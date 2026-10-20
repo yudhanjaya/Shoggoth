@@ -1,0 +1,1022 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Zest</title>
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Ccircle cx='16' cy='16' r='14' fill='%23f4d93e'/%3E%3Cpath d='M16 6v20M6 16h20M9 9l14 14M23 9L9 23' stroke='%2312110e' stroke-width='1.6' opacity='.55'/%3E%3C/svg%3E">
+<style>
+:root{
+  --bg:#12110e; --surface:#1a1915; --surface-2:#242219; --line:#35322a; --line-soft:#272519;
+  --text:#f3efe3; --muted:#a8a393; --faint:#7a7566;
+  --lemon:#f4d93e; --lemon-ink:#1a1700; --lemon-text:#f4d93e; --lemon-wash:rgba(244,217,62,.10);
+  --leaf:#a3d672; --warn:#f0a352; --bad:#f0735f; --steel:#86a9cc;
+  --radius:14px; --radius-sm:9px;
+  --serif:"Iowan Old Style","Palatino Linotype",Palatino,"URW Palladio L","Book Antiqua",Georgia,serif;
+  --sans:ui-sans-serif,system-ui,-apple-system,"Segoe UI",Roboto,"Noto Sans",sans-serif;
+  --mono:ui-monospace,"JetBrains Mono","Fira Code","SF Mono",Menlo,Consolas,monospace;
+  --ease:cubic-bezier(.2,.7,.2,1);
+  --rail:84px;
+}
+@media (prefers-color-scheme:light){
+  :root:not([data-theme="dark"]){
+    --bg:#f6f2e4; --surface:#fffdf4; --surface-2:#f0ebd9; --line:#ddd6bd; --line-soft:#e8e2cc;
+    --text:#1f1d15; --muted:#5f5b4c; --faint:#8a8571;
+    --lemon:#f1d12a; --lemon-text:#6e5a00; --lemon-wash:rgba(241,209,42,.22);
+    --leaf:#3f7d1c; --warn:#a85f00; --bad:#b3341f; --steel:#35648f;
+  }
+}
+:root[data-theme="light"]{
+  --bg:#f6f2e4; --surface:#fffdf4; --surface-2:#f0ebd9; --line:#ddd6bd; --line-soft:#e8e2cc;
+  --text:#1f1d15; --muted:#5f5b4c; --faint:#8a8571;
+  --lemon:#f1d12a; --lemon-text:#6e5a00; --lemon-wash:rgba(241,209,42,.22);
+  --leaf:#3f7d1c; --warn:#a85f00; --bad:#b3341f; --steel:#35648f;
+}
+*{box-sizing:border-box}
+html,body{height:100%}
+body{margin:0;background:var(--bg);color:var(--text);font:15px/1.55 var(--sans);-webkit-font-smoothing:antialiased;overflow:hidden}
+button,input,select,textarea{font:inherit;color:inherit}
+button{cursor:pointer}
+:focus-visible{outline:2px solid var(--lemon);outline-offset:2px;border-radius:6px}
+.sr{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0)}
+svg.i{width:20px;height:20px;stroke:currentColor;fill:none;stroke-width:1.7;stroke-linecap:round;stroke-linejoin:round;flex:none}
+.mono{font-family:var(--mono)}
+.num{font-variant-numeric:tabular-nums}
+
+/* ---------- shell ---------- */
+.app{display:grid;grid-template-columns:var(--rail) 1fr;height:100dvh}
+.rail{display:flex;flex-direction:column;align-items:center;gap:6px;padding:18px 10px;border-right:1px solid var(--line-soft);background:var(--bg)}
+.logo{width:42px;height:42px;margin-bottom:14px;display:grid;place-items:center}
+.logo svg{width:40px;height:40px}
+.nav{width:100%;display:flex;flex-direction:column;gap:6px}
+.nav button{display:flex;flex-direction:column;align-items:center;gap:3px;padding:10px 4px;min-height:56px;border:0;background:none;border-radius:12px;color:var(--muted);font-size:11.5px;letter-spacing:.02em;transition:background .18s,color .18s}
+.nav button:hover{background:var(--surface);color:var(--text)}
+.nav button[aria-current="page"]{background:var(--lemon-wash);color:var(--lemon-text)}
+.rail .spacer{flex:1}
+.theme{border:0;background:none;color:var(--faint);padding:10px;border-radius:10px;min-width:44px;min-height:44px}
+.theme:hover{color:var(--text);background:var(--surface)}
+main{display:flex;flex-direction:column;min-width:0;height:100dvh}
+.top{display:flex;align-items:center;gap:14px;padding:14px 26px;border-bottom:1px solid var(--line-soft);min-height:68px}
+.top h1{font:600 26px/1.1 var(--serif);margin:0;letter-spacing:-.01em}
+.top .grow{flex:1}
+.status{display:flex;align-items:center;gap:10px;padding:7px 14px 7px 12px;border:1px solid var(--line);border-radius:999px;background:var(--surface);font-size:13px;max-width:100%;min-height:40px;transition:border-color .2s}
+.status:hover{border-color:var(--faint)}
+.dot{width:9px;height:9px;border-radius:50%;background:var(--faint);flex:none}
+.dot.on{background:var(--leaf);box-shadow:0 0 0 0 var(--leaf);animation:pulse 2.4s infinite}
+.dot.busy{background:var(--lemon);animation:pulse 1s infinite}
+.dot.off{background:var(--bad)}
+@keyframes pulse{0%{box-shadow:0 0 0 0 color-mix(in srgb,var(--leaf) 50%,transparent)}70%{box-shadow:0 0 0 8px transparent}100%{box-shadow:0 0 0 0 transparent}}
+.status .sep{width:1px;height:16px;background:var(--line)}
+.status .name{font-weight:600;max-width:24ch;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.status .dim{color:var(--muted)}
+.view{flex:1;min-height:0;display:none;overflow:auto}
+.view.active{display:flex;flex-direction:column;animation:enter .32s var(--ease)}
+@keyframes enter{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:none}}
+
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:8px;min-height:40px;padding:0 16px;border-radius:10px;border:1px solid var(--line);background:var(--surface);font-weight:550;font-size:14px;transition:background .15s,border-color .15s,transform .1s}
+.btn:hover{background:var(--surface-2);border-color:var(--faint)}
+.btn:active{transform:scale(.98)}
+.btn.primary{background:var(--lemon);color:var(--lemon-ink);border-color:transparent}
+.btn.primary:hover{filter:brightness(1.06)}
+.btn.ghost{background:none;border-color:transparent;color:var(--muted)}
+.btn.ghost:hover{color:var(--text);background:var(--surface)}
+.btn.danger{color:var(--bad)}
+.btn[disabled]{opacity:.45;pointer-events:none}
+.chip{display:inline-flex;align-items:center;gap:5px;padding:2px 9px;border-radius:999px;border:1px solid var(--line);font-size:12px;color:var(--muted);white-space:nowrap}
+.chip.lem{color:var(--lemon-text);border-color:color-mix(in srgb,var(--lemon) 45%,transparent);background:var(--lemon-wash)}
+.chip.ok{color:var(--leaf);border-color:color-mix(in srgb,var(--leaf) 40%,transparent)}
+
+/* ---------- chat ---------- */
+.chat{flex-direction:row!important;overflow:hidden}
+.convs{width:264px;flex:none;border-right:1px solid var(--line-soft);display:flex;flex-direction:column;padding:14px 12px;gap:10px;overflow:auto}
+.convs .new{width:100%}
+.conv{display:flex;align-items:center;gap:6px;padding:9px 10px;border-radius:10px;border:0;background:none;text-align:left;width:100%;color:var(--muted);font-size:14px;min-height:42px}
+.conv span.t{flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.conv:hover{background:var(--surface);color:var(--text)}
+.conv.cur{background:var(--surface-2);color:var(--text)}
+.conv .del{opacity:0;border:0;background:none;color:var(--faint);padding:4px;border-radius:6px;display:grid}
+.conv:hover .del,.conv:focus-within .del{opacity:1}
+.conv .del:hover{color:var(--bad)}
+.stage{flex:1;min-width:0;display:flex;flex-direction:column}
+.thread{flex:1;overflow:auto;padding:28px 26px 12px;scroll-behavior:smooth}
+.col{max-width:780px;margin:0 auto}
+.empty{margin:min(10vh,90px) auto 0;max-width:640px;text-align:left}
+.empty h2{font:500 clamp(34px,5vw,54px)/1.05 var(--serif);letter-spacing:-.02em;margin:0 0 14px}
+.empty h2 em{font-style:italic;color:var(--lemon-text)}
+.empty p{color:var(--muted);margin:0 0 24px;max-width:52ch}
+.sugg{display:flex;flex-wrap:wrap;gap:10px}
+.sugg button{padding:10px 14px;border-radius:12px;border:1px solid var(--line);background:var(--surface);color:var(--text);font-size:14px;min-height:44px;text-align:left;transition:border-color .15s,transform .15s}
+.sugg button:hover{border-color:var(--lemon);transform:translateY(-1px)}
+.msg{display:flex;gap:14px;margin:0 0 26px}
+.msg.user{justify-content:flex-end}
+.msg.user .body{background:var(--surface-2);border-radius:18px 18px 4px 18px;padding:10px 16px;max-width:85%;white-space:pre-wrap;overflow-wrap:anywhere}
+.avatar{width:30px;height:30px;border-radius:50%;background:var(--lemon);flex:none;display:grid;place-items:center;margin-top:2px}
+.avatar svg{width:22px;height:22px}
+.msg.bot .body{flex:1;min-width:0;overflow-wrap:anywhere}
+.body p{margin:0 0 .85em}.body p:last-child{margin-bottom:0}
+.body h1,.body h2,.body h3{font-family:var(--serif);margin:1.1em 0 .4em;line-height:1.2}
+.body h1{font-size:1.5em}.body h2{font-size:1.28em}.body h3{font-size:1.1em}
+.body ul,.body ol{padding-left:1.4em;margin:0 0 .85em}
+.body code{font:0.88em var(--mono);background:var(--surface-2);padding:.12em .4em;border-radius:5px}
+.body pre{position:relative;background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:14px 16px;overflow:auto;margin:0 0 1em}
+.body pre code{background:none;padding:0;font-size:13px;line-height:1.6}
+.body pre .lang{position:absolute;top:8px;right:54px;font:11px var(--mono);color:var(--faint)}
+.body pre .cp{position:absolute;top:4px;right:6px;border:0;background:none;color:var(--faint);padding:6px;border-radius:7px;min-width:36px;min-height:32px;display:grid;place-items:center}
+.body pre .cp:hover{color:var(--text);background:var(--surface-2)}
+.think{margin:0 0 .9em;border-left:2px solid var(--line);padding-left:14px;color:var(--muted)}
+.think summary{cursor:pointer;font-size:13px;list-style:none;display:flex;align-items:center;gap:8px;min-height:28px}
+.think summary::-webkit-details-marker{display:none}
+.think summary::before{content:"";width:6px;height:6px;border-right:1.6px solid currentColor;border-bottom:1.6px solid currentColor;transform:rotate(-45deg);transition:transform .2s}
+.think[open] summary::before{transform:rotate(45deg)}
+.think .tx{font-size:13.5px;white-space:pre-wrap;margin-top:6px;max-height:260px;overflow:auto}
+.meta{margin-top:8px;font:12px var(--mono);color:var(--faint);display:flex;gap:14px;flex-wrap:wrap;align-items:center}
+.meta button{border:0;background:none;color:var(--faint);padding:4px 6px;border-radius:6px;display:inline-flex;gap:5px;align-items:center;font:inherit;min-height:28px}
+.meta button:hover{color:var(--text);background:var(--surface)}
+.typing{display:inline-flex;gap:5px;padding:8px 0}
+.typing i{width:7px;height:7px;border-radius:50%;background:var(--lemon);animation:bob 1.1s infinite ease-in-out}
+.typing i:nth-child(2){animation-delay:.15s}.typing i:nth-child(3){animation-delay:.3s}
+@keyframes bob{0%,80%,100%{transform:translateY(0);opacity:.4}40%{transform:translateY(-5px);opacity:1}}
+.loadnote{display:flex;align-items:center;gap:10px;color:var(--muted);font-size:14px;padding:6px 0}
+.shimmer{height:6px;width:160px;border-radius:99px;background:linear-gradient(90deg,var(--line),var(--lemon),var(--line));background-size:200% 100%;animation:sh 1.4s linear infinite}
+@keyframes sh{to{background-position:-200% 0}}
+.composer-wrap{padding:8px 26px calc(18px + env(safe-area-inset-bottom))}
+.composer{max-width:780px;margin:0 auto;border:1px solid var(--line);background:var(--surface);border-radius:20px;padding:12px 12px 10px 18px;transition:border-color .15s,box-shadow .15s}
+.composer:focus-within{border-color:var(--lemon);box-shadow:0 0 0 3px var(--lemon-wash)}
+.composer textarea{width:100%;border:0;background:none;resize:none;outline:none;max-height:220px;min-height:28px;line-height:1.55;padding:2px 0}
+.composer textarea::placeholder{color:var(--faint)}
+.crow{display:flex;align-items:center;gap:8px;margin-top:6px}
+.crow .grow{flex:1}
+.pick{display:inline-flex;align-items:center;gap:6px;min-height:36px;padding:0 10px;border-radius:9px;border:1px solid var(--line);background:var(--bg);font-size:13px;max-width:46vw}
+.pick select{appearance:none;border:0;background:none;outline:none;max-width:30ch;text-overflow:ellipsis;cursor:pointer;padding-right:2px}
+.pick select option{background:var(--surface);color:var(--text)}
+.send{width:44px;height:44px;border-radius:50%;border:0;background:var(--lemon);color:var(--lemon-ink);display:grid;place-items:center;transition:transform .12s,filter .15s}
+.send:hover{filter:brightness(1.07)}.send:active{transform:scale(.94)}
+.send[disabled]{background:var(--surface-2);color:var(--faint);pointer-events:none}
+.send.stop{background:var(--text);color:var(--bg)}
+.hint{text-align:center;font-size:12px;color:var(--faint);margin-top:8px}
+.menu-btn{display:none}
+.sheet{padding:16px 18px;border:1px solid var(--line);border-radius:var(--radius);background:var(--surface);display:grid;gap:12px;max-width:780px;margin:0 auto 10px}
+.sheet[hidden]{display:none}
+.sheet label{display:grid;gap:5px;font-size:13px;color:var(--muted)}
+.sheet textarea,.sheet input[type=number]{border:1px solid var(--line);background:var(--bg);border-radius:9px;padding:9px 11px;outline:none;color:var(--text);min-height:40px}
+.sheet textarea:focus,.sheet input:focus{border-color:var(--lemon)}
+.sheet .two{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.sheet input[type=range]{accent-color:var(--lemon);width:100%}
+
+/* ---------- models ---------- */
+.pad{padding:24px 26px 40px}
+.wrap{max-width:1180px;margin:0 auto;width:100%}
+.lede{color:var(--muted);max-width:62ch;margin:0 0 20px}
+.filters{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:22px;align-items:center}
+.filters button{min-height:38px;padding:0 14px;border-radius:999px;border:1px solid var(--line);background:none;color:var(--muted);font-size:13.5px}
+.filters button:hover{color:var(--text);border-color:var(--faint)}
+.filters button[aria-pressed="true"]{background:var(--text);color:var(--bg);border-color:var(--text)}
+.filters input{margin-left:auto;min-height:38px;border:1px solid var(--line);border-radius:999px;background:var(--surface);padding:0 16px;outline:none;min-width:180px}
+.filters input:focus{border-color:var(--lemon)}
+.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(310px,1fr));gap:16px}
+.card{position:relative;border:1px solid var(--line);background:var(--surface);border-radius:var(--radius);padding:18px;display:flex;flex-direction:column;gap:12px;transition:border-color .2s,transform .2s var(--ease)}
+.card:hover{border-color:var(--faint);transform:translateY(-2px)}
+.card.loaded{border-color:var(--lemon);background:linear-gradient(180deg,var(--lemon-wash),transparent 60%),var(--surface)}
+.card h3{margin:0;font:600 19px/1.2 var(--serif);overflow-wrap:anywhere}
+.card .tags{display:flex;gap:6px;flex-wrap:wrap}
+.card .row{display:flex;justify-content:space-between;align-items:baseline;font-size:13px;color:var(--muted)}
+.fit{height:8px;border-radius:99px;background:var(--surface-2);overflow:hidden;position:relative}
+.fit i{position:absolute;inset:0 auto 0 0;border-radius:99px;transition:width .5s var(--ease)}
+.fit.ok i{background:var(--leaf)}.fit.tight i{background:var(--warn)}.fit.over i{background:repeating-linear-gradient(135deg,var(--bad) 0 6px,color-mix(in srgb,var(--bad) 60%,transparent) 6px 12px)}
+.fitnote{font-size:12.5px}
+.fitnote.ok{color:var(--leaf)}.fitnote.tight{color:var(--warn)}.fitnote.over{color:var(--bad)}
+.card .act{display:flex;gap:8px;margin-top:auto;padding-top:4px}
+.card .act .btn{flex:1}
+.empty-note{padding:40px;text-align:center;color:var(--muted);border:1px dashed var(--line);border-radius:var(--radius)}
+dialog{border:1px solid var(--line);background:var(--surface);color:var(--text);border-radius:18px;padding:0;max-width:min(460px,calc(100vw - 32px));width:100%}
+dialog::backdrop{background:rgba(0,0,0,.55);backdrop-filter:blur(3px)}
+dialog form{padding:24px;display:grid;gap:16px}
+dialog h3{font:600 24px var(--serif);margin:0}
+dialog .actions{display:flex;gap:10px;justify-content:flex-end}
+dialog select,dialog input{min-height:42px;border:1px solid var(--line);border-radius:10px;background:var(--bg);padding:0 12px;width:100%;outline:none}
+dialog label{display:grid;gap:6px;font-size:13px;color:var(--muted)}
+
+/* ---------- hardware ---------- */
+.gpus{display:grid;grid-template-columns:repeat(auto-fit,minmax(320px,1fr));gap:20px;margin-bottom:26px}
+.gpu{border:1px solid var(--line);border-radius:20px;background:var(--surface);padding:22px;display:grid;grid-template-columns:120px 1fr;gap:22px;transition:border-color .3s,opacity .3s;position:relative;overflow:hidden}
+.gpu.active{border-color:var(--lemon)}
+.gpu.idle{opacity:.72}
+.gpu .badge{margin-bottom:10px}
+.gpu h3{font:600 22px/1.15 var(--serif);margin:0 0 2px}
+.gpu .sub{font:12px var(--mono);color:var(--faint);margin-bottom:14px}
+.tank{width:120px;height:240px;display:block}
+.tank .shell{fill:none;stroke:var(--line);stroke-width:2}
+.tank .liquid{transition:transform 1.1s var(--ease)}
+.tank .wave{animation:wave 2.6s linear infinite}
+@keyframes wave{to{transform:translateX(-60px)}}
+.tank .fillc{fill:var(--lemon)}
+.gpu.idle .tank .fillc{fill:var(--steel)}
+.tank .tick{stroke:var(--line);stroke-width:1.5}
+.tank text{font:11px var(--mono);fill:var(--faint)}
+.big{font:500 40px/1 var(--serif);letter-spacing:-.02em}
+.big small{font:13px var(--mono);color:var(--faint);letter-spacing:0;margin-left:4px}
+.stats{display:grid;grid-template-columns:1fr 1fr;gap:12px 16px;margin-top:16px}
+.stat b{display:block;font:600 18px var(--mono)}
+.stat span{font-size:12px;color:var(--faint)}
+.spark{width:100%;height:46px;margin-top:14px;display:block}
+.spark path{fill:none;stroke:var(--lemon);stroke-width:1.8;stroke-linejoin:round}
+.spark .area{fill:var(--lemon-wash);stroke:none}
+.gpu.idle .spark path{stroke:var(--steel)}
+.gpu.idle .spark .area{fill:color-mix(in srgb,var(--steel) 14%,transparent)}
+.panel{border:1px solid var(--line);border-radius:var(--radius);background:var(--surface);padding:20px 22px;display:grid;gap:14px}
+.panel h3{margin:0;font:600 20px var(--serif)}
+.kv{display:grid;grid-template-columns:max-content 1fr;gap:8px 22px;font-size:14px}
+.kv dt{color:var(--muted)}.kv dd{margin:0;font-family:var(--mono);font-size:13px;overflow-wrap:anywhere}
+.toast{position:fixed;left:50%;bottom:26px;transform:translate(-50%,20px);background:var(--text);color:var(--bg);padding:11px 18px;border-radius:12px;font-size:14px;opacity:0;pointer-events:none;transition:all .28s var(--ease);z-index:20;max-width:calc(100vw - 32px)}
+.toast.show{opacity:1;transform:translate(-50%,0)}
+
+.applybar{position:sticky;top:0;z-index:5;display:flex;align-items:center;gap:12px;flex-wrap:wrap;padding:12px 16px;margin:0 0 18px;border:1px solid var(--lemon);border-radius:14px;background:var(--surface);box-shadow:0 10px 30px rgba(0,0,0,.18)}
+.applybar[hidden]{display:none}
+.applybar .msg2{flex:1;min-width:200px;font-size:14px}
+.applybar .mono{color:var(--lemon-text)}
+.gpu .ctl{display:flex;gap:8px;align-items:center;margin-top:14px;flex-wrap:wrap}
+.sw{display:inline-flex;align-items:center;gap:10px;min-height:40px;padding:0 14px 0 6px;border:1px solid var(--line);border-radius:999px;background:var(--bg);font-size:13.5px;font-weight:550}
+.sw i{width:34px;height:20px;border-radius:99px;background:var(--surface-2);border:1px solid var(--line);position:relative;transition:background .2s}
+.sw i::after{content:"";position:absolute;top:2px;left:2px;width:14px;height:14px;border-radius:50%;background:var(--muted);transition:transform .2s var(--ease),background .2s}
+.sw[aria-checked="true"] i{background:var(--lemon);border-color:transparent}
+.sw[aria-checked="true"] i::after{transform:translateX(14px);background:var(--lemon-ink)}
+.mv{width:40px;height:40px;border-radius:10px;border:1px solid var(--line);background:var(--bg);display:grid;place-items:center;color:var(--muted)}
+.mv:hover{color:var(--text);border-color:var(--faint)}
+.mv[disabled]{opacity:.35;pointer-events:none}
+.notel{font-size:13px;color:var(--faint);margin:16px 0 0}
+.gpu .tankbox{position:relative}
+.warn-note{border:1px solid color-mix(in srgb,var(--warn) 45%,transparent);color:var(--warn);border-radius:12px;padding:10px 14px;font-size:13.5px;margin:0 0 18px}
+.bkgrid{display:grid;gap:16px}
+.bkp{border:1px solid var(--line);border-radius:var(--radius);background:var(--surface);padding:18px 20px;display:grid;gap:14px}
+.bkp header{display:flex;gap:10px;align-items:center;flex-wrap:wrap}
+.bkp h3{margin:0;font:600 20px var(--serif)}
+.bkp .grow{flex:1}
+.bopts{display:flex;gap:10px;flex-wrap:wrap}
+.bo{display:inline-flex;align-items:center;gap:10px;min-height:48px;padding:6px 8px 6px 14px;border:1px solid var(--line);border-radius:12px;background:var(--bg);color:var(--text);font-size:14px;font-weight:550;text-align:left}
+button.bo:hover{border-color:var(--faint)}
+.bo[aria-checked="true"]{background:var(--lemon);color:var(--lemon-ink);border-color:transparent}
+.bo small{display:block;font:11.5px var(--mono);font-weight:400;opacity:.75}
+.bo .btn{min-height:32px;padding:0 12px;font-size:13px}
+.bo.static{padding-right:14px;cursor:default}
+.bow{display:inline-flex;align-items:center;gap:6px}
+.bo .sdot{width:8px;height:8px;border-radius:50%;flex:none}
+.sdot.installed{background:var(--leaf)}.sdot.update_required{background:var(--warn)}.sdot.installable{background:var(--faint)}
+.bo[aria-checked="true"] .sdot{background:var(--lemon-ink)}
+.bkp .note{margin:0;font-size:13px;color:var(--faint)}
+
+/* ---------- logs ---------- */
+.logbar{display:flex;gap:10px;align-items:center;margin-bottom:14px;flex-wrap:wrap}
+.logbar input[type=search]{flex:1;min-width:160px;min-height:40px;border:1px solid var(--line);border-radius:10px;background:var(--surface);padding:0 14px;outline:none}
+.logbar input:focus{border-color:var(--lemon)}
+.logbar label{display:flex;align-items:center;gap:8px;font-size:13px;color:var(--muted);min-height:40px}
+.logbar input[type=checkbox]{accent-color:var(--lemon);width:18px;height:18px}
+.log{font:12.5px/1.65 var(--mono);background:var(--surface);border:1px solid var(--line);border-radius:var(--radius);padding:14px 16px;overflow:auto;flex:1;min-height:300px;white-space:pre-wrap;overflow-wrap:anywhere}
+.log .ln{display:block}.log .Warn{color:var(--warn)}.log .Error{color:var(--bad)}.log .Info{color:var(--muted)}
+.log .tag{color:var(--lemon-text)}
+
+/* ---------- responsive ---------- */
+@media (max-width:900px){
+  .convs{position:absolute;z-index:6;inset:0 auto 0 0;background:var(--bg);transform:translateX(-102%);transition:transform .25s var(--ease);width:min(300px,86vw);box-shadow:8px 0 30px rgba(0,0,0,.35)}
+  .convs.open{transform:none}
+  .menu-btn{display:inline-grid}
+  .chat{position:relative}
+}
+@media (max-width:640px){
+  :root{--rail:0px}
+  .app{grid-template-columns:1fr;grid-template-rows:1fr auto}
+  .rail{order:2;flex-direction:row;border-right:0;border-top:1px solid var(--line-soft);padding:6px 8px calc(6px + env(safe-area-inset-bottom));justify-content:space-around}
+  .logo,.rail .spacer,.theme{display:none}
+  .nav{flex-direction:row;justify-content:space-around}
+  .nav button{flex:1;min-height:52px}
+  main{height:auto;min-height:0}
+  .app{height:100dvh}
+  .top{padding:12px 16px;flex-wrap:wrap;min-height:60px}
+  .top h1{font-size:22px}
+  .status .hide-sm{display:none}
+  .thread,.composer-wrap,.pad{padding-left:16px;padding-right:16px}
+  .gpu{grid-template-columns:96px 1fr;padding:18px}
+  .tank{width:96px;height:192px}
+  .sheet .two{grid-template-columns:1fr}
+  .filters input{margin-left:0;width:100%}
+
+}
+@media (prefers-reduced-motion:reduce){
+  *,*::before,*::after{animation-duration:.001ms!important;animation-iteration-count:1!important;transition-duration:.001ms!important;scroll-behavior:auto!important}
+}
+</style>
+</head>
+<body>
+<div class="app">
+  <nav class="rail" aria-label="Main">
+    <div class="logo" aria-hidden="true">
+      <svg viewBox="0 0 40 40"><circle cx="20" cy="20" r="18" fill="#f4d93e"/><circle cx="20" cy="20" r="14.5" fill="none" stroke="#1a1700" stroke-width="1.4" opacity=".55"/><g stroke="#1a1700" stroke-width="1.3" opacity=".45"><path d="M20 6v28M6 20h28M10 10l20 20M30 10L10 30"/></g><circle cx="20" cy="20" r="2.6" fill="#1a1700" opacity=".6"/></svg>
+    </div>
+    <div class="nav" role="tablist">
+      <button data-view="chat" aria-current="page"><svg class="i" viewBox="0 0 24 24"><path d="M21 12a8 8 0 0 1-11.6 7.1L4 20.5l1.5-4.6A8 8 0 1 1 21 12z"/></svg>Chat</button>
+      <button data-view="models"><svg class="i" viewBox="0 0 24 24"><path d="M12 3l8 4.5v9L12 21l-8-4.5v-9z"/><path d="M12 12l8-4.5M12 12L4 7.5M12 12v9"/></svg>Models</button>
+      <button data-view="hardware"><svg class="i" viewBox="0 0 24 24"><rect x="5" y="5" width="14" height="14" rx="2.5"/><rect x="9" y="9" width="6" height="6" rx="1"/><path d="M9 2v3M15 2v3M9 19v3M15 19v3M2 9h3M2 15h3M19 9h3M19 15h3"/></svg>Hardware</button>
+      <button data-view="backends"><svg class="i" viewBox="0 0 24 24"><path d="M12 3l9 5-9 5-9-5z"/><path d="M3 13l9 5 9-5"/><path d="M3 17.5l9 5 9-5" opacity=".5"/></svg>Backends</button>
+      <button data-view="logs"><svg class="i" viewBox="0 0 24 24"><path d="M4 6l6 6-6 6"/><path d="M13 19h7"/></svg>Logs</button>
+    </div>
+    <div class="spacer"></div>
+    <button class="theme" id="theme" aria-label="Toggle light or dark theme"><svg class="i" viewBox="0 0 24 24"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M2 12h2M20 12h2M5 5l1.4 1.4M17.6 17.6L19 19M5 19l1.4-1.4M17.6 6.4L19 5"/></svg></button>
+  </nav>
+
+  <main>
+    <header class="top">
+      <button class="btn ghost menu-btn" id="menu" aria-label="Show conversations"><svg class="i" viewBox="0 0 24 24"><path d="M4 7h16M4 12h16M4 17h16"/></svg></button>
+      <h1 id="title">Chat</h1>
+      <div class="grow"></div>
+      <button class="status" id="status" aria-label="Server status, open models" type="button">
+        <span class="dot" id="sdot"></span>
+        <span class="name" id="sname">Connecting…</span>
+        <span class="sep hide-sm"></span>
+        <span class="dim hide-sm mono num" id="sgpu"></span>
+        <span class="dim hide-sm mono num" id="stps"></span>
+      </button>
+    </header>
+
+    <!-- CHAT -->
+    <section class="view chat active" id="v-chat">
+      <aside class="convs" id="convs" aria-label="Conversations">
+        <button class="btn primary new" id="newchat"><svg class="i" viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></svg>New chat</button>
+        <div id="convlist"></div>
+      </aside>
+      <div class="stage">
+        <div class="thread" id="thread" aria-live="polite"><div class="col" id="msgs"></div></div>
+        <div class="composer-wrap">
+          <div class="sheet" id="sheet" hidden>
+            <label>System prompt<textarea id="sys" rows="2" placeholder="Optional. Sets the model's behaviour for this conversation."></textarea></label>
+            <div class="two">
+              <label>Temperature <span class="mono num" id="tv">0.7</span><input type="range" id="temp" min="0" max="2" step="0.05" value="0.7"></label>
+              <label>Max tokens (0 = no limit)<input type="number" id="maxtok" min="0" step="256" value="0"></label>
+            </div>
+          </div>
+          <form class="composer" id="form">
+            <label class="sr" for="input">Message</label>
+            <textarea id="input" rows="1" placeholder="Ask anything…" autocomplete="off"></textarea>
+            <div class="crow">
+              <label class="pick" title="Model"><svg class="i" viewBox="0 0 24 24" style="width:16px;height:16px"><path d="M12 3l8 4.5v9L12 21l-8-4.5v-9z"/></svg><select id="modelsel" aria-label="Model"></select></label>
+              <button type="button" class="btn ghost" id="tune" aria-expanded="false" aria-label="Chat settings"><svg class="i" viewBox="0 0 24 24"><path d="M4 7h10M18 7h2M4 17h2M10 17h10"/><circle cx="16" cy="7" r="2"/><circle cx="8" cy="17" r="2"/></svg></button>
+              <span class="grow"></span>
+              <button class="send" id="send" type="submit" aria-label="Send"><svg class="i" viewBox="0 0 24 24"><path d="M12 19V5M5 12l7-7 7 7"/></svg></button>
+            </div>
+          </form>
+          <div class="hint"><span id="hintdev"></span> · Enter to send, Shift+Enter for a new line</div>
+        </div>
+      </div>
+    </section>
+
+    <!-- MODELS -->
+    <section class="view" id="v-models"><div class="pad"><div class="wrap">
+      <p class="lede">Everything your Lemonade server can run. The meter on each card compares the model with the VRAM of the devices Lemonade is set to use.</p>
+      <div class="filters" id="filters" role="group" aria-label="Filter models"></div>
+      <div class="grid" id="grid"></div>
+    </div></div></section>
+
+    <!-- HARDWARE -->
+    <section class="view" id="v-hardware"><div class="pad"><div class="wrap">
+      <p class="lede">Choose which devices Lemonade's llama.cpp engine runs on, and in what order. The first device is the primary one. Changes apply the next time a model loads.</p>
+      <div class="applybar" id="applybar" hidden></div>
+      <div class="gpus" id="gpus"></div>
+      <div class="panel"><h3>Engine</h3><dl class="kv" id="engine"></dl></div>
+    </div></div></section>
+
+    <!-- BACKENDS -->
+    <section class="view" id="v-backends"><div class="pad"><div class="wrap">
+      <p class="lede">Every engine Lemonade runs can use different backends: CUDA, Vulkan, ROCm, CPU and more. Choose which one each engine uses, or install one that's missing. Changes apply the next time a model loads.</p>
+      <div id="bk"></div>
+    </div></div></section>
+
+    <!-- LOGS -->
+    <section class="view" id="v-logs"><div class="pad" style="display:flex;flex-direction:column;flex:1;min-height:0"><div class="wrap" style="display:flex;flex-direction:column;flex:1;min-height:0">
+      <div class="logbar">
+        <input type="search" id="logq" placeholder="Filter log lines" aria-label="Filter log lines">
+        <label><input type="checkbox" id="logauto" checked> Follow</label>
+        <button class="btn" id="logref">Refresh</button>
+      </div>
+      <div class="log" id="log" tabindex="0" role="log"></div>
+    </div></div></section>
+  </main>
+</div>
+
+<dialog id="instdlg">
+  <form method="dialog">
+    <h3 id="idname">Install backend</h3>
+    <p id="idtext" style="margin:0;color:var(--muted)"></p>
+    <div class="actions"><button class="btn" value="cancel" formnovalidate>Cancel</button><button class="btn primary" value="ok">Download and install</button></div>
+  </form>
+</dialog>
+<dialog id="loaddlg">
+  <form method="dialog" id="loadform">
+    <h3 id="ldname">Load model</h3>
+    <div id="ldfit"></div>
+    <label>Context window
+      <select id="ldctx">
+        <option value="">Model default</option><option>2048</option><option>4096</option><option>8192</option><option>16384</option><option>32768</option><option>65536</option><option>131072</option>
+      </select>
+    </label>
+    <div class="actions">
+      <button class="btn" value="cancel" formnovalidate>Cancel</button>
+      <button class="btn primary" value="ok" id="ldgo">Load model</button>
+    </div>
+  </form>
+</dialog>
+<div class="toast" id="toast" role="status"></div>
+
+<script>
+"use strict";
+const $ = (s, r=document) => r.querySelector(s);
+const $$ = (s, r=document) => [...r.querySelectorAll(s)];
+const esc = s => String(s ?? "").replace(/[&<>"']/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
+const store = {
+  get(k, d){ try{ const v = localStorage.getItem(k); return v ? JSON.parse(v) : d; }catch{ return d; } },
+  set(k, v){ try{ localStorage.setItem(k, JSON.stringify(v)); }catch{} }
+};
+const ICON = {
+  copy:'<svg class="i" viewBox="0 0 24 24" style="width:15px;height:15px"><rect x="9" y="9" width="11" height="11" rx="2"/><path d="M5 15V6a2 2 0 0 1 2-2h8"/></svg>',
+  trash:'<svg class="i" viewBox="0 0 24 24" style="width:16px;height:16px"><path d="M4 7h16M10 11v6M14 11v6M6 7l1 13h10l1-13M9 7V4h6v3"/></svg>',
+  stop:'<svg class="i" viewBox="0 0 24 24"><rect x="6" y="6" width="12" height="12" rx="2" fill="currentColor"/></svg>',
+  up:'<svg class="i" viewBox="0 0 24 24"><path d="M12 19V5M5 12l7-7 7 7"/></svg>',
+  redo:'<svg class="i" viewBox="0 0 24 24" style="width:15px;height:15px"><path d="M4 12a8 8 0 1 0 3-6.2M4 4v5h5"/></svg>',
+  bolt:'<svg class="i" viewBox="0 0 24 24" style="width:16px;height:16px"><path d="M13 2L4 14h7l-1 8 9-12h-7z"/></svg>'
+};
+const AVATAR = '<div class="avatar" aria-hidden="true"><svg viewBox="0 0 40 40"><g stroke="#1a1700" stroke-width="2.2" opacity=".6"><path d="M20 6v28M6 20h28M10 10l20 20M30 10L10 30"/></g><circle cx="20" cy="20" r="15" fill="none" stroke="#1a1700" stroke-width="2.2" opacity=".75"/></svg></div>';
+
+let toastT;
+function toast(msg){ const t = $("#toast"); t.textContent = msg; t.classList.add("show"); clearTimeout(toastT); toastT = setTimeout(()=>t.classList.remove("show"), 3200); }
+
+/* ======================= state ======================= */
+const S = {
+  view: "chat", models: [], loaded: null, health: null, gpus: [], info: null, hist: {},
+  filter: store.get("zest.filter", "downloaded"), q: "",
+  convs: store.get("zest.convs", []), cur: store.get("zest.cur", null),
+  model: store.get("zest.model", ""), busy: false, abort: null,
+  temp: store.get("zest.temp", 0.7), maxtok: store.get("zest.maxtok", 0), tps: null, loadingModel: null
+};
+
+async function api(path, opts={}){
+  const r = await fetch(path, opts);
+  const ct = r.headers.get("content-type") || "";
+  const data = ct.includes("json") ? await r.json() : await r.text();
+  if(!r.ok) throw new Error((data && data.error && (data.error.message || data.error)) || r.statusText);
+  return data;
+}
+
+/* ======================= navigation ======================= */
+const TITLES = {chat:"Chat", models:"Models", hardware:"Hardware", backends:"Backends", logs:"Logs"};
+function show(v){
+  S.view = v;
+  $$(".view").forEach(el => el.classList.toggle("active", el.id === "v-"+v));
+  $$(".nav button").forEach(b => b.toggleAttribute("aria-current", b.dataset.view === v));
+  $$(".nav button").forEach(b => { if(b.dataset.view===v) b.setAttribute("aria-current","page"); else b.removeAttribute("aria-current"); });
+  $("#title").textContent = TITLES[v];
+  $("#menu").style.display = v === "chat" ? "" : "none";
+  if(location.hash !== "#"+v) history.replaceState(null, "", "#"+v);
+  if(v === "models") renderModels();
+  if(v === "hardware") renderHardware();
+  if(v === "backends") loadBackends();
+  if(v === "logs") loadLogs();
+}
+$$(".nav button").forEach(b => b.addEventListener("click", () => show(b.dataset.view)));
+$("#status").addEventListener("click", () => show("models"));
+$("#theme").addEventListener("click", () => {
+  const cur = document.documentElement.dataset.theme || (matchMedia("(prefers-color-scheme: light)").matches ? "light" : "dark");
+  const next = cur === "light" ? "dark" : "light";
+  document.documentElement.dataset.theme = next; store.set("zest.theme", next);
+});
+{ const t = store.get("zest.theme", null); if(t) document.documentElement.dataset.theme = t; }
+
+/* ======================= polling ======================= */
+const gb = mb => (mb/1024);
+const allDevices = () => S.info?.devices || [];
+const savedIds = () => (S.info?.device || "").split(",").map(s => s.trim()).filter(Boolean);
+/* devices llama.cpp will really use: the saved list, or every device when it is on automatic */
+function activeIds(){ const ids = savedIds().filter(id => allDevices().some(d => d.id === id)); return ids.length ? ids : allDevices().map(d => d.id); }
+const activeDevs = () => activeIds().map(id => allDevices().find(d => d.id === id)).filter(Boolean);
+const gpuFor = d => d && d.nv_index != null ? S.gpus.find(g => g.nv_index === d.nv_index) : null;
+const shortName = n => String(n).replace(/^(NVIDIA|AMD|Intel)(\(R\))?\s+/i, "").replace(/^GeForce\s+/i, "").replace(/^Radeon\s+/i, "Radeon ");
+function activeGpus(){ return activeDevs().map(gpuFor).filter(Boolean); }
+function activeVramGb(){ const d = activeDevs(); return d.length ? d.reduce((a,x) => a + x.mib/1024, 0) : null; }
+function activeName(){ const d = activeDevs(); return d.length ? d.map(x => shortName(x.name)).join(" + ") : "default devices"; }
+async function pollGpu(){
+  try{
+    const g = await api("/ui/gpu"); S.gpus = g.gpus;
+    for(const x of g.gpus){ const h = (S.hist[x.nv_index] ||= []); h.push(x.util ?? 0); if(h.length > 60) h.shift(); }
+  }catch{}
+}
+async function pollServer(){
+  try{
+    S.health = await api("/api/v1/health");
+    S.loaded = S.health.model_loaded || null;
+    S.up = true;
+  }catch{ S.up = false; S.loaded = null; }
+  try{ const st = await api("/api/v1/stats"); S.tps = st.tokens_per_second || null; }catch{}
+  try{ S.info = await api("/ui/info"); }catch{}
+}
+async function loadModels(){
+  try{
+    const r = await api("/api/v1/models?show_all=true");
+    S.models = r.data || [];
+  }catch(e){
+    try{ S.models = (await api("/api/v1/models")).data || []; }catch{}
+  }
+}
+function renderStatus(){
+  const d = $("#sdot");
+  d.className = "dot " + (!S.up ? "off" : S.loadingModel || S.busy ? "busy" : S.loaded ? "on" : "");
+  $("#sname").textContent = !S.up ? "Server unreachable" : S.loadingModel ? "Loading " + S.loadingModel : (S.loaded || "No model loaded");
+  const g = activeGpus();
+  $("#sgpu").textContent = g.length ? g.map(x => `${gb(x.mem_used_mb).toFixed(1)}/${gb(x.mem_total_mb).toFixed(0)} GB`).join(" · ") : "";
+  $("#stps").textContent = S.tps ? S.tps.toFixed(1) + " tok/s" : "";
+  $("#hintdev").textContent = S.info ? "Running on " + activeName() : "";
+}
+async function tick(){
+  if(document.hidden) return;
+  await Promise.all([pollGpu(), pollServer()]);
+  renderStatus();
+  if(S.view === "hardware") renderHardware();
+  if(S.view === "models") updateModelBadges();
+  syncModelSelect();
+}
+setInterval(tick, 2500);
+document.addEventListener("visibilitychange", tick);
+
+/* ======================= markdown-lite ======================= */
+function inline(s){
+  s = esc(s);
+  s = s.replace(/`([^`\n]+)`/g, "<code>$1</code>");
+  s = s.replace(/\*\*([^*\n]+)\*\*/g, "<strong>$1</strong>");
+  s = s.replace(/(^|[^*])\*([^*\n]+)\*(?!\*)/g, "$1<em>$2</em>");
+  return s;
+}
+function md(src){
+  const out = [], lines = src.split("\n"); let i = 0, para = [];
+  const flush = () => { if(para.length){ out.push("<p>"+inline(para.join("\n")).replace(/\n/g,"<br>")+"</p>"); para = []; } };
+  while(i < lines.length){
+    const ln = lines[i];
+    let m;
+    if((m = ln.match(/^```(\w*)/))){
+      flush(); const code = []; i++;
+      while(i < lines.length && !lines[i].startsWith("```")) code.push(lines[i++]);
+      i++;
+      out.push(`<pre><span class="lang">${esc(m[1])}</span><button class="cp" type="button" aria-label="Copy code">${ICON.copy}</button><code>${esc(code.join("\n"))}</code></pre>`);
+      continue;
+    }
+    if((m = ln.match(/^(#{1,3})\s+(.*)/))){ flush(); out.push(`<h${m[1].length}>${inline(m[2])}</h${m[1].length}>`); i++; continue; }
+    if(/^\s*[-*]\s+/.test(ln)){
+      flush(); const items = [];
+      while(i < lines.length && /^\s*[-*]\s+/.test(lines[i])) items.push("<li>"+inline(lines[i++].replace(/^\s*[-*]\s+/,""))+"</li>");
+      out.push("<ul>"+items.join("")+"</ul>"); continue;
+    }
+    if(/^\s*\d+[.)]\s+/.test(ln)){
+      flush(); const items = [];
+      while(i < lines.length && /^\s*\d+[.)]\s+/.test(lines[i])) items.push("<li>"+inline(lines[i++].replace(/^\s*\d+[.)]\s+/,""))+"</li>");
+      out.push("<ol>"+items.join("")+"</ol>"); continue;
+    }
+    if(!ln.trim()){ flush(); i++; continue; }
+    para.push(ln); i++;
+  }
+  flush();
+  return out.join("");
+}
+function splitThink(m){
+  let reasoning = m.reasoning || "", text = m.content || "", open = false;
+  const a = text.indexOf("<think>");
+  if(a !== -1){
+    const b = text.indexOf("</think>", a);
+    if(b === -1){ reasoning += text.slice(a+7); text = text.slice(0,a); open = true; }
+    else { reasoning += text.slice(a+7, b); text = text.slice(0,a) + text.slice(b+8); }
+  }
+  return {reasoning: reasoning.trim(), text: text.trim(), open};
+}
+
+/* ======================= chat ======================= */
+const uid = () => Math.random().toString(36).slice(2, 10);
+const conv = () => S.convs.find(c => c.id === S.cur);
+function saveConvs(){ store.set("zest.convs", S.convs.slice(0, 60)); store.set("zest.cur", S.cur); }
+function newConv(){
+  const c = {id: uid(), title: "New chat", messages: [], system: "", created: Date.now()};
+  S.convs.unshift(c); S.cur = c.id; saveConvs(); renderConvs(); renderThread();
+  $("#convs").classList.remove("open"); $("#input").focus();
+}
+function renderConvs(){
+  const list = $("#convlist");
+  list.innerHTML = S.convs.map(c => `<div class="conv ${c.id===S.cur?"cur":""}" data-id="${c.id}" role="button" tabindex="0"><span class="t">${esc(c.title)}</span><button class="del" aria-label="Delete conversation" data-del="${c.id}">${ICON.trash}</button></div>`).join("");
+}
+$("#convlist").addEventListener("click", e => {
+  const del = e.target.closest("[data-del]");
+  if(del){
+    e.stopPropagation(); const id = del.dataset.del;
+    S.convs = S.convs.filter(c => c.id !== id);
+    if(S.cur === id) S.cur = S.convs[0]?.id || null;
+    if(!S.cur) return newConv();
+    saveConvs(); renderConvs(); renderThread(); return;
+  }
+  const row = e.target.closest(".conv"); if(!row) return;
+  S.cur = row.dataset.id; saveConvs(); renderConvs(); renderThread(); $("#convs").classList.remove("open");
+});
+$("#convlist").addEventListener("keydown", e => { if((e.key==="Enter"||e.key===" ") && e.target.classList.contains("conv")){ e.preventDefault(); e.target.click(); } });
+$("#newchat").addEventListener("click", newConv);
+$("#menu").addEventListener("click", () => $("#convs").classList.toggle("open"));
+
+const SUGGEST = [
+  "What's the best way to run a 7B model on an old 6 GB GPU?",
+  "Explain GGUF quantisation: Q4_K_M versus Q8_0",
+  "Write a Python script that benchmarks tokens per second against a local API",
+  "How much VRAM do I need for a 32B model with a 16k context?"
+];
+function msgHTML(m, i, live){
+  if(m.role === "user") return `<div class="msg user"><div class="body">${esc(m.content)}</div></div>`;
+  const {reasoning, text, open} = splitThink(m);
+  let inner = "";
+  if(reasoning) inner += `<details class="think" ${open||!text?"open":""}><summary>${open||(live&&!text)?"Thinking…":"Reasoning"}</summary><div class="tx">${esc(reasoning)}</div></details>`;
+  if(m.loading) inner += `<div class="loadnote"><span class="shimmer"></span>Loading ${esc(m.loading)} onto ${esc(activeName())}…</div>`;
+  else if(text) inner += md(text);
+  else if(!reasoning) inner += `<div class="typing" aria-label="Thinking"><i></i><i></i><i></i></div>`;
+  let meta = "";
+  if(!live || m.done){
+    const s = m.stats;
+    meta = `<div class="meta">${s ? `<span>${s.tps ? s.tps.toFixed(1)+" tok/s · " : ""}${s.tokens} tokens${s.ttft!=null?` · first token ${s.ttft.toFixed(1)}s`:""}</span>` : ""}<button type="button" data-copy="${i}">${ICON.copy} Copy</button><button type="button" data-regen="${i}">${ICON.redo} Retry</button></div>`;
+  }
+  return `<div class="msg bot">${AVATAR}<div class="body">${inner}${meta}</div></div>`;
+}
+function renderThread(scroll=true){
+  const c = conv(); const box = $("#msgs");
+  if(!c || !c.messages.length){
+    box.innerHTML = `<div class="empty"><h2>What shall we <em>squeeze</em> today?</h2><p>${S.info ? `Everything here runs on your own machine, on the ${esc(activeName())}.` : "Everything here runs on your own machine."}</p><div class="sugg">${SUGGEST.map(s=>`<button type="button">${esc(s)}</button>`).join("")}</div></div>`;
+  } else box.innerHTML = c.messages.map((m,i)=>msgHTML(m,i,false)).join("");
+  if(scroll) $("#thread").scrollTop = 1e9;
+  $("#sys").value = c?.system || "";
+}
+$("#msgs").addEventListener("click", e => {
+  const sug = e.target.closest(".sugg button"); if(sug){ $("#input").value = sug.textContent; send(); return; }
+  const cp = e.target.closest(".cp"); if(cp){ navigator.clipboard?.writeText(cp.parentElement.querySelector("code").textContent); toast("Code copied"); return; }
+  const cm = e.target.closest("[data-copy]"); if(cm){ const m = conv().messages[+cm.dataset.copy]; navigator.clipboard?.writeText(splitThink(m).text); toast("Copied"); return; }
+  const rg = e.target.closest("[data-regen]"); if(rg && !S.busy){ const c = conv(); c.messages.length = +rg.dataset.regen; saveConvs(); generate(); }
+});
+
+$("#tune").addEventListener("click", () => {
+  const sh = $("#sheet"); sh.hidden = !sh.hidden; $("#tune").setAttribute("aria-expanded", String(!sh.hidden));
+});
+$("#temp").value = S.temp; $("#tv").textContent = (+S.temp).toFixed(2); $("#maxtok").value = S.maxtok;
+$("#temp").addEventListener("input", e => { S.temp = +e.target.value; $("#tv").textContent = S.temp.toFixed(2); store.set("zest.temp", S.temp); });
+$("#maxtok").addEventListener("change", e => { S.maxtok = +e.target.value || 0; store.set("zest.maxtok", S.maxtok); });
+$("#sys").addEventListener("change", e => { const c = conv(); if(c){ c.system = e.target.value; saveConvs(); } });
+
+const input = $("#input");
+function grow(){ input.style.height = "auto"; input.style.height = Math.min(input.scrollHeight, 220) + "px"; }
+input.addEventListener("input", grow);
+input.addEventListener("keydown", e => { if(e.key === "Enter" && !e.shiftKey && !e.isComposing){ e.preventDefault(); send(); } });
+$("#form").addEventListener("submit", e => { e.preventDefault(); if(S.busy) S.abort?.abort(); else send(); });
+
+function chatModels(){ return S.models.filter(m => m.recipe && !["sd-cpp","whispercpp","kokoro","moonshine","acestep","thinksound","trellis","openmoss"].includes(m.recipe) && m.downloaded); }
+function syncModelSelect(){
+  const sel = $("#modelsel"); const list = chatModels(); if(!list.length) { sel.innerHTML = '<option value="">No models downloaded</option>'; return; }
+  const sig = list.map(m=>m.id).join("|")+"|"+(S.loaded||"");
+  if(sel.dataset.sig !== sig){
+    if(!S.model || !list.find(m=>m.id===S.model)) S.model = S.loaded && list.find(m=>m.id===S.loaded) ? S.loaded : list[0].id;
+    sel.innerHTML = list.map(m => `<option value="${esc(m.id)}">${m.id===S.loaded?"● ":""}${esc(m.id)}</option>`).join("");
+    sel.dataset.sig = sig;
+  }
+  sel.value = S.model;
+}
+$("#modelsel").addEventListener("change", e => { S.model = e.target.value; store.set("zest.model", S.model); });
+
+function setSendState(){
+  const b = $("#send");
+  b.classList.toggle("stop", S.busy);
+  b.innerHTML = S.busy ? ICON.stop : ICON.up;
+  b.setAttribute("aria-label", S.busy ? "Stop generating" : "Send");
+  renderStatus();
+}
+function send(){
+  const text = input.value.trim(); if(!text || S.busy) return;
+  if(!S.cur) newConv();
+  const c = conv();
+  c.messages.push({role:"user", content:text});
+  if(c.title === "New chat") c.title = text.slice(0, 48);
+  input.value = ""; grow(); saveConvs(); renderConvs(); generate();
+}
+async function generate(){
+  const c = conv(); if(!c || !S.model){ toast("Pick a model first"); return; }
+  const needLoad = S.loaded !== S.model;
+  const bot = {role:"assistant", content:"", reasoning:"", loading: needLoad ? S.model : null};
+  c.messages.push(bot);
+  renderThread();
+  const idx = c.messages.length - 1;
+  const el = () => $("#msgs").children[idx];
+  S.busy = true; S.abort = new AbortController(); setSendState();
+  if(needLoad) S.loadingModel = S.model;
+
+  const msgs = [];
+  if(c.system?.trim()) msgs.push({role:"system", content:c.system.trim()});
+  c.messages.slice(0, idx).forEach(m => msgs.push({role:m.role, content:m.content}));
+  const body = {model:S.model, messages:msgs, stream:true, temperature:S.temp, stream_options:{include_usage:true}};
+  if(S.maxtok > 0) body.max_tokens = S.maxtok;
+
+  const t0 = performance.now(); let tFirst = null, chunks = 0, usage = null, timings = null;
+  let raf = 0; const paint = () => { raf = 0; const node = el(); if(!node) return; const tmp = document.createElement("div"); tmp.innerHTML = msgHTML(bot, idx, true); node.replaceWith(tmp.firstElementChild); const th = $("#thread"); if(th.scrollHeight - th.scrollTop - th.clientHeight < 140) th.scrollTop = 1e9; };
+  try{
+    const r = await fetch("/api/v1/chat/completions", {method:"POST", headers:{"Content-Type":"application/json"}, body:JSON.stringify(body), signal:S.abort.signal});
+    if(!r.ok){ let t = await r.text(); try{ t = JSON.parse(t).error.message || t; }catch{} throw new Error(t); }
+    const rd = r.body.getReader(), dec = new TextDecoder(); let buf = "";
+    for(;;){
+      const {value, done} = await rd.read(); if(done) break;
+      buf += dec.decode(value, {stream:true});
+      let nl;
+      while((nl = buf.indexOf("\n")) >= 0){
+        const line = buf.slice(0, nl).trim(); buf = buf.slice(nl+1);
+        if(!line.startsWith("data:")) continue;
+        const d = line.slice(5).trim(); if(d === "[DONE]") continue;
+        let j; try{ j = JSON.parse(d); }catch{ continue; }
+        if(j.usage) usage = j.usage; if(j.timings) timings = j.timings;
+        const dl = j.choices?.[0]?.delta; if(!dl) continue;
+        const piece = (dl.content || "") , rp = (dl.reasoning_content || dl.reasoning || "");
+        if(piece || rp){
+          if(tFirst === null){ tFirst = performance.now(); bot.loading = null; S.loadingModel = null; }
+          bot.content += piece; bot.reasoning += rp; chunks++;
+          if(!raf) raf = requestAnimationFrame(paint);
+        }
+      }
+    }
+  }catch(err){
+    if(err.name === "AbortError"){ bot.content += bot.content ? "" : ""; }
+    else { bot.content += (bot.content ? "\n\n" : "") + "⚠️ " + (err.message || err); }
+  }
+  bot.loading = null; S.loadingModel = null;
+  const tEnd = performance.now();
+  const tokens = usage?.completion_tokens ?? chunks;
+  const gen = tFirst ? (tEnd - tFirst) / 1000 : 0;
+  bot.stats = tFirst ? {tokens, tps: timings?.predicted_per_second || (gen > .2 ? tokens / gen : null), ttft: (tFirst - t0)/1000} : null;
+  bot.done = true;
+  if(!bot.content && !bot.reasoning) c.messages.splice(idx, 1);
+  S.busy = false; S.abort = null; saveConvs(); setSendState(); renderThread(false); tick();
+}
+
+/* ======================= models ======================= */
+const CATS = [
+  ["downloaded","Downloaded", m => m.downloaded],
+  ["chat","Chat", m => m.labels?.includes("chat") || (m.recipe==="llamacpp" && !m.labels?.includes("embeddings"))],
+  ["vision","Vision", m => m.labels?.includes("vision")],
+  ["image","Image", m => m.recipe==="sd-cpp"],
+  ["audio","Audio", m => ["whispercpp","kokoro","moonshine","acestep","thinksound"].includes(m.recipe)],
+  ["all","All", () => true]
+];
+function renderFilters(){
+  $("#filters").innerHTML = CATS.map(([k,l,f]) => `<button type="button" data-f="${k}" aria-pressed="${S.filter===k}">${l} <span class="num" style="opacity:.6">${S.models.filter(f).length}</span></button>`).join("") +
+    `<input type="search" id="mq" placeholder="Search models" aria-label="Search models" value="${esc(S.q)}">`;
+}
+function fitInfo(m){
+  const vram = activeVramGb(); const size = m.size;
+  if(!vram || !size || m.recipe !== "llamacpp") return null;
+  // weights alone; the KV cache and compute buffers add a few GB on top
+  const need = size + 0.8, r = need / vram;
+  const cls = r <= .8 ? "ok" : r <= 1 ? "tight" : "over";
+  const note = cls==="ok" ? "Fits in VRAM with room for context" : cls==="tight" ? "Tight: keep the context window small" : `Won't fit in ${vram.toFixed(0)} GB: layers spill to system RAM (slower)`;
+  return {cls, pct: Math.min(100, r*100), note, need, vram};
+}
+function cardHTML(m){
+  const f = fitInfo(m), isLoaded = m.id === S.loaded;
+  const tags = [`<span class="chip">${esc(m.recipe)}</span>`, ...(m.labels||[]).filter(l=>l!==m.recipe).slice(0,4).map(l=>`<span class="chip">${esc(l)}</span>`)].join("");
+  const rt = m.recipe === "llamacpp" || m.recipe === "sd-cpp" || m.recipe === "whispercpp";
+  return `<article class="card ${isLoaded?"loaded":""}" data-id="${esc(m.id)}">
+    <div style="display:flex;justify-content:space-between;gap:10px;align-items:flex-start"><h3>${esc(m.id)}</h3>${isLoaded?'<span class="chip ok">● Loaded</span>':""}</div>
+    <div class="tags">${tags}</div>
+    <div class="row"><span class="mono num">${m.size ? m.size.toFixed(m.size<10?2:1)+" GB on disk" : "—"}</span>${m.context_length?`<span class="mono num">${(m.context_length/1024).toFixed(0)}k ctx</span>`:""}</div>
+    ${f ? `<div><div class="fit ${f.cls}" role="img" aria-label="${esc(f.note)}"><i style="width:${f.pct}%"></i></div><div class="fitnote ${f.cls}" style="margin-top:6px">${esc(f.note)}</div></div>` : ""}
+    <div class="act">${
+      !m.downloaded ? `<button class="btn" data-copycmd="${esc(m.id)}">${ICON.copy} Copy pull command</button>` :
+      isLoaded ? `<button class="btn" data-unload="${esc(m.id)}">Unload</button><button class="btn primary" data-chat="${esc(m.id)}">Chat</button>` :
+      `<button class="btn primary" data-load="${esc(m.id)}">${ICON.bolt} Load</button>`
+    }</div>
+  </article>`;
+}
+function renderModels(){
+  renderFilters();
+  const f = CATS.find(c => c[0]===S.filter)[2], q = S.q.toLowerCase();
+  const list = S.models.filter(f).filter(m => !q || m.id.toLowerCase().includes(q) || (m.labels||[]).some(l=>l.includes(q)))
+    .sort((a,b)=> (b.id===S.loaded)-(a.id===S.loaded) || b.downloaded-a.downloaded || a.id.localeCompare(b.id));
+  $("#grid").innerHTML = list.length ? list.map(cardHTML).join("") : `<div class="empty-note" style="grid-column:1/-1">Nothing matches. Try the “All” filter.</div>`;
+}
+function updateModelBadges(){ if(!$("#loaddlg").open && !document.activeElement?.closest?.("#grid")) renderModels(); }
+$("#filters").addEventListener("click", e => { const b = e.target.closest("[data-f]"); if(b){ S.filter = b.dataset.f; store.set("zest.filter", S.filter); renderModels(); } });
+$("#filters").addEventListener("input", e => { if(e.target.id==="mq"){ S.q = e.target.value; const pos = e.target.selectionStart; renderModels(); const n = $("#mq"); n.focus(); n.setSelectionRange(pos,pos); } });
+$("#grid").addEventListener("click", async e => {
+  const t = e.target.closest("button"); if(!t) return;
+  if(t.dataset.load) openLoad(t.dataset.load);
+  else if(t.dataset.unload){ t.disabled = true; try{ await api("/api/v1/unload", {method:"POST", headers:{"Content-Type":"application/json"}, body:JSON.stringify({model_name:t.dataset.unload})}); toast("Unloaded"); }catch(err){ toast(err.message); } await tick(); renderModels(); }
+  else if(t.dataset.chat){ S.model = t.dataset.chat; store.set("zest.model", S.model); syncModelSelect(); show("chat"); $("#input").focus(); }
+  else if(t.dataset.copycmd){ navigator.clipboard?.writeText("lemonade pull " + t.dataset.copycmd); toast("Copied: lemonade pull " + t.dataset.copycmd); }
+});
+let pendingLoad = null;
+function openLoad(id){
+  const m = S.models.find(x => x.id === id); pendingLoad = m;
+  $("#ldname").textContent = m.id;
+  const f = fitInfo(m);
+  $("#ldfit").innerHTML = `<div class="row" style="display:flex;justify-content:space-between;color:var(--muted);font-size:13px;margin-bottom:8px"><span>Target: <b style="color:var(--text)">${esc(activeName())}</b></span><span class="mono">${m.size?m.size.toFixed(1)+" GB":""}</span></div>` +
+    (f ? `<div class="fit ${f.cls}"><i style="width:${f.pct}%"></i></div><div class="fitnote ${f.cls}" style="margin-top:6px">${esc(f.note)}</div>` : "");
+  $("#ldctx").value = "";
+  $("#loaddlg").showModal();
+}
+$("#loadform").addEventListener("submit", async e => {
+  if(e.submitter?.value !== "ok" || !pendingLoad) return;
+  const m = pendingLoad; const body = {model_name: m.id};
+  const ctx = $("#ldctx").value; if(ctx) body.ctx_size = +ctx;
+  S.loadingModel = m.id; renderStatus(); toast("Loading " + m.id + "…");
+  try{
+    await api("/api/v1/load", {method:"POST", headers:{"Content-Type":"application/json"}, body:JSON.stringify(body)});
+    S.model = m.id; store.set("zest.model", m.id); toast(m.id + " is ready");
+  }catch(err){ toast("Load failed: " + err.message); }
+  S.loadingModel = null; await tick(); if(S.view==="models") renderModels();
+});
+
+/* ======================= hardware ======================= */
+function wavePath(){ return "M0,0 q15,-7 30,0 t30,0 t30,0 t30,0 t30,0 t30,0 t30,0 t30,0 V280 H0 Z"; }
+function sparkPath(h){
+  if(h.length < 2) return ["",""];
+  const w = 300, hh = 46, step = w / 59, off = 60 - h.length;
+  const pts = h.map((v,i) => [ (off+i)*step, hh - 3 - (v/100)*(hh-6) ]);
+  const d = pts.map((p,i) => (i?"L":"M") + p[0].toFixed(1) + "," + p[1].toFixed(1)).join("");
+  return [d, d + `L${pts.at(-1)[0].toFixed(1)},${hh}L${pts[0][0].toFixed(1)},${hh}Z`];
+}
+/* The list being edited: the draft if there is one, otherwise what's saved (or everything, on automatic). */
+const editing = () => S.draft ?? activeIds();
+function deviceOrder(){
+  const sel = editing().filter(id => allDevices().some(d => d.id === id));
+  return {sel, order: [...sel, ...allDevices().map(d => d.id).filter(id => !sel.includes(id))]};
+}
+function liveHTML(d, active){
+  const g = gpuFor(d);
+  if(!g) return `<div class="big num">${(d.mib/1024).toFixed(0)}<small>GB VRAM</small></div><p class="notel">No live telemetry for this device. Zest reads usage from nvidia-smi.</p>`;
+  const used = gb(g.mem_used_mb), total = gb(g.mem_total_mb);
+  const [line, area] = sparkPath(S.hist[g.nv_index] || []);
+  return `<div class="big num">${used.toFixed(1)}<small>/ ${total.toFixed(0)} GB VRAM</small></div>
+    <div class="stats">
+      <div class="stat"><b class="num">${g.util ?? "–"}%</b><span>Utilisation</span></div>
+      <div class="stat"><b class="num">${g.temp ?? "–"}°C</b><span>Temperature</span></div>
+      <div class="stat"><b class="num">${g.power!=null?g.power.toFixed(0):"–"} W</b><span>of ${g.power_limit!=null?g.power_limit.toFixed(0):"–"} W limit</span></div>
+      <div class="stat"><b class="num">${g.fan ?? "–"}%</b><span>Fan</span></div>
+    </div>
+    <svg class="spark" viewBox="0 0 300 46" preserveAspectRatio="none" aria-hidden="true"><path class="area" d="${area}"/><path d="${line}"/></svg>`;
+}
+function tankY(d){ const g = gpuFor(d); return g ? 240 * (1 - Math.min(1, g.mem_used_mb / g.mem_total_mb)) : 240; }
+let hwSig = "";
+function renderHardware(){
+  const devs = allDevices(), {sel, order} = deviceOrder(), auto = !S.draft && !savedIds().length;
+  const sig = JSON.stringify([order, sel, auto, !!S.info?.devices_assumed]);
+  const host = $("#gpus");
+  if(sig === hwSig && host.children.length){            // same layout: just refresh the numbers
+    order.forEach(id => { const d = devs.find(x => x.id === id), card = host.querySelector(`[data-id="${id}"]`); if(!card) return;
+      card.querySelector(".live").innerHTML = liveHTML(d, sel.includes(id));
+      card.querySelector(".liquid").style.transform = `translateY(${tankY(d)}px)`;
+      const g = gpuFor(d); if(g) card.querySelector("svg.tank").setAttribute("aria-label", `${gb(g.mem_used_mb).toFixed(1)} of ${gb(g.mem_total_mb).toFixed(0)} gigabytes VRAM in use`); });
+  } else {
+    hwSig = sig;
+    const note = S.info?.devices_assumed ? `<div class="warn-note">Zest couldn't query llama.cpp directly, so it assumes the CUDA device order matches nvidia-smi. If a model lands on the wrong card, check the engine section below.</div>` : "";
+    host.innerHTML = devs.length ? order.map(id => {
+      const d = devs.find(x => x.id === id), active = sel.includes(id), pos = sel.indexOf(id) + 1;
+      const ticks = [0.25,0.5,0.75].map(t => `<line class="tick" x1="12" x2="22" y1="${(240*(1-t)).toFixed(0)}" y2="${(240*(1-t)).toFixed(0)}"/><text x="26" y="${(240*(1-t)+4).toFixed(0)}">${(d.mib/1024*t).toFixed(0)}</text>`).join("");
+      return `<article class="gpu ${active?"active":"idle"}" data-id="${id}">
+        <svg class="tank" viewBox="0 0 120 240" role="img" aria-label="VRAM">
+          <defs><clipPath id="c-${id}"><rect x="1" y="1" width="118" height="238" rx="18"/></clipPath>
+          <pattern id="h-${id}" width="8" height="8" patternUnits="userSpaceOnUse" patternTransform="rotate(45)"><line x1="0" y1="0" x2="0" y2="8" stroke="var(--line)" stroke-width="2"/></pattern></defs>
+          <g clip-path="url(#c-${id})">
+            ${active ? "" : `<rect width="120" height="240" fill="url(#h-${id})" opacity=".55"/>`}
+            <g class="liquid" style="transform:translateY(${tankY(d)}px)"><g class="wave"><path class="fillc" d="${wavePath()}" opacity=".95"/></g></g>
+            ${ticks}
+          </g>
+          <rect class="shell" x="1" y="1" width="118" height="238" rx="18"/>
+        </svg>
+        <div>
+          <span class="badge chip ${active?"lem":""}">${active ? (sel.length>1 ? `#${pos} · ` : "") + (auto ? "Automatic" : "In use") : "Not used"}</span>
+          <h3>${esc(shortName(d.name))}</h3>
+          <div class="sub">${esc(id.toUpperCase())} in llama.cpp${d.nv_index!=null?` · GPU ${d.nv_index} in nvidia-smi`:""}</div>
+          <div class="live">${liveHTML(d, active)}</div>
+          <div class="ctl">
+            <button type="button" class="sw" role="switch" aria-checked="${active}" data-toggle="${id}"><i></i>Use this device</button>
+            ${active && sel.length > 1 ? `<button type="button" class="mv" data-move="${id}:-1" aria-label="Move ${esc(shortName(d.name))} earlier" ${pos===1?"disabled":""}><svg class="i" viewBox="0 0 24 24"><path d="M15 6l-6 6 6 6"/></svg></button><button type="button" class="mv" data-move="${id}:1" aria-label="Move ${esc(shortName(d.name))} later" ${pos===sel.length?"disabled":""}><svg class="i" viewBox="0 0 24 24"><path d="M9 6l6 6-6 6"/></svg></button>` : ""}
+          </div>
+        </div>
+      </article>`;
+    }).join("") : `<div class="empty-note" style="grid-column:1/-1">No devices found. Make sure the llama.cpp backend is installed (see the Backends page) and the server is running.</div>`;
+    host.parentElement.querySelector(".warn-note")?.remove();
+    if(note) host.insertAdjacentHTML("beforebegin", note);
+  }
+  // apply bar
+  const bar = $("#applybar"), want = editing().join(",");
+  const dirty = S.draft && want !== savedIds().join(",");
+  bar.hidden = !dirty;
+  if(dirty) bar.innerHTML = `<span class="msg2">Unsaved: llama.cpp will use <span class="mono">${esc(want || "no devices")}</span> in this order.</span><button class="btn" data-revert>Revert</button><button class="btn" data-auto>Automatic</button><button class="btn primary" data-apply ${want?"":"disabled"}>Apply</button>`;
+  const i = S.info;
+  $("#engine").innerHTML = i ? `
+    <dt>Backend</dt><dd>${esc(i.backend?.current === "auto" ? `auto (${i.backend?.resolved || "?"})` : i.backend?.current || "?")}</dd>
+    <dt>llama.cpp build</dt><dd>${esc(i.llama_version || "bundled with Lemonade (not inspectable)")}</dd>
+    <dt>Binary</dt><dd>${esc(i.llama_bin || "managed by Lemonade")}</dd>
+    <dt>Device list</dt><dd>llamacpp.device = ${esc(i.device || "(automatic)")}</dd>
+    <dt>Extra args</dt><dd>${esc(i.llama_args || "—")}</dd>
+    <dt>Lemonade</dt><dd>${esc(i.lemonade)} · Zest ${esc(i.zest)}</dd>` : "";
+}
+function setDraft(list){ S.draft = list; renderHardware(); }
+$("#gpus").addEventListener("click", e => {
+  const t = e.target.closest("[data-toggle]"), m = e.target.closest("[data-move]");
+  if(t){ const id = t.dataset.toggle, cur = [...deviceOrder().sel]; setDraft(cur.includes(id) ? cur.filter(x => x !== id) : [...cur, id]); }
+  if(m){ const [id, dir] = m.dataset.move.split(":"), cur = [...deviceOrder().sel], i = cur.indexOf(id), j = i + +dir; if(j >= 0 && j < cur.length){ [cur[i], cur[j]] = [cur[j], cur[i]]; setDraft(cur); } }
+});
+$("#applybar").addEventListener("click", async e => {
+  const b = e.target.closest("button"); if(!b) return;
+  if(b.hasAttribute("data-revert")){ S.draft = null; return renderHardware(); }
+  const dev = b.hasAttribute("data-auto") ? "" : editing().join(",");
+  try{
+    await api("/ui/device", {method:"POST", headers:{"Content-Type":"application/json"}, body:JSON.stringify({device:dev})});
+    toast(S.loaded ? "Saved. Unload and reload the model to move it." : "Saved. Applies to the next model you load.");
+    S.draft = null; S.info = await api("/ui/info"); renderHardware(); renderStatus(); renderThread(false);
+  }catch(err){ toast("Couldn't save: " + err.message); }
+});
+
+/* ======================= backends ======================= */
+async function loadBackends(){
+  try{ S.bk = (await api("/ui/backends")).recipes; }catch(e){ $("#bk").innerHTML = `<div class="empty-note">Couldn't read backends: ${esc(e.message)}</div>`; return; }
+  renderBackends();
+}
+const STATE_LABEL = {installed:"installed", update_required:"update needed", installable:"not installed"};
+function renderBackends(){
+  if(!S.bk) return;
+  $("#bk").innerHTML = `<div class="bkgrid">` + S.bk.map(r => {
+    const auto = r.selectable ? `<button type="button" class="bo" role="radio" aria-checked="${r.current==="auto"}" data-set="${r.recipe}:auto"><span>Auto<small>${r.default ? "→ " + esc(r.default) : "best available"}</small></span></button>` : "";
+    const opts = r.backends.map(b => {
+      const lbl = `<span>${esc(b.name)}<small>${esc(STATE_LABEL[b.state] || b.state)}${b.version ? " · " + esc(b.version) : ""}</small></span>`;
+      const dot = `<span class="sdot ${esc(b.state)}"></span>`;
+      const act = b.state === "installed" ? "" : `<button type="button" class="btn" data-install="${r.recipe}:${b.name}">${b.state === "update_required" ? "Update" : "Install"}</button>`;
+      if(b.state === "installable") return `<div class="bo static">${dot}${lbl}${act}</div>`;
+      if(!r.selectable) return `<div class="bo static">${dot}${lbl}${act}</div>`;
+      return `<div class="bow"><button type="button" class="bo" role="radio" aria-checked="${r.current===b.name}" data-set="${r.recipe}:${b.name}">${dot}${lbl}</button>${act}</div>`;
+    }).join("");
+    return `<section class="bkp" data-recipe="${r.recipe}">
+      <header><h3>${esc(r.name)}</h3><span class="chip">${esc(r.modality)}</span>${r.experimental?'<span class="chip">experimental</span>':""}<span class="grow"></span>${r.recipe==="llamacpp"?'<span class="chip lem">drives chat models</span>':""}</header>
+      <div class="bopts" role="${r.selectable?"radiogroup":"group"}" aria-label="${esc(r.name)} backend">${auto}${opts}</div>
+      ${r.selectable ? "" : `<p class="note">Lemonade picks the backend for this engine automatically.</p>`}
+    </section>`;
+  }).join("") + `</div>`;
+}
+$("#bk").addEventListener("click", async e => {
+  const set = e.target.closest("[data-set]"), ins = e.target.closest("[data-install]");
+  if(set){
+    const [recipe, backend] = set.dataset.set.split(":");
+    try{
+      await api("/ui/backend", {method:"POST", headers:{"Content-Type":"application/json"}, body:JSON.stringify({recipe, backend})});
+      toast(`${S.bk.find(r => r.recipe===recipe)?.name} will use ${backend === "auto" ? "automatic selection" : backend} on the next load.`);
+      await loadBackends(); S.info = await api("/ui/info"); S.draft = null; renderStatus();
+    }catch(err){ toast("Couldn't change backend: " + err.message); }
+  }
+  if(ins){
+    const [recipe, backend] = ins.dataset.install.split(":"), r = S.bk.find(x => x.recipe === recipe), b = r.backends.find(x => x.name === backend);
+    $("#idname").textContent = `${b.state === "update_required" ? "Update" : "Install"} ${r.name} · ${backend}`;
+    $("#idtext").innerHTML = `Lemonade will download <b class="mono">${esc(b.file || backend)}</b> from <span class="mono" style="overflow-wrap:anywhere">${esc(b.release_url || "its release page")}</span>. This can take a few minutes.`;
+    pendingInstall = {recipe, backend, btn: ins}; $("#instdlg").showModal();
+  }
+});
+let pendingInstall = null;
+$("#instdlg form").addEventListener("submit", async e => {
+  if(e.submitter?.value !== "ok" || !pendingInstall) return;
+  const {recipe, backend, btn} = pendingInstall; btn.disabled = true; btn.textContent = "Installing…"; toast("Installing " + backend + "…");
+  try{
+    await api("/ui/backend/install", {method:"POST", headers:{"Content-Type":"application/json"}, body:JSON.stringify({recipe, backend})});
+    toast(backend + " installed");
+  }catch(err){ toast("Install failed: " + err.message); }
+  await loadBackends();
+});
+
+/* ======================= logs ======================= */
+async function loadLogs(){
+  try{
+    const r = await api("/ui/logs?n=400"); const q = $("#logq").value.toLowerCase();
+    const lines = r.lines.filter(l => !q || l.toLowerCase().includes(q));
+    $("#log").innerHTML = lines.map(l => {
+      const lv = (l.match(/\[(Info|Warn|Error|Debug)\]/) || [])[1] || "";
+      const t = esc(l).replace(/\((\w+)\)/, '<span class="tag">($1)</span>');
+      return `<span class="ln ${lv}">${t}</span>`;
+    }).join("") || "No matching log lines.";
+    if($("#logauto").checked) $("#log").scrollTop = 1e9;
+  }catch(e){ $("#log").textContent = "Couldn't read the log: " + e.message; }
+}
+$("#logq").addEventListener("input", loadLogs); $("#logref").addEventListener("click", loadLogs);
+setInterval(() => { if(S.view === "logs" && $("#logauto").checked && !document.hidden) loadLogs(); }, 3000);
+
+window.addEventListener("hashchange", () => { const h = location.hash.slice(1); if(TITLES[h] && h !== S.view) show(h); });
+
+/* keep-alive so the desktop (AppImage) build knows the tab is still open */
+setInterval(() => fetch("/ui/ping", {method:"POST"}).catch(() => {}), 5000); fetch("/ui/ping", {method:"POST"}).catch(() => {});
+
+/* ======================= boot ======================= */
+(async function boot(){
+  await Promise.all([loadModels(), pollGpu(), pollServer()]);
+  if(!S.convs.length || !conv()) { if(S.convs.length) S.cur = S.convs[0].id; else { const c = {id:uid(), title:"New chat", messages:[], system:"", created:Date.now()}; S.convs.push(c); S.cur = c.id; } }
+  renderConvs(); syncModelSelect(); renderStatus(); setSendState();
+  const h = location.hash.slice(1); show(TITLES[h] ? h : "chat");
+  renderThread();
+  grow();
+})();
+</script>
+</body>
+</html>

@@ -1,0 +1,4 @@
+#!/bin/sh
+# AppImage entry point: run Zest with the Python bundled in this image.
+HERE="$(dirname "$(readlink -f "$0")")"
+exec "$HERE/usr/python/bin/python3" -I "$HERE/usr/share/zest/server.py" --app "$@"

@@ -1,0 +1,27 @@
+name: Release AppImage
+on:
+  push:
+    tags: ["v*"]
+  workflow_dispatch:
+permissions:
+  contents: write
+jobs:
+  appimage:
+    runs-on: ubuntu-22.04   # older glibc keeps the AppImage portable
+    steps:
+      - uses: actions/checkout@v4
+      - run: ./packaging/build-appimage.sh
+      - uses: actions/upload-artifact@v4
+        with:
+          name: Zest-AppImage
+          path: dist/*
+      - name: Publish release
+        if: startsWith(github.ref, 'refs/tags/v')
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          # Don't replace assets that were already attached by hand.
+          existing="$(gh release view "${GITHUB_REF_NAME}" --json assets -q '.assets[].name' || true)"
+          for f in dist/*; do
+            echo "$existing" | grep -qx "$(basename "$f")" || gh release upload "${GITHUB_REF_NAME}" "$f"
+          done
