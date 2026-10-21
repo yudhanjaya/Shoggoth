@@ -28,7 +28,7 @@ The meter on each card is the size of the model against the VRAM that is free ri
 ![Models](docs/screenshots/models.png)
 
 ### Hardware
-Select GPUs and set their order. The first device is the primary one. Nothing changes until you press **Apply**.
+Select GPUs and set their order. The first device is the primary one. Each card shows how much VRAM is free and which processes are using it (here, Lemonade running a model split across both cards). Nothing changes until you press **Apply**.
 
 ![Hardware](docs/screenshots/hardware.png)
 
