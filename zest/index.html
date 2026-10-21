@@ -330,6 +330,38 @@ details.setgrp>summary small{font:12px var(--mono);color:var(--faint);font-weigh
 .setrow .sw{justify-self:start}
 @media (max-width:640px){.setrow{grid-template-columns:1fr;padding:14px 16px}.fld .row2{grid-template-columns:1fr}#optdlg header,.odbody,#optdlg .actions{padding-left:16px;padding-right:16px}.nav button{font-size:10.5px;padding:8px 2px}}
 
+/* ---------- argument editor ---------- */
+#optdlg{max-width:min(780px,calc(100vw - 32px))}
+.ae{display:grid;gap:12px}
+details.aegrp{border:1px solid var(--line);border-radius:12px;background:var(--bg)}
+details.aegrp>summary{cursor:pointer;list-style:none;padding:10px 14px;font-weight:600;font-size:14px;display:flex;gap:9px;align-items:center;min-height:46px}
+details.aegrp>summary::-webkit-details-marker{display:none}
+details.aegrp>summary::before{content:"";width:6px;height:6px;border-right:1.6px solid currentColor;border-bottom:1.6px solid currentColor;transform:rotate(-45deg);transition:transform .2s;opacity:.6;flex:none}
+details.aegrp[open]>summary::before{transform:rotate(45deg)}
+details.aegrp>summary small{margin-left:auto;font:11.5px var(--mono);color:var(--lemon-text);font-weight:400}
+.aegrp .aebody{border-top:1px solid var(--line-soft)}
+.aerow{display:grid;grid-template-columns:minmax(0,1fr) minmax(160px,230px);gap:8px 18px;padding:12px 14px;border-bottom:1px solid var(--line-soft);align-items:start}
+.aerow:last-child{border-bottom:0}
+.aerow.set{background:var(--lemon-wash)}
+.aetxt b{font-size:14px}
+.aetxt code{font:11px var(--mono);color:var(--faint);margin-left:6px;white-space:nowrap}
+.aetxt .help{display:block;font-size:12.5px;color:var(--muted);margin-top:2px;line-height:1.45;font-weight:400}
+.aectl{display:grid;gap:5px;justify-items:stretch}
+.fld .aectl select,.fld .aectl input[type=text],.fld .aectl input[type=number]{width:100%;min-height:38px;border:1px solid var(--line);border-radius:9px;background:var(--surface);color:var(--text);padding:0 10px;outline:none}
+.fld .aectl input:focus,.fld .aectl select:focus{border-color:var(--lemon)}
+.aechk{display:flex;gap:9px;align-items:center;min-height:38px;font-size:13.5px;font-weight:500}
+.aechk input,.fld .aechk input{width:18px!important;height:18px;min-height:0!important;padding:0!important;border:0!important;accent-color:var(--lemon);flex:none}
+.aemulti{display:grid;gap:2px}
+.aectl .reset{justify-self:start;border:0;background:none;color:var(--lemon-text);font-size:12px;padding:2px 4px;border-radius:6px}
+.aectl .reset[hidden]{display:none}
+.aeall input[type=search]{margin:12px 14px 4px;width:calc(100% - 28px);min-height:38px;border:1px solid var(--line);border-radius:999px;background:var(--surface);color:var(--text);padding:0 16px;outline:none}
+.aeall h4{margin:14px 14px 0;font:600 11.5px var(--mono);text-transform:uppercase;letter-spacing:.06em;color:var(--faint)}
+.aeall .note{margin:10px 14px;font-size:12.5px;color:var(--faint)}
+.aeprev{display:grid;gap:4px;padding:10px 14px;border:1px dashed var(--line);border-radius:12px}
+.aeprev span{font-size:12px;color:var(--faint)}
+.aeprev code{font:12.5px/1.5 var(--mono);overflow-wrap:anywhere;color:var(--text)}
+@media (max-width:640px){.aerow{grid-template-columns:1fr}}
+
 /* ---------- logs ---------- */
 .logbar{display:flex;gap:10px;align-items:center;margin-bottom:14px;flex-wrap:wrap}
 .logbar input[type=search]{flex:1;min-width:160px;min-height:40px;border:1px solid var(--line);border-radius:10px;background:var(--surface);padding:0 14px;outline:none}
@@ -966,6 +998,9 @@ function optField(k){
         <option value="custom" ${isPreset?"":"selected"}>Custom…</option></select>
       <input type="number" min="256" step="256" data-k="${k}" data-kind="ctxnum" aria-label="Custom context size in tokens" value="${isPreset?"":cur}" placeholder="tokens" ${isPreset?"hidden":""}></div>
       ${d.resolved_ctx_size ? `<span class="help">A load right now would use ${Number(d.resolved_ctx_size).toLocaleString()} tokens.</span>` : (d.resolved_ctx_size === null ? `<span class="help" style="color:var(--warn)">Automatic sizing found too little free memory for any context.</span>` : "")}`;
+  } else if(kind === "args" && k === "llamacpp_args" && AE){
+    const inherited = d.defaults[k];
+    ctl = `${argsEditorHTML()}${inherited ? `<span class="help">Also applied to every model${OD.data.effective.merge_args === false ? " (not used while “Also use the global arguments” is off)" : ""}: <code>${esc(inherited)}</code>. A flag set here replaces the same flag from the global arguments.</span>` : ""}`;
   } else if(kind === "args"){
     const inherited = d.defaults[k];
     ctl = `<textarea data-k="${k}" data-kind="args" spellcheck="false" aria-label="${esc(label)}" placeholder="${k==="llamacpp_args"?"e.g. --flash-attn on --cache-type-k q8_0":"extra command-line arguments"}">${esc(shown(k, ""))}</textarea>
@@ -1002,13 +1037,14 @@ function renderOptions(){
   const main = keys.filter(k => !(OPT_META[k]||{}).adv).sort((a,b) => rank(a) - rank(b));
   const adv = keys.filter(k => (OPT_META[k]||{}).adv);
   $("#odfields").innerHTML = main.map(optField).join("") + (adv.length ? `<details class="adv"><summary>Advanced: memory management</summary><div style="display:grid;gap:18px">${adv.map(optField).join("")}</div></details>` : "");
-  keys.filter(k => optKind(k, OD.data.effective[k]) === "args").forEach(k => { if(k === "llamacpp_args") checkArgs(k); });
+  keys.filter(k => optKind(k, OD.data.effective[k]) === "args").forEach(k => { if(k === "llamacpp_args") checkArgs(k, AE ? aeBuild() : undefined); });
+  if(AE) { const prev = $("#aeprev"); if(prev) prev.textContent = aeBuild() || "None. llama-server uses its defaults plus the global arguments."; }
   updateOptButtons();
 }
 let argTimer;
-async function checkArgs(k){
-  const box = $("#argcheck-" + k), ta = $(`textarea[data-k="${k}"]`); if(!box || !ta) return;
-  const text = ta.value.trim();
+async function checkArgs(k, given){
+  const box = $("#argcheck-" + k), ta = $(`textarea[data-k="${k}"]`); if(!box || (!ta && given === undefined)) return;
+  const text = (given !== undefined ? given : ta.value).trim();
   if(!text){ box.innerHTML = ""; OD.argErrors = false; return updateOptButtons(); }
   try{
     const r = await api("/ui/args/check", {method:"POST", headers:{"Content-Type":"application/json"}, body:JSON.stringify({args:text})});
@@ -1035,6 +1071,7 @@ async function openOptions(id){
   catch(e){ toast("Couldn't read this model's options: " + e.message); return; }
   let bk = []; try{ bk = (await api("/ui/backends")).recipes; }catch{}
   OD = {m, data, dirty:{}, bk, argErrors:false};
+  if(data.recipe === "llamacpp") await aeLoad((data.saved || {}).llamacpp_args || ""); else AE = null;
   $("#odname").textContent = id;
   $("#odsub").textContent = S.loaded === id ? "Currently loaded. Changes apply when it is reloaded." : (m.downloaded ? "Changes apply the next time it loads." : "Not downloaded yet.");
   const f = fitInfo(m);
@@ -1075,7 +1112,7 @@ odBody.addEventListener("click", e => {
     input.value = (sel.includes(id) ? sel.filter(x => x !== id) : [...sel, id]).join(",");
     input.dispatchEvent(new Event("input", {bubbles:true}));
   }
-  if(rs){ setDirty(rs.dataset.reset, null); const sc = $(".odbody").scrollTop; renderOptions(); $(".odbody").scrollTop = sc; }
+  if(rs){ if(AE && rs.dataset.reset === "llamacpp_args"){ AE.values = {}; AE.custom = ""; } setDirty(rs.dataset.reset, null); const sc = $(".odbody").scrollTop; renderOptions(); $(".odbody").scrollTop = sc; }
 });
 function showOptErr(msg){ const el = $("#oderr"); el.textContent = msg; el.hidden = false; el.scrollIntoView({block:"nearest"}); }
 async function saveOptions(){
@@ -1094,7 +1131,7 @@ async function loadModelNow(id){
   S.loadingModel = null; await loadModels(); await tick(); if(S.view === "models") renderModels();
 }
 $("#odcancel").addEventListener("click", () => { $("#optdlg").close(); });
-$("#optdlg").addEventListener("close", () => { OD = null; });
+$("#optdlg").addEventListener("close", () => { OD = null; AE = null; });
 $("#odsave").addEventListener("click", async () => {
   try{ await saveOptions(); $("#optdlg").close(); toast("Options saved"); await loadModels(); if(S.view === "models") renderModels(); }
   catch(e){ showOptErr(e.message); }
@@ -1104,6 +1141,155 @@ $("#odload").addEventListener("click", async () => {
   try{ await saveOptions(); }catch(e){ return showOptErr(e.message); }
   $("#optdlg").close(); await loadModels(); loadModelNow(id);
 });
+
+/* ======================= friendly llama.cpp arguments ======================= */
+let AE = null;   // {entries, byId, values, custom}
+const ARG_CATALOG = [
+  {title: "Speed", items: [
+    {id: "--flash-attn", l: "Flash attention", h: "A faster way of reading long conversations that also saves memory. Automatic is almost always right; turn it off only if you hit errors.", labels: {on: "On", off: "Off", auto: "Automatic"}},
+    {id: "--parallel", d: "automatic", l: "Conversations at once", h: "How many requests the model serves at the same time. Each one gets its own share of the context window, so 2 halves the room per chat. Leave it on automatic unless several apps share this model."},
+    {id: "--threads", d: "automatic", l: "CPU threads", h: "How many CPU threads help with the parts of the model that run on the processor. About your number of physical cores works best."},
+    {id: "--batch-size", l: "Prompt batch size", h: "How many prompt tokens are processed together. Bigger is faster for long prompts but needs more memory."},
+    {id: "--ubatch-size", l: "Prompt chunk size", h: "The size of the pieces a batch is split into. Raise it for faster prompt reading if you have spare VRAM."},
+    {id: "--cont-batching", l: "Serve several chats together", h: "Lets requests that arrive at different times share the GPU efficiently. On by default.", labels: {on: "On", off: "Off"}},
+    {id: "--cache-reuse", l: "Reuse earlier text (min tokens)", h: "Reuses parts of a previous prompt that appear again, even if they moved. The number is the smallest piece worth reusing; 0 turns it off."}
+  ]},
+  {title: "Memory", items: [
+    {id: "--cache-type-k", l: "Conversation memory precision (keys)", h: "The model remembers the conversation in a “KV cache”. Storing it with smaller numbers saves VRAM so you can use a longer context. q8_0 is about half the size of full quality with almost no loss.", labels: {f16: "f16 · full quality", q8_0: "q8_0 · half the memory", q4_0: "q4_0 · a quarter of the memory"}},
+    {id: "--cache-type-v", l: "Conversation memory precision (values)", h: "The same idea for the other half of the cache. Smaller types here need Flash attention to be on.", labels: {f16: "f16 · full quality", q8_0: "q8_0 · half the memory", q4_0: "q4_0 · a quarter of the memory"}},
+    {id: "--kv-offload", l: "Keep conversation memory on the GPU", h: "On (the default) is faster. Off keeps that memory in system RAM, which frees VRAM but slows replies.", labels: {on: "On", off: "Off"}},
+    {id: "--n-cpu-moe", l: "Expert layers kept in system RAM", h: "For mixture-of-experts models (GLM, Qwen …-A3B, Gemma …-A4B): keep the experts of the first N layers in system RAM instead of VRAM, so a bigger model fits on your GPU. Higher N uses less VRAM and runs slower."},
+    {id: "--cpu-moe", l: "All experts in system RAM", h: "The same for every layer: the least VRAM and the slowest replies."},
+    {id: "--load-mode", l: "How the model file is loaded", h: "Automatic maps the file into memory so it loads fast. “None” reads it in plainly; locking keeps it from being swapped out.", labels: {auto: "Automatic", none: "Plain read", mmap: "Memory-mapped", mlock: "Locked in RAM", "mmap+mlock": "Mapped and locked"}},
+    {id: "--cache-ram", d: "8192", l: "Saved-prompt cache (MB)", h: "System RAM that may hold earlier prompts so repeated conversations start instantly. 0 turns it off; -1 means no limit."},
+    {id: "--context-shift", l: "Keep going past the context limit", h: "When a conversation outgrows the window, drop the oldest text and carry on instead of stopping.", labels: {on: "On", off: "Off"}},
+    {id: "--fit", l: "Fit the model to memory automatically", h: "llama.cpp adjusts settings you did not choose so the model fits your GPU memory. Keep it on unless you want full manual control.", labels: {on: "On", off: "Off"}}
+  ]},
+  {title: "Several GPUs", items: [
+    {id: "--split-mode", l: "How to share the model between GPUs", h: "Layer splitting is the safe default. “One GPU only” ignores the others.", labels: {none: "One GPU only", layer: "Split by layers (default)", row: "Split by rows", tensor: "Split every tensor in parallel"}},
+    {id: "--tensor-split", l: "Share of the model per GPU", h: "Proportions in device order, for example 3,1 puts three quarters on the first device. Handy when your GPUs have different amounts of VRAM."},
+    {id: "--main-gpu", l: "Main GPU", h: "The GPU that holds intermediate results, and the whole model when only one GPU is used. Counts from 0."}
+  ]},
+  {title: "Thinking and tool calls", items: [
+    {id: "--reasoning", l: "Let the model think before answering", h: "Reasoning models write out their thinking first. Automatic follows the model's template; turn it off for quicker, shorter replies.", labels: {on: "On", off: "Off", auto: "Automatic"}},
+    {id: "--reasoning-budget", l: "Thinking limit (tokens)", h: "Stops the thinking after this many tokens. -1 means no limit, 0 means skip thinking."},
+    {id: "--reasoning-effort", l: "Thinking effort", h: "For templates that support it: how hard the model should think (minimal, low, medium, high…). “default” keeps the template's own."},
+    {id: "--reasoning-format", l: "Where thoughts appear in replies", h: "“Separate field” is what lets apps like Zest fold the thinking away. “Inside the reply” leaves it in the text.", labels: {none: "Inside the reply", deepseek: "Separate field", "deepseek-legacy": "Both"}},
+    {id: "--chat-template-file", l: "Custom prompt template file", h: "A template file that replaces the model's built-in one. The template also decides how tool calls are written, which is how llama.cpp supports tool calling for models like GLM."},
+    {id: "--chat-template-kwargs", l: "Extra template settings (JSON)", h: "Advanced: settings handed to the chat template, for example {\"enable_thinking\": false} on models whose template supports it."}
+  ]},
+  {title: "Faster replies (speculative decoding)", items: [
+    {id: "--spec-type", l: "Speed-up method", h: "Lets the model guess several words ahead and check them in one go, which makes replies faster without changing them. “draft-mtp” is for models with a built-in predictor (names ending in -MTP); the “ngram” methods guess from text already in the conversation."},
+    {id: "--spec-draft-n-max", l: "Words guessed ahead (at most)", h: "How many words are guessed per step. Higher can be faster when the guesses are good."}
+  ]},
+  {title: "Writing style defaults", items: [
+    {id: "--temp", l: "Temperature", h: "Higher is more varied and creative, lower is more focused. Chat apps normally send their own value, so this only applies when they don't."},
+    {id: "--top-k", l: "Top-k", h: "Only consider the K most likely next words. 0 turns it off."},
+    {id: "--top-p", l: "Top-p", h: "Only consider the most likely words that together make up this share (0.95 means 95%). 1 turns it off."},
+    {id: "--min-p", l: "Min-p", h: "Ignore words far less likely than the best one. 0 turns it off."},
+    {id: "--repeat-penalty", l: "Repeat penalty", h: "Above 1 discourages the model from repeating itself. 1 turns it off."},
+    {id: "--seed", l: "Random seed", h: "Use a fixed number for repeatable replies. -1 means random."}
+  ]}
+];
+const aeCurated = () => new Set(ARG_CATALOG.flatMap(g => g.items.map(i => i.id)));
+function aeQuote(t){ if(t && !/[\s'"]/.test(t)) return t; if(!t.includes("'")) return `'${t}'`; if(!t.includes('"')) return `"${t}"`; return t; }
+function aeBuild(){
+  const toks = [];
+  for(const [id, val] of Object.entries(AE.values)){
+    const e = AE.byId[id]; if(!e) continue;
+    if(e.kind === "bool"){ if(val) toks.push(id); }
+    else if(e.kind === "pair"){ if(val === "on") toks.push(id); else if(val === "off") toks.push(e.neg.find(f => f.startsWith("--")) || e.neg[0]); }
+    else if(e.kind === "multi"){ if(val.length) toks.push(id, val.join(",")); }
+    else if(val !== "" && val != null) toks.push(id, String(val));
+  }
+  return [toks.map(aeQuote).join(" "), AE.custom.trim()].filter(Boolean).join(" ");
+}
+function aeRow(e, meta){
+  meta = meta || {};
+  const v = AE.values[e.id], set = v !== undefined && !(Array.isArray(v) && !v.length);
+  const label = meta.l || e.id.replace(/^--/, "").replace(/-/g, " ").replace(/^./, c => c.toUpperCase());
+  const help = (meta.h || e.desc || "") + (meta.h && e.default ? "" : "");
+  const lab = c => (meta.labels && meta.labels[c]) || c;
+  const short = (meta.d || e.default.split(/,\s|;\s/)[0].replace(/^'|'$/g, "")).trim();
+  const dflt = short ? `Default (${short})` : "Default";
+  let ctl;
+  if(e.kind === "bool") ctl = `<label class="aechk"><input type="checkbox" data-ae="${esc(e.id)}" ${v?"checked":""}> ${esc(meta.l ? "Turn on" : "On")}</label>`;
+  else if(e.kind === "pair") ctl = `<select data-ae="${esc(e.id)}" aria-label="${esc(label)}"><option value="">${esc(dflt)}</option><option value="on" ${v==="on"?"selected":""}>${esc(lab("on"))}</option><option value="off" ${v==="off"?"selected":""}>${esc(lab("off"))}</option></select>`;
+  else if(e.kind === "choice") ctl = `<select data-ae="${esc(e.id)}" aria-label="${esc(label)}"><option value="">${esc(dflt)}</option>${e.choices.map(c => `<option value="${esc(c)}" ${v===c?"selected":""}>${esc(lab(c))}</option>`).join("")}</select>`;
+  else if(e.kind === "multi") ctl = `<div class="aemulti" role="group" aria-label="${esc(label)}">${e.choices.filter(c => c !== "none").map(c => `<label class="aechk"><input type="checkbox" data-ae="${esc(e.id)}" data-val="${esc(c)}" ${Array.isArray(v) && v.includes(c)?"checked":""}> ${esc(c)}</label>`).join("")}</div>`;
+  else if(e.kind === "number") ctl = `<input type="number" step="any" data-ae="${esc(e.id)}" aria-label="${esc(label)}" value="${esc(v ?? "")}" placeholder="${esc(dflt)}">`;
+  else ctl = `<input type="text" data-ae="${esc(e.id)}" aria-label="${esc(label)}" value="${esc(v ?? "")}" placeholder="${esc(e.default ? dflt : e.metavar.toLowerCase())}" spellcheck="false">`;
+  return `<div class="aerow ${set?"set":""}" data-row="${esc(e.id)}"><div class="aetxt"><b>${esc(label)}</b><code>${esc(e.id)}</code><span class="help">${esc(help)}</span></div><div class="aectl">${ctl}<button type="button" class="reset" data-aereset="${esc(e.id)}" ${set?"":"hidden"}>Reset</button></div></div>`;
+}
+function aeAllList(q){
+  const cur = aeCurated(); q = (q || "").trim().toLowerCase();
+  const pool = AE.entries.filter(e => !cur.has(e.id) && (!q || (e.id + " " + e.flags.join(" ") + " " + e.desc).toLowerCase().includes(q)));
+  if(!pool.length) return `<p class="note">${q ? "No other options match." : "Nothing more to show."}</p>`;
+  const secs = {}; pool.slice(0, 120).forEach(e => (secs[e.section] ||= []).push(e));
+  return Object.entries(secs).map(([s, es]) => `<h4>${esc(s)}</h4>${es.map(e => aeRow(e)).join("")}`).join("") + (pool.length > 120 ? `<p class="note">Showing 120 of ${pool.length}. Type in the search box to narrow it down.</p>` : "");
+}
+function argsEditorHTML(){
+  const have = g => g.items.filter(i => AE.byId[i.id]);
+  const groups = ARG_CATALOG.map(g => ({title: g.title, items: have(g)})).filter(g => g.items.length);
+  const setIn = g => g.items.filter(i => { const v = AE.values[i.id]; return v !== undefined && !(Array.isArray(v) && !v.length); }).length;
+  const anyOpen = groups.some(g => setIn(g));
+  const cur = aeCurated(), nOther = AE.entries.filter(e => !cur.has(e.id)).length;
+  return `<div class="ae" id="ae">
+    ${groups.map((g, i) => { const n = setIn(g); return `<details class="aegrp" ${(anyOpen ? n : i < 2) ? "open" : ""}><summary>${esc(g.title)}<small>${n ? n + " set" : ""}</small></summary><div class="aebody">${g.items.map(it => aeRow(AE.byId[it.id], it)).join("")}</div></details>`; }).join("")}
+    <details class="aegrp aeall" id="aeall"><summary>All other llama-server options<small>${nOther}</small></summary><div class="aebody"><input type="search" id="aeq" placeholder="Search every option (for example “rope”, “lora”, “cpu mask”)" aria-label="Search options"><div id="aelist"></div></div></details>
+    <div class="fld"><div class="ln"><span>Anything else (typed arguments)</span></div>
+      <textarea data-aecustom spellcheck="false" aria-label="Custom arguments" placeholder="Arguments Zest doesn't know about go here, one line, for example --some-new-flag 1">${esc(AE.custom)}</textarea></div>
+    <div class="aeprev"><span>Arguments Zest will pass to llama-server for this model</span><code id="aeprev"></code></div>
+    <div class="argcheck" id="argcheck-llamacpp_args" aria-live="polite"></div>
+  </div>`;
+}
+function aeSync(){
+  if(!AE) return;
+  const k = "llamacpp_args", s = aeBuild();
+  const prev = $("#aeprev"); if(prev) prev.textContent = s || "None. llama-server uses its defaults plus the global arguments.";
+  setDirty(k, s === "" ? (optHas(k) ? null : undefined) : s);
+  $$("#ae .aerow").forEach(r => { const v = AE.values[r.dataset.row], set = v !== undefined && !(Array.isArray(v) && !v.length); r.classList.toggle("set", set); const b = $(".reset", r); if(b) b.hidden = !set; });
+  $$("#ae details.aegrp:not(.aeall)").forEach(d => { const n = $$(".aerow.set", d).length; $("summary small", d).textContent = n ? n + " set" : ""; });
+  clearTimeout(argTimer); argTimer = setTimeout(() => checkArgs(k, s), 300);
+}
+function aeSetValue(id, v){
+  const e = AE.byId[id];
+  if(v === "" || v == null || (Array.isArray(v) && !v.length) || (e.kind === "bool" && !v)) delete AE.values[id]; else AE.values[id] = v;
+  aeSync();
+}
+document.addEventListener("input", ev => {
+  const el = ev.target; if(!AE || !el.closest || !el.closest("#optdlg")) return;
+  if(el.matches("[data-aecustom]")){ AE.custom = el.value; return aeSync(); }
+  if(el.id === "aeq"){ clearTimeout(el._t); el._t = setTimeout(() => { $("#aelist").innerHTML = aeAllList(el.value); }, 150); return; }
+  const id = el.dataset.ae; if(!id) return;
+  const e = AE.byId[id];
+  if(e.kind === "multi"){ const cur = new Set(AE.values[id] || []); el.checked ? cur.add(el.dataset.val) : cur.delete(el.dataset.val); return aeSetValue(id, [...cur]); }
+  if(el.type === "checkbox") return aeSetValue(id, el.checked);
+  if(el.tagName === "SELECT") return;     // handled on "change"
+  aeSetValue(id, el.value.trim());
+});
+document.addEventListener("change", ev => {
+  const el = ev.target; if(!AE || !el.closest || !el.closest("#optdlg") || el.tagName !== "SELECT" || !el.dataset.ae) return;
+  aeSetValue(el.dataset.ae, el.value);
+});
+document.addEventListener("click", ev => {
+  const b = ev.target.closest && ev.target.closest("[data-aereset]"); if(!AE || !b) return;
+  const id = b.dataset.aereset; delete AE.values[id];
+  const row = b.closest(".aerow"), meta = ARG_CATALOG.flatMap(g => g.items).find(i => i.id === id);
+  row.outerHTML = aeRow(AE.byId[id], meta); aeSync();
+});
+document.addEventListener("toggle", ev => {
+  if(ev.target.id === "aeall" && ev.target.open && AE && !$("#aelist").innerHTML) $("#aelist").innerHTML = aeAllList("");
+}, true);
+async function aeLoad(saved){
+  AE = null;
+  try{
+    const sch = await api("/ui/args/schema");
+    if(!sch.entries.length) return;
+    const parsed = await api("/ui/args/parse", {method:"POST", headers:{"Content-Type":"application/json"}, body:JSON.stringify({args: saved || ""})});
+    AE = {entries: sch.entries, byId: Object.fromEntries(sch.entries.map(e => [e.id, e])), values: parsed.values || {}, custom: parsed.custom || ""};
+  }catch{ AE = null; }
+}
 
 /* ======================= settings ======================= */
 const SET = {cfg: null, defaults: null, q: ""};

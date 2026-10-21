@@ -10,7 +10,7 @@ Zest is a small, dependency-free web app. It talks to a Lemonade Server you alre
 
 - **Chat** with streaming replies, markdown and code blocks with copy buttons, collapsible reasoning for "thinking" models, and tokens-per-second and time-to-first-token on every answer. Conversations are kept in your browser.
 - **Models** shows everything Lemonade can run. Each card has a fit meter that compares the model with the VRAM that is actually *free* on the devices Lemonade is set to use, so you can tell *before* loading whether it will fit, spill into system RAM, or fail because another program is holding the memory. Load with a context size you choose.
-- **Per-model options.** Every card has an **Options** button: context window, extra llama.cpp arguments, backend, devices and memory-management settings, saved per model. Arguments are checked against your own `llama-server` before you load, so a typo or a vLLM-only flag is caught up front instead of failing the load.
+- **Per-model options, no flags to memorise.** Every card has an **Options** button: context window, backend, devices and memory settings, plus tick boxes, dropdowns and number fields (each with a plain-English explanation) for the things you'd otherwise pass to `llama-server` as flags, such as flash attention, cache precision, keeping expert layers in system RAM, GPU splitting, thinking, and speculative decoding. Zest builds the arguments for you and shows exactly what it will pass. The full list of options your `llama-server` supports is searchable underneath, and a free-text box covers anything else. Everything is checked against your own `llama-server` before you load, so a typo or a vLLM-only flag is caught up front instead of failing the load.
 - **Settings** edits everything in Lemonade's own configuration (storage folders, eviction, logging, engine arguments and more), searchable, with a reset-to-default for every value.
 - **Hardware** shows every device llama.cpp can see as a live VRAM tank with utilisation, temperature, power, a short history, and which processes are holding its memory. **Pick which devices to use and put them in order**, then apply.
 - **Backends** lists every Lemonade engine (llama.cpp, Whisper.cpp, StableDiffusion.cpp and more) with the backends each supports (CUDA, Vulkan, ROCm, CPU…). Choose one per engine, or install and update missing ones, just as you can in Lemonade itself.
@@ -30,7 +30,7 @@ The meter on each card is the size of the model against the VRAM that is free ri
 ![Models](docs/screenshots/models.png)
 
 ### Model options
-Set the context window, extra arguments, backend and devices for one model. Zest warns when an argument isn't one your `llama-server` understands (here, a vLLM-only flag), and offers **Save and reload** for a model that's already running.
+Set the context window, backend and devices for one model, and tune `llama-server` with tick boxes and dropdowns instead of flags. Highlighted rows are the ones you've changed. Zest shows the exact arguments it will pass, warns when one isn't understood by your `llama-server` (for example a vLLM-only flag), and offers **Save and reload** for a model that's already running.
 
 ![Model options](docs/screenshots/model-options.png)
 

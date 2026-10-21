@@ -238,6 +238,36 @@ def backends():
 
 
 # ---------------------------------------------------------------- llama-server arguments
+def lem_split(text):
+    """Split an argument string exactly the way Lemonade does: on spaces, with '...' or "..." grouping and no escapes."""
+    out, cur, quote, started = [], "", None, False
+    for c in text or "":
+        if quote is None and c in "\"'":
+            quote, started = c, True
+        elif quote and c == quote:
+            quote = None
+        elif quote is None and c == " ":
+            if cur or started:
+                out.append(cur)
+            cur, started = "", False
+        else:
+            cur += c
+    if cur or started:
+        out.append(cur)
+    return out, quote is not None   # tokens, and whether a quote was left open
+
+
+def lem_quote(tok):
+    """Quote one token so Lemonade reads it back unchanged (None if it contains both kinds of quote)."""
+    if tok and not re.search(r"[\s'\"]", tok):
+        return tok
+    if "'" not in tok:
+        return "'" + tok + "'"
+    if '"' not in tok:
+        return '"' + tok + '"'
+    return None
+
+
 # Lemonade refuses these because it sets them itself.
 MANAGED_FLAGS = {
     "-m": "the model path", "--model": "the model path", "--port": "the port",
@@ -278,11 +308,156 @@ def known_flags(bin_path):
     return cached(f"flags:{bin_path}:{os.path.getmtime(bin_path) if bin_path and os.path.isfile(bin_path) else 0}", 3600, build)
 
 
+# ---------------------------------------------------------------- argument schema
+# Flags that are not model settings (or that would break Lemonade's own connection to llama-server).
+_HIDDEN = {"-h", "--help", "--usage", "--version", "--license", "--completion-bash", "--list-devices",
+           "--cache-list", "--host", "--port", "--api-key", "--api-key-file", "--path", "--alias", "-a",
+           "--tags", "--reuse-port", "--timeout", "-to", "--threads-http"}
+_HIDDEN_PREFIXES = ("--ssl", "--api-", "--webui", "--no-webui", "--models-", "--hf-", "-hf", "--model-url",
+                    "-mu", "--mmproj", "-mm", "--docker", "--tools", "--offline")
+
+
+def _hidden(flag):
+    return flag in _HIDDEN or flag in MANAGED_FLAGS or flag.startswith(_HIDDEN_PREFIXES)
+
+
+def _clean_desc(lines):
+    text = " ".join(lines)
+    text = re.sub(r"\(env:[^)]*\)", "", text)
+    text = re.sub(r"\[[^\]]*\]\([^)]*\)", "", text)       # markdown links
+    return re.sub(r"\s+", " ", text).strip()
+
+
+def _make_entry(flagpart, desc_lines, section):
+    pieces = [x.strip() for x in flagpart.split(", ") if x.strip()]
+    flags, metavar = [], ""
+    for piece in pieces:
+        parts = piece.split(None, 1)
+        flags.append(parts[0])
+        if len(parts) > 1 and not metavar:
+            metavar = parts[1].strip()
+    # split "-kvo, --kv-offload, -nkvo, --no-kv-offload" into its positive and negative halves
+    neg_at = next((i for i, f in enumerate(flags) if f.startswith(("--no-", "-no-"))), None)
+    pos, neg = flags, []
+    if neg_at is not None:
+        k0 = neg_at - 1 if neg_at > 0 and not flags[neg_at - 1].startswith("--") else neg_at
+        pos, neg = flags[:k0], flags[k0:]
+    if not pos:
+        return None
+    if any(_hidden(f) for f in pos + neg):
+        return None
+    ident = next((f for f in pos if f.startswith("--")), pos[0])
+    desc = _clean_desc(desc_lines)
+    choices, optional = [], False
+    m = re.fullmatch(r"[\[{]([^\]}]+)[\]}]", metavar)
+    if m:
+        choices = [c for c in re.split(r"[|,]", m.group(1)) if c]
+        optional = metavar.startswith("[")
+    elif "," in metavar and "." not in metavar and re.fullmatch(r"[\w+\-,]+", metavar):
+        choices = metavar.split(",")
+    if not choices:
+        mv = re.search(r"allowed values:\s*([\w+\-, ]+?)(?:\s*\(|$)", desc)
+        if mv:
+            choices = [c.strip() for c in mv.group(1).split(",") if c.strip()]
+    if not choices:
+        choices = re.findall(r"(?:^| )- ([\w+\-]+):", " " + " ".join(desc_lines))
+    dm = re.search(r"default:\s*([^)]+?)\)", desc)
+    default = dm.group(1).strip() if dm else ""
+    if neg:
+        kind = "pair"
+    elif not metavar:
+        kind = "bool"
+    elif "," in metavar and not m and choices:
+        kind = "multi"
+    elif choices:
+        kind = "choice"
+    elif metavar in ("N", "SEED", "INDEX") or re.fullmatch(r"<[\d.]+>", metavar):
+        kind = "number"
+    else:
+        kind = "text"
+    return {"id": ident, "flags": pos, "neg": neg, "kind": kind, "metavar": metavar, "choices": choices,
+            "optional": optional, "default": default[:40], "desc": desc, "section": section}
+
+
+def args_schema(bin_path):
+    """Every llama-server option, parsed from its own --help, as structured data."""
+    def build():
+        if not bin_path or not os.path.isfile(bin_path):
+            return None
+        code, out = run([bin_path, "--help"], 20)
+        lines, entries, section, i = out.splitlines(), [], "common", 0
+        while i < len(lines):
+            line = lines[i]
+            m = re.match(r"^-{3,}\s*(.+?)\s*-{3,}$", line)
+            if m:
+                section = m.group(1).replace(" params", "").strip()
+                i += 1
+                continue
+            if not line.startswith("-"):
+                i += 1
+                continue
+            norm = re.sub(r",\s+", ", ", line.strip())
+            parts = re.split(r"\s{2,}", norm, maxsplit=1)
+            desc = [parts[1]] if len(parts) > 1 else []
+            i += 1
+            while i < len(lines) and lines[i].startswith(" " * 10):
+                desc.append(lines[i].strip())
+                i += 1
+            e = _make_entry(parts[0], desc, section)
+            if e:
+                entries.append(e)
+        return entries or None
+    key = f"schema:{bin_path}:{os.path.getmtime(bin_path) if bin_path and os.path.isfile(bin_path) else 0}"
+    return cached(key, 3600, build)
+
+
+def parse_args(text, bin_path):
+    """Split an argument string into values for known options plus whatever is left over."""
+    schema = args_schema(bin_path)
+    toks, open_quote = lem_split(text)
+    if open_quote or not schema:
+        return {"values": {}, "custom": text or "", "known": bool(schema) and not open_quote}
+    if not schema:
+        return {"values": {}, "custom": text or "", "known": False}
+    alias = {}
+    for e in schema:
+        for f in e["flags"]:
+            alias[f] = (e, False)
+        for f in e["neg"]:
+            alias[f] = (e, True)
+    values, custom, i = {}, [], 0
+    isflag = lambda t: t.startswith("-") and not re.fullmatch(r"-\d+(\.\d+)?", t)
+    while i < len(toks):
+        t = toks[i]
+        flag, eq, inline = t.partition("=")
+        hit = alias.get(flag) if isflag(t) else None
+        if not hit:
+            custom.append(t)
+            if isflag(t) and not eq and i + 1 < len(toks) and not isflag(toks[i + 1]):
+                custom.append(toks[i + 1])
+                i += 1
+            i += 1
+            continue
+        e, is_neg = hit
+        if e["kind"] in ("bool", "pair"):
+            values[e["id"]] = ("off" if is_neg else "on") if e["kind"] == "pair" else True
+            i += 1
+            continue
+        val = inline if eq else None
+        if val is None and i + 1 < len(toks) and (not isflag(toks[i + 1])):
+            val = toks[i + 1]
+            i += 1
+        if val is None:  # a bare optional-value flag such as "--flash-attn" means "on"
+            val = "on" if "on" in e["choices"] else ""
+        values[e["id"]] = val.split(",") if e["kind"] == "multi" else val
+        i += 1
+    return {"values": values, "custom": " ".join(q or t for t in custom for q in [lem_quote(t)]), "known": True}
+
+
 def check_args(text, bin_path):
-    try:
-        toks = shlex.split(text or "")
-    except ValueError as e:
-        return {"error": "Unbalanced quote: " + str(e), "problems": [], "verified": False}
+    toks, open_quote = lem_split(text)
+    if open_quote:
+        return {"error": "A quote is never closed.", "problems": [], "verified": False}
     flags = known_flags(bin_path)
     problems, seen = [], set()
     for t in toks:
@@ -349,6 +524,9 @@ class Handler(BaseHTTPRequestHandler):
             self.send_json({"recipes": cached("backends", 4, backends)})
         elif u.path == "/ui/config":
             self.send_json({"config": lemonade_get("/internal/config"), "defaults": lemonade_get("/internal/config/defaults")})
+        elif u.path == "/ui/args/schema":
+            schema = args_schema(cached("info", 4, info).get("llama_bin"))
+            self.send_json({"entries": schema or [], "verified": bool(schema)})
         elif u.path == "/ui/logs":
             n = min(max(int(parse_qs(u.query).get("n", ["200"])[0]), 10), 1000)
             code, out = run(["journalctl", "-u", "lemond", "-n", str(n), "--no-pager", "-o", "cat"], 10)
@@ -384,6 +562,9 @@ class Handler(BaseHTTPRequestHandler):
                 return self.send_json({"ok": True, "updated": payload.get("updated")})
             err = payload.get("error", "Lemonade rejected the change") if isinstance(payload, dict) else "Lemonade rejected the change"
             return self.send_json({"ok": False, "error": err if isinstance(err, str) else str(err)}, 400 if status else 502)
+        if u.path == "/ui/args/parse":
+            body = self.read_json()
+            return self.send_json(parse_args(str(body.get("args", "")), cached("info", 4, info).get("llama_bin")))
         if u.path == "/ui/args/check":
             body = self.read_json()
             return self.send_json(check_args(str(body.get("args", "")), cached("info", 4, info).get("llama_bin")))
