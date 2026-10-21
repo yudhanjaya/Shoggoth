@@ -9,8 +9,8 @@ Zest is a small, dependency-free web app. It talks to a Lemonade Server you alre
 ## Features
 
 - **Chat** with streaming replies, markdown and code blocks with copy buttons, collapsible reasoning for "thinking" models, and tokens-per-second and time-to-first-token on every answer. Conversations are kept in your browser.
-- **Models** shows everything Lemonade can run. Each card has a fit meter that compares the model with the VRAM of the devices Lemonade is set to use, so you can tell *before* loading whether it will fit or spill into system RAM. Load with a context size you choose.
-- **Hardware** shows every device llama.cpp can see as a live VRAM tank with utilisation, temperature, power and a short history. **Pick which devices to use and put them in order**, then apply.
+- **Models** shows everything Lemonade can run. Each card has a fit meter that compares the model with the VRAM that is actually *free* on the devices Lemonade is set to use, so you can tell *before* loading whether it will fit, spill into system RAM, or fail because another program is holding the memory. Load with a context size you choose.
+- **Hardware** shows every device llama.cpp can see as a live VRAM tank with utilisation, temperature, power, a short history, and which processes are holding its memory. **Pick which devices to use and put them in order**, then apply.
 - **Backends** lists every Lemonade engine (llama.cpp, Whisper.cpp, StableDiffusion.cpp and more) with the backends each supports (CUDA, Vulkan, ROCm, CPU…). Choose one per engine, or install and update missing ones, just as you can in Lemonade itself.
 - **Logs** tails the Lemonade service log with a filter and follow mode.
 - Light and dark themes, keyboard-friendly, works on a phone-width screen.
@@ -23,7 +23,7 @@ Streaming answers with speed stats, a model picker, and per-chat settings.
 ![Chat](docs/screenshots/chat-empty.png)
 
 ### Models
-The meter on each card is the size of the model against the VRAM you've given Lemonade.
+The meter on each card is the size of the model against the VRAM that is free right now. If another program is using the card, Zest says so and names it.
 
 ![Models](docs/screenshots/models.png)
 
@@ -98,7 +98,8 @@ Zest is one Python file (`zest/server.py`) and one HTML file (`zest/index.html`)
 
 ### Good to know
 
-- **Telemetry is NVIDIA-only for now.** AMD and Intel devices are listed and selectable, but show capacity without live usage.
+- **Telemetry is NVIDIA-only for now.** AMD and Intel devices are listed and selectable, but show capacity without live usage, and the fit meter treats them as empty.
+- **Process names are shown on the Hardware page.** They come from `nvidia-smi` (name only, not the full path) and are only displayed in your own browser.
 - **Device discovery needs a llama.cpp binary Zest can run.** That works when `llamacpp.<backend>_bin` points at one, or `llamacpp.prefer_system` is on. With Lemonade's bundled build, which lives where an ordinary user can't read it, Zest falls back to assuming CUDA order equals `nvidia-smi` order and says so on the Hardware page.
 - **Logs need systemd.** On other setups the Logs page will tell you it couldn't read the service log.
 - Tested on Linux with NVIDIA GPUs. The Vulkan and ROCm paths follow Lemonade's own backend data but haven't been tried on real hardware yet. Reports welcome.

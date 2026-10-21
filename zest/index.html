@@ -243,6 +243,8 @@ dialog label{display:grid;gap:6px;font-size:13px;color:var(--muted)}
 .mv{width:40px;height:40px;border-radius:10px;border:1px solid var(--line);background:var(--bg);display:grid;place-items:center;color:var(--muted)}
 .mv:hover{color:var(--text);border-color:var(--faint)}
 .mv[disabled]{opacity:.35;pointer-events:none}
+.holders{display:flex;flex-wrap:wrap;gap:6px;margin-top:12px}
+.chip.warn{color:var(--warn);border-color:color-mix(in srgb,var(--warn) 50%,transparent)}
 .notel{font-size:13px;color:var(--faint);margin:16px 0 0}
 .gpu .tankbox{position:relative}
 .warn-note{border:1px solid color-mix(in srgb,var(--warn) 45%,transparent);color:var(--warn);border-radius:12px;padding:10px 14px;font-size:13.5px;margin:0 0 18px}
@@ -369,7 +371,7 @@ button.bo:hover{border-color:var(--faint)}
 
     <!-- MODELS -->
     <section class="view" id="v-models"><div class="pad"><div class="wrap">
-      <p class="lede">Everything your Lemonade server can run. The meter on each card compares the model with the VRAM of the devices Lemonade is set to use.</p>
+      <p class="lede">Everything your Lemonade server can run. The meter on each card compares the model with the VRAM that is actually free on the devices Lemonade is set to use.</p>
       <div class="filters" id="filters" role="group" aria-label="Filter models"></div>
       <div class="grid" id="grid"></div>
     </div></div></section>
@@ -497,7 +499,23 @@ const activeDevs = () => activeIds().map(id => allDevices().find(d => d.id === i
 const gpuFor = d => d && d.nv_index != null ? S.gpus.find(g => g.nv_index === d.nv_index) : null;
 const shortName = n => String(n).replace(/^(NVIDIA|AMD|Intel)(\(R\))?\s+/i, "").replace(/^GeForce\s+/i, "").replace(/^Radeon\s+/i, "Radeon ");
 function activeGpus(){ return activeDevs().map(gpuFor).filter(Boolean); }
-function activeVramGb(){ const d = activeDevs(); return d.length ? d.reduce((a,x) => a + x.mib/1024, 0) : null; }
+/* Processes Lemonade starts itself: their VRAM frees up when it loads a different model. */
+const isLemonadeProc = p => /llama-server|sd-server|whisper|lemond|stable-diffusion|ggml-rpc/i.test(p.name);
+/* VRAM the next model can really use on the active devices: free memory, plus whatever Lemonade itself holds. */
+function vramAvail(){
+  const devs = activeDevs(); if(!devs.length) return null;
+  let total = 0, avail = 0, live = false; const holders = {};
+  for(const d of devs){
+    const g = gpuFor(d);
+    if(!g){ total += d.mib/1024; avail += d.mib/1024; continue; }       // no telemetry: assume empty
+    live = true;
+    const t = gb(g.mem_total_mb), used = gb(g.mem_used_mb);
+    const mine = (g.procs || []).filter(isLemonadeProc).reduce((a,p) => a + gb(p.mem_mb), 0);
+    total += t; avail += Math.max(0, t - used + mine);
+    for(const p of g.procs || []) if(!isLemonadeProc(p)) holders[p.name] = (holders[p.name] || 0) + gb(p.mem_mb);
+  }
+  return {total, avail, live, holders: Object.entries(holders).map(([name, g]) => ({name, gb: g})).sort((a,b) => b.gb - a.gb)};
+}
 function activeName(){ const d = activeDevs(); return d.length ? d.map(x => shortName(x.name)).join(" + ") : "default devices"; }
 async function pollGpu(){
   try{
@@ -768,13 +786,19 @@ function renderFilters(){
     `<input type="search" id="mq" placeholder="Search models" aria-label="Search models" value="${esc(S.q)}">`;
 }
 function fitInfo(m){
-  const vram = activeVramGb(); const size = m.size;
-  if(!vram || !size || m.recipe !== "llamacpp") return null;
-  // weights alone; the KV cache and compute buffers add a few GB on top
-  const need = size + 0.8, r = need / vram;
+  const v = vramAvail();
+  if(!v || !m.size || m.recipe !== "llamacpp") return null;
+  // weights plus a margin for the KV cache and compute buffers
+  const need = m.size + 0.8, r = v.avail > 0 ? need / v.avail : Infinity;
   const cls = r <= .8 ? "ok" : r <= 1 ? "tight" : "over";
-  const note = cls==="ok" ? "Fits in VRAM with room for context" : cls==="tight" ? "Tight: keep the context window small" : `Won't fit in ${vram.toFixed(0)} GB: layers spill to system RAM (slower)`;
-  return {cls, pct: Math.min(100, r*100), note, need, vram};
+  const who = v.holders.length ? `${v.holders[0].name} is using ${v.holders[0].gb.toFixed(1)} GB` : "";
+  let note;
+  if(cls === "ok") note = "Fits in free VRAM with room for context";
+  else if(cls === "tight") note = "Tight: keep the context window small";
+  else if(v.live && v.avail < 0.6) note = `Almost no free VRAM (${v.avail.toFixed(1)} GB of ${v.total.toFixed(0)} GB)${who ? ": " + who : ""}. Loading will probably fail with an out-of-memory error.`;
+  else if(need <= v.total) note = `Only ${v.avail.toFixed(1)} GB of ${v.total.toFixed(0)} GB is free${who ? ": " + who : ""}. Free some VRAM or the load may fail.`;
+  else note = `Won't fit in ${v.avail < v.total - 0.5 ? v.avail.toFixed(1) + " GB of free" : v.total.toFixed(0) + " GB"} VRAM: layers spill to system RAM (slower)`;
+  return {cls, pct: Math.min(100, r * 100), note, need, vram: v.avail};
 }
 function cardHTML(m){
   const f = fitInfo(m), isLoaded = m.id === S.loaded;
@@ -849,9 +873,13 @@ function deviceOrder(){
 function liveHTML(d, active){
   const g = gpuFor(d);
   if(!g) return `<div class="big num">${(d.mib/1024).toFixed(0)}<small>GB VRAM</small></div><p class="notel">No live telemetry for this device. Zest reads usage from nvidia-smi.</p>`;
-  const used = gb(g.mem_used_mb), total = gb(g.mem_total_mb);
+  const used = gb(g.mem_used_mb), total = gb(g.mem_total_mb), free = total - used;
   const [line, area] = sparkPath(S.hist[g.nv_index] || []);
+  const procs = {}; for(const p of g.procs || []) { const k = isLemonadeProc(p) ? "Lemonade" : p.name; procs[k] = (procs[k] || 0) + gb(p.mem_mb); }
+  const chips = Object.entries(procs).sort((a,b) => b[1] - a[1]).map(([n, v]) => `<span class="chip ${n==="Lemonade"?"lem":""}" title="VRAM held by ${esc(n)}">${esc(n)} · ${v.toFixed(1)} GB</span>`).join("");
+  const low = free < 1 ? `<span class="chip warn">Only ${Math.max(0, free).toFixed(1)} GB free</span>` : `<span class="chip">${free.toFixed(1)} GB free</span>`;
   return `<div class="big num">${used.toFixed(1)}<small>/ ${total.toFixed(0)} GB VRAM</small></div>
+    <div class="holders" aria-label="What is using this card's memory">${low}${chips}</div>
     <div class="stats">
       <div class="stat"><b class="num">${g.util ?? "–"}%</b><span>Utilisation</span></div>
       <div class="stat"><b class="num">${g.temp ?? "–"}°C</b><span>Temperature</span></div>

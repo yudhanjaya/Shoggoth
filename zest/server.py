@@ -83,7 +83,7 @@ def lemonade_get(path):
 
 # ---------------------------------------------------------------- hardware
 def nvidia_gpus():
-    q = "index,name,memory.used,memory.total,utilization.gpu,temperature.gpu,power.draw,power.limit,fan.speed"
+    q = "index,uuid,name,memory.used,memory.total,utilization.gpu,temperature.gpu,power.draw,power.limit,fan.speed"
     code, out = run(["nvidia-smi", f"--query-gpu={q}", "--format=csv,noheader,nounits"], 5)
     gpus = []
     if code != 0:
@@ -97,14 +97,26 @@ def nvidia_gpus():
 
     for line in out.strip().splitlines():
         p = [x.strip() for x in line.split(",")]
-        if len(p) < 9:
+        if len(p) < 10:
             continue
         gpus.append({
-            "nv_index": int(p[0]), "name": p[1],
-            "mem_used_mb": num(p[2]), "mem_total_mb": num(p[3]),
-            "util": num(p[4]), "temp": num(p[5]),
-            "power": num(p[6]), "power_limit": num(p[7]), "fan": num(p[8]),
+            "nv_index": int(p[0]), "uuid": p[1], "name": p[2],
+            "mem_used_mb": num(p[3]), "mem_total_mb": num(p[4]),
+            "util": num(p[5]), "temp": num(p[6]),
+            "power": num(p[7]), "power_limit": num(p[8]), "fan": num(p[9]),
+            "procs": [],
         })
+    # Which processes hold VRAM on each card (compute clients only; names, not full paths).
+    code, out = run(["nvidia-smi", "--query-compute-apps=pid,process_name,gpu_uuid,used_memory",
+                     "--format=csv,noheader,nounits"], 5)
+    by_uuid = {g["uuid"]: g for g in gpus}
+    for line in out.strip().splitlines() if code == 0 else []:
+        p = [x.strip() for x in line.split(",")]
+        if len(p) < 4 or p[2] not in by_uuid:
+            continue
+        by_uuid[p[2]]["procs"].append({"pid": int(p[0]) if p[0].isdigit() else None,
+                                       "name": os.path.basename(p[1]) or p[1],
+                                       "mem_mb": num(p[3]) or 0})
     return gpus
 
 
