@@ -23,7 +23,7 @@ Streaming answers with speed stats, a model picker, and per-chat settings.
 ![Chat](docs/screenshots/chat-empty.png)
 
 ### Models
-The meter on each card is the size of the model against the VRAM that is free right now. If another program is using the card, Zest says so and names it.
+The meter on each card is the size of the model against the VRAM that is free right now, so you can see what will fit before you load it. If another program is using the card, Zest warns you and names it.
 
 ![Models](docs/screenshots/models.png)
 
