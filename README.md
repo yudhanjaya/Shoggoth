@@ -10,6 +10,8 @@ Zest is a small, dependency-free web app. It talks to a Lemonade Server you alre
 
 - **Chat** with streaming replies, markdown and code blocks with copy buttons, collapsible reasoning for "thinking" models, and tokens-per-second and time-to-first-token on every answer. Conversations are kept in your browser.
 - **Models** shows everything Lemonade can run. Each card has a fit meter that compares the model with the VRAM that is actually *free* on the devices Lemonade is set to use, so you can tell *before* loading whether it will fit, spill into system RAM, or fail because another program is holding the memory. Load with a context size you choose.
+- **Per-model options.** Every card has an **Options** button: context window, extra llama.cpp arguments, backend, devices and memory-management settings, saved per model. Arguments are checked against your own `llama-server` before you load, so a typo or a vLLM-only flag is caught up front instead of failing the load.
+- **Settings** edits everything in Lemonade's own configuration (storage folders, eviction, logging, engine arguments and more), searchable, with a reset-to-default for every value.
 - **Hardware** shows every device llama.cpp can see as a live VRAM tank with utilisation, temperature, power, a short history, and which processes are holding its memory. **Pick which devices to use and put them in order**, then apply.
 - **Backends** lists every Lemonade engine (llama.cpp, Whisper.cpp, StableDiffusion.cpp and more) with the backends each supports (CUDA, Vulkan, ROCm, CPU…). Choose one per engine, or install and update missing ones, just as you can in Lemonade itself.
 - **Logs** tails the Lemonade service log with a filter and follow mode.
@@ -26,6 +28,16 @@ Streaming answers with speed stats, a model picker, and per-chat settings.
 The meter on each card is the size of the model against the VRAM that is free right now, so you can see what will fit before you load it. If another program is using the card, Zest warns you and names it.
 
 ![Models](docs/screenshots/models.png)
+
+### Model options
+Set the context window, extra arguments, backend and devices for one model. Zest warns when an argument isn't one your `llama-server` understands (here, a vLLM-only flag), and offers **Save and reload** for a model that's already running.
+
+![Model options](docs/screenshots/model-options.png)
+
+### Settings
+Lemonade's global configuration, searchable and saved as you edit.
+
+![Settings](docs/screenshots/settings.png)
 
 ### Hardware
 Select GPUs and set their order. The first device is the primary one. Each card shows how much VRAM is free and which processes are using it (here, Lemonade running a model split across both cards). Nothing changes until you press **Apply**.
@@ -92,7 +104,7 @@ Then open <http://127.0.0.1:13306> (it opens automatically unless you pass `--no
 Zest is one Python file (`zest/server.py`) and one HTML file (`zest/index.html`).
 
 - `/api/*` is passed straight through to Lemonade, so the page needs no CORS changes. Chat uses the OpenAI-compatible `/api/v1/chat/completions` stream.
-- Device and backend changes are written with `lemonade config set llamacpp.device=…` and `lemonade config set <engine>.backend=…`; installs run `lemonade backends install <engine>:<backend>`. These are the same settings Lemonade's own CLI changes.
+- Per-model options use Lemonade's `/v1/models/{id}/options` API, and the Settings page reads and writes `/internal/config` and `/internal/set`. Device and backend changes are written with `lemonade config set llamacpp.device=…` and `lemonade config set <engine>.backend=…`; installs run `lemonade backends install <engine>:<backend>`. These are the same settings Lemonade's own CLI changes.
 - Device order matters: llama.cpp numbers devices differently from `nvidia-smi` (CUDA puts the fastest card first). Zest asks the llama.cpp binary for its own list so the names and IDs line up.
 - Live GPU numbers come from `nvidia-smi`. Logs come from `journalctl -u lemond`.
 

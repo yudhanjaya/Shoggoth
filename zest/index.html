@@ -266,6 +266,70 @@ button.bo:hover{border-color:var(--faint)}
 .bo[aria-checked="true"] .sdot{background:var(--lemon-ink)}
 .bkp .note{margin:0;font-size:13px;color:var(--faint)}
 
+/* ---------- options + settings ---------- */
+#optdlg{max-width:min(660px,calc(100vw - 32px));max-height:calc(100dvh - 32px)}
+#optdlg form{padding:0;display:flex;flex-direction:column;max-height:calc(100dvh - 34px)}
+#optdlg header{padding:22px 24px 6px}
+#optdlg header p{margin:4px 0 0;color:var(--muted);font-size:13.5px}
+.odbody{padding:8px 24px 16px;overflow:auto;display:grid;gap:18px;align-content:start}
+#optdlg .actions{padding:14px 24px;border-top:1px solid var(--line-soft);background:var(--surface)}
+#odfields{display:grid;gap:22px}
+.fld{display:grid;gap:7px}
+.fld>label.chk{justify-content:flex-start}
+.fld .chk+.help{margin-left:28px}
+.fld>label,.fld .ln{display:flex;justify-content:space-between;gap:10px;align-items:baseline;font-size:13.5px;font-weight:600;color:var(--text)}
+.fld .help{font-size:12.5px;color:var(--faint);font-weight:400}
+.fld textarea,.fld input[type=text],.fld input[type=number],.fld select{width:100%;border:1px solid var(--line);border-radius:10px;background:var(--bg);color:var(--text);padding:9px 12px;min-height:42px;outline:none}
+.fld textarea{font:13px/1.5 var(--mono);resize:vertical;min-height:74px}
+.fld input:focus,.fld textarea:focus,.fld select:focus{border-color:var(--lemon)}
+.fld .row2{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.fld .reset,.setrow .reset{border:0;background:none;color:var(--lemon-text);font-size:12.5px;padding:4px 6px;border-radius:6px;font-weight:550}
+.fld .reset:hover,.setrow .reset:hover{background:var(--lemon-wash)}
+.fld .saved{font:11px var(--mono);color:var(--lemon-text);font-weight:400}
+.argcheck{display:grid;gap:6px}
+.argcheck .p{font-size:12.5px;padding:8px 11px;border-radius:9px;border:1px solid var(--line)}
+.argcheck .p b{font-family:var(--mono);font-weight:600}
+.argcheck .warn{color:var(--warn);border-color:color-mix(in srgb,var(--warn) 45%,transparent)}
+.argcheck .error{color:var(--bad);border-color:color-mix(in srgb,var(--bad) 45%,transparent)}
+.argcheck .ok{color:var(--faint);border:0;padding:0}
+.devchips{display:flex;gap:6px;flex-wrap:wrap}
+.devchips button{min-height:32px;padding:0 11px;border-radius:999px;border:1px solid var(--line);background:none;color:var(--muted);font:12px var(--mono)}
+.devchips button[aria-pressed="true"]{background:var(--lemon);color:var(--lemon-ink);border-color:transparent}
+.fld .chk{display:flex;gap:10px;align-items:center;font-weight:550;min-height:36px}
+.fld .chk input{width:18px;height:18px;accent-color:var(--lemon);min-height:0}
+details.adv{border-top:1px solid var(--line-soft);padding-top:12px}
+details.adv summary{cursor:pointer;font-size:13.5px;color:var(--muted);min-height:32px;display:flex;align-items:center}
+details.adv[open] summary{margin-bottom:12px}
+.errline{margin:0;padding:10px 13px;border:1px solid color-mix(in srgb,var(--bad) 50%,transparent);color:var(--bad);border-radius:10px;font-size:13.5px}
+.errline[hidden]{display:none}
+.card .optline{font:12px var(--mono);color:var(--faint);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.card .optline b{color:var(--lemon-text);font-weight:600}
+.btn.icon{flex:0 0 44px!important;padding:0}
+.setbar{display:flex;gap:12px;align-items:center;margin-bottom:18px;flex-wrap:wrap}
+.setbar input{flex:1;min-width:200px;min-height:42px;border:1px solid var(--line);border-radius:999px;background:var(--surface);padding:0 18px;outline:none}
+.setbar input:focus{border-color:var(--lemon)}
+details.setgrp{border:1px solid var(--line);border-radius:var(--radius);background:var(--surface);margin-bottom:14px}
+details.setgrp>summary{cursor:pointer;list-style:none;padding:16px 20px;font:600 19px var(--serif);display:flex;align-items:center;gap:10px;min-height:56px}
+details.setgrp>summary::-webkit-details-marker{display:none}
+details.setgrp>summary::before{content:"";width:7px;height:7px;border-right:1.8px solid currentColor;border-bottom:1.8px solid currentColor;transform:rotate(-45deg);transition:transform .2s;opacity:.6}
+details.setgrp[open]>summary::before{transform:rotate(45deg)}
+details.setgrp>summary small{font:12px var(--mono);color:var(--faint);font-weight:400;margin-left:auto}
+.setrows{border-top:1px solid var(--line-soft)}
+.setrow{display:grid;grid-template-columns:minmax(0,1fr) minmax(220px,340px);gap:10px 26px;padding:14px 20px;border-bottom:1px solid var(--line-soft);align-items:start}
+.setrow:last-child{border-bottom:0}
+.setrow .lab b{display:block;font-size:14.5px}
+.setrow .help{display:block;font-size:12.5px;color:var(--muted);margin-top:2px}
+.setrow code{font:11.5px var(--mono);color:var(--faint)}
+.setrow .ctl{display:grid;gap:6px;justify-items:stretch}
+.setrow .ctl input[type=text],.setrow .ctl input[type=number]{width:100%;min-height:40px;border:1px solid var(--line);border-radius:9px;background:var(--bg);color:var(--text);padding:0 12px;outline:none}
+.setrow .ctl input:focus{border-color:var(--lemon)}
+.setrow .ctl input[disabled]{opacity:.55}
+.setrow .st{font:12px var(--mono);min-height:16px;color:var(--lemon-text)}
+.setrow .st.err{color:var(--bad)}
+.setrow pre{margin:0;font:12px/1.5 var(--mono);background:var(--bg);border:1px solid var(--line);border-radius:9px;padding:8px 10px;overflow:auto;max-height:130px}
+.setrow .sw{justify-self:start}
+@media (max-width:640px){.setrow{grid-template-columns:1fr;padding:14px 16px}.fld .row2{grid-template-columns:1fr}#optdlg header,.odbody,#optdlg .actions{padding-left:16px;padding-right:16px}.nav button{font-size:10.5px;padding:8px 2px}}
+
 /* ---------- logs ---------- */
 .logbar{display:flex;gap:10px;align-items:center;margin-bottom:14px;flex-wrap:wrap}
 .logbar input[type=search]{flex:1;min-width:160px;min-height:40px;border:1px solid var(--line);border-radius:10px;background:var(--surface);padding:0 14px;outline:none}
@@ -318,6 +382,7 @@ button.bo:hover{border-color:var(--faint)}
       <button data-view="models"><svg class="i" viewBox="0 0 24 24"><path d="M12 3l8 4.5v9L12 21l-8-4.5v-9z"/><path d="M12 12l8-4.5M12 12L4 7.5M12 12v9"/></svg>Models</button>
       <button data-view="hardware"><svg class="i" viewBox="0 0 24 24"><rect x="5" y="5" width="14" height="14" rx="2.5"/><rect x="9" y="9" width="6" height="6" rx="1"/><path d="M9 2v3M15 2v3M9 19v3M15 19v3M2 9h3M2 15h3M19 9h3M19 15h3"/></svg>Hardware</button>
       <button data-view="backends"><svg class="i" viewBox="0 0 24 24"><path d="M12 3l9 5-9 5-9-5z"/><path d="M3 13l9 5 9-5"/><path d="M3 17.5l9 5 9-5" opacity=".5"/></svg>Backends</button>
+      <button data-view="settings"><svg class="i" viewBox="0 0 24 24"><path d="M4 7h9M17 7h3M4 17h3M11 17h9"/><circle cx="15" cy="7" r="2"/><circle cx="9" cy="17" r="2"/></svg>Settings</button>
       <button data-view="logs"><svg class="i" viewBox="0 0 24 24"><path d="M4 6l6 6-6 6"/><path d="M13 19h7"/></svg>Logs</button>
     </div>
     <div class="spacer"></div>
@@ -390,6 +455,13 @@ button.bo:hover{border-color:var(--faint)}
       <div id="bk"></div>
     </div></div></section>
 
+    <!-- SETTINGS -->
+    <section class="view" id="v-settings"><div class="pad"><div class="wrap">
+      <p class="lede">Every setting Lemonade offers, in one place. Changes are saved straight to Lemonade as you make them. Settings for a single model live on the Models page, under its <b>Options</b> button.</p>
+      <div class="setbar"><input type="search" id="setq" placeholder="Search settings" aria-label="Search settings"><span class="chip" id="setcount"></span></div>
+      <div id="settings"></div>
+    </div></div></section>
+
     <!-- LOGS -->
     <section class="view" id="v-logs"><div class="pad" style="display:flex;flex-direction:column;flex:1;min-height:0"><div class="wrap" style="display:flex;flex-direction:column;flex:1;min-height:0">
       <div class="logbar">
@@ -409,18 +481,18 @@ button.bo:hover{border-color:var(--faint)}
     <div class="actions"><button class="btn" value="cancel" formnovalidate>Cancel</button><button class="btn primary" value="ok">Download and install</button></div>
   </form>
 </dialog>
-<dialog id="loaddlg">
-  <form method="dialog" id="loadform">
-    <h3 id="ldname">Load model</h3>
-    <div id="ldfit"></div>
-    <label>Context window
-      <select id="ldctx">
-        <option value="">Model default</option><option>2048</option><option>4096</option><option>8192</option><option>16384</option><option>32768</option><option>65536</option><option>131072</option>
-      </select>
-    </label>
+<dialog id="optdlg">
+  <form id="optform" onsubmit="return false">
+    <header><h3 id="odname">Options</h3><p id="odsub"></p></header>
+    <div class="odbody">
+      <div id="odfit"></div>
+      <div id="odfields"></div>
+      <p class="errline" id="oderr" role="alert" hidden></p>
+    </div>
     <div class="actions">
-      <button class="btn" value="cancel" formnovalidate>Cancel</button>
-      <button class="btn primary" value="ok" id="ldgo">Load model</button>
+      <button type="button" class="btn" id="odcancel">Cancel</button>
+      <button type="button" class="btn" id="odsave">Save</button>
+      <button type="button" class="btn primary" id="odload">Load</button>
     </div>
   </form>
 </dialog>
@@ -441,6 +513,7 @@ const ICON = {
   stop:'<svg class="i" viewBox="0 0 24 24"><rect x="6" y="6" width="12" height="12" rx="2" fill="currentColor"/></svg>',
   up:'<svg class="i" viewBox="0 0 24 24"><path d="M12 19V5M5 12l7-7 7 7"/></svg>',
   redo:'<svg class="i" viewBox="0 0 24 24" style="width:15px;height:15px"><path d="M4 12a8 8 0 1 0 3-6.2M4 4v5h5"/></svg>',
+  sliders:'<svg class="i" viewBox="0 0 24 24" style="width:18px;height:18px"><path d="M4 7h9M17 7h3M4 17h3M11 17h9"/><circle cx="15" cy="7" r="2"/><circle cx="9" cy="17" r="2"/></svg>',
   bolt:'<svg class="i" viewBox="0 0 24 24" style="width:16px;height:16px"><path d="M13 2L4 14h7l-1 8 9-12h-7z"/></svg>'
 };
 const AVATAR = '<div class="avatar" aria-hidden="true"><svg viewBox="0 0 40 40"><g stroke="#1a1700" stroke-width="2.2" opacity=".6"><path d="M20 6v28M6 20h28M10 10l20 20M30 10L10 30"/></g><circle cx="20" cy="20" r="15" fill="none" stroke="#1a1700" stroke-width="2.2" opacity=".75"/></svg></div>';
@@ -466,7 +539,7 @@ async function api(path, opts={}){
 }
 
 /* ======================= navigation ======================= */
-const TITLES = {chat:"Chat", models:"Models", hardware:"Hardware", backends:"Backends", logs:"Logs"};
+const TITLES = {chat:"Chat", models:"Models", hardware:"Hardware", backends:"Backends", settings:"Settings", logs:"Logs"};
 function show(v){
   S.view = v;
   $$(".view").forEach(el => el.classList.toggle("active", el.id === "v-"+v));
@@ -478,6 +551,7 @@ function show(v){
   if(v === "models") renderModels();
   if(v === "hardware") renderHardware();
   if(v === "backends") loadBackends();
+  if(v === "settings") loadSettings();
   if(v === "logs") loadLogs();
 }
 $$(".nav button").forEach(b => b.addEventListener("click", () => show(b.dataset.view)));
@@ -800,6 +874,18 @@ function fitInfo(m){
   else note = `Won't fit in ${v.avail < v.total - 0.5 ? v.avail.toFixed(1) + " GB of free" : v.total.toFixed(0) + " GB"} VRAM: layers spill to system RAM (slower)`;
   return {cls, pct: Math.min(100, r * 100), note, need, vram: v.avail};
 }
+/* One line summing up what has been saved for a model (context size, arguments, backend…). */
+function savedLine(m){
+  const o = m.recipe_options || {}, parts = [];
+  for(const [k, v] of Object.entries(o)){
+    if(v === null || v === "" || k === "pinned" || k === "merge_args") continue;
+    if(k === "ctx_size") parts.push(v === -1 ? "auto context" : fmtTok(v) + " ctx");
+    else if(/_args$/.test(k)) parts.push(v);
+    else if(/_backend$|_device$/.test(k)) parts.push(v);
+    else if(["steps","cfg_scale","width","height"].includes(k)) parts.push(k + " " + v);
+  }
+  return parts.length ? `<div class="optline" title="${esc(parts.join(" · "))}"><b>Saved</b> ${esc(parts.join(" · "))}</div>` : "";
+}
 function cardHTML(m){
   const f = fitInfo(m), isLoaded = m.id === S.loaded;
   const tags = [`<span class="chip">${esc(m.recipe)}</span>`, ...(m.labels||[]).filter(l=>l!==m.recipe).slice(0,4).map(l=>`<span class="chip">${esc(l)}</span>`)].join("");
@@ -807,12 +893,13 @@ function cardHTML(m){
   return `<article class="card ${isLoaded?"loaded":""}" data-id="${esc(m.id)}">
     <div style="display:flex;justify-content:space-between;gap:10px;align-items:flex-start"><h3>${esc(m.id)}</h3>${isLoaded?'<span class="chip ok">● Loaded</span>':""}</div>
     <div class="tags">${tags}</div>
-    <div class="row"><span class="mono num">${m.size ? m.size.toFixed(m.size<10?2:1)+" GB on disk" : "—"}</span>${m.context_length?`<span class="mono num">${(m.context_length/1024).toFixed(0)}k ctx</span>`:""}</div>
+    <div class="row"><span class="mono num">${m.size ? m.size.toFixed(m.size<10?2:1)+" GB on disk" : "—"}</span>${m.context_length?`<span class="mono num" title="Largest context this model supports">${fmtTok(m.context_length)} max ctx</span>`:""}</div>
+    ${savedLine(m)}
     ${f ? `<div><div class="fit ${f.cls}" role="img" aria-label="${esc(f.note)}"><i style="width:${f.pct}%"></i></div><div class="fitnote ${f.cls}" style="margin-top:6px">${esc(f.note)}</div></div>` : ""}
     <div class="act">${
       !m.downloaded ? `<button class="btn" data-copycmd="${esc(m.id)}">${ICON.copy} Copy pull command</button>` :
-      isLoaded ? `<button class="btn" data-unload="${esc(m.id)}">Unload</button><button class="btn primary" data-chat="${esc(m.id)}">Chat</button>` :
-      `<button class="btn primary" data-load="${esc(m.id)}">${ICON.bolt} Load</button>`
+      isLoaded ? `<button class="btn" data-unload="${esc(m.id)}">Unload</button><button class="btn primary" data-chat="${esc(m.id)}">Chat</button><button class="btn icon" data-opts="${esc(m.id)}" aria-label="Options for ${esc(m.id)}" title="Options">${ICON.sliders}</button>` :
+      `<button class="btn primary" data-load="${esc(m.id)}">${ICON.bolt} Load</button><button class="btn icon" data-opts="${esc(m.id)}" aria-label="Options for ${esc(m.id)}" title="Options">${ICON.sliders}</button>`
     }</div>
   </article>`;
 }
@@ -823,36 +910,336 @@ function renderModels(){
     .sort((a,b)=> (b.id===S.loaded)-(a.id===S.loaded) || b.downloaded-a.downloaded || a.id.localeCompare(b.id));
   $("#grid").innerHTML = list.length ? list.map(cardHTML).join("") : `<div class="empty-note" style="grid-column:1/-1">Nothing matches. Try the “All” filter.</div>`;
 }
-function updateModelBadges(){ if(!$("#loaddlg").open && !document.activeElement?.closest?.("#grid")) renderModels(); }
+function updateModelBadges(){ if(!$("#optdlg").open && !document.activeElement?.closest?.("#grid")) renderModels(); }
 $("#filters").addEventListener("click", e => { const b = e.target.closest("[data-f]"); if(b){ S.filter = b.dataset.f; store.set("zest.filter", S.filter); renderModels(); } });
 $("#filters").addEventListener("input", e => { if(e.target.id==="mq"){ S.q = e.target.value; const pos = e.target.selectionStart; renderModels(); const n = $("#mq"); n.focus(); n.setSelectionRange(pos,pos); } });
 $("#grid").addEventListener("click", async e => {
   const t = e.target.closest("button"); if(!t) return;
-  if(t.dataset.load) openLoad(t.dataset.load);
+  if(t.dataset.load || t.dataset.opts) openOptions(t.dataset.load || t.dataset.opts);
   else if(t.dataset.unload){ t.disabled = true; try{ await api("/api/v1/unload", {method:"POST", headers:{"Content-Type":"application/json"}, body:JSON.stringify({model_name:t.dataset.unload})}); toast("Unloaded"); }catch(err){ toast(err.message); } await tick(); renderModels(); }
   else if(t.dataset.chat){ S.model = t.dataset.chat; store.set("zest.model", S.model); syncModelSelect(); show("chat"); $("#input").focus(); }
   else if(t.dataset.copycmd){ navigator.clipboard?.writeText("lemonade pull " + t.dataset.copycmd); toast("Copied: lemonade pull " + t.dataset.copycmd); }
 });
-let pendingLoad = null;
-function openLoad(id){
-  const m = S.models.find(x => x.id === id); pendingLoad = m;
-  $("#ldname").textContent = m.id;
-  const f = fitInfo(m);
-  $("#ldfit").innerHTML = `<div class="row" style="display:flex;justify-content:space-between;color:var(--muted);font-size:13px;margin-bottom:8px"><span>Target: <b style="color:var(--text)">${esc(activeName())}</b></span><span class="mono">${m.size?m.size.toFixed(1)+" GB":""}</span></div>` +
-    (f ? `<div class="fit ${f.cls}"><i style="width:${f.pct}%"></i></div><div class="fitnote ${f.cls}" style="margin-top:6px">${esc(f.note)}</div>` : "");
-  $("#ldctx").value = "";
-  $("#loaddlg").showModal();
+/* ======================= per-model options ======================= */
+let OD = null;   // the dialog's state: model, what Lemonade reports, and what the user changed
+const CTX_PRESETS = [2048, 4096, 8192, 16384, 32768, 65536, 131072, 262144];
+const OPT_META = {
+  ctx_size: {l: "Context window", h: "How many tokens of conversation the model can see. Larger windows need more VRAM."},
+  merge_args: {l: "Also use the global arguments", h: "Keep the arguments from Settings (for example threads or split mode) alongside this model's own."},
+  auto_evict: {l: "Unload automatically when memory is low", adv: true},
+  auto_update: {l: "Keep this model up to date", adv: true},
+  downsize_idle_timeout: {l: "Shrink after idle (seconds)", adv: true},
+  evict_idle_timeout: {l: "Unload after idle (seconds)", adv: true},
+  evict_weight_factor: {l: "Eviction weight", h: "Higher values make this model more likely to be unloaded first.", adv: true},
+  steps: {l: "Steps"}, cfg_scale: {l: "Guidance scale (CFG)"}, width: {l: "Width (px)"}, height: {l: "Height (px)"}
+};
+const optKind = (k, v) => k === "ctx_size" ? "ctx" : k === "merge_args" ? "bool" : /_args$/.test(k) ? "args" : /_backend$/.test(k) ? "backend" : /_device$/.test(k) ? "device" : (k === "auto_evict" || k === "auto_update") ? "tri" : typeof v === "boolean" ? "bool" : typeof v === "number" ? "num" : "text";
+const optHas = k => OD && Object.prototype.hasOwnProperty.call(OD.data.saved || {}, k);
+const fmtTok = n => n >= 1000 && n % 1000 === 0 ? (n/1000) + "k" : n >= 1024 && n % 1024 === 0 ? (n/1024) + "k" : Number(n).toLocaleString();
+
+/* Record a change. `undefined` means "back to what it was"; `null` means "remove my saved value". */
+function setDirty(k, v){
+  const saved = OD.data.saved || {};
+  if(v === undefined) delete OD.dirty[k];
+  else if(v === null && !optHas(k)) delete OD.dirty[k];
+  else if(v !== null && optHas(k) && saved[k] === v) delete OD.dirty[k];
+  else OD.dirty[k] = v;
+  updateOptButtons();
 }
-$("#loadform").addEventListener("submit", async e => {
-  if(e.submitter?.value !== "ok" || !pendingLoad) return;
-  const m = pendingLoad; const body = {model_name: m.id};
-  const ctx = $("#ldctx").value; if(ctx) body.ctx_size = +ctx;
-  S.loadingModel = m.id; renderStatus(); toast("Loading " + m.id + "…");
+const shown = (k, fallback) => k in OD.dirty ? (OD.dirty[k] === null ? undefined : OD.dirty[k]) : optHas(k) ? OD.data.saved[k] : fallback;
+
+function optField(k){
+  const d = OD.data, meta = OPT_META[k] || {}, eff = d.effective[k], def = d.defaults[k], kind = optKind(k, eff);
+  const eng = {llamacpp:"llama.cpp", whispercpp:"whisper.cpp", sdcpp:"stable-diffusion.cpp"}[k.replace(/_(args|backend|device)$/, "")] || k.replace(/_(args|backend|device)$/, "");
+  const label = meta.l || (/_args$/.test(k) ? `Extra arguments for ${eng}` : /_backend$/.test(k) ? "Backend" : /_device$/.test(k) ? "Devices" : k.replace(/_/g, " ").replace(/^./, c => c.toUpperCase()));
+  const own = (k in OD.dirty) ? OD.dirty[k] !== null : optHas(k);
+  const reset = own ? `<button type="button" class="reset" data-reset="${k}">Reset to default</button>` : (k in OD.dirty ? `<span class="saved">will reset</span>` : "");
+  const help = meta.h ? `<span class="help">${esc(meta.h)}</span>` : "";
+  let ctl = "";
+  if(kind === "ctx"){
+    const cur = shown(k, "inherit"), isPreset = cur === "inherit" || cur === -1 || CTX_PRESETS.includes(cur);
+    const dc = d.defaults.ctx_size;
+    ctl = `<div class="row2"><select data-k="${k}" data-kind="ctx" aria-label="${esc(label)}">
+        <option value="inherit" ${cur==="inherit"?"selected":""}>Use the server default (${dc === -1 ? "automatic" : fmtTok(dc)})</option>
+        <option value="-1" ${cur===-1?"selected":""}>Automatic</option>
+        ${CTX_PRESETS.map(n => `<option value="${n}" ${cur===n?"selected":""}>${n.toLocaleString()} tokens (${fmtTok(n)})</option>`).join("")}
+        <option value="custom" ${isPreset?"":"selected"}>Custom…</option></select>
+      <input type="number" min="256" step="256" data-k="${k}" data-kind="ctxnum" aria-label="Custom context size in tokens" value="${isPreset?"":cur}" placeholder="tokens" ${isPreset?"hidden":""}></div>
+      ${d.resolved_ctx_size ? `<span class="help">A load right now would use ${Number(d.resolved_ctx_size).toLocaleString()} tokens.</span>` : (d.resolved_ctx_size === null ? `<span class="help" style="color:var(--warn)">Automatic sizing found too little free memory for any context.</span>` : "")}`;
+  } else if(kind === "args"){
+    const inherited = d.defaults[k];
+    ctl = `<textarea data-k="${k}" data-kind="args" spellcheck="false" aria-label="${esc(label)}" placeholder="${k==="llamacpp_args"?"e.g. --flash-attn on --cache-type-k q8_0":"extra command-line arguments"}">${esc(shown(k, ""))}</textarea>
+      <div class="argcheck" id="argcheck-${k}" aria-live="polite"></div>
+      ${inherited ? `<span class="help">Already applied to every model${OD.data.effective.merge_args === false ? " (not used while “Also use the global arguments” is off)" : ""}: <code>${esc(inherited)}</code></span>` : ""}`;
+  } else if(kind === "backend"){
+    const prefix = k.replace(/_backend$/, ""), rec = (OD.bk || []).find(r => r.recipe.replace(/-/g, "") === prefix);
+    const opts = (rec ? rec.backends.filter(b => b.state === "installed" || b.state === "update_required").map(b => b.name) : []);
+    const cur = shown(k, "");
+    if(cur && !opts.includes(cur)) opts.push(cur);
+    ctl = `<select data-k="${k}" data-kind="backend" aria-label="${esc(label)}"><option value="">Default (${esc(def || "auto")})</option>${opts.map(o => `<option ${cur===o?"selected":""}>${esc(o)}</option>`).join("")}</select>`;
+  } else if(kind === "device"){
+    const cur = shown(k, ""), sel = String(cur).split(",").map(s => s.trim()).filter(Boolean), devs = S.info?.devices || [];
+    ctl = `<input type="text" data-k="${k}" data-kind="device" aria-label="${esc(label)}" value="${esc(cur)}" placeholder="Default (${esc(def || "all devices")})" spellcheck="false">
+      ${devs.length ? `<div class="devchips" role="group" aria-label="Pick devices">${devs.map(x => `<button type="button" data-devpick="${esc(x.id)}" aria-pressed="${sel.includes(x.id)}" title="${esc(x.name)}">${esc(x.id)} · ${esc(shortName(x.name))}</button>`).join("")}</div>` : ""}
+      <span class="help">Order matters: the first device is primary. Leave empty to use the setting from the Hardware page.</span>`;
+  } else if(kind === "bool"){
+    const cur = shown(k, eff);
+    return `<div class="fld"><label class="chk"><input type="checkbox" data-k="${k}" data-kind="bool" ${cur?"checked":""}> ${esc(label)}</label>${help}${own?`<div>${reset}</div>`:""}</div>`;
+  } else if(kind === "tri"){
+    const cur = shown(k, null);
+    ctl = `<select data-k="${k}" data-kind="tri" aria-label="${esc(label)}"><option value="" ${cur==null?"selected":""}>Use the server default</option><option value="true" ${cur===true?"selected":""}>On</option><option value="false" ${cur===false?"selected":""}>Off</option></select>`;
+  } else if(kind === "num"){
+    const cur = shown(k, undefined);
+    ctl = `<input type="number" step="any" data-k="${k}" data-kind="num" aria-label="${esc(label)}" value="${cur ?? ""}" placeholder="Default (${esc(def)})">`;
+  } else {
+    ctl = `<input type="text" data-k="${k}" data-kind="text" aria-label="${esc(label)}" value="${esc(shown(k, "") ?? "")}">`;
+  }
+  return `<div class="fld"><div class="ln"><span>${esc(label)}</span>${reset}</div>${help}${ctl}</div>`;
+}
+function renderOptions(){
+  const keys = Object.keys(OD.data.effective).filter(k => k !== "model_name");
+  const rank = k => { const kind = optKind(k, OD.data.effective[k]); return {ctx:0, args:1, backend:2, device:3, bool:4}[kind] ?? 5; };
+  const main = keys.filter(k => !(OPT_META[k]||{}).adv).sort((a,b) => rank(a) - rank(b));
+  const adv = keys.filter(k => (OPT_META[k]||{}).adv);
+  $("#odfields").innerHTML = main.map(optField).join("") + (adv.length ? `<details class="adv"><summary>Advanced: memory management</summary><div style="display:grid;gap:18px">${adv.map(optField).join("")}</div></details>` : "");
+  keys.filter(k => optKind(k, OD.data.effective[k]) === "args").forEach(k => { if(k === "llamacpp_args") checkArgs(k); });
+  updateOptButtons();
+}
+let argTimer;
+async function checkArgs(k){
+  const box = $("#argcheck-" + k), ta = $(`textarea[data-k="${k}"]`); if(!box || !ta) return;
+  const text = ta.value.trim();
+  if(!text){ box.innerHTML = ""; OD.argErrors = false; return updateOptButtons(); }
   try{
-    await api("/api/v1/load", {method:"POST", headers:{"Content-Type":"application/json"}, body:JSON.stringify(body)});
-    S.model = m.id; store.set("zest.model", m.id); toast(m.id + " is ready");
+    const r = await api("/ui/args/check", {method:"POST", headers:{"Content-Type":"application/json"}, body:JSON.stringify({args:text})});
+    if(!OD || !$("#argcheck-" + k)) return;
+    if(r.error){ box.innerHTML = `<div class="p error">${esc(r.error)}</div>`; OD.argErrors = true; }
+    else {
+      box.innerHTML = r.problems.map(p => `<div class="p ${p.level}"><b>${esc(p.flag)}</b>: ${esc(p.message)}</div>`).join("") ||
+        `<div class="p ok">${r.verified ? "All options are recognised by your llama-server." : "Zest couldn't check these against llama-server."}</div>`;
+      OD.argErrors = r.problems.some(p => p.level === "error");
+    }
+  }catch{ box.innerHTML = ""; }
+  updateOptButtons();
+}
+function updateOptButtons(){
+  if(!OD) return;
+  const dirty = Object.keys(OD.dirty).length, loaded = S.loaded === OD.m.id, can = OD.m.downloaded && !(OD.argErrors);
+  $("#odsave").disabled = !dirty || !!OD.argErrors; $("#odsave").hidden = !dirty;
+  const lbl = loaded ? (dirty ? "Save and reload" : "Reload") : (dirty ? "Save and load" : "Load");
+  $("#odload").textContent = lbl; $("#odload").disabled = !can;
+}
+async function openOptions(id){
+  const m = S.models.find(x => x.id === id); if(!m) return;
+  let data; try{ data = await api(`/api/v1/models/${encodeURIComponent(id)}/options`); }
+  catch(e){ toast("Couldn't read this model's options: " + e.message); return; }
+  let bk = []; try{ bk = (await api("/ui/backends")).recipes; }catch{}
+  OD = {m, data, dirty:{}, bk, argErrors:false};
+  $("#odname").textContent = id;
+  $("#odsub").textContent = S.loaded === id ? "Currently loaded. Changes apply when it is reloaded." : (m.downloaded ? "Changes apply the next time it loads." : "Not downloaded yet.");
+  const f = fitInfo(m);
+  $("#odfit").innerHTML = f ? `<div class="row" style="display:flex;justify-content:space-between;color:var(--muted);font-size:13px;margin-bottom:8px"><span>Target: <b style="color:var(--text)">${esc(activeName())}</b></span><span class="mono">${m.size?m.size.toFixed(1)+" GB":""}</span></div><div class="fit ${f.cls}"><i style="width:${f.pct}%"></i></div><div class="fitnote ${f.cls}" style="margin-top:6px">${esc(f.note)}</div>` : "";
+  $("#oderr").hidden = true;
+  renderOptions();
+  $("#optdlg").showModal();
+}
+const odBody = $("#odfields");
+odBody.addEventListener("input", e => {
+  const el = e.target, k = el.dataset.k; if(!k) return;
+  const kind = el.dataset.kind;
+  if(kind === "args"){ setDirty(k, el.value.trim() === "" ? (optHas(k) ? null : undefined) : el.value.trim()); if(k === "llamacpp_args"){ clearTimeout(argTimer); argTimer = setTimeout(() => checkArgs(k), 350); } }
+  else if(kind === "ctxnum"){ const n = parseInt(el.value, 10); setDirty(k, Number.isFinite(n) && n > 0 ? n : (optHas(k) ? null : undefined)); }
+  else if(kind === "num"){ const n = el.value === "" ? null : Number(el.value); setDirty(k, n === null ? (optHas(k) ? null : undefined) : n); }
+  else if(kind === "device" || kind === "text"){ const v = el.value.trim(); setDirty(k, v === "" ? (optHas(k) ? null : undefined) : v); if(kind === "device") syncDevChips(el); }
+  else if(kind === "bool"){ setDirty(k, el.checked); }
+});
+odBody.addEventListener("change", e => {
+  const el = e.target, k = el.dataset.k; if(!k) return;
+  const kind = el.dataset.kind, v = el.value;
+  if(kind === "ctx"){
+    const num = $(`input[data-kind="ctxnum"][data-k="${k}"]`);
+    if(v === "custom"){ num.hidden = false; num.focus(); const n = parseInt(num.value, 10); if(Number.isFinite(n) && n > 0) setDirty(k, n); }
+    else { num.hidden = true; num.value = ""; setDirty(k, v === "inherit" ? (optHas(k) ? null : undefined) : parseInt(v, 10)); }
+  } else if(kind === "backend"){ setDirty(k, v === "" ? (optHas(k) ? null : undefined) : v); }
+  else if(kind === "tri"){ setDirty(k, v === "" ? (optHas(k) ? null : undefined) : v === "true"); }
+});
+function syncDevChips(input){
+  const sel = input.value.split(",").map(s => s.trim()).filter(Boolean);
+  input.closest(".fld").querySelectorAll("[data-devpick]").forEach(b => b.setAttribute("aria-pressed", String(sel.includes(b.dataset.devpick))));
+}
+odBody.addEventListener("click", e => {
+  const pick = e.target.closest("[data-devpick]"), rs = e.target.closest("[data-reset]");
+  if(pick){
+    const input = pick.closest(".fld").querySelector('input[data-kind="device"]'), id = pick.dataset.devpick;
+    const sel = input.value.split(",").map(s => s.trim()).filter(Boolean);
+    input.value = (sel.includes(id) ? sel.filter(x => x !== id) : [...sel, id]).join(",");
+    input.dispatchEvent(new Event("input", {bubbles:true}));
+  }
+  if(rs){ setDirty(rs.dataset.reset, null); const sc = $(".odbody").scrollTop; renderOptions(); $(".odbody").scrollTop = sc; }
+});
+function showOptErr(msg){ const el = $("#oderr"); el.textContent = msg; el.hidden = false; el.scrollIntoView({block:"nearest"}); }
+async function saveOptions(){
+  if(!Object.keys(OD.dirty).length) return;
+  const body = {...OD.dirty};
+  const r = await api(`/api/v1/models/${encodeURIComponent(OD.m.id)}/options`, {method:"POST", headers:{"Content-Type":"application/json"}, body:JSON.stringify(body)});
+  OD.data = r; OD.dirty = {};
+}
+async function loadModelNow(id){
+  S.loadingModel = id; renderStatus(); toast((S.loaded === id ? "Reloading " : "Loading ") + id + "…");
+  try{
+    if(S.loaded === id) await api("/api/v1/unload", {method:"POST", headers:{"Content-Type":"application/json"}, body:JSON.stringify({model_name:id})});
+    await api("/api/v1/load", {method:"POST", headers:{"Content-Type":"application/json"}, body:JSON.stringify({model_name:id})});
+    S.model = id; store.set("zest.model", id); toast(id + " is ready");
   }catch(err){ toast("Load failed: " + err.message); }
-  S.loadingModel = null; await tick(); if(S.view==="models") renderModels();
+  S.loadingModel = null; await loadModels(); await tick(); if(S.view === "models") renderModels();
+}
+$("#odcancel").addEventListener("click", () => { $("#optdlg").close(); });
+$("#optdlg").addEventListener("close", () => { OD = null; });
+$("#odsave").addEventListener("click", async () => {
+  try{ await saveOptions(); $("#optdlg").close(); toast("Options saved"); await loadModels(); if(S.view === "models") renderModels(); }
+  catch(e){ showOptErr(e.message); }
+});
+$("#odload").addEventListener("click", async () => {
+  const id = OD.m.id;
+  try{ await saveOptions(); }catch(e){ return showOptErr(e.message); }
+  $("#optdlg").close(); await loadModels(); loadModelNow(id);
+});
+
+/* ======================= settings ======================= */
+const SET = {cfg: null, defaults: null, q: ""};
+const SET_GROUPS = {
+  "Models and downloads": ["models_dir","extra_models_dir","max_loaded_models","ctx_size","auto_evict","auto_evict_threshold_pct","default_model_source","disable_model_filtering","auto_check_model_updates","auto_update_models","download_rate_limit","offline","global_timeout"],
+  "Server": ["host","port","websocket_port","allowed_origins","broadcast","inhibit_suspend"],
+  "Logging": ["log_level","log_file","log_max_file_size_mb","log_max_files"]
+};
+const SET_META = {
+  models_dir: {l:"Model storage folder", h:"Where downloaded models are kept. “auto” follows your Hugging Face cache settings."},
+  extra_models_dir: {l:"Extra models folder", h:"A folder Lemonade searches for GGUF files to import."},
+  max_loaded_models: {l:"Models loaded at once", h:"How many models of each type can stay in memory together."},
+  ctx_size: {l:"Default context window", h:"Used when a model has no context size of its own. -1 sizes it automatically."},
+  auto_evict: {l:"Unload models automatically when memory is low"},
+  auto_evict_threshold_pct: {l:"Memory threshold for unloading", h:"A fraction, for example 0.9 means 90% full."},
+  default_model_source: {l:"Where to download models from", opts:["huggingface","modelscope"]},
+  disable_model_filtering: {l:"Show models even if this hardware can't run them"},
+  auto_check_model_updates: {l:"Check for model updates"},
+  auto_update_models: {l:"Download model updates automatically"},
+  download_rate_limit: {l:"Download speed limit", h:"Leave empty for no limit."},
+  offline: {l:"Offline mode", h:"Never contact the network."},
+  global_timeout: {l:"Request timeout (seconds)"},
+  host: {l:"Listen address", h:"Changing this would disconnect Zest from Lemonade. Edit Lemonade's config.json and restart it if you really need to.", locked:true},
+  port: {l:"Port", h:"Changing this would disconnect Zest from Lemonade. Edit Lemonade's config.json and restart it if you really need to.", locked:true},
+  websocket_port: {l:"WebSocket port", h:"“auto” picks a free port. Applies after Lemonade restarts."},
+  allowed_origins: {l:"Allowed web origins", h:"Browser pages (CORS) allowed to call Lemonade directly. Zest doesn't need this."},
+  broadcast: {l:"Announce this server on the network"},
+  inhibit_suspend: {l:"Keep the computer awake while models run"},
+  log_level: {l:"Log level", opts:["trace","debug","info","warning","error"]},
+  log_file: {l:"Log file", h:"auto, disabled, enabled, or a file path."},
+  log_max_file_size_mb: {l:"Largest log file (MB)"},
+  log_max_files: {l:"Old log files to keep"},
+  enable_dgpu_gtt: {l:"Allow discrete GPUs to use system memory (GTT)"},
+  rocm_channel: {l:"ROCm channel"},
+  rocm_install_method: {l:"ROCm install method", opts:["auto","pip","tarball"]},
+  no_fetch_executables: {l:"Never download backend programs"},
+  "llamacpp.args": {l:"Extra arguments for every model", h:"Added to every llama-server start. Per-model arguments are set from the Models page."},
+  "llamacpp.backend": {l:"Backend", kind:"backend"},
+  "llamacpp.device": {l:"Devices", h:"Choose and order devices on the Hardware page.", link:"hardware"},
+  "llamacpp.prefer_system": {l:"Prefer a llama.cpp installed on this system"}
+};
+const humanize = k => k.replace(/_/g, " ").replace(/^./, c => c.toUpperCase());
+function setFlat(){
+  const out = [], seen = new Set();
+  const cfg = SET.cfg || {}, def = SET.defaults || {};
+  const engines = {};
+  const add = (group, path, value) => { out.push({group, path, value, def: path.reduce((o,k) => o?.[k], def)}); seen.add(path.join(".")); };
+  for(const [g, keys] of Object.entries(SET_GROUPS)) for(const k of keys) if(k in cfg) add(g, [k], cfg[k]);
+  for(const [k, v] of Object.entries(cfg)){
+    if(k.startsWith("_") || k === "config_version" || seen.has(k)) continue;
+    if(v && typeof v === "object" && !Array.isArray(v)){
+      const rec = (S.bk || []).find(r => r.recipe.replace(/-/g, "") === k);
+      const title = k === "telemetry" ? "Telemetry" : (rec ? rec.name : humanize(k));
+      for(const [k2, v2] of Object.entries(v)) add("Engine: " + title, [k, k2], v2);
+      engines[k] = 1;
+    } else add("Advanced", [k], v);
+  }
+  // keys that exist only in the defaults (not yet written to config.json)
+  return out;
+}
+function setRow(f){
+  const key = f.path.join("."), meta = SET_META[key] || SET_META[f.path.at(-1)] || {};
+  const leaf = f.path.at(-1), label = meta.l || (/_bin$/.test(leaf) ? humanize(leaf.replace(/_bin$/, "")) + " program" : humanize(leaf));
+  const help = meta.h || (/_bin$/.test(leaf) ? "“builtin” uses Lemonade's own download. Or give the path of a program of your own." : "");
+  const v = f.value, locked = meta.locked, type = typeof v;
+  let ctl;
+  if(meta.link) ctl = `<input type="text" value="${esc(v)}" disabled aria-label="${esc(label)}"><button type="button" class="btn" data-goto="${meta.link}">Open ${esc(humanize(meta.link))}</button>`;
+  else if(v !== null && typeof v === "object") ctl = `<pre>${esc(JSON.stringify(v, null, 1))}</pre>`;
+  else if(type === "boolean") ctl = `<button type="button" class="sw" role="switch" aria-checked="${v}" data-sw="${esc(key)}" ${locked?"disabled":""}><i></i>${v?"On":"Off"}</button>`;
+  else if(type === "number") ctl = `<input type="number" step="any" value="${v}" data-set="${esc(key)}" aria-label="${esc(label)}" ${locked?"disabled":""}>`;
+  else {
+    let list = meta.opts, id = "dl-" + key.replace(/\W/g, "_");
+    if(meta.kind === "backend"){ const rec = (S.bk || []).find(r => r.recipe.replace(/-/g, "") === f.path[0]); list = ["auto", ...(rec ? rec.backends.filter(b => b.state !== "unsupported").map(b => b.name) : [])]; }
+    ctl = `<input type="text" value="${esc(v ?? "")}" data-set="${esc(key)}" aria-label="${esc(label)}" spellcheck="false" ${list?`list="${id}"`:""} ${locked?"disabled":""}>${list?`<datalist id="${id}">${list.map(o => `<option value="${esc(o)}">`).join("")}</datalist>`:""}`;
+  }
+  const changed = f.def !== undefined && JSON.stringify(f.def) !== JSON.stringify(v) && !locked && !meta.link && (v === null || typeof v !== "object");
+  return `<div class="setrow" data-key="${esc(key)}" data-text="${esc((label + " " + key + " " + help).toLowerCase())}">
+    <div class="lab"><b>${esc(label)}</b>${help ? `<span class="help">${esc(help)}</span>` : ""}<code>${esc(key)}</code></div>
+    <div class="ctl">${ctl}<div style="display:flex;gap:10px;align-items:center"><span class="st" aria-live="polite"></span>${changed ? `<button type="button" class="reset" data-resetset="${esc(key)}" title="Default: ${esc(JSON.stringify(f.def))}">Reset to default</button>` : ""}</div></div>
+  </div>`;
+}
+function renderSettings(){
+  const host = $("#settings"); if(!SET.cfg){ host.innerHTML = ""; return; }
+  const open = new Set($$("details.setgrp[open]", host).map(d => d.dataset.g));
+  const first = !host.children.length;
+  const flat = setFlat(), groups = {};
+  for(const f of flat) (groups[f.group] ||= []).push(f);
+  const order = [...Object.keys(SET_GROUPS), ...Object.keys(groups).filter(g => g.startsWith("Engine:")).sort(), "Advanced"].filter(g => groups[g]);
+  host.innerHTML = order.map(g => `<details class="setgrp" data-g="${esc(g)}" ${first ? (g === "Models and downloads" || g === "Engine: Llama.cpp GPU" ? "open" : "") : (open.has(g) ? "open" : "")}>
+    <summary>${esc(g)}<small>${groups[g].length}</small></summary><div class="setrows">${groups[g].map(setRow).join("")}</div></details>`).join("");
+  filterSettings();
+}
+function filterSettings(){
+  const q = ($("#setq").value || "").trim().toLowerCase(); let n = 0;
+  $$("#settings .setrow").forEach(r => { const hit = !q || r.dataset.text.includes(q); r.hidden = !hit; if(hit) n++; });
+  $$("#settings details.setgrp").forEach(d => { const any = $$(".setrow:not([hidden])", d).length > 0; d.hidden = !any; if(q && any) d.open = true; });
+  $("#setcount").textContent = q ? `${n} match${n === 1 ? "" : "es"}` : `${$$("#settings .setrow").length} settings`;
+}
+async function loadSettings(){
+  try{
+    if(!S.bk){ try{ S.bk = (await api("/ui/backends")).recipes; }catch{} }
+    const r = await api("/ui/config"); SET.cfg = r.config; SET.defaults = r.defaults; renderSettings();
+  }catch(e){ $("#settings").innerHTML = `<div class="empty-note">Couldn't read Lemonade's settings: ${esc(e.message)}</div>`; }
+}
+async function saveSetting(key, value, row, revert){
+  const path = key.split("."), st = $(".st", row); st.className = "st"; st.textContent = "Saving…";
+  const nested = path.reduceRight((acc, k) => ({[k]: acc}), value);
+  try{
+    await api("/ui/config", {method:"POST", headers:{"Content-Type":"application/json"}, body:JSON.stringify(nested)});
+    let o = SET.cfg; for(const k of path.slice(0, -1)) o = o[k]; o[path.at(-1)] = value;
+    st.textContent = "Saved"; setTimeout(() => { if(st.textContent === "Saved") st.textContent = ""; }, 2500);
+    S.info = await api("/ui/info").catch(() => S.info); renderStatus();
+    return true;
+  }catch(e){ st.className = "st err"; st.textContent = e.message; revert?.(); return false; }
+}
+$("#setq").addEventListener("input", filterSettings);
+$("#settings").addEventListener("change", e => {
+  const el = e.target.closest("[data-set]"); if(!el) return;
+  const key = el.dataset.set, old = key.split(".").reduce((o, k) => o?.[k], SET.cfg), row = el.closest(".setrow");
+  let v = el.value;
+  if(typeof old === "number"){ v = v === "" ? NaN : Number(v); if(Number.isNaN(v)){ el.value = old; return; } }
+  if(v === old) return;
+  saveSetting(key, v, row, () => { el.value = old ?? ""; }).then(ok => { if(ok) renderSettingsRowReset(row, key); });
+});
+function renderSettingsRowReset(){ const s = $("#settings"), sc = $(".view.active").scrollTop; const act = document.activeElement; renderSettings(); $(".view.active").scrollTop = sc; }
+$("#settings").addEventListener("click", async e => {
+  const sw = e.target.closest("[data-sw]"), rs = e.target.closest("[data-resetset]"), go = e.target.closest("[data-goto]");
+  if(go) return show(go.dataset.goto);
+  if(sw){
+    const key = sw.dataset.sw, cur = sw.getAttribute("aria-checked") === "true", row = sw.closest(".setrow");
+    if(await saveSetting(key, !cur, row)) renderSettingsRowReset();
+  }
+  if(rs){
+    const key = rs.dataset.resetset, def = key.split(".").reduce((o, k) => o?.[k], SET.defaults), row = rs.closest(".setrow");
+    if(await saveSetting(key, def, row)) renderSettingsRowReset();
+  }
 });
 
 /* ======================= hardware ======================= */

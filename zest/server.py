@@ -12,6 +12,7 @@ import http.client
 import json
 import os
 import re
+import shlex
 import shutil
 import subprocess
 import sys
@@ -21,7 +22,7 @@ import webbrowser
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from urllib.parse import urlparse, parse_qs
 
-VERSION = "1.1.0"
+VERSION = "1.2.0"
 HERE = os.path.dirname(os.path.abspath(__file__))
 
 CFG = {
@@ -67,18 +68,31 @@ def lemonade_cli(*args, timeout=15):
     return run(cmd + list(args), timeout)
 
 
-def lemonade_get(path):
+def lemonade_request(method, path, body=None, timeout=15):
+    """Returns (status, parsed JSON); status 0 means Lemonade couldn't be reached."""
     host, port = CFG["lemonade"]
-    conn = http.client.HTTPConnection(host, port, timeout=8)
+    headers = {"Authorization": "Bearer " + CFG["api_key"]} if CFG["api_key"] else {}
+    data = None
+    if body is not None:
+        data = json.dumps(body).encode()
+        headers["Content-Type"] = "application/json"
+    conn = http.client.HTTPConnection(host, port, timeout=timeout)
     try:
-        h = {"Authorization": "Bearer " + CFG["api_key"]} if CFG["api_key"] else {}
-        conn.request("GET", path, headers=h)
+        conn.request(method, path, body=data, headers=headers)
         r = conn.getresponse()
-        return json.loads(r.read() or b"{}") if r.status == 200 else {}
-    except (OSError, ValueError):
-        return {}
+        raw = r.read()
+        return r.status, json.loads(raw or b"{}")
+    except OSError as e:
+        return 0, {"error": str(e)}
+    except ValueError:
+        return r.status, {}
     finally:
         conn.close()
+
+
+def lemonade_get(path):
+    status, payload = lemonade_request("GET", path, timeout=8)
+    return payload if status == 200 else {}
 
 
 # ---------------------------------------------------------------- hardware
@@ -223,6 +237,70 @@ def backends():
     return out
 
 
+# ---------------------------------------------------------------- llama-server arguments
+# Lemonade refuses these because it sets them itself.
+MANAGED_FLAGS = {
+    "-m": "the model path", "--model": "the model path", "--port": "the port",
+    "--ctx-size": "the context window", "-c": "the context window",
+    "-ngl": "GPU layers", "--gpu-layers": "GPU layers", "--n-gpu-layers": "GPU layers",
+    "--jinja": "the chat template engine", "--mmproj": "the multimodal projector", "-mm": "the multimodal projector",
+    "--embeddings": "embedding mode", "--embedding": "embedding mode",
+    "--reranking": "reranking mode", "--rerank": "reranking mode",
+}
+# Options people know from vLLM / SGLang that llama.cpp spells differently.
+FOREIGN_HINTS = {
+    "--tool-call-parser": "That is a vLLM/SGLang option. llama.cpp reads tool calls through the model's chat template, and --jinja is already on. To use a different template, try --chat-template-file.",
+    "--enable-auto-tool-choice": "That is a vLLM option. llama.cpp enables tool calling through the chat template (--jinja is already on).",
+    "--reasoning-parser": "That is a vLLM/SGLang option. llama.cpp has --reasoning-format and --reasoning for thinking models.",
+    "--max-model-len": "That is a vLLM option. Set the Context window field instead.",
+    "--tensor-parallel-size": "That is a vLLM option. llama.cpp splits across GPUs with --split-mode and --tensor-split.",
+}
+
+
+def known_flags(bin_path):
+    """Every flag the llama-server binary documents in --help."""
+    def build():
+        if not bin_path or not os.path.isfile(bin_path):
+            return None
+        code, out = run([bin_path, "--help"], 20)
+        flags = set()
+        for line in out.splitlines():
+            if not line.startswith("-"):
+                continue
+            head = re.split(r"\s{2,}", re.sub(r",\s+", ", ", line.strip()), maxsplit=1)[0]
+            for tok in re.findall(r"--?\[?[A-Za-z0-9][\w\-\[\]]*", head):
+                m = re.fullmatch(r"(--)\[no-\](.+)", tok)
+                if m:
+                    flags.update({m.group(1) + m.group(2), m.group(1) + "no-" + m.group(2)})
+                else:
+                    flags.add(tok)
+        return flags or None
+    return cached(f"flags:{bin_path}:{os.path.getmtime(bin_path) if bin_path and os.path.isfile(bin_path) else 0}", 3600, build)
+
+
+def check_args(text, bin_path):
+    try:
+        toks = shlex.split(text or "")
+    except ValueError as e:
+        return {"error": "Unbalanced quote: " + str(e), "problems": [], "verified": False}
+    flags = known_flags(bin_path)
+    problems, seen = [], set()
+    for t in toks:
+        if not t.startswith("-") or re.fullmatch(r"-\d+(\.\d+)?", t):
+            continue
+        flag = t.split("=", 1)[0]
+        if flag in seen:
+            continue
+        seen.add(flag)
+        if flag in MANAGED_FLAGS:
+            problems.append({"flag": flag, "level": "error",
+                             "message": f"Lemonade sets {MANAGED_FLAGS[flag]} itself and rejects this option."})
+        elif flags is not None and flag not in flags:
+            problems.append({"flag": flag, "level": "warn",
+                             "message": FOREIGN_HINTS.get(flag, "This llama-server build doesn't list this option, so loading would probably fail.")})
+    return {"problems": problems, "verified": flags is not None}
+
+
 # ---------------------------------------------------------------- http
 class Handler(BaseHTTPRequestHandler):
     server_version = "Zest/" + VERSION
@@ -269,6 +347,8 @@ class Handler(BaseHTTPRequestHandler):
             self.send_json(cached("info", 4, info))
         elif u.path == "/ui/backends":
             self.send_json({"recipes": cached("backends", 4, backends)})
+        elif u.path == "/ui/config":
+            self.send_json({"config": lemonade_get("/internal/config"), "defaults": lemonade_get("/internal/config/defaults")})
         elif u.path == "/ui/logs":
             n = min(max(int(parse_qs(u.query).get("n", ["200"])[0]), 10), 1000)
             code, out = run(["journalctl", "-u", "lemond", "-n", str(n), "--no-pager", "-o", "cat"], 10)
@@ -294,6 +374,19 @@ class Handler(BaseHTTPRequestHandler):
             code, out = lemonade_cli("config", "set", f"llamacpp.device={dev}")
             invalidate("info")
             return self.send_json({"ok": code == 0, "output": out.strip()}, 200 if code == 0 else 500)
+        if u.path == "/ui/config":
+            nested = self.read_json()
+            if not isinstance(nested, dict) or not nested:
+                return self.send_json({"error": "expected a JSON object"}, 400)
+            status, payload = lemonade_request("POST", "/internal/set", nested)
+            invalidate()
+            if status == 200:
+                return self.send_json({"ok": True, "updated": payload.get("updated")})
+            err = payload.get("error", "Lemonade rejected the change") if isinstance(payload, dict) else "Lemonade rejected the change"
+            return self.send_json({"ok": False, "error": err if isinstance(err, str) else str(err)}, 400 if status else 502)
+        if u.path == "/ui/args/check":
+            body = self.read_json()
+            return self.send_json(check_args(str(body.get("args", "")), cached("info", 4, info).get("llama_bin")))
         if u.path in ("/ui/backend", "/ui/backend/install"):
             return self.backend_action(u.path.endswith("/install"))
         if u.path.startswith("/api/"):
