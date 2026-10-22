@@ -34,7 +34,7 @@ import store       # noqa: E402
 import util        # noqa: E402
 from util import cached, invalidate, run   # noqa: E402
 
-VERSION = "2.2.0"
+VERSION = "2.2.1"
 _last_ping = {"t": None}
 FORCED = {"addr": None}           # set by --lemonade: use exactly that server and skip the setup screen
 LOOPBACK_ONLY = {"on": True}
@@ -206,7 +206,8 @@ class Handler(BaseHTTPRequestHandler):
                 self.send_json({"error": str(e)}, 400)
         elif p == "/ui/server":
             ids = {int(x) for x in parse_qs(u.query).get("ids", [""])[0].split(",") if x.isdigit()}
-            self.get_server(ids)
+            qids = {int(x) for x in parse_qs(u.query).get("q", [""])[0].split(",") if x.isdigit()}
+            self.get_server(ids, qids)
         elif p == "/ui/activity":
             self.send_json({"items": gateway.REC.activity()})
         elif p == "/ui/logs":
@@ -417,11 +418,16 @@ class Handler(BaseHTTPRequestHandler):
         gateway.relay(self, self.command, self.path, body, rec, store.load()["gateway"]["capture"] if rec else False)
 
     # ---- the Server page
-    def get_server(self, ids):
+    def get_server(self, ids, qids=()):
         s = store.load()
         items, seq = gateway.REC.snapshot(60, ids if s["gateway"]["capture"] else ())
+        if s["gateway"]["capture"] and qids:
+            q = gateway.REC.quotes(set(qids))
+            for it in items:
+                if it["id"] in q:
+                    it["quote"] = q[it["id"]]
         self.send_json({"gateway": gateway.public_state(s), "requests": items, "seq": seq, "now": time.time(),
-                        "active": gateway.REC.active()})
+                        "active": gateway.REC.active(), "today": gateway.REC.count_today()})
 
     def post_gateway(self, body):
         s = store.load()

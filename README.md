@@ -78,9 +78,9 @@ Zest is organised around four places in the left-hand menu: **Chat**, **Models**
 
 The same page shows what those apps are doing:
 
-- **A glass per request.** It bubbles while the model is thinking and fills with lemon as the answer is written.
-- **The last minute**, one lane per app, with waiting, thinking and writing shown as different colours.
-- **A request list**, with the app, the model, how long it took and whether it worked. Zest labels each app from the `User-Agent` it sends, or from an `X-Zest-App` header if the app sets one.
+- **Right now.** A card for each request that is running, with the app's name, a glass that bubbles while the model thinks and fills with lemon as the answer is written, and a line such as "Thought for 7.2 s, about 415 words". With **Show what models are saying** on, each card also quotes the line the model is on. The count of requests today sits underneath.
+- **The last minute.** One lane per app, with a pill for each request split into reading the question (grey), thinking (dotted) and writing the answer (lemon), so you can see who was waiting for whom.
+- **Requests.** A list with the app, the model, how long it took and whether it worked, filtered by app. Zest labels each app from the `User-Agent` it sends (for example "Hermes agent" or "opencode"), or from an `X-Zest-App` header if the app sets one.
 - **Show what models are saying** is off by default. When on, you can open a request to read the question and answer. The text is held in memory only and is gone when Zest closes.
 
 Other apps never talk to Zest's own page. Zest opens a second, much smaller door on its own port (13308) that serves only the chat-style `/v1` endpoints (models, chat, completions, embeddings, responses, audio, images, reranking, and loading or unloading a model). It **always asks for the key**, and pulling, deleting, installing or changing settings are not reachable through it. It listens on this computer only. **Other devices on my network** turns on listening on your local network; anyone there who has the key can then use your models, and the traffic is not encrypted, so use it on a network you trust. **Make a new key** invalidates the old one at once.
@@ -144,7 +144,7 @@ Address, key and copy-paste setup for opencode, Hermes and any OpenAI-compatible
 
 ![Server](docs/screenshots/server.png)
 
-While an app is working you see a glass filling up, a lane per app for the last minute, and a request list with the app, model, time and result.
+While an app is working you see a card with a glass that fills as it writes, a pill timeline of the last minute, and a request list. The screenshots below show real requests from three apps at once, so two of them are waiting their turn.
 
 ![A request in progress](docs/screenshots/server-live.png)
 

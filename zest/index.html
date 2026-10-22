@@ -599,37 +599,54 @@ details.aegrp>summary small{margin-left:auto;font:11.5px var(--mono);color:var(-
 .swrow b{font-size:15.5px}
 .swrow span{font-size:13.5px;color:var(--muted)}
 .swrow .confirm{display:flex;gap:8px;flex-wrap:wrap}
-.glasses{display:flex;gap:18px;flex-wrap:wrap;align-items:flex-end;min-height:150px;padding:6px 0}
-.quiet2{color:var(--muted);margin:0;max-width:60ch;font-size:14.5px}
-.glass{display:grid;gap:8px;justify-items:center;width:112px;animation:glassin .4s var(--ease)}
+.srvsec{margin:0 0 26px;display:grid;gap:12px}
+.sechead{display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap}
+.sechead h3{margin:0;font:600 20px var(--serif)}
+.nowpanel{gap:16px}
+.nowgrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(320px,1fr));gap:14px;min-height:60px}
+.quiet2{color:var(--muted);margin:0;max-width:62ch;font-size:14.5px;padding:6px 2px}
+.nowcard{border:1px solid var(--line);border-radius:14px;background:var(--bg);padding:14px 16px;display:grid;gap:10px;align-content:start;animation:glassin .4s var(--ease)}
 @keyframes glassin{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:none}}
-.tumbler{width:60px;height:96px;border:2.5px solid var(--text);border-top-width:2px;border-radius:3px 3px 18px 18px;overflow:hidden;position:relative;background:var(--surface)}
-.liq{position:absolute;left:0;right:0;bottom:0;background:var(--lemon);transition:height .5s var(--ease)}
-.glass.waiting .liq{background:var(--line)}
-.glass.thinking .liq{background:#fbf0a8}
-.glass.error .liq{background:#f3c9c4}
-.liq b{position:absolute;bottom:-8px;width:7px;height:7px;border-radius:50%;background:rgba(26,26,23,.28);animation:rise 2.4s infinite ease-in}
-.liq b:nth-child(1){left:12%;animation-delay:0s}.liq b:nth-child(2){left:30%;animation-delay:.6s;width:5px;height:5px}.liq b:nth-child(3){left:50%;animation-delay:1.1s}.liq b:nth-child(4){left:68%;animation-delay:.3s;width:5px;height:5px}.liq b:nth-child(5){left:84%;animation-delay:1.6s}
-@keyframes rise{0%{transform:translateY(0);opacity:0}15%{opacity:1}100%{transform:translateY(-70px);opacity:0}}
-.gl{display:grid;gap:1px;text-align:center;font-size:12.5px}
-.gl b{font-size:13.5px}.gl span{color:var(--muted);max-width:112px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.gl em{font-style:normal;color:var(--faint)}
+.nowcard header{display:flex;align-items:center;gap:10px}
+.nowcard header b{font-size:15px}
+.appbadge{width:26px;height:26px;border-radius:8px;background:var(--surface-2);border:1px solid var(--line);display:grid;place-items:center;font-size:12px;font-weight:700}
+.nowbody{display:flex;gap:16px;align-items:flex-start}
+.nowtext h4{margin:2px 0 4px;font-size:16px}
+.nowdetail{margin:0;color:var(--muted);font-size:14px}.nowmodel{margin:6px 0 0;color:var(--faint);font-size:12.5px}
+.glasssvg{flex:none}
+.glasssvg .gfill{fill:#fff}.glasssvg .gline{fill:none;stroke:#cfcdc2;stroke-width:2.2;stroke-linejoin:round}
+.glasssvg .liqsvg{fill:var(--lemon);transition:y .5s var(--ease),height .5s var(--ease)}
+.glasssvg.waiting .liqsvg{fill:#e3e1d6}.glasssvg.thinking .liqsvg{fill:#fbf0a8}.glasssvg.error .liqsvg{fill:#f3c9c4}
+.glasssvg .bub{fill:rgba(255,255,255,.85);stroke:#cfcdc2;stroke-width:1;animation:bubrise 2.6s infinite ease-in}
+@keyframes bubrise{0%{transform:translateY(0);opacity:0}15%{opacity:1}100%{transform:translateY(-70px);opacity:0}}
+.nowquote{margin:0;border-left:3px solid var(--lemon);padding:2px 0 2px 12px;font-style:italic;color:var(--muted);font-size:14px}
+.nowkey{display:flex;gap:22px;align-items:center;flex-wrap:wrap;font-size:13px;color:var(--muted)}
+.nowkey .btn{margin-left:auto;min-height:36px;padding:0 14px;font-size:13.5px}
+.nowkey i{display:inline-block;width:12px;height:12px;border-radius:50%;margin-right:8px;vertical-align:-1px}
+.nowkey .kb{border:1.5px solid #bdbbb0;background:#fff}.nowkey .kl{background:var(--lemon)}
+@media (prefers-reduced-motion:reduce){.glasssvg .bub{animation:none}}
 .gmore{align-self:center;color:var(--muted)}
 h4.sub{margin:10px 0 0;font:600 13px var(--sans);color:var(--muted);text-transform:none}
-.river{display:grid;gap:6px}
-.lane{display:grid;grid-template-columns:110px 1fr;gap:10px;align-items:center}
+.river{display:grid;gap:8px}
+.lane{display:grid;grid-template-columns:120px 1fr;gap:12px;align-items:center}
 .ln2{font-size:13px;color:var(--muted);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
-.track{position:relative;height:22px;border-radius:7px;background:var(--surface-2);overflow:hidden}
+.track{position:relative;height:26px;border-radius:99px;background:var(--bg)}
 .track.empty{display:grid;place-items:center;font-size:12.5px;color:var(--faint)}
-.seg{position:absolute;top:3px;bottom:3px;border-radius:4px;transition:left .3s linear,width .3s linear}
-.seg.wait{background:repeating-linear-gradient(135deg,#d9d7cc 0 4px,#ecebe3 4px 8px)}
-.seg.think{background:#fbf0a8;border:1px solid #e3cf4a}
-.seg.write{background:var(--lemon)}
-.seg.bad{background:#e7a39b}
-.riverkey{display:flex;gap:18px;font-size:12.5px;color:var(--muted);flex-wrap:wrap}
-.riverkey .k{display:inline-block;width:14px;height:10px;border-radius:3px;margin-right:6px;vertical-align:middle}
-.riverkey .k.wait{background:#d9d7cc}.riverkey .k.think{background:#fbf0a8;border:1px solid #e3cf4a}.riverkey .k.write{background:var(--lemon)}
-.reqlist{display:grid;gap:0;border:1px solid var(--line-soft);border-radius:12px;overflow:hidden}
+.rbar{position:absolute;top:4px;height:18px;border-radius:99px;overflow:hidden;display:flex;border:1px solid #d3d1c6;background:#ecebe3;transition:left .3s linear,width .3s linear;box-sizing:border-box}
+.rbar .p{display:block;height:100%;min-width:0}
+.rbar .wait{background:#ecebe3}
+.rbar .thk{background-color:#fdf6c8;background-image:radial-gradient(#d9c44a 1px,transparent 1.4px);background-size:5px 5px}
+.rbar .write{background:var(--lemon)}.rbar .bad{background:#e7a39b}
+.axis{display:grid;grid-template-columns:120px 1fr;margin-top:6px;font-size:12px;color:var(--faint)}
+.axis{display:flex;justify-content:space-between;padding-left:132px}
+.riverkey span{display:inline-flex;align-items:center}
+.riverkey{display:flex;gap:20px;font-size:13px;color:var(--muted);flex-wrap:wrap}
+.riverkey .k{display:inline-block;width:22px;height:12px;border-radius:99px;margin-right:8px;box-sizing:border-box;flex:none}
+.riverkey .k.wait{background:#ecebe3;border:1px solid #d3d1c6}
+.riverkey .k.thk{background-color:#fdf6c8;background-image:radial-gradient(#d9c44a 1px,transparent 1.4px);background-size:5px 5px;border:1px solid #e3cf4a}
+.riverkey .k.write{background:var(--lemon)}
 .reqlist .quiet2{padding:20px}
+.reqlist.panel{padding:0;gap:0;overflow:hidden}
 .req+.req{border-top:1px solid var(--line-soft)}
 .reqhead{display:grid;grid-template-columns:78px 150px minmax(0,1fr) auto;gap:12px;align-items:center;width:100%;border:0;background:var(--surface);text-align:left;padding:10px 14px;min-height:50px}
 .reqhead:hover{background:var(--surface-2)}
@@ -2415,7 +2432,9 @@ let pendingLogScroll = false;
 const SRV = {g: null, reqs: new Map(), off: 0, tab: "opencode", showKey: false, filter: "all", open: new Set(), timer: null, fast: null, err: "", built: false, confirmKey: false};
 async function srvFetch(){
   try{
-    const r = await api("/ui/server?ids=" + [...SRV.open].join(","));
+    const live = [...SRV.reqs.values()].filter(q => q.state === "thinking" || q.state === "answering").map(q => q.id);
+    const r = await api("/ui/server?ids=" + [...SRV.open].join(",") + "&q=" + live.join(","));
+    SRV.today = r.today;
     SRV.off = r.now - Date.now() / 1000; SRV.err = "";
     const gsig = JSON.stringify(r.gateway), changed = gsig !== SRV.gsig; SRV.gsig = gsig; SRV.g = r.gateway;
     SRV.reqs = new Map(r.requests.map(q => [q.id, q]));
@@ -2467,16 +2486,27 @@ function srvBuild(){
       <p class="help2">These setup steps were written from each app's documentation and may need a small tweak. If an app can't connect, the <b>Requests</b> list below shows what it tried.</p>`
       : `<p class="help2">No other app can reach your models while this is off. Zest itself keeps working.</p>`}
     </section>
-    <section class="panel srvlive">
-      <div class="connhead"><h3>What's happening now</h3><button class="btn" type="button" data-sact="test">Send a test message</button></div>
-      <div id="glasses" class="glasses" aria-live="off"></div>
-      <h4 class="sub">The last minute</h4>
-      <div id="river" class="river" role="img" aria-label="Timeline of requests in the last minute, one row per app"></div>
-      <div class="riverkey"><span><i class="k wait"></i>Waiting</span><span><i class="k think"></i>Thinking</span><span><i class="k write"></i>Writing</span></div>
+    <section class="srvsec srvlive">
+      <div class="sechead"><h3>Right now</h3>
+        <button class="sw" type="button" role="switch" aria-checked="${g.capture}" data-sact="capture"><i></i>Show what models are saying</button></div>
+      <div class="panel nowpanel">
+        <div id="glasses" class="nowgrid" aria-live="off"></div>
+        <div class="nowkey"><span><i class="kb"></i>Bubbles are the model thinking</span><span><i class="kl"></i>The lemon fills as it writes the answer</span><span id="todaycount"></span>
+          <button class="btn" type="button" data-sact="test">Send a test message</button></div>
+      </div>
     </section>
-    <section class="panel srvlist">
-      <div class="connhead"><h3>Requests</h3><div class="filters" id="srvfilters" style="margin:0"></div></div>
-      <div id="reqlist" class="reqlist"></div>
+    <section class="srvsec srvminute">
+      <div class="sechead"><h3>The last minute</h3></div>
+      <div class="panel">
+        <div id="river" class="river" role="img" aria-label="Timeline of requests in the last minute, one row per app"></div>
+        <div class="axis"><span>1 minute ago</span><span>30 seconds ago</span><span>now</span></div>
+      </div>
+      <div class="riverkey"><span><i class="k wait"></i>Reading the question</span><span><i class="k thk"></i>Thinking</span><span><i class="k write"></i>Writing the answer</span></div>
+    </section>
+    <section class="srvsec srvlist">
+      <div class="sechead"><h3>Requests</h3></div>
+      <div class="filters" id="srvfilters" style="margin:0 0 12px"></div>
+      <div id="reqlist" class="reqlist panel"></div>
     </section>
     <section class="panel srvshare">
       <h3>Who can connect</h3>
@@ -2488,36 +2518,63 @@ function srvBuild(){
         ${SRV.confirmKey ? `<span class="confirm"><button class="btn danger" type="button" data-sact="newkey">Yes, make a new key</button><button class="btn ghost" type="button" data-sact="nokey">Keep it</button></span>` : `<button class="btn" type="button" data-sact="askkey">Make a new key</button>`}</div>
     </section>`;
 }
-function stateWord(r){ return {waiting: "Waiting for the model", thinking: "Thinking…", answering: "Writing…", done: "Done", error: "Didn't work"}[r.state]; }
+const appLabel = a => a === "Zest" ? "Zest chat" : a;
+function stateWord(r){ return {waiting: "Reading the question", thinking: "Thinking", answering: "Writing", done: "Done", error: "Didn't work"}[r.state]; }
+const wordsOf = chars => Math.max(0, Math.round((chars || 0) / 5.5));
+function nowDetail(r, now){
+  const end = r.t_end || now;
+  if(r.state === "waiting") return `${(now - r.t0).toFixed(1)} s so far`;
+  if(r.state === "thinking") return `Thought for ${(now - (r.t_think || r.t0)).toFixed(1)} s, about ${wordsOf(r.think_chars).toLocaleString()} words`;
+  if(r.state === "answering") return `Writing for ${(now - (r.t_write || r.t0)).toFixed(1)} s, about ${wordsOf(r.out_chars).toLocaleString()} words so far`;
+  if(r.state === "error") return r.status === 401 ? "The key was wrong" : "That request didn't work";
+  return `Finished in ${(end - r.t0).toFixed(1)} s, about ${wordsOf(r.out_chars).toLocaleString()} words`;
+}
+function glassSVG(r){
+  const lvl = r.state === "thinking" ? Math.min(.3, .08 + r.think_chars / 2500) : r.state === "answering" ? .3 + Math.min(.62, r.out_chars / 1800) : r.state === "done" ? 1 : r.state === "error" ? .12 : .06;
+  const y = 120 - lvl * 108, id = "g" + r.id;
+  const bub = r.state === "thinking" || r.state === "waiting" ? [[22, 0], [36, .7], [48, 1.3], [30, 1.9], [42, .35]].map(([cx, d], i) => `<circle class="bub" cx="${cx}" cy="116" r="${i % 2 ? 3 : 4.5}" style="animation-delay:${d}s"/>`).join("") : "";
+  return `<svg class="glasssvg ${r.state}" viewBox="0 0 70 128" width="70" height="128" aria-hidden="true"><defs><clipPath id="${id}"><path d="M6 6h58l-6 112q-1 4-5 4H17q-4 0-5-4z"/></clipPath></defs>
+    <path d="M6 6h58l-6 112q-1 4-5 4H17q-4 0-5-4z" class="gfill"/>
+    <g clip-path="url(#${id})"><rect class="liqsvg" x="0" y="${y.toFixed(1)}" width="70" height="${(128 - y).toFixed(1)}"/>${bub}</g>
+    <path d="M6 6h58l-6 112q-1 4-5 4H17q-4 0-5-4z" class="gline"/></svg>`;
+}
 function glassHTML(r){
-  const lvl = r.state === "thinking" ? Math.min(.35, .08 + r.think_chars / 1500) : r.state === "answering" ? .35 + Math.min(.62, r.out_chars / 1200) : r.state === "done" ? 1 : r.state === "error" ? .12 : .06;
-  return `<div class="glass ${r.state}" data-gid="${r.id}"><div class="tumbler"><div class="liq" style="height:${(lvl * 100).toFixed(0)}%">${r.state === "thinking" ? '<b></b><b></b><b></b><b></b><b></b>' : ""}</div></div><div class="gl"><b>${esc(r.app)}</b><span>${esc(friendly(r.model || "") || "a model")}</span><em>${stateWord(r)}</em></div></div>`;
+  const g = SRV.g || {}, q = r.quote;
+  return `<article class="nowcard ${r.state}" data-gid="${r.id}">
+    <header><span class="appbadge">${esc((appLabel(r.app)[0] || "?").toUpperCase())}</span><b>${esc(appLabel(r.app))}</b></header>
+    <div class="nowbody">${glassSVG(r)}<div class="nowtext"><h4>${stateWord(r)}</h4><p class="nowdetail" data-rid="${r.id}">${esc(nowDetail(r, srvNow()))}</p>
+      <p class="nowmodel">${esc(friendly(r.model || "") || "a model")}</p></div></div>
+    ${q ? `<blockquote class="nowquote">“${esc(q.replace(/[*_`#>]+/g, "").replace(/\s+/g, " ").trim())}”</blockquote>` : ""}</article>`;
 }
 function srvPaint(){
   if(!SRV.built || S.view !== "server") return;
   const now = srvNow(), all = [...SRV.reqs.values()].sort((a, b) => b.id - a.id);
-  const live = all.filter(r => ["waiting", "thinking", "answering"].includes(r.state) || (r.t_end && now - r.t_end < 5 && r.state === "done"));
+  const live = all.filter(r => ["waiting", "thinking", "answering"].includes(r.state) || (r.t_end && now - r.t_end < 5 && r.state === "done")).sort((a, b) => a.id - b.id);
   const gl = $("#glasses");
-  const sig = live.map(r => r.id + r.state + Math.round((r.state === "answering" ? r.out_chars : r.think_chars) / 40)).join("|");
+  const sig = live.map(r => r.id + r.state + Math.round((r.state === "answering" ? r.out_chars : r.think_chars) / 60) + (r.quote ? r.quote.length : 0)).join("|");
   if(gl && gl.dataset.sig !== sig){
     gl.dataset.sig = sig;
-    gl.innerHTML = live.length ? live.slice(0, 8).map(glassHTML).join("") + (live.length > 8 ? `<div class="gmore">+${live.length - 8} more</div>` : "")
-      : `<p class="quiet2">Nothing is being asked right now. When an app uses your models, a glass fills up here for each request: it bubbles while the model thinks, and turns lemon as the answer is written.</p>`;
+    gl.innerHTML = live.length ? live.slice(0, 6).map(glassHTML).join("") + (live.length > 6 ? `<div class="gmore">+${live.length - 6} more</div>` : "")
+      : `<p class="quiet2">Nothing is being asked right now. When an app uses your models, a card with a glass appears here for each request: it bubbles while the model thinks, and the lemon fills as the answer is written.${SRV.g && !SRV.g.capture ? " Turn on “Show what models are saying” to see a line of what it is saying, too." : ""}</p>`;
   }
-  // the river
+  $$("#glasses .nowdetail").forEach(el => { const r = SRV.reqs.get(+el.dataset.rid); if(r) el.textContent = nowDetail(r, now); });
+  const tc = $("#todaycount"); if(tc) tc.textContent = SRV.today != null ? `${SRV.today.toLocaleString()} request${SRV.today === 1 ? "" : "s"} today` : "";
+  // the last minute: one lane per app, one pill per request, split into reading, thinking and writing
   const rv = $("#river"); if(rv){
     const W = 60, t1 = now, t0 = now - W, recent = all.filter(r => (r.t_end || t1) >= t0);
     const apps = []; for(const r of recent.slice().reverse()) if(!apps.includes(r.app)) apps.push(r.app);
     const lanes = apps.slice(0, 6), x = t => Math.max(0, Math.min(100, (t - t0) / W * 100));
-    rv.innerHTML = lanes.length ? lanes.map(a => `<div class="lane"><span class="ln2">${esc(a)}</span><div class="track">${recent.filter(r => r.app === a).map(r => {
-      const end = r.t_end || t1, s1 = r.t_think || r.t_write || end, s2 = r.t_write || end;
-      const seg = (a1, b1, cls) => b1 > a1 ? `<i class="seg ${cls}" style="left:${x(a1)}%;width:${Math.max(.6, x(b1) - x(a1))}%"></i>` : "";
-      return seg(r.t0, s1, "wait") + (r.t_think ? seg(r.t_think, s2, "think") : "") + (r.t_write ? seg(r.t_write, end, r.state === "error" ? "bad" : "write") : r.t_end ? seg(s1, end, "write") : "");
+    rv.innerHTML = lanes.length ? lanes.map(a => `<div class="lane"><span class="ln2">${esc(appLabel(a))}</span><div class="track">${recent.filter(r => r.app === a).map(r => {
+      const end = r.t_end || t1, think = r.t_think || null, write = r.t_write || null;
+      const s1 = think || write || end, s2 = write || end, a0 = Math.max(r.t0, t0);
+      const dur = Math.max(end - r.t0, .001), part = (p0, p1) => Math.max(0, p1 - p0) / dur * 100;
+      const segs = `<i class="p wait" style="flex:${part(r.t0, s1)}"></i>` + (think ? `<i class="p thk" style="flex:${part(think, s2)}"></i>` : "") + (write ? `<i class="p ${r.state === "error" ? "bad" : "write"}" style="flex:${part(write, end)}"></i>` : r.t_end && !think ? `<i class="p write" style="flex:${part(s1, end)}"></i>` : "");
+      return `<span class="rbar" style="left:${x(a0)}%;width:max(10px,${(x(end) - x(a0)).toFixed(2)}%)" title="${esc(stateWord(r))}">${segs}</span>`;
     }).join("")}</div></div>`).join("") : `<div class="lane"><span class="ln2"></span><div class="track empty">Quiet for the last minute</div></div>`;
   }
   // the list
   const fl = $("#srvfilters"), apps = [...new Set(all.map(r => r.app))];
-  if(fl){ const fs = JSON.stringify([apps, SRV.filter]); if(fl.dataset.sig !== fs){ fl.dataset.sig = fs; fl.innerHTML = ["all", ...apps].map(a => `<button type="button" data-sact="filter" data-a="${esc(a)}" aria-pressed="${SRV.filter === a}">${a === "all" ? "Everything" : esc(a)}</button>`).join(""); } }
+  if(fl){ const fs = JSON.stringify([apps, SRV.filter]); if(fl.dataset.sig !== fs){ fl.dataset.sig = fs; fl.innerHTML = ["all", ...apps].map(a => `<button type="button" data-sact="filter" data-a="${esc(a)}" aria-pressed="${SRV.filter === a}">${a === "all" ? "All apps" : esc(appLabel(a))}</button>`).join(""); } }
   const rows = all.filter(r => SRV.filter === "all" || r.app === SRV.filter).slice(0, 60);
   const rl = $("#reqlist"); if(rl){
     const rs = rows.map(r => r.id + r.state + r.out_chars + r.think_chars + (SRV.open.has(r.id) ? "o" : "") + (r.t_end ? "e" : Math.floor(now))).join(",");
@@ -2534,9 +2591,9 @@ function reqRow(r){
   const chip = r.state === "done" ? `<span class="chip ok">Done · ${dur.toFixed(1)}s</span>` : r.state === "error" ? `<span class="chip bad">${r.status === 401 ? "Wrong key" : "Didn't work"}</span>` : `<span class="chip lem">${stateWord(r)}</span>`;
   const g = SRV.g || {};
   return `<div class="req ${open ? "open" : ""}" data-rid="${r.id}"><button type="button" class="reqhead" data-sact="row" data-id="${r.id}" aria-expanded="${open}">
-      <span class="rt mono num">${fmtT(r.t0)}</span><span class="reqapp"><i>${esc(r.app[0] || "?")}</i>${esc(r.app)}</span><span class="rm">${esc(friendly(r.model || "") || (r.status === 401 ? (r.error || "no key sent").toLowerCase() : r.path))}</span>${chip}</button>
+      <span class="rt mono num">${fmtT(r.t0)}</span><span class="reqapp"><i>${esc(appLabel(r.app)[0] || "?")}</i>${esc(appLabel(r.app))}</span><span class="rm">${esc(friendly(r.model || "") || (r.status === 401 ? (r.error || "no key sent").toLowerCase() : r.path))}</span>${chip}</button>
     ${open ? `<div class="reqbody">
-      <dl class="kv"><dt>Asked for</dt><dd>${esc(r.path)}</dd><dt>From</dt><dd>${esc(r.source === "zest" ? "Zest's own chat" : r.ip)}</dd>
+      <dl class="kv"><dt>Asked for</dt><dd>${esc(r.path)}</dd><dt>From</dt><dd>${esc(r.source === "zest" ? "Zest chat" : r.ip)}</dd>
         ${r.model ? `<dt>Model</dt><dd>${esc(r.model)}</dd>` : ""}
         ${r.t_think ? `<dt>Thought for</dt><dd>${thinkS.toFixed(1)} s</dd>` : ""}${r.t_write ? `<dt>Wrote for</dt><dd>${writeS.toFixed(1)} s</dd>` : ""}
         ${r.tokens_in != null ? `<dt>Question size</dt><dd>${r.tokens_in} tokens</dd>` : ""}${r.tokens_out != null ? `<dt>Answer size</dt><dd>${r.tokens_out} tokens</dd>` : ""}

@@ -8,7 +8,9 @@ Both that listener and Zest's own chat go through relay(), which forwards the re
 watching the answer stream past, so the Server tab can show who asked, which model answered, and whether it was
 thinking or already writing.
 """
+import datetime
 import hmac
+import os
 import http.client
 import json
 import re
@@ -38,7 +40,7 @@ def norm(path):
 
 # ---------------------------------------------------------------- who is asking
 _APPS = [
-    (r"opencode", "opencode"), (r"hermes", "Hermes"), (r"open[- ]?webui", "Open WebUI"),
+    (r"opencode", "opencode"), (r"hermes", "Hermes agent"), (r"open[- ]?webui", "Open WebUI"),
     (r"claude[- ]?code", "Claude Code"), (r"cline", "Cline"), (r"roo", "Roo Code"), (r"continue", "Continue"),
     (r"aider", "Aider"), (r"cursor", "Cursor"), (r"zed", "Zed"), (r"lobe", "LobeChat"), (r"librechat", "LibreChat"),
     (r"anythingllm", "AnythingLLM"), (r"sillytavern", "SillyTavern"), (r"msty", "Msty"), (r"jan/", "Jan"),
@@ -68,10 +70,44 @@ class Recorder:
         self.lock = threading.Lock()
         self.items = []
         self.seq = 0
+        self.day, self.today = self._load_day()
+
+    # "Requests today" survives a restart, so it is kept in a tiny file beside Zest's other data.
+    @staticmethod
+    def _day_path():
+        return os.path.join(store.data_dir(), "requests-today.json")
+
+    def _load_day(self):
+        now = datetime.date.today().isoformat()
+        try:
+            with open(self._day_path()) as f:
+                d = json.load(f)
+            if d.get("day") == now:
+                return now, int(d.get("n", 0))
+        except (OSError, ValueError):
+            pass
+        return now, 0
+
+    def _count(self):
+        now = datetime.date.today().isoformat()
+        if now != self.day:
+            self.day, self.today = now, 0
+        self.today += 1
+        try:
+            os.makedirs(store.data_dir(), exist_ok=True)
+            with open(self._day_path(), "w") as f:
+                json.dump({"day": self.day, "n": self.today}, f)
+        except OSError:
+            pass
+
+    def count_today(self):
+        with self.lock:
+            return self.today if self.day == datetime.date.today().isoformat() else 0
 
     def start(self, app, source, method, path, model, stream, ip):
         with self.lock:
             self.seq += 1
+            self._count()
             r = {"id": self.seq, "app": app, "source": source, "method": method, "path": path, "model": model or "",
                  "stream": bool(stream), "ip": ip, "state": "waiting", "t0": time.time(), "t_think": None, "t_write": None,
                  "t_end": None, "status": None, "think_chars": 0, "out_chars": 0, "tokens_in": None, "tokens_out": None,
@@ -79,6 +115,19 @@ class Recorder:
             self.items.append(r)
             del self.items[:-MAX_KEEP]
             return r
+
+    def quotes(self, ids):
+        """The last few words of what each running request is thinking or writing, for the live cards."""
+        out = {}
+        with self.lock:
+            for r in self.items:
+                if r["id"] in ids and r["state"] in ("thinking", "answering"):
+                    txt = (r["think"] if r["state"] == "thinking" else r["answer"]).strip()
+                    if txt:
+                        tail = txt[-260:]
+                        cut = max(tail.rfind(". "), tail.rfind("? "), tail.rfind("! "), tail.rfind("\n"))
+                        out[r["id"]] = (tail[cut + 1:] if 0 <= cut < len(tail) - 25 else tail).strip()[-200:]
+        return out
 
     def snapshot(self, limit=60, text_ids=()):
         """The newest requests, newest last. Question and answer text only goes out for the ids asked about."""
