@@ -362,6 +362,83 @@ details.aegrp>summary small{margin-left:auto;font:11.5px var(--mono);color:var(-
 .aeprev code{font:12.5px/1.5 var(--mono);overflow-wrap:anywhere;color:var(--text)}
 @media (max-width:640px){.aerow{grid-template-columns:1fr}}
 
+/* ---------- setup ---------- */
+.navdot{position:absolute;top:8px;right:18px;width:9px;height:9px;border-radius:50%;background:var(--lemon);box-shadow:0 0 0 2px var(--bg)}
+.nav button{position:relative}
+.nav2{margin-bottom:4px}
+.rail{overflow-y:auto}
+.faint{color:var(--faint)}
+.step a,.note-warn a,.lead a{color:var(--lemon-text);text-underline-offset:3px}
+.btn.ghost{background:none;border-color:transparent}
+.hero{margin:6px 0 30px}
+.hero h2{font:500 clamp(34px,5vw,52px)/1.05 var(--serif);letter-spacing:-.02em;margin:0 0 12px}
+.hero h2 em{font-style:italic;color:var(--lemon-text)}
+.hero p{color:var(--muted);max-width:62ch;margin:0 0 22px;font-size:16px}
+.flow{display:grid;grid-template-columns:repeat(4,1fr);gap:0;list-style:none;margin:0;padding:0;counter-reset:fl}
+.flow li{position:relative;padding:14px 16px 14px 56px;border:1px solid var(--line);background:var(--surface);min-height:76px;display:grid;align-content:center;gap:1px}
+.flow li:first-child{border-radius:14px 0 0 14px}.flow li:last-child{border-radius:0 14px 14px 0}
+.flow li+li{border-left:0}
+.flow li::before{counter-increment:fl;content:counter(fl);position:absolute;left:15px;top:50%;transform:translateY(-50%);width:28px;height:28px;border-radius:50%;background:var(--surface-2);display:grid;place-items:center;font:600 13px var(--mono);color:var(--muted)}
+.flow li.done::before{content:"✓";background:var(--lemon);color:var(--lemon-ink)}
+.flow li.now{border-color:var(--lemon);background:var(--lemon-wash)}
+.flow li.now+li{border-left:1px solid var(--line)}
+.flow b{font-size:14px}.flow span{font-size:12px;color:var(--muted)}
+.step{border:1px solid var(--line);border-radius:var(--radius);background:var(--surface);margin-bottom:16px;overflow:hidden}
+.step>header{display:flex;align-items:center;gap:14px;padding:18px 22px;cursor:default}
+.step .num{width:32px;height:32px;border-radius:50%;background:var(--surface-2);display:grid;place-items:center;font:600 14px var(--mono);color:var(--muted);flex:none}
+.step.done .num{background:var(--lemon);color:var(--lemon-ink)}
+.step h3{margin:0;font:600 22px var(--serif);flex:1}
+.step .sbody{padding:0 22px 22px 68px;display:grid;gap:16px}
+.step .lead{margin:0;color:var(--muted);max-width:66ch}
+.choices{display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:12px}
+.choice{border:1px solid var(--line);border-radius:12px;padding:14px 16px;background:var(--bg);display:grid;gap:8px;align-content:start;position:relative}
+.choice[aria-checked="true"]{border-color:var(--lemon);background:var(--lemon-wash)}
+.choice .ct{display:flex;gap:10px;align-items:center;font-weight:600}
+.choice .ct .rad{width:18px;height:18px;border-radius:50%;border:2px solid var(--faint);flex:none;display:grid;place-items:center}
+.choice[aria-checked="true"] .rad{border-color:var(--lemon-text)}
+.choice[aria-checked="true"] .rad::after{content:"";width:8px;height:8px;border-radius:50%;background:var(--lemon-text)}
+.choice p{margin:0;font-size:13.5px;color:var(--muted)}
+.choice .btn{justify-self:start}
+.choice .row2{display:grid;grid-template-columns:1fr 100px;gap:8px}
+.choice input[type=text],.choice input[type=number],.choice input[type=password]{width:100%;min-height:38px;border:1px solid var(--line);border-radius:9px;background:var(--surface);color:var(--text);padding:0 11px;outline:none}
+.choice input:focus{border-color:var(--lemon)}
+.panel2{border:1px solid var(--line-soft);border-radius:12px;padding:14px 16px;background:var(--bg);display:grid;gap:12px}
+.panel2 .line{display:flex;gap:10px;align-items:center;flex-wrap:wrap}
+.panel2 .line .grow{flex:1;min-width:150px}
+.stat-dot{width:9px;height:9px;border-radius:50%;background:var(--faint);flex:none}
+.stat-dot.ok{background:var(--leaf)}.stat-dot.busy{background:var(--lemon);animation:pulse 1s infinite}.stat-dot.bad{background:var(--bad)}
+.prog{height:8px;border-radius:99px;background:var(--surface-2);overflow:hidden;position:relative}
+.prog i{position:absolute;inset:0 auto 0 0;background:var(--lemon);border-radius:99px;transition:width .4s}
+.prog.ind i{width:35%;animation:slide 1.3s ease-in-out infinite}
+@keyframes slide{0%{left:-35%}100%{left:100%}}
+.tail{margin:0;font:12px/1.5 var(--mono);background:var(--surface);border:1px solid var(--line);border-radius:9px;padding:10px 12px;overflow:auto;max-height:150px;white-space:pre-wrap;color:var(--muted)}
+.note-warn{border:1px solid color-mix(in srgb,var(--warn) 45%,transparent);color:var(--warn);border-radius:10px;padding:10px 13px;font-size:13.5px}
+.note-bad{border:1px solid color-mix(in srgb,var(--bad) 45%,transparent);color:var(--bad);border-radius:10px;padding:10px 13px;font-size:13.5px}
+.srclist{display:grid;gap:8px}
+.src{display:grid;grid-template-columns:auto 1fr auto;gap:12px;align-items:center;border:1px solid var(--line);border-radius:11px;padding:11px 14px;background:var(--bg)}
+.src input{width:18px;height:18px;accent-color:var(--lemon)}
+.src b{font-size:14px}.src small{display:block;color:var(--muted);font-size:12.5px;overflow-wrap:anywhere}
+.src .sz{font:12px var(--mono);color:var(--faint);text-align:right}
+.starters{display:grid;gap:8px}
+.starter{display:grid;grid-template-columns:1fr auto;gap:12px;align-items:center;border:1px solid var(--line);border-radius:11px;padding:11px 14px;background:var(--bg)}
+.starter b{font-size:14px}.starter small{display:block;color:var(--muted);font-size:12.5px}
+.starter .prog{margin-top:7px}
+.setfoot{display:flex;gap:12px;justify-content:flex-end;flex-wrap:wrap;margin:22px 0 10px}
+#fsdlg{max-width:min(560px,calc(100vw - 32px))}
+#fsdlg form{padding:0;display:flex;flex-direction:column;max-height:calc(100dvh - 34px)}
+#fsdlg header{padding:22px 24px 6px}#fsdlg header p{margin:4px 0 0;color:var(--muted);font-size:12.5px;overflow-wrap:anywhere}
+#fslist{display:grid;gap:2px}
+#fslist button{display:flex;gap:10px;align-items:center;text-align:left;border:0;background:none;padding:9px 10px;border-radius:9px;min-height:40px;width:100%}
+#fslist button:hover{background:var(--surface-2)}
+#fslist .gg{margin-left:auto;font:11.5px var(--mono);color:var(--lemon-text)}
+.dlpill{display:inline-flex;align-items:center;gap:8px;padding:6px 12px;border:1px solid var(--line);border-radius:999px;background:var(--surface);font:12.5px var(--mono);min-height:36px;color:var(--text)}
+.dlpill[hidden]{display:none}
+.dlpill .prog{width:60px;height:6px}
+.card .prog{margin:2px 0}
+.card .dlrow{display:flex;gap:8px;align-items:center;font:12px var(--mono);color:var(--muted)}
+@media (max-width:900px){.flow{grid-template-columns:1fr 1fr}.flow li{border-radius:0!important;border-left:1px solid var(--line)!important;margin:-1px 0 0 -1px}.step .sbody{padding-left:22px}}
+@media (max-width:640px){.flow{grid-template-columns:1fr}.step>header{padding:16px}.step .sbody{padding:0 16px 18px}.rail{overflow-x:auto}.nav2{margin:0;width:auto}.src{grid-template-columns:auto 1fr}.src .sz{grid-column:2;text-align:left}}
+
 /* ---------- logs ---------- */
 .logbar{display:flex;gap:10px;align-items:center;margin-bottom:14px;flex-wrap:wrap}
 .logbar input[type=search]{flex:1;min-width:160px;min-height:40px;border:1px solid var(--line);border-radius:10px;background:var(--surface);padding:0 14px;outline:none}
@@ -418,6 +495,7 @@ details.aegrp>summary small{margin-left:auto;font:11.5px var(--mono);color:var(-
       <button data-view="logs"><svg class="i" viewBox="0 0 24 24"><path d="M4 6l6 6-6 6"/><path d="M13 19h7"/></svg>Logs</button>
     </div>
     <div class="spacer"></div>
+    <div class="nav nav2"><button data-view="setup" id="navsetup"><svg class="i" viewBox="0 0 24 24"><path d="M5 21V4"/><path d="M5 4h11l-2 4 2 4H5"/></svg>Setup<span class="navdot" id="navdot" hidden></span></button></div>
     <button class="theme" id="theme" aria-label="Toggle light or dark theme"><svg class="i" viewBox="0 0 24 24"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M2 12h2M20 12h2M5 5l1.4 1.4M17.6 17.6L19 19M5 19l1.4-1.4M17.6 6.4L19 5"/></svg></button>
   </nav>
 
@@ -426,6 +504,7 @@ details.aegrp>summary small{margin-left:auto;font:11.5px var(--mono);color:var(-
       <button class="btn ghost menu-btn" id="menu" aria-label="Show conversations"><svg class="i" viewBox="0 0 24 24"><path d="M4 7h16M4 12h16M4 17h16"/></svg></button>
       <h1 id="title">Chat</h1>
       <div class="grow"></div>
+      <button class="dlpill" id="dlpill" type="button" hidden aria-label="Model downloads in progress"></button>
       <button class="status" id="status" aria-label="Server status, open models" type="button">
         <span class="dot" id="sdot"></span>
         <span class="name" id="sname">Connecting…</span>
@@ -468,7 +547,8 @@ details.aegrp>summary small{margin-left:auto;font:11.5px var(--mono);color:var(-
 
     <!-- MODELS -->
     <section class="view" id="v-models"><div class="pad"><div class="wrap">
-      <p class="lede">Everything your Lemonade server can run. The meter on each card compares the model with the VRAM that is actually free on the devices Lemonade is set to use.</p>
+      <p class="lede">Everything your Lemonade can run. The meter on each card compares the model with the VRAM that is actually free on the devices Lemonade is set to use.</p>
+      <div id="modelsbanner"></div>
       <div class="filters" id="filters" role="group" aria-label="Filter models"></div>
       <div class="grid" id="grid"></div>
     </div></div></section>
@@ -486,6 +566,9 @@ details.aegrp>summary small{margin-left:auto;font:11.5px var(--mono);color:var(-
       <p class="lede">Every engine Lemonade runs can use different backends: CUDA, Vulkan, ROCm, CPU and more. Choose which one each engine uses, or install one that's missing. Changes apply the next time a model loads.</p>
       <div id="bk"></div>
     </div></div></section>
+
+    <!-- SETUP -->
+    <section class="view" id="v-setup"><div class="pad"><div class="wrap" id="setup"></div></div></section>
 
     <!-- SETTINGS -->
     <section class="view" id="v-settings"><div class="pad"><div class="wrap">
@@ -511,6 +594,13 @@ details.aegrp>summary small{margin-left:auto;font:11.5px var(--mono);color:var(-
     <h3 id="idname">Install backend</h3>
     <p id="idtext" style="margin:0;color:var(--muted)"></p>
     <div class="actions"><button class="btn" value="cancel" formnovalidate>Cancel</button><button class="btn primary" value="ok">Download and install</button></div>
+  </form>
+</dialog>
+<dialog id="fsdlg">
+  <form id="fsform" onsubmit="return false">
+    <header><h3>Choose a folder</h3><p id="fspath" class="mono"></p></header>
+    <div class="odbody"><div id="fslist" role="listbox" aria-label="Folders"></div><p class="errline" id="fserr" hidden></p></div>
+    <div class="actions"><button type="button" class="btn" id="fscancel">Cancel</button><button type="button" class="btn primary" id="fsuse">Use this folder</button></div>
   </form>
 </dialog>
 <dialog id="optdlg">
@@ -557,6 +647,7 @@ function toast(msg){ const t = $("#toast"); t.textContent = msg; t.classList.add
 const S = {
   view: "chat", models: [], loaded: null, health: null, gpus: [], info: null, hist: {},
   filter: store.get("zest.filter", "downloaded"), q: "",
+  downloads: [], dlSupported: null, bk: null,
   convs: store.get("zest.convs", []), cur: store.get("zest.cur", null),
   model: store.get("zest.model", ""), busy: false, abort: null,
   temp: store.get("zest.temp", 0.7), maxtok: store.get("zest.maxtok", 0), tps: null, loadingModel: null
@@ -571,7 +662,7 @@ async function api(path, opts={}){
 }
 
 /* ======================= navigation ======================= */
-const TITLES = {chat:"Chat", models:"Models", hardware:"Hardware", backends:"Backends", settings:"Settings", logs:"Logs"};
+const TITLES = {chat:"Chat", models:"Models", hardware:"Hardware", backends:"Backends", settings:"Settings", logs:"Logs", setup:"Setup"};
 function show(v){
   S.view = v;
   $$(".view").forEach(el => el.classList.toggle("active", el.id === "v-"+v));
@@ -584,9 +675,11 @@ function show(v){
   if(v === "hardware") renderHardware();
   if(v === "backends") loadBackends();
   if(v === "settings") loadSettings();
+  if(v === "setup") refreshSetup(true);
   if(v === "logs") loadLogs();
 }
 $$(".nav button").forEach(b => b.addEventListener("click", () => show(b.dataset.view)));
+document.addEventListener("click", e => { const l = e.target.closest("a[data-go]"); if(l){ e.preventDefault(); show(l.dataset.go); } });
 $("#status").addEventListener("click", () => show("models"));
 $("#theme").addEventListener("click", () => {
   const cur = document.documentElement.dataset.theme || (matchMedia("(prefers-color-scheme: light)").matches ? "light" : "dark");
@@ -649,15 +742,19 @@ async function loadModels(){
 function renderStatus(){
   const d = $("#sdot");
   d.className = "dot " + (!S.up ? "off" : S.loadingModel || S.busy ? "busy" : S.loaded ? "on" : "");
-  $("#sname").textContent = !S.up ? "Server unreachable" : S.loadingModel ? "Loading " + S.loadingModel : (S.loaded || "No model loaded");
+  const eng = SU.st && SU.st.mode === "builtin" ? SU.st.engine : null;
+  $("#sname").textContent = !S.up ? (eng ? (eng.state === "error" ? "Lemonade couldn't start" : "Starting Lemonade…") : "Server unreachable") : S.loadingModel ? "Loading " + S.loadingModel : (S.loaded || "No model loaded");
   const g = activeGpus();
   $("#sgpu").textContent = g.length ? g.map(x => `${gb(x.mem_used_mb).toFixed(1)}/${gb(x.mem_total_mb).toFixed(0)} GB`).join(" · ") : "";
   $("#stps").textContent = S.tps ? S.tps.toFixed(1) + " tok/s" : "";
+  renderDlPill();
   $("#hintdev").textContent = S.info ? "Running on " + activeName() : "";
 }
 async function tick(){
   if(document.hidden) return;
-  await Promise.all([pollGpu(), pollServer()]);
+  await Promise.all([pollGpu(), pollServer(), pollDownloads()]);
+  if(!S.up) await refreshSetup();
+  else if(!S.models.length) { await loadModels(); if(S.view === "models") renderModels(); }
   renderStatus();
   if(S.view === "hardware") renderHardware();
   if(S.view === "models") updateModelBadges();
@@ -665,6 +762,51 @@ async function tick(){
 }
 setInterval(tick, 2500);
 document.addEventListener("visibilitychange", tick);
+
+/* ======================= model downloads ======================= */
+let dlFast = null;
+const isActiveJob = j => ["downloading", "paused"].includes(j.status);
+async function pollDownloads(){
+  try{
+    const r = await api("/api/v1/downloads");
+    S.dlSupported = true;
+    const before = S.downloads || [];
+    S.downloads = Array.isArray(r) ? r : [];
+    const ended = before.filter(isActiveJob).map(p => ({p, now: S.downloads.find(j => j.id === p.id)})).filter(x => !x.now || !isActiveJob(x.now));
+    for(const {p, now} of ended){
+      if(now && now.status === "error") toast(`Download of ${p.model_name} failed${now.error ? ": " + now.error : ""}`);
+      else if(!now || now.status === "completed") toast(`${p.model_name} is downloaded`);
+    }
+    if(ended.length){ await loadModels(); if(S.view === "models") renderModels(); if(S.view === "setup") renderSetup(true); syncModelSelect(); }
+  }catch{ if(S.dlSupported === null) S.dlSupported = false; }
+  const active = S.downloads.some(isActiveJob);
+  if(active && !dlFast) dlFast = setInterval(() => { pollDownloads(); if(S.view === "models") renderModels(); if(S.view === "setup") renderSetup(); }, 1000);
+  else if(!active && dlFast){ clearInterval(dlFast); dlFast = null; }
+  renderDlPill();
+}
+function renderDlPill(){
+  const pill = $("#dlpill"), js = (S.downloads || []).filter(isActiveJob);
+  pill.hidden = !js.length;
+  if(!js.length) return;
+  const j = js[0], pct = j.percent || 0;
+  pill.innerHTML = `↓ ${esc(j.model_name.length > 22 ? j.model_name.slice(0, 21) + "…" : j.model_name)} <span class="prog"><i style="width:${pct}%"></i></span> ${pct}%${js.length > 1 ? ` +${js.length - 1}` : ""}`;
+}
+$("#dlpill").addEventListener("click", () => show("models"));
+async function startDownload(id){
+  try{
+    await api("/api/v1/pull", {method:"POST", headers:{"Content-Type":"application/json"}, body:JSON.stringify({model_name:id, stream:true, subscribe:false})});
+    SU.msg.dl = ""; await pollDownloads(); if(S.view === "models") renderModels(); if(S.view === "setup") renderSetup(true);
+  }catch(e){ SU.msg.dl = e.message; toast("Couldn't start the download: " + e.message); if(S.view === "setup") renderSetup(true); }
+}
+async function cancelDownload(id){
+  try{
+    const body = a => JSON.stringify({id: "model:" + id, action: a});
+    await api("/api/v1/downloads/control", {method:"POST", headers:{"Content-Type":"application/json"}, body: body("cancel")});
+    await new Promise(r => setTimeout(r, 600));
+    await api("/api/v1/downloads/control", {method:"POST", headers:{"Content-Type":"application/json"}, body: body("remove")}).catch(() => {});
+  }catch(e){ toast(e.message); }
+  await pollDownloads(); if(S.view === "models") renderModels(); if(S.view === "setup") renderSetup(true);
+}
 
 /* ======================= markdown-lite ======================= */
 function inline(s){
@@ -929,14 +1071,20 @@ function cardHTML(m){
     ${savedLine(m)}
     ${f ? `<div><div class="fit ${f.cls}" role="img" aria-label="${esc(f.note)}"><i style="width:${f.pct}%"></i></div><div class="fitnote ${f.cls}" style="margin-top:6px">${esc(f.note)}</div></div>` : ""}
     <div class="act">${
-      !m.downloaded ? `<button class="btn" data-copycmd="${esc(m.id)}">${ICON.copy} Copy pull command</button>` :
+      !m.downloaded ? (dlJob(m.id) ? `<div class="dlrow" style="flex:1"><div class="prog" style="flex:1"><i style="width:${dlJob(m.id).percent}%"></i></div>${dlJob(m.id).percent}%</div><button class="btn" data-canceldl="${esc(m.id)}">Cancel</button>`
+        : S.dlSupported === false ? `<button class="btn" data-copycmd="${esc(m.id)}">${ICON.copy} Copy pull command</button>`
+        : `<button class="btn primary" data-dl="${esc(m.id)}">Download${m.size ? " · " + (m.size < 10 ? m.size.toFixed(1) : Math.round(m.size)) + " GB" : ""}</button>`) :
       isLoaded ? `<button class="btn" data-unload="${esc(m.id)}">Unload</button><button class="btn primary" data-chat="${esc(m.id)}">Chat</button><button class="btn icon" data-opts="${esc(m.id)}" aria-label="Options for ${esc(m.id)}" title="Options">${ICON.sliders}</button>` :
       `<button class="btn primary" data-load="${esc(m.id)}">${ICON.bolt} Load</button><button class="btn icon" data-opts="${esc(m.id)}" aria-label="Options for ${esc(m.id)}" title="Options">${ICON.sliders}</button>`
     }</div>
   </article>`;
 }
 function renderModels(){
+  if(S.filter === "downloaded" && S.models.length && !S.models.some(m => m.downloaded)) S.filter = "chat";   // nothing downloaded yet: show what could be
   renderFilters();
+  const none = S.models.length && !S.models.some(m => m.downloaded), noBackend = S.bk && S.bk.length && !backendsInstalled().length;
+  $("#modelsbanner").innerHTML = (noBackend ? `<div class="note-warn" style="margin-bottom:12px">No llama.cpp backend is installed yet, so models can't run. <a href="#setup" data-go="setup">Install one in Setup</a>.</div>` : "") +
+    (none ? `<div class="note-warn" style="margin-bottom:12px">You haven't downloaded any models yet. Press <b>Download</b> on one below, or <a href="#setup" data-go="setup">open Setup</a> for suggestions that fit your hardware.</div>` : "");
   const f = CATS.find(c => c[0]===S.filter)[2], q = S.q.toLowerCase();
   const list = S.models.filter(f).filter(m => !q || m.id.toLowerCase().includes(q) || (m.labels||[]).some(l=>l.includes(q)))
     .sort((a,b)=> (b.id===S.loaded)-(a.id===S.loaded) || b.downloaded-a.downloaded || a.id.localeCompare(b.id));
@@ -947,7 +1095,9 @@ $("#filters").addEventListener("click", e => { const b = e.target.closest("[data
 $("#filters").addEventListener("input", e => { if(e.target.id==="mq"){ S.q = e.target.value; const pos = e.target.selectionStart; renderModels(); const n = $("#mq"); n.focus(); n.setSelectionRange(pos,pos); } });
 $("#grid").addEventListener("click", async e => {
   const t = e.target.closest("button"); if(!t) return;
-  if(t.dataset.load || t.dataset.opts) openOptions(t.dataset.load || t.dataset.opts);
+  if(t.dataset.dl) startDownload(t.dataset.dl);
+  else if(t.dataset.canceldl) cancelDownload(t.dataset.canceldl);
+  else if(t.dataset.load || t.dataset.opts) openOptions(t.dataset.load || t.dataset.opts);
   else if(t.dataset.unload){ t.disabled = true; try{ await api("/api/v1/unload", {method:"POST", headers:{"Content-Type":"application/json"}, body:JSON.stringify({model_name:t.dataset.unload})}); toast("Unloaded"); }catch(err){ toast(err.message); } await tick(); renderModels(); }
   else if(t.dataset.chat){ S.model = t.dataset.chat; store.set("zest.model", S.model); syncModelSelect(); show("chat"); $("#input").focus(); }
   else if(t.dataset.copycmd){ navigator.clipboard?.writeText("lemonade pull " + t.dataset.copycmd); toast("Copied: lemonade pull " + t.dataset.copycmd); }
@@ -1291,6 +1441,262 @@ async function aeLoad(saved){
   }catch{ AE = null; }
 }
 
+/* ======================= setup / getting started ======================= */
+const SU = {st: null, busy: {}, sources: null, sel: new Set(), msg: {}, check: null, checkErr: "", sig: "", autoChecked: false};
+const fmtBytes = n => n >= 1e9 ? (n/1e9).toFixed(1) + " GB" : n >= 1e6 ? Math.round(n/1e6) + " MB" : Math.round(n/1e3) + " KB";
+const autoCheckOn = () => store.get("zest.autocheck", true);
+const llamaRecipe = () => (S.bk || []).find(r => r.recipe === "llamacpp");
+const backendsInstalled = () => (llamaRecipe()?.backends || []).filter(b => b.state === "installed");
+const downloadedChat = () => S.models.filter(m => m.downloaded && m.recipe === "llamacpp" && !(m.labels || []).includes("embeddings"));
+const dlJob = id => (S.downloads || []).find(j => j.model_name === id && ["downloading", "paused"].includes(j.status));
+
+async function refreshSetup(force){
+  try{ SU.st = await api("/ui/setup"); }catch{ return; }
+  if(SU.st.mode === "builtin" && autoCheckOn() && !SU.autoChecked && SU.st.engine.running){ SU.autoChecked = true; doCheck(true); }
+  if(S.view !== "setup") return;
+  if(force || !S.bk){ try{ S.bk = (await api("/ui/backends")).recipes; }catch{} }
+  renderSetup(force);
+}
+function updateNavDot(){
+  const on = !!(SU.check && SU.check.update_available && SU.st && SU.st.mode === "builtin");
+  $("#navdot").hidden = !on;
+}
+async function doCheck(silent){
+  SU.busy.check = true; if(!silent) renderSetup(true);
+  try{ SU.check = await api("/ui/engine/check", {method:"POST", headers:{"Content-Type":"application/json"}, body:"{}"}); SU.checkErr = ""; }
+  catch(e){ SU.check = null; SU.checkErr = silent ? "" : e.message; }
+  SU.busy.check = false; updateNavDot(); if(S.view === "setup") renderSetup(true);
+}
+function setupSteps(){
+  const st = SU.st;
+  const eng = !!st.lemonade.reachable, be = backendsInstalled().length > 0, mo = downloadedChat().length > 0, ch = S.convs.some(c => c.messages.length) || !!S.loaded;
+  return [{k: "eng", t: "Engine", d: "Lemonade runs your models", done: eng}, {k: "be", t: "Backend", d: "Fits your hardware", done: be},
+          {k: "mo", t: "Models", d: "Bring or download one", done: mo}, {k: "ch", t: "Chat", d: "Load it and say hello", done: ch}];
+}
+function stepShell(n, key, title, doneFlag, chipHTML, body){
+  return `<section class="step ${doneFlag ? "done" : ""}" id="step-${key}"><header><span class="num">${doneFlag ? "✓" : n}</span><h3>${esc(title)}</h3>${chipHTML || ""}</header><div class="sbody">${body}</div></section>`;
+}
+
+/* ---- step 1: the engine */
+function engineStep(){
+  const st = SU.st, eng = st.engine, b = SU.busy, mode = st.mode;
+  const verLabel = eng.active ? `${eng.active.version} <span class="faint">(${eng.active.source === "bundled" ? "came with Zest" : "downloaded update"})</span>` : "";
+  const bi = mode === "builtin";
+  let chip = bi ? (eng.state === "error" ? `<span class="chip" style="color:var(--bad)">Needs attention</span>` : eng.running && st.lemonade.reachable ? `<span class="chip ok">Running</span>` : `<span class="chip lem">Starting…</span>`)
+                : (st.lemonade.reachable ? `<span class="chip ok">Connected</span>` : `<span class="chip" style="color:var(--bad)">Not reachable</span>`);
+  const built = `<div class="choice" role="radio" aria-checked="${bi}" tabindex="0" data-act="mode-builtin">
+      <div class="ct"><span class="rad"></span>Built-in Lemonade ${eng.bundled ? '<span class="chip lem">Recommended</span>' : ""}</div>
+      <p>${eng.available ? `Zest runs its own private copy in the background and stops it when you close Zest. It has its own settings and port, so it never touches another Lemonade on this computer.` : `This copy of Zest doesn't include Lemonade. Download it once (about 7 MB) and Zest will run it for you.`}</p>
+      ${eng.available ? `<p class="mono" style="font-size:12px">Version ${verLabel}</p>` : `<button class="btn primary" data-act="engine-update" ${b.update || eng.update.state === "downloading" ? "disabled" : ""}>Download Lemonade</button>`}
+    </div>`;
+  const ex = st.existing;
+  const exist = `<div class="choice" role="radio" aria-checked="${!bi}" tabindex="0" data-act="mode-existing-pick">
+      <div class="ct"><span class="rad"></span>A Lemonade I already run</div>
+      <p>${ex.reachable ? `Found one answering at <b>${esc(ex.host)}:${ex.port}</b>.` : `Nothing is answering at ${esc(ex.host)}:${ex.port} right now.`} Connect Zest to a Lemonade Server you installed yourself, for example one running as a system service.</p>
+      <div class="row2"><input type="text" id="exhost" value="${esc(ex.host)}" aria-label="Lemonade address" spellcheck="false"><input type="number" id="export" value="${ex.port}" aria-label="Port"></div>
+      <input type="password" id="exkey" placeholder="API key (only if yours needs one)" aria-label="API key" autocomplete="off">
+      <button class="btn" data-act="mode-existing">${bi ? "Use this one instead" : "Connect"}</button>
+    </div>`;
+  let panel = "";
+  if(bi){
+    const u = eng.update, chk = SU.check;
+    let status;
+    if(eng.state === "error") status = `<div class="line"><span class="stat-dot bad"></span><span class="grow"><b>Lemonade couldn't start.</b></span></div><div class="note-bad">${esc(eng.error)}</div>${eng.log_tail.length ? `<pre class="tail">${esc(eng.log_tail.join("\n"))}</pre>` : ""}<div class="line"><button class="btn" data-act="engine-restart">Try again</button><button class="btn" data-act="mode-existing-pick">Use a Lemonade I already run</button></div>`;
+    else status = `<div class="line"><span class="stat-dot ${eng.running && st.lemonade.reachable ? "ok" : "busy"}"></span><span class="grow">${eng.running && st.lemonade.reachable ? `Running privately on port ${eng.port}` : "Starting Lemonade…"}</span>${b.restart ? "" : `<button class="btn" data-act="engine-restart">Restart</button>`}</div>`;
+    let upd = "";
+    if(["downloading", "verifying", "installing"].includes(u.state)){
+      const pct = u.total ? Math.round(100 * u.bytes / u.total) : 0;
+      upd = `<div><div class="line"><span class="grow">${u.state === "downloading" ? `Downloading Lemonade ${esc(u.version)}… ${pct}%` : u.state === "verifying" ? "Checking the download against GitHub's checksum…" : "Installing…"}</span><span class="mono faint">${fmtBytes(u.bytes)} / ${fmtBytes(u.total)}</span></div><div class="prog" style="margin-top:8px"><i style="width:${pct}%"></i></div></div>`;
+    } else if(u.state === "done"){
+      const running = eng.active && eng.active.version === u.version;
+      upd = running ? `<div class="line"><span class="stat-dot ok"></span><span class="grow">Lemonade ${esc(u.version)} is installed and running.</span></div>`
+                    : `<div class="line"><span class="stat-dot ok"></span><span class="grow">Lemonade ${esc(u.version)} is ready. Restart Lemonade to switch to it${S.loaded ? " (this unloads the model that's loaded now)" : ""}.</span><button class="btn primary" data-act="engine-restart">Restart now</button></div>`;
+    } else if(u.state === "error") upd = `<div class="note-bad">${esc(u.error)}</div>`;
+    else if(chk && chk.update_available) upd = `<div class="line"><span class="stat-dot busy"></span><span class="grow"><b>Lemonade ${esc(chk.latest)} is available</b> (${fmtBytes(chk.size)}). <a href="${esc(chk.page)}" target="_blank" rel="noopener">What's new</a></span><button class="btn primary" data-act="engine-update">Update now</button></div>`;
+    else if(chk) upd = `<div class="line"><span class="stat-dot ok"></span><span class="grow">You have the latest Lemonade (${esc(chk.latest)}).</span></div>`;
+    else if(SU.checkErr) upd = `<div class="note-warn">${esc(SU.checkErr)}</div>`;
+    const progs = eng.programs.length > 1 ? `<div class="line"><span class="faint" style="font-size:13px">Installed:</span>${eng.programs.map(p => `<span class="chip ${p.active ? "lem" : ""}">${esc(p.version)} · ${p.source === "bundled" ? "came with Zest" : "downloaded"}</span>`).join("")}${eng.programs.some(p => p.source === "bundled" && !p.active) ? `<button class="btn ghost" data-act="engine-use-bundled" style="min-height:32px">Go back to the version that came with Zest</button>` : ""}</div>` : "";
+    panel = `<div class="panel2">${status}
+      <div class="line"><button class="btn" data-act="engine-check" ${b.check || ["downloading", "verifying", "installing"].includes(u.state) ? "disabled" : ""}>${b.check ? "Checking…" : "Check for Lemonade updates"}</button>
+        <label class="aechk" style="margin-left:auto"><input type="checkbox" data-act="autocheck" ${autoCheckOn() ? "checked" : ""}> Look for updates when Zest opens</label></div>
+      ${upd}${progs}</div>`;
+  }
+  const lead = `Lemonade is the engine that actually runs AI models on your own computer. Everything stays on this machine. Choose where it comes from:`;
+  return stepShell(1, "eng", "Lemonade, the engine", st.lemonade.reachable, chip, `<p class="lead">${lead}</p><div class="choices" role="radiogroup" aria-label="Which Lemonade">${built}${exist}</div>${panel}`);
+}
+
+/* ---- step 2: a backend for the hardware */
+const BACKEND_BLURB = {cuda: "NVIDIA graphics cards. Usually the fastest on NVIDIA.", vulkan: "Most graphics cards (NVIDIA, AMD, Intel). A good all-rounder.", rocm: "Recent AMD graphics cards.", cpu: "No graphics card needed, but much slower.", metal: "Apple silicon.", system: "A llama.cpp already installed on this computer."};
+function backendStep(){
+  const st = SU.st, r = llamaRecipe(), b = SU.busy;
+  if(!st.lemonade.reachable) return stepShell(2, "be", "A backend for your hardware", false, "", `<p class="lead">Waiting for Lemonade to start…</p>`);
+  if(!r) return stepShell(2, "be", "A backend for your hardware", false, "", `<p class="lead">Lemonade didn't report any backends yet. Give it a moment, or open the Backends page.</p>`);
+  const inst = r.backends.filter(x => x.state === "installed"), todo = r.backends.filter(x => ["installable", "update_required"].includes(x.state));
+  const gpus = (S.gpus || []).map(g => g.name.replace(/^NVIDIA GeForce /, ""));
+  const rec = todo.find(x => x.name === r.default) || todo.find(x => x.name === "vulkan") || todo[0];
+  const hw = gpus.length ? `We found <b>${esc(gpus.join(" and "))}</b>.` : `We couldn't read your graphics card (Zest can show details for NVIDIA cards).`;
+  const lead = `A backend is the program that does the heavy lifting for models. Lemonade downloads it for you; pick the one that matches your hardware. ${hw}`;
+  const row = (x, primary) => {
+    const key = "inst-" + x.name, busy = b[key];
+    return `<div class="starter"><div><b>${esc(x.name.toUpperCase())}${primary ? ' <span class="chip lem">Recommended</span>' : ""}</b><small>${esc(BACKEND_BLURB[x.name] || "")}${x.version ? ` · ${esc(x.version)}` : ""}</small>${busy ? `<div class="prog ind"><i></i></div><small>Downloading and installing. This can take a minute or two…</small>` : ""}</div>
+      <button class="btn ${primary ? "primary" : ""}" data-act="install" data-backend="${esc(x.name)}" ${Object.keys(b).some(k => k.startsWith("inst-") && b[k]) ? "disabled" : ""}>${busy ? "Installing…" : (x.state === "update_required" ? "Update" : "Install")}</button></div>`;
+  };
+  let body = `<p class="lead">${lead}</p>`;
+  if(inst.length) body += `<div class="line panel2"><span class="stat-dot ok"></span><span class="grow">Installed: ${inst.map(x => `<b>${esc(x.name.toUpperCase())}</b> <span class="faint">${esc(x.version || "")}</span>`).join(" · ")}</span><button class="btn ghost" data-go="backends">Manage backends</button></div>`;
+  if(todo.length) body += `<div class="starters">${todo.map(x => row(x, !inst.length && rec && x.name === rec.name)).join("")}</div>`;
+  if(SU.msg.backend) body += `<div class="note-bad">${esc(SU.msg.backend)}</div>`;
+  if(inst.length && inst.every(x => x.name === "cpu") && gpus.length && todo.some(x => x.name !== "cpu")) body += `<div class="note-warn">Only the CPU backend is installed. A graphics-card backend would be a lot faster.</div>`;
+  return stepShell(2, "be", "A backend for your hardware", inst.length > 0, inst.length ? `<span class="chip ok">Installed</span>` : `<span class="chip">To do</span>`, body);
+}
+
+/* ---- step 3: models (where they live, ones you already have, getting one) */
+function starterModels(){
+  const v = vramAvail(), cap = v && v.live ? v.avail * 0.8 - 0.8 : (v ? v.avail * 0.8 - 0.8 : 4);
+  const pool = S.models.filter(m => !m.downloaded && m.recipe === "llamacpp" && (m.labels || []).includes("chat") && m.size && !/test/i.test(m.id));
+  const fits = pool.filter(m => m.size <= Math.max(cap, 1)).sort((a, b) => ((b.labels || []).includes("hot")) - ((a.labels || []).includes("hot")) || b.size - a.size);
+  const out = fits.slice(0, 3);
+  const small = pool.slice().sort((a, b) => a.size - b.size)[0];
+  if(small && !out.includes(small)) out.push(small);
+  return out;
+}
+function modelStep(){
+  const st = SU.st, mo = st.models, b = SU.busy;
+  const have = downloadedChat();
+  const hf = `<div class="choice" role="radio" aria-checked="${mo.storage === "hf"}" tabindex="0" data-act="storage-hf">
+      <div class="ct"><span class="rad"></span>Hugging Face cache <span class="chip lem">Default</span></div>
+      <p>The standard place most AI tools keep models, so downloads can be shared with them. <span class="mono" style="font-size:12px">${esc(mo.hf_dir)}</span></p></div>`;
+  const cu = `<div class="choice" role="radio" aria-checked="${mo.storage === "custom"}" tabindex="0" data-act="storage-custom-pick">
+      <div class="ct"><span class="rad"></span>A folder I choose</div>
+      <p>Keep new downloads somewhere else, for example a bigger drive.</p>
+      <div class="row2" style="grid-template-columns:1fr auto"><input type="text" id="cudir" value="${esc(mo.custom_dir)}" placeholder="/path/to/models" aria-label="Models folder" spellcheck="false"><button class="btn" data-act="browse-storage">Browse…</button></div>
+      <button class="btn" data-act="storage-custom">Use this folder</button></div>`;
+  let found = "";
+  if(SU.sources){
+    found = SU.sources.length ? `<div class="srclist">${SU.sources.map(s => `<label class="src"><input type="checkbox" data-src="${esc(s.id)}" ${SU.sel.has(s.id) ? "checked" : ""}><span><b>${esc(s.label)}</b><small>${esc(s.path)}</small><small>${esc(s.samples.join(", "))}${s.count > s.samples.length ? " …" : ""}</small></span><span class="sz">${s.count} model${s.count === 1 ? "" : "s"}<br>${fmtBytes(s.bytes)}</span></label>`).join("")}</div>`
+      : `<p class="lead">Nothing found in the usual places (LM Studio, Ollama, llama.cpp, GPT4All, Jan, your Downloads and models folders).</p>`;
+  }
+  const imported = mo.imports.length ? `<p class="lead">Already using: ${mo.imports.map(i => `<span class="chip">${esc(i.label)}</span>`).join(" ")}</p>` : "";
+  const existing = `<div class="panel2"><div class="line"><b class="grow">Models you already have</b><button class="btn" data-act="scan" ${b.scan ? "disabled" : ""}>${b.scan ? "Looking…" : "Look on this computer"}</button><button class="btn" data-act="browse-source">Add a folder…</button></div>
+      <p class="lead">Zest can use model files you've already downloaded elsewhere. Nothing is copied: Lemonade just gets a link to each file.</p>${imported}${found}
+      ${SU.sources && SU.sources.length ? `<div class="line"><button class="btn primary" data-act="import" ${b.import ? "disabled" : ""}>${b.import ? "Linking…" : "Use the ticked models"}</button></div>` : ""}
+      ${SU.msg.import ? `<div class="${SU.msg.importBad ? "note-warn" : "faint"}" style="font-size:13.5px">${esc(SU.msg.import)}</div>` : ""}</div>`;
+  const starters = starterModels();
+  const getone = `<div class="panel2"><div class="line"><b class="grow">Download a model</b><button class="btn" data-go="models">Browse all models</button></div>
+      <p class="lead">These suggestions fit your hardware's memory. Models are big; they download in the background while you carry on.</p>
+      <div class="starters">${starters.map(m => { const j = dlJob(m.id), pct = j ? j.percent : 0; return `<div class="starter"><div><b>${esc(m.id)}</b><small>${m.size.toFixed(1)} GB${(m.labels || []).filter(l => ["vision", "tool-calling", "hot"].includes(l)).map(l => ` · ${l}`).join("")}</small>${j ? `<div class="prog"><i style="width:${pct}%"></i></div><small>${pct}%</small>` : ""}</div>
+        ${j ? `<button class="btn" data-act="cancel-dl" data-model="${esc(m.id)}">Cancel</button>` : `<button class="btn primary" data-act="dl" data-model="${esc(m.id)}" ${S.dlSupported === false ? "disabled" : ""}>Download</button>`}</div>`; }).join("") || `<p class="lead">No suggestions yet. Open the Models page to see everything Lemonade offers.</p>`}</div>
+      ${SU.msg.dl ? `<div class="note-bad">${esc(SU.msg.dl)}</div>` : ""}</div>`;
+  const note = st.mode === "existing" ? `<div class="note-warn">You're connected to a Lemonade you run yourself. If it runs as a system service it may not be allowed to read files in your home folder, and these choices change that Lemonade's own settings.</div>` : "";
+  const lead = `Models are the AI brains themselves: big files, usually a few gigabytes. Choose where Zest keeps them, bring in ones you already have, or download one.`;
+  return stepShell(3, "mo", "Your models", have.length > 0, have.length ? `<span class="chip ok">${have.length} ready</span>` : `<span class="chip">To do</span>`,
+    `<p class="lead">${lead}</p>${note}<div class="choices" role="radiogroup" aria-label="Where models are stored">${hf}${cu}</div>${SU.msg.storage ? `<div class="${SU.msg.storageBad ? "note-bad" : "faint"}" style="font-size:13.5px">${esc(SU.msg.storage)}</div>` : ""}${existing}${getone}`);
+}
+
+/* ---- step 4: load one and chat */
+function chatStep(){
+  const have = downloadedChat(), steps = setupSteps(), ready = steps[0].done && steps[1].done && have.length;
+  const pick = have.find(m => m.id === S.model) ? S.model : (have[0] && have[0].id);
+  const body = ready ? `<p class="lead">Everything is in place. Pick a model, and Zest will load it and open the chat.</p>
+      <div class="line"><select id="startmodel" aria-label="Model" style="min-height:42px;border:1px solid var(--line);border-radius:10px;background:var(--bg);color:var(--text);padding:0 12px;min-width:240px">${have.map(m => `<option value="${esc(m.id)}" ${m.id === pick ? "selected" : ""}>${esc(m.id)}${m.id === S.loaded ? " (loaded)" : ""}</option>`).join("")}</select>
+        <button class="btn primary" data-act="load-chat" ${SU.busy.load ? "disabled" : ""}>${SU.busy.load ? "Loading…" : (pick === S.loaded ? "Open the chat" : "Load and start chatting")}</button></div>`
+    : `<p class="lead">Finish the steps above first. Once you have an engine, a backend and a model, you can load it here and start chatting.</p>`;
+  return stepShell(4, "ch", "Say hello", steps[3].done, steps[3].done ? `<span class="chip ok">Done</span>` : "", body);
+}
+
+function renderSetup(force){
+  const host = $("#setup"); if(!SU.st){ host.innerHTML = `<div class="empty-note">Loading…</div>`; return; }
+  const sig = JSON.stringify([SU.st, S.bk && S.bk.length, S.models.filter(m => m.downloaded).length, S.downloads, SU.busy, SU.msg, SU.sources, [...SU.sel], SU.check, SU.checkErr, S.loaded, autoCheckOn()]);
+  const typing = host.contains(document.activeElement) && /^(INPUT|TEXTAREA|SELECT)$/.test(document.activeElement.tagName);
+  if(!force && (sig === SU.sig || typing)) return;
+  SU.sig = sig;
+  const st = SU.st, steps = setupSteps(), now = steps.findIndex(s => !s.done);
+  const sc = $(".view.active")?.scrollTop;
+  host.innerHTML = `<div class="hero"><h2>${st.setup_done ? "Setup" : "Welcome to <em>Zest</em>"}</h2>
+      <p>${st.setup_done ? "Everything you need to get models running, in one place. You can come back here any time to update Lemonade, add a backend, or change where models live." : "Zest is a friendly front door to Lemonade, the engine that runs AI models on your own computer. Four short steps get you chatting, and nothing ever leaves your machine."}</p>
+      <ol class="flow">${steps.map((s, i) => `<li class="${s.done ? "done" : i === now ? "now" : ""}"><b>${s.t}</b><span>${s.d}</span></li>`).join("")}</ol></div>
+    ${engineStep()}${backendStep()}${modelStep()}${chatStep()}
+    <div class="setfoot">${st.setup_done ? "" : `<button class="btn ghost" data-act="finish">Skip, take me to Zest</button>`}<button class="btn ${steps.every(s => s.done) && !st.setup_done ? "primary" : ""}" data-act="finish">${st.setup_done ? "Back to Zest" : "Finish setup"}</button></div>`;
+  if(sc != null) $(".view.active").scrollTop = sc;
+  updateNavDot();
+}
+
+async function suPost(path, body){ return api(path, {method: "POST", headers: {"Content-Type": "application/json"}, body: JSON.stringify(body || {})}); }
+async function suBusy(key, fn){
+  SU.busy[key] = true; renderSetup(true);
+  try{ await fn(); }catch(e){ toast(e.message); }
+  finally{ SU.busy[key] = false; await refreshSetup(true); }
+}
+$("#setup").addEventListener("click", async e => {
+  const el = e.target.closest("[data-act],[data-go]"); if(!el) return;
+  if(el.dataset.go) return show(el.dataset.go);
+  const a = el.dataset.act;
+  if(a === "autocheck") { store.set("zest.autocheck", el.checked); return; }
+  if(a === "mode-builtin") return suBusy("mode", async () => { SU.st = await suPost("/ui/setup/mode", {mode: "builtin"}); S.models = []; await waitLemonade(); await loadModels(); });
+  if(a === "mode-existing-pick"){ $("#exhost")?.focus(); return; }
+  if(a === "mode-existing") return suBusy("mode", async () => { SU.st = await suPost("/ui/setup/mode", {mode: "existing", host: $("#exhost").value.trim(), port: +$("#export").value, api_key: $("#exkey").value}); await waitLemonade(); await loadModels(); });
+  if(a === "engine-check") return doCheck(false);
+  if(a === "engine-update") return suBusy("update", async () => { await suPost("/ui/engine/update"); SU.check = null; });
+  if(a === "engine-restart") return suBusy("restart", async () => { await suPost("/ui/engine/restart"); await waitLemonade(); });
+  if(a === "engine-use-bundled") return suBusy("restart", async () => { await suPost("/ui/engine/use", {version: "bundled"}); await waitLemonade(); });
+  if(a === "install") return suBusy("inst-" + el.dataset.backend, async () => {
+    SU.msg.backend = "";
+    try{ const r = await suPost("/ui/backend/install", {recipe: "llamacpp", backend: el.dataset.backend}); if(r.switched) toast(`Lemonade will use the ${r.switched.toUpperCase()} backend. You can change this on the Backends page.`); }catch(err){ SU.msg.backend = err.message; }
+    S.bk = (await api("/ui/backends")).recipes; S.info = await api("/ui/info").catch(() => S.info);
+  });
+  if(a === "storage-hf") return suBusy("storage", async () => { const r = await suPost("/ui/models/storage", {kind: "hf"}); SU.msg.storage = r.ok ? "Models will be kept in the Hugging Face cache." : r.message; SU.msg.storageBad = !r.ok; });
+  if(a === "storage-custom-pick"){ $("#cudir")?.focus(); return; }
+  if(a === "storage-custom") return suBusy("storage", async () => {
+    try{ const r = await suPost("/ui/models/storage", {kind: "custom", path: $("#cudir").value.trim()}); SU.msg.storage = r.ok ? "New models will be downloaded to that folder." : r.message; SU.msg.storageBad = !r.ok; }
+    catch(err){ SU.msg.storage = err.message; SU.msg.storageBad = true; }
+  });
+  if(a === "browse-storage") return openFs($("#cudir").value || "", p => { $("#cudir").value = p; });
+  if(a === "browse-source") return openFs("", async p => {
+    try{ const r = await api("/ui/models/source?path=" + encodeURIComponent(p)); SU.sources = SU.sources || []; if(!SU.sources.some(s => s.id === r.source.id)) SU.sources.push(r.source); SU.sel.add(r.source.id); SU.msg.import = ""; renderSetup(true); }
+    catch(err){ SU.msg.import = err.message; SU.msg.importBad = true; renderSetup(true); }
+  });
+  if(a === "scan") return suBusy("scan", async () => { const r = await api("/ui/models/scan"); const have = new Set(SU.st.models.imports.map(i => i.id)); SU.sources = r.sources; SU.sel = new Set(r.sources.filter(s => have.has(s.id) || (!have.size && s.label !== "Downloads")).map(s => s.id)); SU.msg.import = ""; });
+  if(a === "import") return suBusy("import", async () => {
+    const chosen = (SU.sources || []).filter(s => SU.sel.has(s.id));
+    const r = await suPost("/ui/models/imports", {sources: chosen.map(s => ({kind: s.kind, path: s.path, label: s.label}))});
+    const more = r.listed_after - r.listed_before;
+    SU.msg.import = !chosen.length ? "No folders are being used now." : more > 0 ? `Lemonade now lists ${more} more model${more === 1 ? "" : "s"} (${r.linked} files linked).` : `${r.linked} files were linked, but Lemonade doesn't list any new models yet. If it runs as a system service it may not be able to read them.`;
+    SU.msg.importBad = !r.ok || (chosen.length && more <= 0);
+    await loadModels();
+  });
+  if(a === "dl") return startDownload(el.dataset.model);
+  if(a === "cancel-dl") return cancelDownload(el.dataset.model);
+  if(a === "load-chat"){ const id = $("#startmodel").value; S.model = id; store.set("zest.model", id); syncModelSelect();
+    if(S.loaded === id){ show("chat"); return $("#input").focus(); }
+    return suBusy("load", async () => { await loadModelNow(id); show("chat"); }); }
+  if(a === "finish"){ await suPost("/ui/setup/done", {done: true}); SU.st.setup_done = true; show("chat"); }
+});
+$("#setup").addEventListener("change", e => {
+  const c = e.target.closest("[data-src]"); if(c){ c.checked ? SU.sel.add(c.dataset.src) : SU.sel.delete(c.dataset.src); return; }
+  if(e.target.dataset.act === "autocheck"){ store.set("zest.autocheck", e.target.checked); }
+});
+$("#setup").addEventListener("keydown", e => { if((e.key === "Enter" || e.key === " ") && e.target.matches(".choice[data-act]")){ e.preventDefault(); e.target.click(); } });
+async function waitLemonade(){
+  for(let i = 0; i < 60; i++){ await refreshSetup(true); if(SU.st.lemonade.reachable && (SU.st.mode !== "builtin" || SU.st.engine.running)) break; if(SU.st.engine.state === "error") break; await new Promise(r => setTimeout(r, 1000)); }
+  await pollServer(); await loadModels(); try{ S.bk = (await api("/ui/backends")).recipes; }catch{} renderStatus();
+}
+setInterval(() => { if(!document.hidden && (S.view === "setup" || (SU.st && ["downloading","verifying","installing"].includes(SU.st.engine.update.state)))) refreshSetup(); }, 1500);
+
+/* ---- folder browser */
+const FS = {cb: null, path: ""};
+async function fsGo(path){
+  $("#fserr").hidden = true;
+  try{
+    const r = await api("/ui/fs?path=" + encodeURIComponent(path));
+    FS.path = r.path; $("#fspath").textContent = r.path;
+    const join = n => r.path.replace(/\/$/, "") + "/" + n;
+    $("#fslist").innerHTML = (r.parent ? `<button type="button" data-go="${esc(r.parent)}">⬑ Up one level</button>` : "") + r.dirs.map(n => `<button type="button" data-go="${esc(join(n))}"><svg class="i" viewBox="0 0 24 24" style="width:18px;height:18px"><path d="M3 7a2 2 0 0 1 2-2h4l2 2h8a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/></svg>${esc(n)}</button>`).join("") + (r.dirs.length ? "" : `<p class="faint" style="margin:8px 10px">No sub-folders here.</p>`) + (r.gguf ? `<p class="gg" style="margin:8px 10px;color:var(--lemon-text);font:12px var(--mono)">${r.gguf} GGUF file${r.gguf === 1 ? "" : "s"} in this folder</p>` : "");
+  }catch(e){ $("#fserr").textContent = e.message; $("#fserr").hidden = false; }
+}
+function openFs(start, cb){ FS.cb = cb; fsGo(start || ""); $("#fsdlg").showModal(); }
+$("#fslist").addEventListener("click", e => { const b = e.target.closest("[data-go]"); if(b) fsGo(b.dataset.go); });
+$("#fscancel").addEventListener("click", () => $("#fsdlg").close());
+$("#fsuse").addEventListener("click", () => { $("#fsdlg").close(); if(FS.cb) FS.cb(FS.path); });
+
 /* ======================= settings ======================= */
 const SET = {cfg: null, defaults: null, q: ""};
 const SET_GROUPS = {
@@ -1500,7 +1906,7 @@ function renderHardware(){
           </div>
         </div>
       </article>`;
-    }).join("") : `<div class="empty-note" style="grid-column:1/-1">No devices found. Make sure the llama.cpp backend is installed (see the Backends page) and the server is running.</div>`;
+    }).join("") : `<div class="empty-note" style="grid-column:1/-1">${S.info?.needs_backend ? "No llama.cpp backend is installed yet, so there are no devices to show. Install one in <a href=\"#setup\" data-go=\"setup\">Setup</a>, and your graphics cards will appear here." : S.info?.backend?.resolved === "cpu" ? "You're using the CPU backend, which doesn't use a graphics card. Install a GPU backend on the Backends page to see your cards here." : "No devices found. Make sure a llama.cpp backend is installed (see the Backends page) and Lemonade is running."}</div>`;
     host.parentElement.querySelector(".warn-note")?.remove();
     if(note) host.insertAdjacentHTML("beforebegin", note);
   }
@@ -1611,10 +2017,12 @@ setInterval(() => fetch("/ui/ping", {method:"POST"}).catch(() => {}), 5000); fet
 
 /* ======================= boot ======================= */
 (async function boot(){
-  await Promise.all([loadModels(), pollGpu(), pollServer()]);
+  await Promise.all([loadModels(), pollGpu(), pollServer(), pollDownloads()]);
+  try{ SU.st = await api("/ui/setup"); S.bk = (await api("/ui/backends")).recipes; }catch{}
   if(!S.convs.length || !conv()) { if(S.convs.length) S.cur = S.convs[0].id; else { const c = {id:uid(), title:"New chat", messages:[], system:"", created:Date.now()}; S.convs.push(c); S.cur = c.id; } }
   renderConvs(); syncModelSelect(); renderStatus(); setSendState();
-  const h = location.hash.slice(1); show(TITLES[h] ? h : "chat");
+  const h = location.hash.slice(1);
+  show(TITLES[h] ? h : (SU.st && !SU.st.setup_done ? "setup" : "chat"));
   renderThread();
   grow();
 })();
