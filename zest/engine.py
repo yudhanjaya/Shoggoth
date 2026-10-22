@@ -131,6 +131,12 @@ def _seed_config(directory):
     if not isinstance(cfg.get("llamacpp"), dict):
         cfg["llamacpp"] = {}
     cfg["llamacpp"].setdefault("device", "")
+    # 128k is a good threshold for usefulness in long chats and agentic work. Set it once, so a later change sticks.
+    marker = os.path.join(directory, ".zest-ctx-default")
+    if not os.path.exists(marker):
+        if cfg.get("ctx_size", -1) == -1:
+            cfg["ctx_size"] = 131072
+        open(marker, "w").close()
     with open(path, "w") as f:
         json.dump(cfg, f, indent=2)
 

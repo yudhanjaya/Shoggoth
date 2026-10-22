@@ -24,7 +24,9 @@ HERE = os.path.dirname(os.path.abspath(__file__))
 sys.path.insert(0, HERE)          # the AppImage runs Python in isolated mode, which doesn't add this folder itself
 
 import engine      # noqa: E402
+import gateway     # noqa: E402
 import hardware    # noqa: E402
+import hf          # noqa: E402
 import lem         # noqa: E402
 import llamaargs   # noqa: E402
 import modelscan   # noqa: E402
@@ -32,7 +34,7 @@ import store       # noqa: E402
 import util        # noqa: E402
 from util import cached, invalidate, run   # noqa: E402
 
-VERSION = "2.0.0"
+VERSION = "2.1.0"
 _last_ping = {"t": None}
 FORCED = {"addr": None}           # set by --lemonade: use exactly that server and skip the setup screen
 LOOPBACK_ONLY = {"on": True}
@@ -197,6 +199,14 @@ class Handler(BaseHTTPRequestHandler):
                 self.send_json(modelscan.list_dir(parse_qs(u.query).get("path", [""])[0]))
             except ValueError as e:
                 self.send_json({"error": str(e)}, 400)
+        elif p == "/ui/hf":
+            try:
+                self.send_json(hf.lookup(parse_qs(u.query).get("q", [""])[0]))
+            except ValueError as e:
+                self.send_json({"error": str(e)}, 400)
+        elif p == "/ui/server":
+            ids = {int(x) for x in parse_qs(u.query).get("ids", [""])[0].split(",") if x.isdigit()}
+            self.get_server(ids)
         elif p == "/ui/logs":
             n = min(max(int(parse_qs(u.query).get("n", ["200"])[0]), 10), 1000)
             self.send_json({"lines": read_logs(n)})
@@ -224,6 +234,7 @@ class Handler(BaseHTTPRequestHandler):
             "/ui/setup/mode": self.post_mode, "/ui/setup/done": self.post_done,
             "/ui/engine/check": self.post_engine_check, "/ui/engine/update": self.post_engine_update,
             "/ui/engine/use": self.post_engine_use, "/ui/engine/restart": self.post_engine_restart,
+            "/ui/gateway": self.post_gateway,
             "/ui/models/storage": self.post_storage, "/ui/models/imports": self.post_imports,
         }.get(p)
         if not handler:
@@ -396,32 +407,31 @@ class Handler(BaseHTTPRequestHandler):
     def proxy(self):
         n = int(self.headers.get("Content-Length") or 0)
         body = self.rfile.read(n) if n else None
-        headers = {k: v for k, v in self.headers.items() if k.lower() in ("content-type", "accept")}
-        if lem.key():
-            headers["Authorization"] = "Bearer " + lem.key()
-        conn = http.client.HTTPConnection(*lem.target(), timeout=900)
-        try:
-            conn.request(self.command, self.path, body=body, headers=headers)
-            resp = conn.getresponse()
-        except OSError as e:
-            return self.send_json({"error": {"message": f"Lemonade is unreachable: {e}"}}, 502)
-        self.send_response(resp.status)
-        for h in ("Content-Type", "Cache-Control"):
-            if resp.getheader(h):
-                self.send_header(h, resp.getheader(h))
-        self.send_header("X-Accel-Buffering", "no")
-        self.end_headers()  # HTTP/1.0: the body ends when we close, so streaming just works
-        try:
-            while True:
-                chunk = resp.read1(8192)
-                if not chunk:
-                    break
-                self.wfile.write(chunk)
-                self.wfile.flush()
-        except (BrokenPipeError, ConnectionResetError):
-            pass
-        finally:
-            conn.close()
+        path = gateway.norm(self.path)
+        rec = None
+        if self.command == "POST" and gateway.INFER.match(path):      # Zest's own chat shows up on the Server page too
+            model, stream = gateway.describe(body)
+            rec = gateway.REC.start("Zest", "zest", self.command, path, model, stream, "local")
+        gateway.relay(self, self.command, self.path, body, rec, store.load()["gateway"]["capture"] if rec else False)
+
+    # ---- the Server page
+    def get_server(self, ids):
+        s = store.load()
+        items, seq = gateway.REC.snapshot(60, ids if s["gateway"]["capture"] else ())
+        self.send_json({"gateway": gateway.public_state(s), "requests": items, "seq": seq, "now": time.time(),
+                        "active": gateway.REC.active()})
+
+    def post_gateway(self, body):
+        s = store.load()
+        g = s["gateway"]
+        for k in ("enabled", "lan", "capture"):
+            if k in body:
+                g[k] = bool(body[k])
+        if body.get("new_key"):
+            g["api_key"] = "zest-" + store.new_key()
+        store.save(s)
+        gateway.GATEWAY.apply(s)
+        self.send_json({"gateway": gateway.public_state(s)})
 
 
 def zest_running(host, port):
@@ -479,6 +489,11 @@ def main():
         apply_mode(s)
     print(f"Zest {VERSION} on {url}  ->  Lemonade {effective_mode(s)} ({'%s:%s' % lem.target()})", flush=True)
 
+    gateway.ensure_key(s)
+    gateway.GATEWAY.start(s["gateway"])
+    if gateway.GATEWAY.error:
+        print("Other apps can't connect yet: " + gateway.GATEWAY.error, flush=True)
+
     signal.signal(signal.SIGTERM, lambda *_: (_ for _ in ()).throw(SystemExit(0)))   # so the built-in Lemonade is stopped too
     if a.app:
         threading.Thread(target=watchdog, args=(srv, int(os.environ.get("ZEST_APP_GRACE", "180"))), daemon=True).start()
@@ -489,6 +504,7 @@ def main():
     except (KeyboardInterrupt, SystemExit):
         pass
     finally:
+        gateway.GATEWAY.stop()
         srv.server_close()        # free the port first; stopping Lemonade can take a few seconds
         engine.stop()
 

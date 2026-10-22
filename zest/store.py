@@ -11,6 +11,8 @@ DEFAULTS = {
     "existing": {"host": "127.0.0.1", "port": 13305, "api_key": ""},
     "builtin": {"port": 13307, "api_key": "", "version": ""},   # version: "" = newest, or a pinned version, or "bundled"
     "models": {"storage": "hf", "custom_dir": "", "imports": []},
+    # The door for other apps: its own port, always needs the key, this computer only unless `lan` is on.
+    "gateway": {"enabled": True, "port": 13308, "api_key": "", "lan": False, "capture": False},
 }
 _lock = threading.Lock()
 
