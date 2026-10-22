@@ -61,12 +61,12 @@ Zest is organised around four places in the left-hand menu: **Chat**, **Models**
 - **Models** shows what you can run in plain words: a friendly name, what it is good for, a size word, and one sentence on whether it will run comfortably on your computer. The fit comes from the memory that is actually *free* on your graphics cards right now, so you can tell before loading whether another program is in the way. The default view, **For you**, hides models that would not run well. A **Details** fold on each card holds the technical names and **Settings for this model**: context window, backend, devices and the llama-server options (flash attention, cache precision, expert layers in system RAM, GPU splitting, thinking, speculative decoding) as tick boxes and dropdowns with plain explanations, checked against your own `llama-server` before you load.
 - **Context window: 128k by default.** The built-in Lemonade starts with a 128k (131,072-token) context window, a good threshold for usefulness in long chats and agentic work. Zest sets it once, so changing it later in **All settings** sticks, and any model can have its own size under **Settings for this model**. A bigger window needs more graphics memory. A Lemonade you run yourself keeps its own default.
 - **How do I choose a model?** A button on Models (and an entry in Help) explains how to pick: will it fit, what is it for, how much it needs to remember. It then links to places to compare models: Luke's Dev Lab, Artificial Analysis, LMArena, Aider, the Berkeley Function-Calling Leaderboard, SWE-bench, LiveBench, BenchLM, LLM Stats, r/LocalLLaMA and the Level1Techs forum. Benchmarks only capture so much, measure narrow use cases and can often be gamed, so the dialog says plainly that the best way is to try a few models yourself.
+- **Load, unload, reload and delete.** Every downloaded model has **Load now** (or **Reload** and **Unload** while it is in use) right on its card, so you can free graphics memory or pick up new settings without leaving the page. **Delete from this computer** is under **Details**; it asks first, says how much disk it frees, unloads the model if it is running, and you can download it again later.
 - **Get from Hugging Face** takes a link or `org/name`, lists the GGUF versions in the repository with their sizes and a plain label (for example "A good balance"), marks which ones fit your computer, and hands the download to Lemonade.
-- **Advanced > Server** lets other apps use your models (see below), with a live picture of what they ask for.
+- **Advanced > Server** lets other apps use your models (see below), with a live picture of what they ask for. The address and key to paste into those apps are at the top, and the Lemonade **activity log** (filter and follow mode) sits at the bottom of the same page.
 - **Advanced > Hardware** shows every device llama.cpp can see as a live VRAM tank with utilisation, temperature, power, a short history, and which processes are holding its memory. Pick which devices to use and put them in order, then apply.
-- **Advanced > Engines** lists every Lemonade engine (llama.cpp, Whisper.cpp, StableDiffusion.cpp and more) with the backends each supports (CUDA, Vulkan, ROCm, CPU). Choose one per engine, or install and update missing ones.
+- **Advanced > Engines** explains what an engine is (the program that runs one kind of model) and what each backend means (CUDA, ROCm, Vulkan, CPU), then lists every Lemonade engine (llama.cpp, Whisper.cpp, StableDiffusion.cpp and more) with the backends each supports (CUDA, Vulkan, ROCm, CPU). Choose one per engine, or install and update missing ones.
 - **Advanced > All settings** edits everything in Lemonade's own configuration, searchable, with a reset-to-default for every value.
-- **Advanced > Activity log** tails the Lemonade log with a filter and follow mode.
 - A light theme only, keyboard-friendly, and it works on a phone-width screen. The fonts (Figtree, Fraunces and JetBrains Mono, all under the SIL Open Font License) are built into the page, so nothing is fetched from the internet.
 
 ## Use your models in other apps
@@ -125,13 +125,17 @@ While an app is working you see a glass filling up, a lane per app for the last 
 
 ![Request list](docs/screenshots/server-requests.png)
 
+The Lemonade activity log is at the bottom of the same page.
+
+![Activity log on the Server page](docs/screenshots/server-log.png)
+
 ### Hardware
 Select GPUs and set their order. Each card shows free VRAM, utilisation, temperature, power and which processes hold memory. Nothing changes until you press **Apply**.
 
 ![Hardware](docs/screenshots/hardware.png)
 
 ### Engines
-Pick a backend per engine, or install and update the ones you need.
+Each engine says in plain words what it does, and a short guide explains which backend to pick. Choose one per engine, or install and update the ones you need.
 
 ![Engines](docs/screenshots/backends.png)
 
@@ -139,10 +143,6 @@ Pick a backend per engine, or install and update the ones you need.
 Lemonade's own configuration, searchable and saved as you edit.
 
 ![All settings](docs/screenshots/settings.png)
-
-### Activity log
-
-![Activity log](docs/screenshots/logs.png)
 
 ### Setup guide
 The full set of choices behind the welcome steps: which Lemonade to use, backends, where models live, and updates.

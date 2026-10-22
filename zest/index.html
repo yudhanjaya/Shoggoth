@@ -250,6 +250,14 @@ dialog label{display:grid;gap:6px;font-size:13px;color:var(--muted)}
 .bkp header{display:flex;gap:10px;align-items:center;flex-wrap:wrap}
 .bkp h3{margin:0;font:600 20px var(--serif)}
 .bkp .grow{flex:1}
+.bkp .eng{margin:-4px 0 0;color:var(--muted);font-size:14.5px;max-width:70ch}
+.bkhelp{padding:0 20px;margin:0 0 18px}
+.bkhelp summary{cursor:pointer;list-style:none;min-height:48px;display:flex;align-items:center;font:600 17px var(--serif)}
+.bkhelp summary::-webkit-details-marker{display:none}
+.bkdl{display:grid;grid-template-columns:max-content 1fr;gap:8px 18px;margin:0 0 10px}
+.bkdl dt{font-weight:600}.bkdl dd{margin:0;color:var(--muted)}
+@media (max-width:640px){.bkdl{grid-template-columns:1fr;gap:2px}.bkdl dd{margin-bottom:8px}}
+.srvlog{margin-top:18px;display:grid;gap:12px}
 .bopts{display:flex;gap:10px;flex-wrap:wrap}
 .bo{display:inline-flex;align-items:center;gap:10px;min-height:48px;padding:6px 8px 6px 14px;border:1px solid var(--line);border-radius:12px;background:var(--bg);color:var(--text);font-size:14px;font-weight:550;text-align:left}
 button.bo:hover{border-color:var(--faint)}
@@ -504,6 +512,9 @@ details.aegrp>summary small{margin-left:auto;font:11.5px var(--mono);color:var(-
 .wfoot{text-align:center;font-size:13.5px}
 /* ---------- help, advanced, server ---------- */
 
+.mctl{display:flex;gap:8px;flex-wrap:wrap;margin-top:-6px}
+.mctl .btn{min-height:36px;padding:0 14px;font-size:13.5px}
+.btn.danger{color:var(--bad);border-color:currentColor}
 .pagebtns{display:flex;gap:10px;flex-wrap:wrap;align-items:center}
 #pickdlg{max-width:min(640px,calc(100vw - 32px));max-height:calc(100dvh - 32px)}
 #pickdlg form{padding:0;display:flex;flex-direction:column;max-height:calc(100dvh - 34px)}
@@ -602,7 +613,7 @@ h4.sub{margin:10px 0 0;font:600 13px var(--sans);color:var(--muted);text-transfo
 .logbar input:focus{border-color:var(--lemon)}
 .logbar label{display:flex;align-items:center;gap:8px;font-size:13px;color:var(--muted);min-height:40px}
 .logbar input[type=checkbox]{accent-color:var(--lemon);width:18px;height:18px}
-.log{font:12.5px/1.65 var(--mono);background:var(--surface);border:1px solid var(--line);border-radius:var(--radius);padding:14px 16px;overflow:auto;flex:1;min-height:300px;white-space:pre-wrap;overflow-wrap:anywhere}
+.log{font:12.5px/1.65 var(--mono);background:var(--surface);border:1px solid var(--line);border-radius:var(--radius);padding:14px 16px;overflow:auto;height:380px;white-space:pre-wrap;overflow-wrap:anywhere}
 .log .ln{display:block}.log .Warn{color:var(--warn)}.log .Error{color:var(--bad)}.log .Info{color:var(--muted)}
 .log .tag{color:var(--lemon-text)}
 
@@ -652,7 +663,6 @@ h4.sub{margin:10px 0 0;font:600 13px var(--sans);color:var(--muted);text-transfo
         <button data-view="hardware"><span>Hardware</span></button>
         <button data-view="backends"><span>Engines</span></button>
         <button data-view="settings"><span>All settings</span></button>
-        <button data-view="logs"><span>Activity log</span></button>
         <button data-view="setup"><span>Setup guide</span></button>
       </div>
     </div>
@@ -730,7 +740,17 @@ h4.sub{margin:10px 0 0;font:600 13px var(--sans);color:var(--muted);text-transfo
 
     <!-- BACKENDS -->
     <section class="view" id="v-backends"><div class="pad"><div class="wrap">
-      <p class="lede">Each engine can run on different hardware: CUDA, Vulkan, ROCm, or just the processor. Pick the one you want, or install one that's missing. Changes apply the next time a model loads.</p>
+      <p class="lede">An <b>engine</b> is the program that actually runs a model, and each kind of model needs its own: one for chat, one for turning speech into text, one for pictures, and so on. Each engine can run on different hardware, called a <b>backend</b>. Pick the one you want, or install one that's missing. Changes apply the next time a model loads.</p>
+      <details class="panel bkhelp" open><summary>Which backend should I pick?</summary>
+        <dl class="bkdl">
+          <dt>Auto</dt><dd>Let Lemonade choose the best one for your computer. This is the right answer for almost everyone.</dd>
+          <dt>CUDA</dt><dd>For NVIDIA graphics cards. The fastest option if you have one.</dd>
+          <dt>ROCm</dt><dd>For AMD graphics cards. Fast, but supports fewer cards than Vulkan.</dd>
+          <dt>Vulkan</dt><dd>Works on almost any graphics card (NVIDIA, AMD and Intel). A good choice when CUDA or ROCm isn't an option. It can be a little slower.</dd>
+          <dt>CPU</dt><dd>Uses the main processor. Works on any computer but is the slowest, so it suits small models.</dd>
+        </dl>
+        <p class="note">A green dot means installed. “Update needed” means Lemonade has a newer build for that backend.</p>
+      </details>
       <div id="bk"></div>
     </div></div></section>
 
@@ -741,7 +761,17 @@ h4.sub{margin:10px 0 0;font:600 13px var(--sans);color:var(--muted);text-transfo
     <section class="view" id="v-advanced"><div class="pad"><div class="wrap" id="advhub"></div></div></section>
 
     <!-- SERVER -->
-    <section class="view" id="v-server"><div class="pad"><div class="wrap" id="server"></div></div></section>
+    <section class="view" id="v-server"><div class="pad"><div class="wrap"><div id="server"></div>
+      <section class="panel srvlog" id="srvlog">
+        <div class="connhead"><h3>Activity log</h3><span class="help2" style="margin:0">What the helper has been doing. Useful when something goes wrong.</span></div>
+        <div class="logbar">
+          <input type="search" id="logq" placeholder="Filter log lines" aria-label="Filter log lines">
+          <label><input type="checkbox" id="logauto" checked> Follow</label>
+          <button class="btn" id="logref" type="button">Refresh</button>
+        </div>
+        <div class="log" id="log" tabindex="0" role="log"></div>
+      </section>
+    </div></div></section>
 
     <!-- SETUP -->
     <section class="view" id="v-setup"><div class="pad"><div class="wrap" id="setup"></div></div></section>
@@ -753,15 +783,6 @@ h4.sub{margin:10px 0 0;font:600 13px var(--sans);color:var(--muted);text-transfo
       <div id="settings"></div>
     </div></div></section>
 
-    <!-- LOGS -->
-    <section class="view" id="v-logs"><div class="pad" style="display:flex;flex-direction:column;flex:1;min-height:0"><div class="wrap" style="display:flex;flex-direction:column;flex:1;min-height:0">
-      <div class="logbar">
-        <input type="search" id="logq" placeholder="Filter log lines" aria-label="Filter log lines">
-        <label><input type="checkbox" id="logauto" checked> Follow</label>
-        <button class="btn" id="logref">Refresh</button>
-      </div>
-      <div class="log" id="log" tabindex="0" role="log"></div>
-    </div></div></section>
   </main>
 </div>
 
@@ -770,6 +791,14 @@ h4.sub{margin:10px 0 0;font:600 13px var(--sans);color:var(--muted);text-transfo
     <header><h3>Get a model from Hugging Face</h3></header>
     <div class="odbody" id="hfbody"></div>
     <div class="actions"><button type="button" class="btn" id="hfcancel">Cancel</button><button type="button" class="btn primary" id="hfdo" disabled>Download</button></div>
+  </form>
+</dialog>
+<dialog id="deldlg">
+  <form method="dialog">
+    <h3 id="delname">Delete this model?</h3>
+    <p id="deltext" style="margin:0;color:var(--muted)"></p>
+    <p class="errline" id="delerr" hidden></p>
+    <div class="actions"><button class="btn" value="cancel" formnovalidate>Keep it</button><button class="btn danger" value="ok" id="delok">Delete</button></div>
   </form>
 </dialog>
 <dialog id="instdlg">
@@ -821,6 +850,7 @@ const store = {
   set(k, v){ try{ localStorage.setItem(k, JSON.stringify(v)); }catch{} }
 };
 const ICON = {
+  reload:'<svg class="i" viewBox="0 0 24 24" style="width:15px;height:15px"><path d="M20 12a8 8 0 1 1-2.3-5.7M20 4v5h-5"/></svg>',
   copy:'<svg class="i" viewBox="0 0 24 24" style="width:15px;height:15px"><rect x="9" y="9" width="11" height="11" rx="2"/><path d="M5 15V6a2 2 0 0 1 2-2h8"/></svg>',
   trash:'<svg class="i" viewBox="0 0 24 24" style="width:16px;height:16px"><path d="M4 7h16M10 11v6M14 11v6M6 7l1 13h10l1-13M9 7V4h6v3"/></svg>',
   stop:'<svg class="i" viewBox="0 0 24 24"><rect x="6" y="6" width="12" height="12" rx="2" fill="currentColor"/></svg>',
@@ -853,8 +883,8 @@ async function api(path, opts={}){
 }
 
 /* ======================= navigation ======================= */
-const TITLES = {welcome:"Welcome", chat:"Chat", models:"Models", help:"Help", advanced:"Advanced", server:"Server", hardware:"Hardware", backends:"Engines", settings:"All settings", logs:"Activity log", setup:"Setup guide"};
-const ADV = ["advanced","server","hardware","backends","settings","logs","setup"];
+const TITLES = {welcome:"Welcome", chat:"Chat", models:"Models", help:"Help", advanced:"Advanced", server:"Server", hardware:"Hardware", backends:"Engines", settings:"All settings", setup:"Setup guide"};
+const ADV = ["advanced","server","hardware","backends","settings","setup"];
 function show(v){
   S.view = v;
   $$(".view").forEach(el => el.classList.toggle("active", el.id === "v-"+v));
@@ -875,8 +905,8 @@ function show(v){
   if(v === "settings") loadSettings();
   if(v === "setup" || v === "welcome") refreshSetup(true);
   $(".app").classList.toggle("focus", v === "welcome");
-  if(v === "logs") loadLogs();
   if(v === "server") srvShow();
+  if(v === "server" && pendingLogScroll){ pendingLogScroll = false; setTimeout(() => $("#srvlog").scrollIntoView({block:"start"}), 1200); }
   if(v === "help") renderHelp();
   if(v === "advanced") renderAdvanced();
 }
@@ -1293,19 +1323,23 @@ function cardHTML(m){
       : S.dlSupported === false ? `<button class="btn" data-copycmd="${esc(m.id)}">${ICON.copy} Copy download command</button>`
       : `<button class="btn primary" data-dl="${esc(m.id)}">Get it${m.size ? " · " + (m.size < 10 ? m.size.toFixed(1) : Math.round(m.size)) + " GB" : ""}</button>`;
   } else act = isLoaded ? `<button class="btn primary" data-chat="${esc(m.id)}">Chat with it</button>` : `<button class="btn primary" data-use="${esc(m.id)}">Use this one</button>`;
+  const busy = S.loadingModel === m.id;
+  const ctl = !m.downloaded ? "" : `<div class="mctl">${isLoaded
+    ? `<button class="btn" data-reload="${esc(m.id)}" ${S.loadingModel ? "disabled" : ""}>${ICON.reload} Reload</button><button class="btn" data-unload="${esc(m.id)}" ${S.loadingModel ? "disabled" : ""}>Unload</button>`
+    : `<button class="btn" data-load="${esc(m.id)}" ${S.loadingModel ? "disabled" : ""}>${busy ? "Loading…" : "Load now"}</button>`}</div>`;
   return `<article class="card ${isLoaded?"loaded":""}" data-id="${esc(m.id)}">
     <div class="ctop"><h3>${esc(friendly(m))}</h3>${isLoaded?'<span class="chip ok">In use</span>':m.downloaded?'<span class="chip">On this computer</span>':""}</div>
     <p class="what">${esc(whatFor(m))}</p>
     <div class="row"><span>${m.size ? `${sizeWord(m.size)} <span class="mono num">· ${m.size.toFixed(m.size<10?1:0)} GB</span>` : ""}</span></div>
     ${f ? `<div><div class="fit ${f.cls}" role="img" aria-label="${esc(f.note)}"><i style="width:${f.pct}%"></i></div><div class="fitnote ${f.cls}" style="margin-top:6px">${esc(f.note)}</div></div>` : ""}
-    <div class="act">${act}</div>
+    <div class="act">${act}</div>${ctl}
     <details class="more"><summary>Details</summary>
       <div class="mbody"><div class="tags">${tags}</div>
         <div class="mono mid">${esc(m.id)}</div>
         ${m.checkpoint ? `<div class="mono mid">${esc(String(m.checkpoint).split("\n")[0])}</div>` : ""}
         ${m.context_length ? `<div class="mid">Remembers up to ${fmtTok(m.context_length)} tokens of conversation</div>` : ""}
         ${savedLine(m)}
-        <div class="dact">${m.downloaded ? `<button class="btn" data-opts="${esc(m.id)}">${ICON.sliders} Settings for this model</button>${isLoaded ? `<button class="btn" data-unload="${esc(m.id)}">Stop using it</button>` : ""}` : ""}</div>
+        <div class="dact">${m.downloaded ? `<button class="btn" data-opts="${esc(m.id)}">${ICON.sliders} Settings for this model</button>${isLoaded ? `` : ""}<button class="btn danger" data-delete="${esc(m.id)}">${ICON.trash} Delete from this computer</button>` : ""}</div>
       </div></details>
   </article>`;
 }
@@ -1336,9 +1370,36 @@ $("#v-models").addEventListener("click", async e => {
   else if(t.dataset.canceldl) cancelDownload(t.dataset.canceldl);
   else if(t.dataset.use) useModel(t.dataset.use, true);
   else if(t.dataset.opts) openOptions(t.dataset.opts);
-  else if(t.dataset.unload){ t.disabled = true; try{ await api("/api/v1/unload", {method:"POST", headers:{"Content-Type":"application/json"}, body:JSON.stringify({model_name:t.dataset.unload})}); toast("Done. The model has been put away."); }catch(err){ toast(err.message); } await tick(); renderModels(); }
+  else if(t.dataset.unload){ t.disabled = true; try{ await api("/api/v1/unload", {method:"POST", headers:{"Content-Type":"application/json"}, body:JSON.stringify({model_name:t.dataset.unload})}); toast("Unloaded. The model's memory is free again."); }catch(err){ toast(err.message); } await loadModels(); await tick(); renderModels(); }
+  else if(t.dataset.reload || t.dataset.load) loadModelNow(t.dataset.reload || t.dataset.load);
+  else if(t.dataset.delete) askDelete(t.dataset.delete);
   else if(t.dataset.chat) useModel(t.dataset.chat, true);
   else if(t.dataset.copycmd){ navigator.clipboard?.writeText("lemonade pull " + t.dataset.copycmd); toast("Copied: lemonade pull " + t.dataset.copycmd); }
+});
+
+
+/* ======================= delete a model ======================= */
+let pendingDelete = null;
+function askDelete(id){
+  const m = S.models.find(x => x.id === id); if(!m) return;
+  pendingDelete = id; $("#delerr").hidden = true; $("#delok").disabled = false; $("#delok").textContent = "Delete";
+  $("#delname").textContent = "Delete " + friendly(m) + "?";
+  const size = m.size ? ` and frees about ${m.size < 10 ? m.size.toFixed(1) : Math.round(m.size)} GB of disk` : "";
+  $("#deltext").innerHTML = `This removes the model's files from this computer${size}. You can download it again later.${id === S.loaded ? " It is in use now, so Zest will unload it first." : ""}`;
+  $("#deldlg").showModal();
+}
+$("#deldlg form").addEventListener("submit", async e => {
+  if(e.submitter?.value !== "ok" || !pendingDelete) return;
+  e.preventDefault();
+  const id = pendingDelete, b = $("#delok"); b.disabled = true; b.textContent = "Deleting…";
+  try{
+    if(S.loaded === id) await api("/api/v1/unload", {method:"POST", headers:{"Content-Type":"application/json"}, body:JSON.stringify({model_name:id})});
+    await api("/api/v1/delete", {method:"POST", headers:{"Content-Type":"application/json"}, body:JSON.stringify({model_name:id})});
+    if(S.model === id) S.model = null;
+    $("#deldlg").close(); toast("Deleted " + friendly(S.models.find(x => x.id === id) || id));
+    await loadModels(); await tick(); syncModelSelect(); if(S.view === "models") renderModels();
+  }catch(err){ $("#delerr").textContent = "Couldn't delete it: " + err.message; $("#delerr").hidden = false; b.disabled = false; b.textContent = "Try again"; }
+  pendingDelete = null;
 });
 
 /* ======================= get a model from Hugging Face ======================= */
@@ -2147,11 +2208,10 @@ $("#help").addEventListener("click", async e => {
   if(b.dataset.hact === "restart"){ b.disabled = true; try{ await api("/ui/engine/restart", {method:"POST", headers:{"Content-Type":"application/json"}, body:"{}"}); toast("Restarting. This takes a few seconds."); }catch(err){ toast(err.message); } b.disabled = false; }
 });
 const ADV_CARDS = [
-  ["server", "Server", "Let other apps use your models, like opencode, Hermes or any chat app. See who is asking, live."],
+  ["server", "Server", "Let other apps use your models, like opencode, Hermes or any chat app. See who is asking, live, and read the activity log."],
   ["hardware", "Hardware", "Watch your graphics card fill up as models load, and choose which one Zest uses."],
   ["backends", "Engines", "Pick how models run on your computer, or install a faster option."],
   ["settings", "All settings", "Every setting Lemonade offers, searchable. Changes save as you make them."],
-  ["logs", "Activity log", "What the helper has been doing. Useful when something goes wrong."],
   ["setup", "Setup guide", "Update the helper, bring in models you already have, or connect to your own Lemonade."]
 ];
 function renderAdvanced(){
@@ -2161,6 +2221,7 @@ function renderAdvanced(){
 $("#advhub").addEventListener("click", e => { const c = e.target.closest("[data-view2]"); if(c) show(c.dataset.view2); });
 
 /* ======================= server page ======================= */
+let pendingLogScroll = false;
 const SRV = {g: null, reqs: new Map(), off: 0, tab: "opencode", showKey: false, filter: "all", open: new Set(), timer: null, fast: null, err: "", built: false, confirmKey: false};
 async function srvFetch(){
   try{
@@ -2170,11 +2231,16 @@ async function srvFetch(){
     SRV.reqs = new Map(r.requests.map(q => [q.id, q]));
     if(!SRV.built || changed) srvBuild();
     srvPaint();
-  }catch(e){ SRV.err = e.message; }
+  }catch(e){
+    SRV.err = e.message;
+    if(!SRV.built && !$("#srverr")) $("#server").innerHTML = `<div class="hero srvhero"><h2>The server <span class="hl">isn't answering</span></h2>
+      <p id="srverr">Zest couldn't read the server's status (${esc(e.message)}). If you have just updated Zest, quit it completely and open it again, because the page is newer than the program behind it. Zest keeps trying, so this clears by itself once it can connect.</p></div>`;
+  }
 }
 const srvNow = () => Date.now() / 1000 + SRV.off;
 function srvShow(){
-  SRV.reqs = new Map(); SRV.gsig = ""; SRV.built = false;
+  SRV.reqs = new Map(); SRV.gsig = ""; SRV.built = false; $("#server").innerHTML = `<div class="hero srvhero"><h2>Share your models with <span class="hl">other apps</span></h2><div class="prog ind"><i></i></div></div>`;
+  loadLogs();
   srvFetch();
   clearInterval(SRV.timer); SRV.timer = setInterval(() => { if(S.view !== "server"){ clearInterval(SRV.timer); clearInterval(SRV.fast); return; } if(!document.hidden) srvFetch(); }, 1000);
   clearInterval(SRV.fast); SRV.fast = setInterval(() => { if(S.view === "server" && !document.hidden) srvPaint(); }, 300);
@@ -2567,6 +2633,23 @@ async function loadBackends(){
   renderBackends();
 }
 const STATE_LABEL = {installed:"installed", update_required:"update needed", installable:"not installed"};
+const ENGINE_INFO = {
+  llamacpp: "Runs chat and writing models (the GGUF files you download on the Models page). This is the engine Zest's chat uses, so it is the one that matters most.",
+  whispercpp: "Listens to speech and turns it into text, for dictation and transcribing recordings.",
+  moonshine: "A small, quick speech-to-text engine that works well on ordinary processors.",
+  kokoro: "Reads text aloud with a natural voice (text-to-speech).",
+  openmoss: "Reads text aloud (text-to-speech) with a larger, more expressive voice model.",
+  "sd-cpp": "Makes pictures from a written description, and edits images.",
+  sdcpp: "Makes pictures from a written description, and edits images.",
+  thinksound: "Creates sound effects and audio to go with a description or a video.",
+  acestep: "Composes music from a written description.",
+  onnxruntime: "Runs small specialised models, such as ones that sort text into categories.",
+  trellis: "Builds 3D objects from a picture or a description.",
+  vllm: "A server for large models, aimed at powerful machines serving many requests at once.",
+  flm: "Runs models on AMD Ryzen AI processors (the NPU).",
+  ryzenai: "Runs models on AMD Ryzen AI processors (the NPU).",
+};
+const ENGINE_BY_MODALITY = {"Text generation": "Runs chat and writing models.", "Speech-to-text": "Turns speech into text.", "Text-to-speech": "Reads text aloud.", "Image generation": "Makes pictures.", "Audio generation": "Makes sound or music.", "3D generation": "Builds 3D objects.", "Text classification": "Sorts text into categories."};
 function renderBackends(){
   if(!S.bk) return;
   $("#bk").innerHTML = `<div class="bkgrid">` + S.bk.map(r => {
@@ -2581,6 +2664,7 @@ function renderBackends(){
     }).join("");
     return `<section class="bkp" data-recipe="${r.recipe}">
       <header><h3>${esc(r.name)}</h3><span class="chip">${esc(r.modality)}</span>${r.experimental?'<span class="chip">experimental</span>':""}<span class="grow"></span>${r.recipe==="llamacpp"?'<span class="chip lem">drives chat models</span>':""}</header>
+      <p class="eng">${esc(ENGINE_INFO[r.recipe] || ENGINE_BY_MODALITY[r.modality] || "A helper program that runs one kind of model.")}</p>
       <div class="bopts" role="${r.selectable?"radiogroup":"group"}" aria-label="${esc(r.name)} backend">${auto}${opts}</div>
       ${r.selectable ? "" : `<p class="note">Lemonade picks the backend for this engine automatically.</p>`}
     </section>`;
@@ -2628,9 +2712,9 @@ async function loadLogs(){
   }catch(e){ $("#log").textContent = "Couldn't read the log: " + e.message; }
 }
 $("#logq").addEventListener("input", loadLogs); $("#logref").addEventListener("click", loadLogs);
-setInterval(() => { if(S.view === "logs" && $("#logauto").checked && !document.hidden) loadLogs(); }, 3000);
+setInterval(() => { if(S.view === "server" && $("#logauto").checked && !document.hidden) loadLogs(); }, 3000);
 
-window.addEventListener("hashchange", () => { const h = location.hash.slice(1); if(TITLES[h] && h !== S.view) show(h); });
+window.addEventListener("hashchange", () => { let h = location.hash.slice(1); if(h === "logs"){ pendingLogScroll = true; h = "server"; } if(TITLES[h] && h !== S.view) show(h); });
 
 /* keep-alive so the desktop (AppImage) build knows the tab is still open */
 setInterval(() => fetch("/ui/ping", {method:"POST"}).catch(() => {}), 5000); fetch("/ui/ping", {method:"POST"}).catch(() => {});
@@ -2641,7 +2725,7 @@ setInterval(() => fetch("/ui/ping", {method:"POST"}).catch(() => {}), 5000); fet
   try{ SU.st = await api("/ui/setup"); S.bk = (await api("/ui/backends")).recipes; }catch{}
   if(!S.convs.length || !conv()) { if(S.convs.length) S.cur = S.convs[0].id; else { const c = {id:uid(), title:"New chat", messages:[], system:"", created:Date.now()}; S.convs.push(c); S.cur = c.id; } }
   renderConvs(); syncModelSelect(); renderStatus(); setSendState();
-  const h = location.hash.slice(1);
+  let h = location.hash.slice(1); if(h === "logs"){ pendingLogScroll = true; h = "server"; }
   show(TITLES[h] && h !== "welcome" ? h : (SU.st && !SU.st.setup_done ? "welcome" : "chat"));
   renderThread();
   grow();
