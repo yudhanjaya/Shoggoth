@@ -2,7 +2,7 @@
 
 **Run AI models on your own computer, with one download.** Zest is a friendly interface for [Lemonade](https://lemonade-server.ai), the open-source engine that runs language models locally. The Zest AppImage **includes Lemonade**.
 
-The idea is to provide an user interface that people who aren't necessarily steeped in technical know-how can still navigate to get open-weights models running on their own hardware. 
+The idea is to provide an user interface that people who aren't necessarily steeped in technical know-how can still navigate to get open-weights models running on their own hardware. Download Zest, and you're good to go. 
 
 ![Zest chat](docs/screenshots/chat.png)
 
