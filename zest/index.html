@@ -65,7 +65,9 @@ main{display:flex;flex-direction:column;min-width:0;height:100dvh}
 .status .sep{width:1px;height:16px;background:var(--line)}
 .status .name{font-weight:600;max-width:24ch;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .status .dim{color:var(--muted)}
-.status .sep,.status #sgpu,.status #stps{display:none}
+.status #sgpu,.status .sep[hidden]{display:none}
+.status #stps{font-weight:600;color:var(--text)}
+.status #stps:empty{display:none}
 .view{flex:1;min-height:0;display:none;overflow:auto}
 .view.active{display:flex;flex-direction:column;animation:enter .32s var(--ease)}
 @keyframes enter{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:none}}
@@ -129,6 +131,25 @@ main{display:flex;flex-direction:column;min-width:0;height:100dvh}
 .meta{margin-top:8px;font:12px var(--mono);color:var(--faint);display:flex;gap:14px;flex-wrap:wrap;align-items:center}
 .meta button{border:0;background:none;color:var(--faint);padding:4px 6px;border-radius:6px;display:inline-flex;gap:5px;align-items:center;font:inherit;min-height:28px}
 .meta button:hover{color:var(--text);background:var(--surface)}
+
+.speedline{display:flex;align-items:center;gap:10px;flex-wrap:wrap;font-size:13.5px;color:var(--muted)}
+.speedline b{color:var(--text)}.speedline small{color:var(--faint)}
+.phase{display:flex;align-items:center;gap:10px;color:var(--muted);font-size:14px}
+.phase time,.loadnote time{font:12px var(--mono);color:var(--faint)}
+.live{display:flex;align-items:center;gap:12px;flex-wrap:wrap;margin-top:8px;font-size:13px;color:var(--muted)}
+.live .phase-name{display:inline-flex;align-items:center;gap:8px;font-weight:600;color:var(--text)}
+.live .phase-name::before{content:"";width:8px;height:8px;border-radius:50%;background:var(--lemon);animation:bob 1.1s infinite ease-in-out}
+.rate{font:12.5px var(--mono)}.rate b{font-size:15px;color:var(--text)}
+.sw{display:inline-block;font-family:var(--sans,inherit);border-radius:99px;padding:2px 10px;font-size:12px;font-weight:600;background:var(--surface);border:1px solid var(--line)}
+.sw.ok{color:var(--leaf);border-color:#b9dcc4}.sw.warn{color:var(--warn);border-color:#e6c9a0}.sw.bad{color:var(--bad);border-color:#e8b9b5}
+.spd{color:#b39700;flex:none;display:block;width:96px;height:24px;overflow:visible}
+.speedrow{display:inline-flex;align-items:center;gap:10px;flex-wrap:wrap}
+.subrow{color:var(--faint)}
+.ctxuse{display:inline-flex;align-items:center;gap:8px}
+.ctxbar{width:70px;height:6px;border-radius:99px;background:var(--line);overflow:hidden;display:inline-block}
+.ctxbar i{display:block;height:100%;background:var(--leaf);border-radius:99px}
+.ctxbar i.warn{background:var(--warn)}.ctxbar i.bad{background:var(--bad)}
+.meta .mbtns{margin-left:auto;display:inline-flex;gap:4px}
 .typing{display:inline-flex;gap:5px;padding:8px 0}
 .typing i{width:7px;height:7px;border-radius:50%;background:var(--lemon);animation:bob 1.1s infinite ease-in-out}
 .typing i:nth-child(2){animation-delay:.15s}.typing i:nth-child(3){animation-delay:.3s}
@@ -515,6 +536,20 @@ details.aegrp>summary small{margin-left:auto;font:11.5px var(--mono);color:var(-
 .mctl{display:flex;gap:8px;flex-wrap:wrap;margin-top:-6px}
 .mctl .btn{min-height:36px;padding:0 14px;font-size:13.5px}
 .btn.danger{color:var(--bad);border-color:currentColor}
+
+.picks{grid-column:1/-1;display:grid;gap:34px}
+.picktier{display:grid;gap:14px}
+.tierhead h3{margin:0;font:600 24px var(--serif)}.tierhead p{margin:2px 0 0;color:var(--muted)}
+.picktier .grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(310px,1fr));gap:16px}
+.ticknote{margin:0;background:var(--lemon-wash);border-radius:12px;padding:10px 14px;font-size:14px}
+.pickhead{margin:0}.take{margin:0;color:var(--muted);font-size:14.5px}
+.warnbox{border:1px solid #e6c9a0;background:#fdf4e4;color:var(--warn);border-radius:12px;padding:12px 16px;font-size:14px}
+.engrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(310px,1fr));gap:16px}
+.engcard{align-content:start}
+.engcard .links{display:flex;gap:14px;flex-wrap:wrap}.engcard .links a{font-weight:600}
+.picktier.more{color:var(--muted)}
+.btn[hidden]{display:none}
+.engcard .links a,.engcard .links a:visited{color:var(--lemon-text);text-decoration:underline;text-underline-offset:3px}
 .pagebtns{display:flex;gap:10px;flex-wrap:wrap;align-items:center}
 #pickdlg{max-width:min(640px,calc(100vw - 32px));max-height:calc(100dvh - 32px)}
 #pickdlg form{padding:0;display:flex;flex-direction:column;max-height:calc(100dvh - 34px)}
@@ -680,7 +715,7 @@ h4.sub{margin:10px 0 0;font:600 13px var(--sans);color:var(--muted);text-transfo
       <button class="status" id="status" aria-label="Server status, open models" type="button">
         <span class="dot" id="sdot"></span>
         <span class="name" id="sname">Connecting…</span>
-        <span class="sep hide-sm"></span>
+        <span class="sep hide-sm" hidden></span>
         <span class="dim hide-sm mono num" id="sgpu"></span>
         <span class="dim hide-sm mono num" id="stps"></span>
       </button>
@@ -793,6 +828,15 @@ h4.sub{margin:10px 0 0;font:600 13px var(--sans);color:var(--muted);text-transfo
     <div class="actions"><button type="button" class="btn" id="hfcancel">Cancel</button><button type="button" class="btn primary" id="hfdo" disabled>Download</button></div>
   </form>
 </dialog>
+<dialog id="problemdlg">
+  <form method="dialog">
+    <h3 id="pbtitle">Something went wrong</h3>
+    <p id="pbbody" style="margin:0;color:var(--text)"></p>
+    <p id="pbhint" style="margin:0;color:var(--muted)"></p>
+    <details id="pbtech"><summary>Technical details</summary><pre id="pbraw" class="snip"></pre></details>
+    <div class="actions"><button class="btn" value="engines" id="pbengines" hidden>Open Engines</button><button class="btn primary" value="ok">OK</button></div>
+  </form>
+</dialog>
 <dialog id="deldlg">
   <form method="dialog">
     <h3 id="delname">Delete this model?</h3>
@@ -867,7 +911,7 @@ function toast(msg){ const t = $("#toast"); t.textContent = msg; t.classList.add
 /* ======================= state ======================= */
 const S = {
   view: "chat", models: [], loaded: null, health: null, gpus: [], info: null, hist: {},
-  filter: store.get("zest.filter2", "foryou"), q: "",
+  filter: store.get("zest.filter3", "picks"), q: "",
   downloads: [], dlSupported: null, bk: null,
   convs: store.get("zest.convs", []), cur: store.get("zest.cur", null),
   model: store.get("zest.model", ""), busy: false, abort: null,
@@ -957,6 +1001,7 @@ async function pollServer(){
   }catch{ S.up = false; S.loaded = null; }
   try{ const st = await api("/api/v1/stats"); S.tps = st.tokens_per_second || null; }catch{}
   try{ S.info = await api("/ui/info"); }catch{}
+  try{ S.act = (await api("/ui/activity")).items; }catch{ S.act = []; }
 }
 async function loadModels(){
   try{
@@ -973,7 +1018,11 @@ function renderStatus(){
   $("#sname").textContent = !S.up ? (eng ? (eng.state === "error" ? "Couldn't start" : "Getting ready…") : "Not running")
     : S.loadingModel ? "Getting " + friendly(S.loadingModel) + " ready…" : S.busy ? friendly(S.loaded || S.model || "") + " is answering" : (S.loaded ? friendly(S.loaded) : "Ready");
   $("#status").title = S.up ? (S.loaded ? "The model in use. Click to change it." : "Ready. Click to choose a model.") : "The AI engine isn't running yet. Click for details.";
-  $("#sgpu").textContent = ""; $("#stps").textContent = "";
+  // Live speed in the pill: exact for Zest's own chat, approximate (~) for other apps using the Server.
+  let sp = "";
+  if(S.live && S.live.tFirst && S.live.tps) sp = fmtRate(S.live.tps) + " tok/s";
+  else { const o = (S.act || []).find(a => a.tps && !(S.busy && a.source === "zest")); if(o) sp = "~" + fmtRate(o.tps) + " tok/s" + (o.source === "zest" ? "" : " · " + o.app); }
+  $("#sgpu").textContent = ""; $("#stps").textContent = sp; $("#status .sep").hidden = !sp;
   renderDlPill();
   $("#hintdev").textContent = "Private: everything runs on this computer. ";
 }
@@ -990,6 +1039,33 @@ async function tick(){
 setInterval(tick, 2500);
 document.addEventListener("visibilitychange", tick);
 
+
+/* ======================= friendly problems ======================= */
+// Lemonade and llama.cpp errors are written for engineers. This turns the common ones into a sentence a person can act on.
+function friendlyProblem(raw, what){
+  const r = String(raw || ""), t = r.toLowerCase();
+  if(/architecture|unsupported|not supported|unknown model|unrecogni[sz]ed|invalid gguf|bad magic|failed to load model|llama-server (exited|failed)|model.*(could not|couldn't) be loaded/.test(t))
+    return {title: "This model isn't supported yet", body: `${what || "This model"} uses a design (an “architecture”) that your copy of llama.cpp doesn't understand yet. This is common with brand-new models.`, hint: "Updating the engine often fixes it. Otherwise, pick a different model or a different version of this one.", engines: true};
+  if(/\b(401|403)\b|gated|authori[sz]ation|access token|log ?in|accept.*(terms|license)/.test(t))
+    return {title: "This model needs a login", body: "The owner of this model asks for you to sign in or accept terms on Hugging Face first. Zest can't download models that need a login yet.", hint: "Pick a model that doesn't need one. Many popular models are also published, without a login, by other uploaders."};
+  if(/\b404\b|not found|no such (repo|model)|repository/.test(t))
+    return {title: "Couldn't find that model", body: "Hugging Face (or Lemonade) says that model or file doesn't exist.", hint: "Check the link or name, and that the repository holds GGUF files."};
+  if(/out of memory|cudamalloc|oom|failed to allocate|insufficient memory|not enough memory|vram/.test(t))
+    return {title: "Not enough memory", body: `${what || "This model"} needs more graphics (or system) memory than is free right now.`, hint: "Close other programs that use the graphics card, unload other models, choose a smaller version, or shorten its context window under Settings for this model."};
+  if(/no space|disk full|enospc|not enough (disk|space)/.test(t))
+    return {title: "Not enough disk space", body: "There isn't enough free space to store this model.", hint: "Free some space, or delete a model you no longer use from the Models page."};
+  if(/timed? ?out|timeout|connection|network|unreachable|resolve/.test(t))
+    return {title: "Couldn't reach the internet", body: "The download couldn't connect.", hint: "Check your connection and try again."};
+  return {title: "Something went wrong", body: "That didn't work, and there isn't a simpler explanation for it.", hint: "Details are below. If it keeps happening, the Activity log (Advanced > Server) may say more."};
+}
+function showProblem(raw, what){
+  const p = friendlyProblem(raw, what);
+  $("#pbtitle").textContent = p.title; $("#pbbody").textContent = p.body; $("#pbhint").textContent = p.hint;
+  $("#pbraw").textContent = String(raw || "(no details)"); $("#pbtech").open = false; $("#pbengines").hidden = !p.engines;
+  if(!$("#problemdlg").open) $("#problemdlg").showModal();
+}
+$("#problemdlg form").addEventListener("submit", e => { if(e.submitter?.value === "engines"){ show("backends"); } });
+
 /* ======================= model downloads ======================= */
 let dlFast = null;
 const isActiveJob = j => ["downloading", "paused"].includes(j.status);
@@ -1001,7 +1077,7 @@ async function pollDownloads(){
     S.downloads = Array.isArray(r) ? r : [];
     const ended = before.filter(isActiveJob).map(p => ({p, now: S.downloads.find(j => j.id === p.id)})).filter(x => !x.now || !isActiveJob(x.now));
     for(const {p, now} of ended){
-      if(now && now.status === "error") toast(`Download of ${p.model_name} failed${now.error ? ": " + now.error : ""}`);
+      if(now && now.status === "error"){ toast(`Download of ${friendly(p.model_name)} failed`); showProblem(now.error || now.message || "The download failed.", friendly(p.model_name)); }
       else if(!now || now.status === "completed") toast(`${p.model_name} is downloaded`);
     }
     if(ended.length){ await loadModels(); if(S.view === "models") renderModels(); if(inSetup()) renderSetup(true); syncModelSelect(); }
@@ -1024,7 +1100,7 @@ async function startDownload(id){
   try{
     await api("/api/v1/pull", {method:"POST", headers:{"Content-Type":"application/json"}, body:JSON.stringify({model_name:id, stream:true, subscribe:false})});
     SU.msg.dl = ""; await pollDownloads(); if(S.view === "models") renderModels(); if(inSetup()) renderSetup(true);
-  }catch(e){ SU.msg.dl = e.message; toast("Couldn't start the download: " + e.message); if(inSetup()) renderSetup(true); }
+  }catch(e){ SU.msg.dl = e.message; toast("Couldn't start the download"); showProblem(e.message, friendly(id)); if(inSetup()) renderSetup(true); }
 }
 async function cancelDownload(id){
   try{
@@ -1120,18 +1196,69 @@ const SUGGEST = [
   "Plan a three-day trip to Lisbon on a small budget",
   "Give me five easy dinner ideas using chicken and rice"
 ];
+
+/* ---- speed: words, graph and history ---- */
+// About 5 tokens a second is a comfortable reading pace, so that is the line between "slow" and "fine".
+function speedWord(t){
+  return t >= 25 ? ["Very fast", "ok"] : t >= 10 ? ["Fast", "ok"] : t >= 5 ? ["Comfortable reading speed", "ok"] : t >= 2 ? ["Slow", "warn"] : ["Very slow", "bad"];
+}
+const fmtRate = t => t >= 100 ? Math.round(t).toLocaleString() : t >= 10 ? t.toFixed(0) : t.toFixed(1);
+function sparkSVG(series, w, h){
+  w = w || 96; h = h || 24;
+  if(!series || series.length < 2) return "";
+  const max = Math.max(...series, 1), step = w / (series.length - 1);
+  const pts = series.map((v, i) => (i * step).toFixed(1) + "," + (h - 2 - (v / max) * (h - 4)).toFixed(1)).join(" ");
+  return `<svg class="spd" viewBox="0 0 ${w} ${h}" width="${w}" height="${h}" role="img" aria-label="Speed over the length of the answer, peaking at ${fmtRate(max)} tokens a second"><line x1="0" x2="${w}" y1="${h - 1}" y2="${h - 1}" stroke="currentColor" stroke-opacity=".2"/><polyline points="${pts}" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg>`;
+}
+function downsample(a, n){
+  if(a.length <= n) return a.map(v => +v.toFixed(1));
+  const out = [], k = a.length / n;
+  for(let i = 0; i < n; i++){ const s = a.slice(Math.floor(i * k), Math.floor((i + 1) * k) || undefined); out.push(+(s.reduce((x, y) => x + y, 0) / s.length).toFixed(1)); }
+  return out;
+}
+const speedKey = id => id + "|" + (S.info?.device || "");
+function speedHistory(id){ const all = store.get("zest.speed", {}) || {}; return all[speedKey(id)] || null; }
+function recordSpeed(id, tps){
+  if(!(tps > 0)) return;
+  const all = store.get("zest.speed", {}) || {}, k = speedKey(id), o = all[k];
+  all[k] = {tps: o ? +(o.tps * .7 + tps * .3).toFixed(1) : +tps.toFixed(1), n: (o ? o.n : 0) + 1, t: Date.now()};
+  store.set("zest.speed", all);
+}
+const ctxCache = {};
+async function ctxLimit(id){
+  const c = ctxCache[id]; if(c && Date.now() - c.t < 60000) return c.v;
+  try{ const d = await api(`/api/v1/models/${encodeURIComponent(id)}/options`); const v = Number(d.resolved_ctx_size) || (d.effective?.ctx_size > 0 ? d.effective.ctx_size : 0) || null; ctxCache[id] = {v, t: Date.now()}; return v; }
+  catch{ return null; }
+}
+const fmtK = n => n >= 10000 ? Math.round(n / 1000) + "k" : n >= 1000 ? (n / 1000).toFixed(1) + "k" : String(n);
+function statsHTML(s){
+  const [word, cls] = s.tps ? speedWord(s.tps) : [null, ""];
+  const bits = [];
+  if(s.tps) bits.push(`<span class="rate"><b class="num">${fmtRate(s.tps)}</b> tok/s</span><span class="sw ${cls}">${word}</span>${sparkSVG(s.series)}`);
+  const sub = [`${s.tokens.toLocaleString()} tokens`];
+  if(s.ttft != null) sub.push(`first token ${s.ttft.toFixed(1)}s`);
+  if(s.pps) sub.push(`reads your message at ${fmtRate(s.pps)} tok/s`);
+  if(s.model) sub.push(esc(friendly(s.model)) + (s.backend ? " on " + esc(s.backend) : ""));
+  const ctx = s.ctx && s.used ? `<span class="ctxuse" title="How much of the model's memory of this conversation is used"><span class="ctxbar"><i class="${s.used / s.ctx > .9 ? "bad" : s.used / s.ctx > .7 ? "warn" : ""}" style="width:${Math.min(100, s.used / s.ctx * 100).toFixed(1)}%"></i></span>Conversation: ${fmtK(s.used)} of ${fmtTok(s.ctx)}</span>` : "";
+  return `<span class="speedrow">${bits.join("")}</span><span class="subrow">${sub.join(" · ")}</span>${ctx}`;
+}
 function msgHTML(m, i, live){
   if(m.role === "user") return `<div class="msg user"><div class="body">${esc(m.content)}</div></div>`;
   const {reasoning, text, open} = splitThink(m);
   let inner = "";
   if(reasoning) inner += `<details class="think" ${open||!text?"open":""}><summary>${open||(live&&!text)?"Thinking…":"Show how it thought"}</summary><div class="tx">${esc(reasoning)}</div></details>`;
-  if(m.loading) inner += `<div class="loadnote"><span class="shimmer"></span>Getting ${esc(friendly(m.loading))} ready. The first answer takes a little longer…</div>`;
+  const lv = m.live, secs = lv ? Math.max(0, (performance.now() - lv.t0) / 1000) : 0;
+  if(m.loading) inner += `<div class="loadnote"><span class="shimmer"></span>Loading ${esc(friendly(m.loading))} into memory. The first answer takes a little longer… <time>${Math.floor(secs)}s</time></div>`;
   else if(text) inner += md(text);
-  else if(!reasoning) inner += `<div class="typing" aria-label="Thinking"><i></i><i></i><i></i></div>`;
+  else if(!reasoning) inner += `<div class="phase"><span class="typing" aria-hidden="true"><i></i><i></i><i></i></span>${lv && !lv.tFirst ? `Reading your message… <time>${Math.floor(secs)}s</time>` : ""}</div>`;
   let meta = "";
+  if(live && lv && lv.tFirst && !m.done){
+    const [word, cls] = speedWord(lv.tps || 0), phase = reasoning && !text ? "Thinking" : "Writing";
+    meta = `<div class="live" role="status" aria-label="${phase}, ${fmtRate(lv.tps || 0)} tokens a second"><span class="phase-name">${phase}</span><span class="rate"><b class="num">${fmtRate(lv.tps || 0)}</b> tok/s</span><span class="sw ${cls}">${word}</span>${sparkSVG(lv.series)}</div>`;
+  }
   if(!live || m.done){
     const s = m.stats;
-    meta = `<div class="meta">${s ? `<span>${s.tps ? s.tps.toFixed(1)+" tok/s · " : ""}${s.tokens} tokens${s.ttft!=null?` · first token ${s.ttft.toFixed(1)}s`:""}</span>` : ""}<button type="button" data-copy="${i}">${ICON.copy} Copy</button><button type="button" data-regen="${i}">${ICON.redo} Retry</button></div>`;
+    meta = `<div class="meta">${s ? statsHTML(s) : ""}<span class="mbtns"><button type="button" data-copy="${i}">${ICON.copy} Copy</button><button type="button" data-regen="${i}">${ICON.redo} Retry</button></span></div>`;
   }
   return `<div class="msg bot">${AVATAR}<div class="body">${inner}${meta}</div></div>`;
 }
@@ -1199,7 +1326,7 @@ function send(){
 async function generate(){
   const c = conv(); if(!c || !S.model){ toast("Choose a model first"); show("models"); return; }
   const needLoad = S.loaded !== S.model;
-  const bot = {role:"assistant", content:"", reasoning:"", loading: needLoad ? S.model : null};
+  const bot = {role:"assistant", content:"", reasoning:"", loading: needLoad ? S.model : null, live: {t0: performance.now(), tFirst: null, tps: 0, series: []}};
   c.messages.push(bot);
   renderThread();
   const idx = c.messages.length - 1;
@@ -1214,6 +1341,17 @@ async function generate(){
   if(S.maxtok > 0) body.max_tokens = S.maxtok;
 
   const t0 = performance.now(); let tFirst = null, chunks = 0, usage = null, timings = null;
+  S.live = bot.live;
+  // Sample the speed twice a second: a smoothed tokens-per-second for the readout and the little graph.
+  let lastN = 0, lastT = 0;
+  const sampler = setInterval(() => {
+    const lv = bot.live; if(!lv) return;
+    if(lv.tFirst){
+      const now = performance.now(), dt = (now - (lastT || lv.tFirst)) / 1000;
+      if(dt > 0.2){ const inst = (chunks - lastN) / dt; lv.tps = lv.tps ? lv.tps * .6 + inst * .4 : inst; lv.series.push(lv.tps); lastN = chunks; lastT = now; }
+    }
+    renderStatus(); if(!raf) raf = requestAnimationFrame(paint);
+  }, 500);
   let raf = 0; const paint = () => { raf = 0; const node = el(); if(!node) return; const tmp = document.createElement("div"); tmp.innerHTML = msgHTML(bot, idx, true); node.replaceWith(tmp.firstElementChild); const th = $("#thread"); if(th.scrollHeight - th.scrollTop - th.clientHeight < 140) th.scrollTop = 1e9; };
   try{
     const r = await fetch("/api/v1/chat/completions", {method:"POST", headers:{"Content-Type":"application/json"}, body:JSON.stringify(body), signal:S.abort.signal});
@@ -1232,7 +1370,7 @@ async function generate(){
         const dl = j.choices?.[0]?.delta; if(!dl) continue;
         const piece = (dl.content || "") , rp = (dl.reasoning_content || dl.reasoning || "");
         if(piece || rp){
-          if(tFirst === null){ tFirst = performance.now(); bot.loading = null; S.loadingModel = null; }
+          if(tFirst === null){ tFirst = performance.now(); bot.live.tFirst = tFirst; bot.loading = null; S.loadingModel = null; }
           bot.content += piece; bot.reasoning += rp; chunks++;
           if(!raf) raf = requestAnimationFrame(paint);
         }
@@ -1240,22 +1378,29 @@ async function generate(){
     }
   }catch(err){
     if(err.name === "AbortError"){ bot.content += bot.content ? "" : ""; }
-    else { bot.content += (bot.content ? "\n\n" : "") + "Something went wrong: " + (err.message || err); }
+    else { bot.content += (bot.content ? "\n\n" : "") + "Something went wrong: " + (err.message || err); if(needLoad && tFirst === null) showProblem(err.message || String(err), friendly(S.model)); }
   }
+  clearInterval(sampler); S.live = null;
   bot.loading = null; S.loadingModel = null;
+  const series = bot.live.series; delete bot.live;
   const tEnd = performance.now();
   const tokens = usage?.completion_tokens ?? chunks;
   const gen = tFirst ? (tEnd - tFirst) / 1000 : 0;
-  bot.stats = tFirst ? {tokens, tps: timings?.predicted_per_second || (gen > .2 ? tokens / gen : null), ttft: (tFirst - t0)/1000} : null;
+  bot.stats = tFirst ? {tokens, tps: timings?.predicted_per_second || (gen > .2 ? tokens / gen : null), ttft: (tFirst - t0)/1000,
+    pps: timings?.prompt_per_second || null, used: usage ? (usage.prompt_tokens || 0) + (usage.completion_tokens || 0) : null,
+    series: downsample(series, 40), model: S.model, backend: S.info?.backend?.resolved || null} : null;
   bot.done = true;
+  if(bot.stats?.tokens >= 20 && bot.stats.tps) recordSpeed(S.model, bot.stats.tps);
+  if(bot.stats && bot.stats.used) ctxLimit(S.model).then(v => { if(v){ bot.stats.ctx = v; saveConvs(); if(S.view === "chat") renderThread(false); } });
   if(!bot.content && !bot.reasoning) c.messages.splice(idx, 1);
   S.busy = false; S.abort = null; saveConvs(); setSendState(); renderThread(false); tick();
 }
 
 /* ======================= models ======================= */
 const CATS = [
-  ["foryou","For you", m => m.downloaded || (m.recipe === "llamacpp" && (fitInfo(m)?.cls || "ok") !== "over" && !m.labels?.some(l => /embed|rerank/.test(l)))],
+  ["picks","Our picks", () => false],
   ["downloaded","On this computer", m => m.downloaded],
+  ["foryou","More models", m => m.downloaded || (m.recipe === "llamacpp" && (fitInfo(m)?.cls || "ok") !== "over" && !m.labels?.some(l => /embed|rerank/.test(l)))],
   ["chat","Chat", m => m.recipe==="llamacpp" && !m.labels?.some(l => /embed|rerank/.test(l))],
   ["vision","Sees pictures", m => m.labels?.includes("vision")],
   ["image","Makes images", m => m.recipe==="sd-cpp"],
@@ -1314,7 +1459,7 @@ function savedLine(m){
   }
   return parts.length ? `<div class="optline" title="${esc(parts.join(" · "))}"><b>Custom settings</b> ${esc(parts.join(" · "))}</div>` : "";
 }
-function cardHTML(m){
+function cardHTML(m, extra){
   const f = fitInfo(m), isLoaded = m.id === S.loaded, job = dlJob(m.id);
   const tags = [m.recipe, ...(m.labels||[]).filter(l => l !== m.recipe)].map(l => `<span class="chip">${esc(l)}</span>`).join("");
   let act;
@@ -1323,15 +1468,18 @@ function cardHTML(m){
       : S.dlSupported === false ? `<button class="btn" data-copycmd="${esc(m.id)}">${ICON.copy} Copy download command</button>`
       : `<button class="btn primary" data-dl="${esc(m.id)}">Get it${m.size ? " · " + (m.size < 10 ? m.size.toFixed(1) : Math.round(m.size)) + " GB" : ""}</button>`;
   } else act = isLoaded ? `<button class="btn primary" data-chat="${esc(m.id)}">Chat with it</button>` : `<button class="btn primary" data-use="${esc(m.id)}">Use this one</button>`;
+  const sh = m.downloaded ? speedHistory(m.id) : null, [shWord, shCls] = sh ? speedWord(sh.tps) : ["", ""];
+  const spLine = sh ? `<div class="speedline"><span class="sw ${shCls}">${shWord}</span><span>About <b class="num">${fmtRate(sh.tps)}</b> tok/s on this computer${sh.n > 1 ? ` <small>(from ${sh.n} answers)</small>` : ""}</span></div>` : "";
   const busy = S.loadingModel === m.id;
   const ctl = !m.downloaded ? "" : `<div class="mctl">${isLoaded
     ? `<button class="btn" data-reload="${esc(m.id)}" ${S.loadingModel ? "disabled" : ""}>${ICON.reload} Reload</button><button class="btn" data-unload="${esc(m.id)}" ${S.loadingModel ? "disabled" : ""}>Unload</button>`
     : `<button class="btn" data-load="${esc(m.id)}" ${S.loadingModel ? "disabled" : ""}>${busy ? "Loading…" : "Load now"}</button>`}</div>`;
   return `<article class="card ${isLoaded?"loaded":""}" data-id="${esc(m.id)}">
     <div class="ctop"><h3>${esc(friendly(m))}</h3>${isLoaded?'<span class="chip ok">In use</span>':m.downloaded?'<span class="chip">On this computer</span>':""}</div>
-    <p class="what">${esc(whatFor(m))}</p>
+    <p class="what">${esc(whatFor(m))}</p>${extra || ""}
     <div class="row"><span>${m.size ? `${sizeWord(m.size)} <span class="mono num">· ${m.size.toFixed(m.size<10?1:0)} GB</span>` : ""}</span></div>
     ${f ? `<div><div class="fit ${f.cls}" role="img" aria-label="${esc(f.note)}"><i style="width:${f.pct}%"></i></div><div class="fitnote ${f.cls}" style="margin-top:6px">${esc(f.note)}</div></div>` : ""}
+    ${spLine}
     <div class="act">${act}</div>${ctl}
     <details class="more"><summary>Details</summary>
       <div class="mbody"><div class="tags">${tags}</div>
@@ -1343,8 +1491,47 @@ function cardHTML(m){
       </div></details>
   </article>`;
 }
+
+/* ======================= our picks ======================= */
+// Written from our own testing: a generation-ship design exercise that needs web searches for physics and engineering.
+const PICKS = [
+  {tier: "Start here: small and fast", blurb: "Runs on almost any computer.", items: [
+    {id: "LFM2.5-8B-A1B", label: "Best small model", take: "Very fast, runs on almost anything, and calls tools well. Its answers are short and to the point. Give it web search in a harness such as OpenChamber and it is the smartest small model we have used. Think of it as a stand-in for a cloud “flash” model."}]},
+  {tier: "Our general pick", blurb: "The one we would install first if your computer can hold it.", items: [
+    {id: "Qwen3.6-35B-A3B-MTP-GGUF", label: "Best all-rounder", take: "Very fast and competent at everyday tasks. It sometimes mangles complex code, but you can run it again and again until it gets there. It does well at research, tweaking system settings and scripts, and at agent work (better than GLM). A good in-editor helper for small functions. Its writing style is not to everyone's taste."}]},
+  {tier: "If Qwen 3.6 won't run", blurb: "A fallback, with a warning.", items: [
+    {id: "GLM-4.7-Flash-GGUF", label: "Only if you can't run Qwen 3.6", take: "Fast, but a confident bluffer: it makes things up often, so we would not trust it to write code. It improves a lot when you give it skills in a harness like OpenCode or Hermes, but pick it only if Qwen 3.6 is out of reach."}]},
+  {tier: "Bigger and slower: dense models", blurb: "Good answers, but slower than the models above because every part of them works on every word.", note: "On a computer with a GPU and 64 GB of RAM, we would suggest trying Strata (below) instead of either of these.", items: [
+    {id: "Gemma-4-31B-it-MTP-GGUF", label: "Clear and concise", take: "We like the style: clear, concise and competent. It is simply slow next to the mixture-of-experts models."},
+    {id: "Qwen3.8-27B-GGUF", label: "A thinker", take: "Competent, but it ruminates and refines its answers before it replies, and can think for ages unless you tell it to keep its thinking and answers short."}]}
+];
+const PICK_ENGINES = [
+  {name: "Strata", take: "A separate inference engine, not part of Lemonade, built to run very large mixture-of-experts models (such as Qwen3.8 Flash Next) on one NVIDIA GPU plus plenty of system RAM, around 64 GB. It moves the parts of the model that are not in use between GPU memory, RAM and fast storage.", links: [["stratallm.org", "https://stratallm.org/"], ["GitHub", "https://github.com/Niko1221/Strata"]]},
+  {name: "Maya", take: "A related engine that grew out of Strata, aimed at even bigger models (such as GLM-5.3 Flash and DeepSeek-V4.1 Flash), spread across one to sixteen NVIDIA or AMD GPUs, with a server and dashboard of its own.", links: [["GitHub", "https://github.com/mw00/project-maya"]]}
+];
+function pickCards(it){
+  const m = S.models.find(x => x.id === it.id) || (it.alt || []).map(a => S.models.find(x => x.id === a)).find(Boolean);
+  if(!m) return "";
+  return cardHTML(m, `<p class="pickhead"><span class="chip lem">${esc(it.label)}</span></p><p class="take">${esc(it.take)}</p>`);
+}
+function picksHTML(){
+  const noModels = !S.models.length;
+  const tiers = PICKS.map(t => {
+    const cards = t.items.map(pickCards).join("");
+    if(!cards) return "";
+    return `<section class="picktier"><div class="tierhead"><h3>${esc(t.tier)}</h3><p>${esc(t.blurb)}</p></div>${t.note ? `<p class="ticknote">${esc(t.note)}</p>` : ""}<div class="grid">${cards}</div></section>`;
+  }).join("");
+  const eng = `<section class="picktier"><div class="tierhead"><h3>For advanced users: engines for huge models</h3><p>Not for everyone. Skip this unless you are comfortable on the command line.</p></div>
+    <div class="warnbox"><b>Advanced.</b> These are young projects that run outside Zest and Lemonade. You install and troubleshoot them yourself, and the speeds quoted online are the projects' own claims.</div>
+    <div class="engrid">${PICK_ENGINES.map(e => `<article class="card engcard"><div class="ctop"><h3>${e.name}</h3><span class="chip">Advanced</span></div><p class="take">${esc(e.take)}</p><div class="links">${e.links.map(([n, u]) => `<a href="${u}" target="_blank" rel="noopener noreferrer">${esc(n)}</a>`).join("")}</div></article>`).join("")}</div></section>`;
+  const harness = `<section class="picktier"><div class="tierhead"><h3>Make any model better: a harness and skills</h3><p>A model gets much more useful when it can search the web and follow skills.</p></div>
+    <div class="engrid"><article class="card engcard"><div class="ctop"><h3>OpenChamber</h3><span class="chip lem">Our pick</span></div><p class="take">Our recommended app for working with your models. Connect it through the Server page. We find Unsloth Desktop laggy at the moment, and Hermes more complex than most people need.</p><div class="links"><a href="https://github.com/openchamber/openchamber" target="_blank" rel="noopener noreferrer">OpenChamber on GitHub</a></div></article>
+    <article class="card engcard"><div class="ctop"><h3>obra/superpowers</h3><span class="chip lem">Skills</span></div><p class="take">Give your models a few skills, especially this set, and most of them turn into a very good daily driver.</p><div class="links"><a href="https://github.com/obra/superpowers" target="_blank" rel="noopener noreferrer">obra/superpowers on GitHub</a></div></article></div></section>`;
+  const more = `<section class="picktier more"><p>Want something else? <button class="linkbtn" data-f2="foryou">Browse more models</button> that fit your computer, or <button class="linkbtn" data-hf>add any GGUF model from Hugging Face</button>. If a model's design isn't supported yet, Zest will tell you.</p></section>`;
+  return `<div class="picks">${noModels ? `<p class="help2">Models are loading…</p>` : tiers}${eng}${harness}${more}</div>`;
+}
 function renderModels(){
-  if(!CATS.some(c => c[0] === S.filter)) S.filter = "foryou";
+  if(!CATS.some(c => c[0] === S.filter)) S.filter = "picks";
   renderFilters();
   const none = S.models.length && !S.models.some(m => m.downloaded), noBackend = S.bk && S.bk.length && !backendsInstalled().length;
   $("#modelsbanner").innerHTML = (noBackend ? `<div class="note-warn" style="margin-bottom:12px">Zest still needs one small piece before models can run. <a href="#setup" data-go="setup">Finish setting up</a>.</div>` : "") +
@@ -1353,11 +1540,13 @@ function renderModels(){
   const list = S.models.filter(f).filter(m => !q || m.id.toLowerCase().includes(q) || friendly(m).toLowerCase().includes(q) || (m.labels||[]).some(l=>l.includes(q)))
     .sort((a,b)=> (b.id===S.loaded)-(a.id===S.loaded) || b.downloaded-a.downloaded || a.id.localeCompare(b.id));
   const open = new Set($$("#grid details.more[open]").map(d => d.closest(".card").dataset.id));
+  $("#grid").classList.toggle("picksmode", S.filter === "picks");
+  if(S.filter === "picks"){ $("#grid").innerHTML = picksHTML(); $$("#grid .card[data-id]").forEach(c => { if(open.has(c.dataset.id)) c.querySelector("details.more").open = true; }); return; }
   $("#grid").innerHTML = list.length ? list.map(cardHTML).join("") : `<div class="empty-note" style="grid-column:1/-1">Nothing matches. Try “Everything”, or <button class="linkbtn" data-hf>get a model from Hugging Face</button>.</div>`;
   $$("#grid .card").forEach(c => { if(open.has(c.dataset.id)) c.querySelector("details.more").open = true; });
 }
 function updateModelBadges(){ if(!$("#optdlg").open && !$("#hfdlg").open && !document.activeElement?.closest?.("#grid")) renderModels(); }
-$("#filters").addEventListener("click", e => { const b = e.target.closest("[data-f]"); if(b){ S.filter = b.dataset.f; store.set("zest.filter2", S.filter); renderModels(); } });
+$("#filters").addEventListener("click", e => { const b = e.target.closest("[data-f]"); if(b){ S.filter = b.dataset.f; store.set("zest.filter3", S.filter); renderModels(); } });
 $("#filters").addEventListener("input", e => { if(e.target.id==="mq"){ S.q = e.target.value; const pos = e.target.selectionStart; renderModels(); const n = $("#mq"); n.focus(); n.setSelectionRange(pos,pos); } });
 function useModel(id, go){
   S.model = id; store.set("zest.model", id); syncModelSelect();
@@ -1365,6 +1554,7 @@ function useModel(id, go){
 }
 $("#v-models").addEventListener("click", async e => {
   const t = e.target.closest("button"); if(!t) return;
+  if(t.dataset.f2){ S.filter = t.dataset.f2; store.set("zest.filter3", S.filter); window.scrollTo(0, 0); return renderModels(); }
   if(t.hasAttribute("data-hf")) return openHF();
   if(t.dataset.dl) startDownload(t.dataset.dl);
   else if(t.dataset.canceldl) cancelDownload(t.dataset.canceldl);
@@ -1462,8 +1652,8 @@ async function hfDownload(){
   try{
     await api("/api/v1/pull", {method:"POST", headers:{"Content-Type":"application/json"}, body:JSON.stringify(body)});
     $("#hfdlg").close(); toast("Download started. You can keep using Zest while it works.");
-    await loadModels(); await pollDownloads(); S.filter = "downloaded"; if(S.view === "models") renderModels();
-  }catch(e){ HF.err = "Lemonade couldn't start that download: " + e.message; renderHF(); }
+    await loadModels(); await pollDownloads(); S.filter = "downloaded"; store.set("zest.filter3", S.filter); if(S.view === "models") renderModels();
+  }catch(e){ HF.err = "Lemonade couldn't start that download: " + e.message; renderHF(); showProblem(e.message, d?.name || "This model"); }
 }
 $("#hfbody").addEventListener("click", e => {
   if(e.target.closest("#hfgo")) return hfLookup();
@@ -1649,7 +1839,7 @@ async function loadModelNow(id){
     if(S.loaded === id) await api("/api/v1/unload", {method:"POST", headers:{"Content-Type":"application/json"}, body:JSON.stringify({model_name:id})});
     await api("/api/v1/load", {method:"POST", headers:{"Content-Type":"application/json"}, body:JSON.stringify({model_name:id})});
     S.model = id; store.set("zest.model", id); toast(id + " is ready");
-  }catch(err){ toast("Load failed: " + err.message); }
+  }catch(err){ toast("Couldn't load " + friendly(id)); showProblem(err.message, friendly(id)); }
   S.loadingModel = null; await loadModels(); await tick(); if(S.view === "models") renderModels();
 }
 $("#odcancel").addEventListener("click", () => { $("#optdlg").close(); });
@@ -1853,16 +2043,16 @@ function stepShell(n, key, title, doneFlag, chipHTML, body){
 const inSetup = () => S.view === "setup" || S.view === "welcome";
 function tierModels(){
   const v = vramAvail(), cap = Math.max(1, v ? v.avail * 0.8 - 0.8 : 4);
-  const pool = S.models.filter(m => !m.downloaded && m.recipe === "llamacpp" && (m.labels || []).includes("chat") && !(m.labels || []).includes("coding") && m.size && m.size <= cap && !/test/i.test(m.id) && !(m.labels || []).some(l => /embed|rerank/.test(l)))
-    .sort((a, b) => a.size - b.size);
+  const ok = m => !m.downloaded && m.recipe === "llamacpp" && m.size && m.size <= cap && !(m.labels || []).some(l => /embed|rerank/.test(l));
+  const pool = S.models.filter(m => ok(m) && (m.labels || []).includes("chat") && !(m.labels || []).includes("coding") && !/test/i.test(m.id)).sort((a, b) => a.size - b.size);
   if(!pool.length) return [];
-  const quick = pool.find(m => m.id === "LFM2.5-8B-A1B");   // fast, short answers, runs on almost anything
-  const rest = pool.filter(m => m !== quick);
-  const pick = quick && rest.length
-    ? [quick, rest[Math.floor((rest.length - 1) / 2)], rest[rest.length - 1]].filter((m, i, a) => a.indexOf(m) === i)
-    : [pool[0], pool[Math.floor((pool.length - 1) / 2)], pool[pool.length - 1]].filter((m, i, a) => a.indexOf(m) === i);
+  // Our picks first, so a newcomer's three choices match the Our picks page; anything that doesn't fit falls back to the size ladder.
+  const want = ["LFM2.5-8B-A1B", "Qwen3.6-35B-A3B-MTP-GGUF", "Gemma-4-31B-it-MTP-GGUF"].map(id => pool.find(m => m.id === id));
+  const rest = pool.filter(m => !want.includes(m));
+  const fallback = [rest[0], rest[Math.floor((rest.length - 1) / 2)], rest[rest.length - 1]];
+  const pick = want.map((m, i) => m || fallback[i]).filter((m, i, a) => m && a.indexOf(m) === i);
   const names = pick.length === 1 ? ["Balanced"] : pick.length === 2 ? ["Quick", "Thorough"] : ["Quick", "Balanced", "Thorough"];
-  const blurb = {Quick: "Answers fast and keeps it simple. Good for short questions.", Balanced: "A good all-rounder for everyday writing and questions.", Thorough: "Takes a little longer, but gives more careful, detailed answers."};
+  const blurb = {Quick: "Answers fast and keeps it short and to the point. Runs on almost any computer.", Balanced: "Our general pick: fast, and good at everyday tasks, research and simple code.", Thorough: "Clear, careful writing, but slower than the others."};
   return pick.map((m, i) => ({m, tier: names[i], blurb: blurb[names[i]]}));
 }
 function welcomeStep(){
@@ -2173,7 +2363,7 @@ function renderPick(){
   $("#pickbody").innerHTML = `
     <h4>Start with three questions</h4>
     <ol class="picklist">
-      <li><b>Will it fit?</b> Zest's <b>For you</b> view only shows models that run comfortably in your free graphics memory. A model that doesn't fit will be slow or fail to start.</li>
+      <li><b>Will it fit?</b> Zest's <b>Our picks</b> page leads with models we recommend, and <b>More models</b> hides anything that won't run comfortably in your free graphics memory. A model that doesn't fit will be slow or fail to start.</li>
       <li><b>What is it for?</b> Chat and writing, coding, tool use, or understanding pictures. The labels on each card say what a model is good at.</li>
       <li><b>How much does it need to remember?</b> The context window is how much conversation the model can see. 128k tokens is a good threshold for usefulness in long chats and agentic work, and it is Zest's default.</li>
     </ol>
@@ -2190,7 +2380,7 @@ const FAQ = [
   ["What is a model?", "A model is the AI that answers you. It is a big file, usually a few gigabytes, that lives on this computer. Bigger models tend to write better but need a stronger computer and answer more slowly. Zest marks each one as comfortable, snug or too big for your machine."],
   ["Is my data private?", "Yes. Zest and the models run on this computer. Your chats are saved in this browser window only and are never sent anywhere. The only time Zest goes online is to download a model you ask for."],
   ["Why is the first answer slow?", "The model has to be loaded into your computer's memory before it can answer. That takes a few seconds to a minute, depending on its size. After that, answers start right away."],
-  ["How do I know which model to use?", "It depends on your computer and what you want to do. Start with the <b>For you</b> view on Models, which hides models that won't run well. <p><button class=\"btn\" type=\"button\" data-pick>Show me how to compare models</button></p>"],
+  ["How do I know which model to use?", "It depends on your computer and what you want to do. Start with <b>Our picks</b> on the Models page, where we explain each recommendation. <b>More models</b> shows the rest, hiding anything that won't run well. <p><button class=\"btn\" type=\"button\" data-pick>Show me how to compare models</button></p>"],
   ["What is the context window?", "It is how much of the conversation a model can see at once. Zest uses <b>128k</b> tokens (about 100,000 words) by default, which is a good threshold for usefulness in long chats and agentic work. You can change it for one model under <b>Details</b>, then <b>Settings for this model</b>. A bigger window needs more graphics memory."],
   ["How do I get more models?", "Open <b>Models</b> and press <b>Get it</b> on any model. To use one that isn't listed, press <b>Get from Hugging Face</b> and paste a link to a GGUF model."],
   ["Can other apps use my models?", "Yes. Open <b>Advanced</b>, then <b>Server</b>. Zest gives you an address and a key that you can paste into opencode, Hermes, or any chat app or coding assistant that works with an OpenAI-style server."],

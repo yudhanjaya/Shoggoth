@@ -34,7 +34,7 @@ import store       # noqa: E402
 import util        # noqa: E402
 from util import cached, invalidate, run   # noqa: E402
 
-VERSION = "2.1.1"
+VERSION = "2.2.0"
 _last_ping = {"t": None}
 FORCED = {"addr": None}           # set by --lemonade: use exactly that server and skip the setup screen
 LOOPBACK_ONLY = {"on": True}
@@ -207,6 +207,8 @@ class Handler(BaseHTTPRequestHandler):
         elif p == "/ui/server":
             ids = {int(x) for x in parse_qs(u.query).get("ids", [""])[0].split(",") if x.isdigit()}
             self.get_server(ids)
+        elif p == "/ui/activity":
+            self.send_json({"items": gateway.REC.activity()})
         elif p == "/ui/logs":
             n = min(max(int(parse_qs(u.query).get("n", ["200"])[0]), 10), 1000)
             self.send_json({"lines": read_logs(n)})

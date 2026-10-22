@@ -95,6 +95,22 @@ class Recorder:
         with self.lock:
             return sum(1 for r in self.items if r["state"] in ("waiting", "thinking", "answering"))
 
+    def activity(self):
+        """Requests being written right now, with a rough speed. Characters stand in for tokens (about four to one),
+        so the figure is marked as approximate wherever it is shown."""
+        now = time.time()
+        out = []
+        with self.lock:
+            for r in self.items:
+                if r["state"] not in ("thinking", "answering"):
+                    continue
+                start = r["t_think"] or r["t_write"]
+                dt = now - start if start else 0
+                chars = r["think_chars"] + r["out_chars"]
+                out.append({"id": r["id"], "app": r["app"], "source": r["source"], "model": r["model"], "state": r["state"],
+                            "tps": round(chars / 4 / dt, 1) if dt >= 1 and chars >= 20 else None})
+        return out
+
 
 REC = Recorder()
 

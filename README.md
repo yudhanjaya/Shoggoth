@@ -20,7 +20,7 @@
    | --- | --- |
    | **Helper** | Zest starts its own private copy of Lemonade. Nothing to choose. |
    | **Your computer** | Zest looks at your graphics card and downloads the program that suits it (CUDA for NVIDIA, Vulkan for most cards, the processor as a fallback). One button. |
-   | **A model** | Three suggestions that fit your computer, labelled Quick, Balanced and Thorough. Quick is LFM2.5 8B A1B: fast, to the point, good with tools and happy on almost any computer. Press Download on one. |
+   | **A model** | Three suggestions that fit your computer, labelled Quick, Balanced and Thorough. Quick is LFM2.5 8B A1B (fast, to the point, good with tools, happy on almost any computer), Balanced is Qwen3.6 35B A3B MTP and Thorough is Gemma 4 31B MTP, each only if it fits; otherwise Zest picks by size. Press Download on one. |
    | **Chat** | Press Start chatting. |
 
    People who already have models, or run their own Lemonade, can skip to **Advanced > Setup guide**, which keeps the full set of choices: where models are stored, models you already have (LM Studio, Ollama, llama.cpp and others are found for you), and Lemonade updates.
@@ -58,7 +58,8 @@ Lemonade handles models; Zest gives you the choices:
 Zest is organised around four places in the left-hand menu: **Chat**, **Models**, **Help** and **Advanced**. Everything a newcomer needs is in the first three; everything technical sits behind Advanced.
 
 - **Chat** with streaming replies, markdown and code blocks with copy buttons, a collapsible "how it thought" panel for reasoning models, and everyday starter questions. Conversations are kept in your browser.
-- **Models** shows what you can run in plain words: a friendly name, what it is good for, a size word, and one sentence on whether it will run comfortably on your computer. The fit comes from the memory that is actually *free* on your graphics cards right now, so you can tell before loading whether another program is in the way. The default view, **For you**, hides models that would not run well. A **Details** fold on each card holds the technical names and **Settings for this model**: context window, backend, devices and the llama-server options (flash attention, cache precision, expert layers in system RAM, GPU splitting, thinking, speculative decoding) as tick boxes and dropdowns with plain explanations, checked against your own `llama-server` before you load.
+- **Speed you can see.** While a reply is being written, the chat shows the phase (**Loading the model**, **Reading your message**, **Thinking**, **Writing**), a live tokens-per-second figure, a plain word for it (**Very fast**, **Fast**, **Comfortable reading speed**, **Slow**, **Very slow**; about 5 tokens a second is a comfortable reading pace) and a small graph of the speed through the answer. When it finishes, the footer keeps the speed and graph, the tokens, the time to the first token, how fast the model read your message, which model and backend answered, and how much of the context window the conversation uses (for example "Conversation: 34k of 128k"). The status pill at the top shows the live speed too, including for other apps using the Server (marked with a ~ because it is estimated). Each downloaded model card remembers how fast it has been on this computer ("Fast, about 62 tok/s"), kept in your browser.
+- **Models** shows what you can run in plain words: a friendly name, what it is good for, a size word, and one sentence on whether it will run comfortably on your computer. The fit comes from the memory that is actually *free* on your graphics cards right now, so you can tell before loading whether another program is in the way. The default page, **Our picks**, leads with the models we recommend and says why. **More models** shows the rest of what Lemonade offers that will run well on your computer. A **Details** fold on each card holds the technical names and **Settings for this model**: context window, backend, devices and the llama-server options (flash attention, cache precision, expert layers in system RAM, GPU splitting, thinking, speculative decoding) as tick boxes and dropdowns with plain explanations, checked against your own `llama-server` before you load.
 - **Context window: 128k by default.** The built-in Lemonade starts with a 128k (131,072-token) context window, a good threshold for usefulness in long chats and agentic work. Zest sets it once, so changing it later in **All settings** sticks, and any model can have its own size under **Settings for this model**. A bigger window needs more graphics memory. A Lemonade you run yourself keeps its own default.
 - **How do I choose a model?** A button on Models (and an entry in Help) explains how to pick: will it fit, what is it for, how much it needs to remember. It then links to places to compare models: Luke's Dev Lab, Artificial Analysis, LMArena, Aider, the Berkeley Function-Calling Leaderboard, SWE-bench, LiveBench, BenchLM, LLM Stats, r/LocalLLaMA and the Level1Techs forum. Benchmarks only capture so much, measure narrow use cases and can often be gamed, so the dialog says plainly that the best way is to try a few models yourself.
 - **Load, unload, reload and delete.** Every downloaded model has **Load now** (or **Reload** and **Unload** while it is in use) right on its card, so you can free graphics memory or pick up new settings without leaving the page. **Delete from this computer** is under **Details**; it asks first, says how much disk it frees, unloads the model if it is running, and you can download it again later.
@@ -94,14 +95,36 @@ Streaming answers with code blocks and copy buttons, speed stats, a model picker
 
 ![Chat](docs/screenshots/chat.png)
 
-### Models
-The default **For you** view shows what will run well. The bar on each card shows how much of your *free* graphics memory the model needs, and a plain sentence says whether it fits. Installed models say **Use this one**; the rest say **Get it** with the download size.
+The footer of each reply shows how fast it was written, how fast the model read your message, which model answered and how much of the context window is used. While a reply is being written the same row updates live, with a graph, and the status pill at the top shows the speed.
 
-![Models](docs/screenshots/models.png)
+![Reply with speed footer](docs/screenshots/chat-speed.png)
 
-**Get from Hugging Face** lists the GGUF versions in a repository, with a plain label, the size, and whether each fits.
+### Models: our picks
+The Models page opens on **Our picks**, written from our own testing (designing a generation ship, which needs web searches for physics and engineering). Each pick says what it is good at and where it falls short, and the card still shows whether it fits your computer.
+
+- **Start here: LFM2.5 8B A1B.** Very fast, runs on almost anything, calls tools well, and keeps answers short.
+- **Our general pick: Qwen3.6 35B A3B MTP.** Fast and competent at everyday tasks, research and agent work.
+- **If Qwen 3.6 won't run: GLM 4.7 Flash.** Fast, but it makes things up, so it comes with a warning.
+- **Bigger and slower, dense models: Gemma 4 31B MTP and Qwen3.8 27B.** Good answers, but slow. With a GPU and 64 GB of RAM, try Strata instead.
+- **For advanced users: Strata and Maya,** separate inference engines built for huge models, with links and a clear warning that they run outside Zest and Lemonade.
+- **Make any model better:** OpenChamber as the recommended app, and obra/superpowers for skills.
+
+![Our picks](docs/screenshots/picks-top.png)
+
+![The general pick, installed, with a fit warning](docs/screenshots/picks-general.png)
+
+![Advanced engines and the harness recommendation](docs/screenshots/picks-engines.png)
+
+### Models: more models
+**More models** (and the filters beside it) lists everything else Lemonade offers. Models you haven't downloaded yet have a **Get it** button with the size. The meter on each card shows what will fit in the VRAM that's free right now; if another program is using the card, Zest warns you and names it.
+
+![More models, on this computer](docs/screenshots/models.png)
+
+**Get from Hugging Face** is for experts. It lists the GGUF versions in a repository, with a plain label, the size, and whether each fits. When Lemonade or llama.cpp refuses a model (for example because its architecture isn't supported yet, it needs a login, it can't be found, or memory or disk is short), Zest shows a plain-language message with the technical details tucked underneath, and offers to open Engines when an update may help.
 
 ![Get a model from Hugging Face](docs/screenshots/huggingface.png)
+
+![When a model isn't supported](docs/screenshots/problem-architecture.png)
 
 **How do I choose a model?** Explains what to look for and links to benchmark sites and communities, with a reminder that benchmarks are only a guide.
 
