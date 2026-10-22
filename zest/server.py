@@ -34,7 +34,7 @@ import store       # noqa: E402
 import util        # noqa: E402
 from util import cached, invalidate, run   # noqa: E402
 
-VERSION = "2.2.1"
+VERSION = "2.2.2"
 _last_ping = {"t": None}
 FORCED = {"addr": None}           # set by --lemonade: use exactly that server and skip the setup screen
 LOOPBACK_ONLY = {"on": True}
@@ -97,6 +97,7 @@ def setup_state():
         "models": {"storage": s["models"]["storage"], "custom_dir": s["models"]["custom_dir"],
                    "hf_dir": modelscan.hf_cache_dir(), "imports": s["models"]["imports"], "live": live},
         "arch_supported": engine.summary(s)["arch_supported"],
+        "gpus_found": util.cached("gpus_found", 30, hardware.detect_gpus),
     }
 
 
@@ -173,7 +174,7 @@ class Handler(BaseHTTPRequestHandler):
         elif p == "/ui/ping":
             self.send_json({"zest": VERSION})
         elif p == "/ui/gpu":
-            self.send_json({"gpus": hardware.nvidia_gpus(), "t": time.time()})
+            self.send_json({"gpus": hardware.all_gpus(), "t": time.time()})
         elif p == "/ui/info":
             self.send_json(self._info())
         elif p == "/ui/backends":

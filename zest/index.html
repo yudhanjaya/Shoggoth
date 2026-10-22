@@ -983,7 +983,9 @@ const savedIds = () => (S.info?.device || "").split(",").map(s => s.trim()).filt
 /* devices llama.cpp will really use: the saved list, or every device when it is on automatic */
 function activeIds(){ const ids = savedIds().filter(id => allDevices().some(d => d.id === id)); return ids.length ? ids : allDevices().map(d => d.id); }
 const activeDevs = () => activeIds().map(id => allDevices().find(d => d.id === id)).filter(Boolean);
-const gpuFor = d => d && d.nv_index != null ? S.gpus.find(g => g.nv_index === d.nv_index) : null;
+const gpuFor = d => d && d.gpu_key ? S.gpus.find(g => g.key === d.gpu_key) : null;
+/* "RTX 3060, RTX 3060" -> "2 × RTX 3060", so two identical cards read naturally */
+const groupNames = list => { const c = {}; list.forEach(n => c[n] = (c[n] || 0) + 1); return Object.entries(c).map(([n, k]) => k > 1 ? `${k} × ${n}` : n); };
 const shortName = n => String(n).replace(/^(NVIDIA|AMD|Intel)(\(R\))?\s+/i, "").replace(/^GeForce\s+/i, "").replace(/^Radeon\s+/i, "Radeon ");
 function activeGpus(){ return activeDevs().map(gpuFor).filter(Boolean); }
 /* Processes Lemonade starts itself: their VRAM frees up when it loads a different model. */
@@ -1007,7 +1009,7 @@ function activeName(){ const d = activeDevs(); return d.length ? d.map(x => shor
 async function pollGpu(){
   try{
     const g = await api("/ui/gpu"); S.gpus = g.gpus;
-    for(const x of g.gpus){ const h = (S.hist[x.nv_index] ||= []); h.push(x.util ?? 0); if(h.length > 60) h.shift(); }
+    for(const x of g.gpus){ const h = (S.hist[x.key] ||= []); h.push(x.util ?? 0); if(h.length > 60) h.shift(); }
   }catch{}
 }
 async function pollServer(){
@@ -2097,9 +2099,10 @@ function wComputer(){
   const r = llamaRecipe(), b = SU.busy; if(!r) return `<h2>Looking at your <span class="hl">computer</span>…</h2><div class="prog ind"><i></i></div>`;
   const todo = r.backends.filter(x => ["installable", "update_required"].includes(x.state));
   const rec = todo.find(x => x.name === r.default) || todo.find(x => x.name === "vulkan") || todo[0];
-  const gpus = (S.gpus || []).map(g => shortName(g.name));
+  // Cards found before any backend exists: nvidia-smi for NVIDIA, otherwise what the system itself reports (AMD, Intel).
+  const found = SU.st?.gpus_found || [], gpus = (found.length ? found : (S.gpus || [])).map(g => shortName(g.name));
   const busy = rec && b["inst-" + rec.name];
-  const hw = gpus.length ? `Zest found <b>${esc(gpus.join(" and "))}</b>. It will use ${gpus.length > 1 ? "them" : "it"} to answer quickly.` : `Zest didn't find a dedicated graphics card, so it will use your processor. That works, but answers come a bit slower.`;
+  const hw = gpus.length ? `Zest found <b>${esc(groupNames(gpus).join(" and "))}</b>. It will use ${gpus.length > 1 ? "them" : "it"} to answer quickly.` : `Zest couldn't identify a graphics card, so it will choose a setting that works on any computer. You can change it later under Advanced > Engines. If you do have a card, answers may come a little slower until then.`;
   if(!rec) return `<h2>Your computer needs a <span class="hl">setting</span></h2><p class="wl">Lemonade didn't offer anything Zest can install automatically.</p><button class="btn primary xl" data-go="backends">Look at the options</button>`;
   return `<h2>Let's set up <span class="hl">your computer</span></h2><p class="wl">${hw}</p>
     <p class="wsmall">One download makes this work well. It takes a minute or two.</p>
@@ -2188,9 +2191,9 @@ function backendStep(){
   if(!st.lemonade.reachable) return stepShell(2, "be", "A backend for your hardware", false, "", `<p class="lead">Waiting for Lemonade to start…</p>`);
   if(!r) return stepShell(2, "be", "A backend for your hardware", false, "", `<p class="lead">Lemonade didn't report any backends yet. Give it a moment, or open the Engines page.</p>`);
   const inst = r.backends.filter(x => x.state === "installed"), todo = r.backends.filter(x => ["installable", "update_required"].includes(x.state));
-  const gpus = (S.gpus || []).map(g => g.name.replace(/^NVIDIA GeForce /, ""));
+  const gpus = ((st.gpus_found && st.gpus_found.length) ? st.gpus_found : (S.gpus || [])).map(g => g.name.replace(/^NVIDIA GeForce /, ""));
   const rec = todo.find(x => x.name === r.default) || todo.find(x => x.name === "vulkan") || todo[0];
-  const hw = gpus.length ? `We found <b>${esc(gpus.join(" and "))}</b>.` : `We couldn't read your graphics card (Zest can show details for NVIDIA cards).`;
+  const hw = gpus.length ? `We found <b>${esc(groupNames(gpus).join(" and "))}</b>.` : `We couldn't identify a graphics card, so the choice below is the one that works on any computer.`;
   const lead = `A backend is the program that does the heavy lifting for models. Lemonade downloads it for you; pick the one that matches your hardware. ${hw}`;
   const row = (x, primary) => {
     const key = "inst-" + x.name, busy = b[key];
@@ -2784,9 +2787,9 @@ function deviceOrder(){
 }
 function liveHTML(d, active){
   const g = gpuFor(d);
-  if(!g) return `<div class="big num">${(d.mib/1024).toFixed(0)}<small>GB VRAM</small></div><p class="notel">No live telemetry for this device. Zest reads usage from nvidia-smi.</p>`;
+  if(!g) return `<div class="big num">${(d.mib/1024).toFixed(0)}<small>GB VRAM</small></div><p class="notel">No live numbers for this device. Zest reads NVIDIA cards with nvidia-smi and AMD cards from the Linux amdgpu driver.</p>`;
   const used = gb(g.mem_used_mb), total = gb(g.mem_total_mb), free = total - used;
-  const [line, area] = sparkPath(S.hist[g.nv_index] || []);
+  const [line, area] = sparkPath(S.hist[g.key] || []);
   const procs = {}; for(const p of g.procs || []) { const k = isLemonadeProc(p) ? "Lemonade" : p.name; procs[k] = (procs[k] || 0) + gb(p.mem_mb); }
   const chips = Object.entries(procs).sort((a,b) => b[1] - a[1]).map(([n, v]) => `<span class="chip ${n==="Lemonade"?"lem":""}" title="VRAM held by ${esc(n)}">${esc(n)} · ${v.toFixed(1)} GB</span>`).join("");
   const low = free < 1 ? `<span class="chip warn">Only ${Math.max(0, free).toFixed(1)} GB free</span>` : `<span class="chip">${free.toFixed(1)} GB free</span>`;
@@ -2795,8 +2798,8 @@ function liveHTML(d, active){
     <div class="stats">
       <div class="stat"><b class="num">${g.util ?? "–"}%</b><span>Utilisation</span></div>
       <div class="stat"><b class="num">${g.temp ?? "–"}°C</b><span>Temperature</span></div>
-      <div class="stat"><b class="num">${g.power!=null?g.power.toFixed(0):"–"} W</b><span>of ${g.power_limit!=null?g.power_limit.toFixed(0):"–"} W limit</span></div>
-      <div class="stat"><b class="num">${g.fan ?? "–"}%</b><span>Fan</span></div>
+      <div class="stat"><b class="num">${g.power!=null?g.power.toFixed(0):"–"} W</b><span>${g.power_limit!=null?`of ${g.power_limit.toFixed(0)} W limit`:"power draw"}</span></div>
+      <div class="stat"><b class="num">${g.fan!=null?g.fan+"%":"–"}</b><span>Fan</span></div>
     </div>
     <svg class="spark" viewBox="0 0 300 46" preserveAspectRatio="none" aria-hidden="true"><path class="area" d="${area}"/><path d="${line}"/></svg>`;
 }
@@ -2831,7 +2834,7 @@ function renderHardware(){
         <div>
           <span class="badge chip ${active?"lem":""}">${active ? (sel.length>1 ? `#${pos} · ` : "") + (auto ? "Automatic" : "In use") : "Not used"}</span>
           <h3>${esc(shortName(d.name))}</h3>
-          <div class="sub">${esc(id.toUpperCase())} in llama.cpp${d.nv_index!=null?` · GPU ${d.nv_index} in nvidia-smi`:""}</div>
+          <div class="sub">${esc(id.toUpperCase())} in llama.cpp${d.gpu_ref?` · ${esc(d.gpu_ref)}`:""}</div>
           <div class="live">${liveHTML(d, active)}</div>
           <div class="ctl">
             <button type="button" class="sw" role="switch" aria-checked="${active}" data-toggle="${id}"><i></i>Use this device</button>
