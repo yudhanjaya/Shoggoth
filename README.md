@@ -223,9 +223,9 @@ Then open <http://127.0.0.1:13306> (it opens automatically unless you pass `--no
 
 (`XDG_CONFIG_HOME` and `XDG_DATA_HOME` are respected.) To start from scratch, delete `~/.config/zest` and `~/.local/share/zest`. Downloaded models are not in there unless you chose a folder inside it.
 
-## What uses the network
+## Privacy
 
-Nothing you type into a chat leaves your computer. Zest and Lemonade do contact these, only when you ask or enable it:
+Nothing you type into a chat leaves your computer. Zest and Lemonade do contact the following services:
 
 - **api.github.com and github.com**: looking for and downloading Lemonade updates (the automatic check can be switched off), and Lemonade downloading the backends you install.
 - **Hugging Face**: Lemonade downloading the models you choose, and Zest reading a repository's public file list when you use **Get from Hugging Face**. Gated models, which need a login, are not supported yet.
