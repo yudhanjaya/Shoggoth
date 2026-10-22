@@ -70,7 +70,7 @@ Zest is organised around four places in the left-hand menu: **Chat**, **Models**
 - **Advanced > Hardware** shows every device llama.cpp can see as a live VRAM tank with utilisation, temperature, power, a short history, and which processes are holding its memory. Pick which devices to use and put them in order, then apply.
 - **Advanced > Engines** explains what an engine is (the program that runs one kind of model) and what each backend means (CUDA, ROCm, Vulkan, CPU), then lists every Lemonade engine (llama.cpp, Whisper.cpp, StableDiffusion.cpp and more) with the backends each supports (CUDA, Vulkan, ROCm, CPU). Choose one per engine, or install and update missing ones.
 - **Advanced > All settings** edits everything in Lemonade's own configuration, searchable, with a reset-to-default for every value.
-- A light theme only, keyboard-friendly, and it works on a phone-width screen. The fonts (Figtree, Fraunces and JetBrains Mono, all under the SIL Open Font License) are built into the page, so nothing is fetched from the internet.
+
 
 ## Use your models in other apps
 
@@ -179,13 +179,6 @@ The full set of choices behind the welcome steps: which Lemonade to use, backend
 ![Help](docs/screenshots/help.png)
 
 ![Advanced](docs/screenshots/advanced.png)
-
-### On a phone
-The layout follows the screen width, with a bottom bar in place of the side menu.
-
-<p><img src="docs/screenshots/mobile-models.png" alt="Models on a phone" width="260"> <img src="docs/screenshots/mobile-chat.png" alt="Chat on a phone" width="260"></p>
-
-*Screenshots were taken on a machine with an RTX 3060 and an RTX 4080 SUPER. Zest shows whatever devices your machine has.*
 
 ## Using a Lemonade you already run
 
