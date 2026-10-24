@@ -37,7 +37,7 @@ import store       # noqa: E402
 import util        # noqa: E402
 from util import cached, invalidate, run   # noqa: E402
 
-VERSION = "3.0.0"
+VERSION = "3.1.0"
 _last_ping = {"t": None}
 FORCED = {"addr": None}           # set by --lemonade: use exactly that server and skip the setup screen
 LOOPBACK_ONLY = {"on": True}
