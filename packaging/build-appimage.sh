@@ -15,6 +15,16 @@ LEM_VER="2026.43.3"
 LEM_URL="https://github.com/lemonade-sdk/lemonade/releases/download/v${LEM_VER}/lemonade-embeddable-${LEM_VER}-ubuntu-x64.tar.gz"
 LEM_SHA="d9a2fe01d7fd60ed9ec94822fea814a6d0e8aed46b39be8f126de74ba242b023"
 
+# Cowork: Pi, the coding agent (MIT), run by a Node.js it ships with. Pi needs Node 22.19 or newer. npm checks these by
+# their published sha512 integrity; Node by the checksum nodejs.org publishes.
+NODE_VER="22.23.4"
+NODE_URL="https://nodejs.org/dist/v${NODE_VER}/node-v${NODE_VER}-linux-x64.tar.xz"
+NODE_SHA="1805bcd35e6815559bd2eb97db438d3fdb0eb3a5e6a977b7c1badca76337e9ce"
+PI_URL="https://registry.npmjs.org/@earendil-works/pi-coding-agent/-/pi-coding-agent-1.4.0.tgz"
+PI_INT="sha512-Z41LpZ3yYHSC/UUps6Mr39UMFPwH8elhJBG9DY1P7kuzsE5qSK/6eMj2EHzO5evJRQWLbKSqUMw+4nCNtIyiQg=="
+JITI_URL="https://registry.npmjs.org/jiti/-/jiti-2.7.0.tgz"       # Pi loads extensions (Zest's approval gate) with it
+JITI_INT="sha512-AC/7JofJvZGrrneWNaEnJeOLUx+JlGt7tNa0wZiRPT4MY1wmfKjt2+6O2p2uz2+skll8OZZmJMNqeke7kKbNgQ=="
+
 CACHE=build/cache APPDIR=build/AppDir OUT=dist
 mkdir -p "$CACHE" "$OUT"
 
@@ -24,13 +34,23 @@ fetch() {  # url sha256 dest
   curl -fsSL "$1" -o "$3"
   echo "$2  $3" | sha256sum -c --quiet || { echo "Checksum mismatch for $3" >&2; exit 1; }
 }
+fetch512() {  # url sha512-integrity dest
+  if [ -f "$3" ] && [ "sha512-$(openssl dgst -sha512 -binary "$3" | base64 -w0)" = "$2" ]; then return; fi
+  echo "Downloading $(basename "$3")"
+  curl -fsSL "$1" -o "$3"
+  [ "sha512-$(openssl dgst -sha512 -binary "$3" | base64 -w0)" = "$2" ] || { echo "Integrity mismatch for $3" >&2; exit 1; }
+}
+fetch "$NODE_URL" "$NODE_SHA" "$CACHE/node.tar.xz"
+fetch512 "$PI_URL" "$PI_INT" "$CACHE/pi.tgz"
+fetch512 "$JITI_URL" "$JITI_INT" "$CACHE/jiti.tgz"
 fetch "$PY_URL"  "$PY_SHA"  "$CACHE/python.tar.gz"
 fetch "$AIT_URL" "$AIT_SHA" "$CACHE/appimagetool"
 fetch "$LEM_URL" "$LEM_SHA" "$CACHE/lemonade.tar.gz"
 chmod +x "$CACHE/appimagetool"
 
 rm -rf "$APPDIR"
-mkdir -p "$APPDIR/usr/python" "$APPDIR/usr/share/zest" "$APPDIR/usr/lemonade"
+mkdir -p "$APPDIR/usr/python" "$APPDIR/usr/share/zest/pi" "$APPDIR/usr/lemonade" "$APPDIR/usr/node/bin" \
+         "$APPDIR/usr/pi/node_modules/jiti"
 tar -xzf "$CACHE/python.tar.gz" -C "$APPDIR/usr/python" --strip-components=1
 
 # Zest only needs the standard library: drop what it never touches.
@@ -39,7 +59,15 @@ rm -rf "$PYLIB"/{test,idlelib,tkinter,turtledemo,lib2to3,ensurepip,site-packages
        "$APPDIR/usr/python/lib"/{tcl*,tk*,itcl*,thread*} "$APPDIR/usr/python/share" "$APPDIR/usr/python/include"
 find "$APPDIR" -name __pycache__ -prune -exec rm -rf {} +
 
-cp zest/*.py zest/index.html "$APPDIR/usr/share/zest/"
+./packaging/fetch-vendor.sh
+cp zest/*.py zest/index.html zest/docs.md "$APPDIR/usr/share/zest/"
+cp zest/pi/* "$APPDIR/usr/share/zest/pi/"
+cp -r zest/skills zest/vendor "$APPDIR/usr/share/zest/"
+
+# Node (just the binary) and Pi (its self-contained bundle, plus jiti, which it loads extensions with).
+tar -xJf "$CACHE/node.tar.xz" -C "$APPDIR/usr/node" --strip-components=1 "node-v${NODE_VER}-linux-x64/bin/node" "node-v${NODE_VER}-linux-x64/LICENSE"
+tar -xzf "$CACHE/pi.tgz" -C "$APPDIR/usr/pi" --strip-components=1 package/package.json package/dist/bundle
+tar -xzf "$CACHE/jiti.tgz" -C "$APPDIR/usr/pi/node_modules/jiti" --strip-components=1
 
 # Lemonade: the server and its resources. Zest talks to it over HTTP, so the command-line tool isn't needed.
 LEMTMP="$(mktemp -d)"
@@ -53,6 +81,7 @@ cp packaging/zest.png "$APPDIR/.DirIcon"
 # Smoke test the bundled interpreter before packaging. (lemond itself needs glibc 2.38+, newer than some
 # build machines, so it is only checked for presence here; Zest explains the requirement if it can't start.)
 "$APPDIR/usr/python/bin/python3" -I "$APPDIR/usr/share/zest/server.py" --version
+"$APPDIR/usr/node/bin/node" "$APPDIR/usr/pi/dist/bundle/cli.js" --version
 [ -x "$APPDIR/usr/lemonade/lemond" ] && [ -d "$APPDIR/usr/lemonade/resources" ] || { echo "Lemonade is missing from the image" >&2; exit 1; }
 
 FILE="$OUT/Zest-$VERSION-x86_64.AppImage"

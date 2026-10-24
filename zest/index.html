@@ -699,6 +699,133 @@ h4.sub{margin:10px 0 0;font:600 13px var(--sans);color:var(--muted);text-transfo
 @media (prefers-reduced-motion:reduce){
   *,*::before,*::after{animation-duration:.001ms!important;animation-iteration-count:1!important;transition-duration:.001ms!important;scroll-behavior:auto!important}
 }
+
+/* ---------- cowork ---------- */
+.view.cw.active{flex-direction:row}
+.cw .stage{position:relative}
+.cwbar{display:flex;align-items:center;gap:10px;padding:10px 20px;border-bottom:1px solid var(--line-soft);min-height:52px}
+.cwbar .grow{flex:1}
+.cwbar .chip[hidden],.cwhero [hidden]{display:none}
+.cwbar #cwtoggle-list,.cwbar #cwtoggle-side{display:none}
+.cwtitle{font:600 17px var(--serif);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.cwside{width:300px;flex:none;border-left:1px solid var(--line-soft);padding:18px 16px;display:grid;gap:18px;align-content:start;overflow:auto}
+.cwside h4{margin:0 0 8px;font:600 12px var(--sans);letter-spacing:.06em;text-transform:uppercase;color:var(--faint)}
+.cwside .path{font:12px var(--mono);color:var(--muted);overflow-wrap:anywhere}
+.cwside select{width:100%;min-height:38px;border:1px solid var(--line);border-radius:10px;background:var(--surface);padding:0 10px}
+.cwmodes{display:grid;gap:6px}
+.cwmodes label{display:grid;grid-template-columns:18px 1fr;gap:2px 8px;padding:8px 10px;border:1px solid var(--line);border-radius:10px;cursor:pointer;background:var(--surface)}
+.cwmodes label:has(input:checked){border-color:var(--lemon);background:var(--lemon-wash)}
+.cwmodes b{font-weight:600;font-size:14px}
+.cwmodes small{grid-column:2;color:var(--muted);font-size:12.5px;line-height:1.4}
+.cwmeter{height:8px;border-radius:99px;background:var(--surface-2);overflow:hidden;border:1px solid var(--line-soft)}
+.cwmeter i{display:block;height:100%;background:var(--lemon);border-radius:99px;transition:width .4s var(--ease)}
+.cwmeter.hot i{background:var(--warn)}
+.cwfiles{display:grid;gap:4px;font:12.5px var(--mono)}
+.cwfiles div{display:flex;gap:8px;align-items:baseline;overflow-wrap:anywhere}
+.cwfiles b{font-weight:600;color:var(--leaf);flex:none}
+.cwtask{display:block;width:100%;text-align:left;border:0;background:none;border-radius:10px;padding:9px 10px;position:relative}
+.cwtask:hover,.cwtask[aria-current]{background:var(--surface)}
+.cwtask[aria-current]{box-shadow:inset 0 0 0 1px var(--line)}
+.cwtask b{display:block;font-weight:600;font-size:14px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;padding-right:18px}
+.cwtask small{display:block;color:var(--faint);font-size:12px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.cwtask .st{position:absolute;right:10px;top:12px;width:9px;height:9px;border-radius:50%}
+.cwtask .st.run{background:var(--lemon);animation:pulse 1.2s infinite}
+.cwtask .st.wait{background:var(--warn)}
+.cwtask .del{position:absolute;right:6px;bottom:6px;border:0;background:none;color:var(--faint);display:none;padding:2px 6px;border-radius:6px}
+.cwtask:hover .del{display:block}
+.cwtask .del:hover{color:var(--bad);background:var(--surface-2)}
+@keyframes pulse{50%{opacity:.35}}
+.cwhero{margin:min(8vh,70px) auto 0;max-width:640px}
+.cwhero h2{font:500 clamp(32px,4.6vw,50px)/1.06 var(--serif);letter-spacing:-.02em;margin:0 0 14px}
+.cwhero p{color:var(--muted);max-width:56ch;margin:0 0 20px}
+.cwhero .recent{display:flex;gap:8px;flex-wrap:wrap;margin-top:14px}
+.cwhero .recent button{border:1px solid var(--line);background:var(--surface);border-radius:999px;padding:6px 12px;font:12.5px var(--mono);color:var(--muted)}
+.cwhero .recent button:hover{border-color:var(--lemon)}
+.cwnote{color:var(--faint);font-size:13px;margin:0 0 18px;display:flex;gap:8px;align-items:center}
+.cwnote.err{color:var(--bad)}
+.cwnote.err pre{white-space:pre-wrap;font:12px var(--mono);margin:0}
+.cwthink{margin:0 0 .9em;color:var(--muted);border-left:2px solid var(--line);padding-left:14px}
+.cwthink summary{cursor:pointer;font-size:13px;color:var(--faint)}
+.tool{border:1px solid var(--line);border-radius:12px;background:var(--surface);margin:0 0 12px 44px;overflow:hidden}
+.tool .thead{display:flex;gap:10px;align-items:center;width:100%;border:0;background:none;padding:9px 12px;text-align:left}
+.tool .tn{font:600 11.5px var(--sans);letter-spacing:.05em;text-transform:uppercase;color:var(--muted);flex:none;min-width:48px}
+.tool .tsum{font:12.5px var(--mono);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;flex:1;min-width:0}
+.tool .tst{font-size:12px;color:var(--faint);flex:none}
+.tool.run .tst{color:var(--warn)}.tool.ok .tst{color:var(--leaf)}.tool.bad .tst,.tool.no .tst{color:var(--bad)}
+.tool .tbody{border-top:1px solid var(--line-soft);padding:10px 12px;max-height:340px;overflow:auto;background:var(--bg)}
+.tool pre{margin:0;font:12.5px/1.55 var(--mono);white-space:pre-wrap;overflow-wrap:anywhere}
+.tool .ln.add{background:rgba(27,122,58,.13)}.tool .ln.del{background:rgba(179,38,30,.12)}
+.tool .ln{display:block;padding:0 4px;border-radius:3px}
+.approve{border:1.5px solid var(--lemon);background:var(--lemon-wash);border-radius:14px;padding:14px 16px;margin:0 0 14px 44px;display:grid;gap:10px}
+.approve .ahead{font-weight:600}
+.approve .awhat{margin:0;background:var(--surface);border:1px solid var(--line);border-radius:10px;padding:8px 12px;font:12.5px var(--mono);white-space:pre-wrap;overflow-wrap:anywhere;max-height:160px;overflow:auto}
+.approve .warn{color:var(--warn);font-size:13px}
+.approve .abtns{display:flex;gap:8px;flex-wrap:wrap}
+.cwbanner{border:1px solid color-mix(in srgb,var(--warn) 45%,transparent);background:#fff8ec;border-radius:12px;padding:10px 14px;margin:0 auto 10px;max-width:780px;display:flex;gap:12px;align-items:center;flex-wrap:wrap;font-size:14px}
+.cwbanner span{flex:1;min-width:200px}
+.cwqueue{max-width:780px;margin:0 auto 8px;font-size:13px;color:var(--muted)}
+.cwwork{display:flex;gap:10px;align-items:center;color:var(--muted);font-size:13.5px;margin:0 0 18px 44px}
+.cwwork i{width:9px;height:9px;border-radius:50%;background:var(--lemon);animation:pulse 1.1s infinite}
+@media (max-width:1180px){
+  .cwside{position:absolute;right:0;top:52px;bottom:0;z-index:5;background:var(--bg);box-shadow:-12px 0 30px rgba(0,0,0,.08);display:none}
+  .cwside.open{display:grid}
+  .cwbar #cwtoggle-side{display:inline-flex}
+}
+@media (max-width:900px){
+  .view.cw .convs{position:absolute;left:0;top:52px;bottom:0;z-index:5;background:var(--bg);display:none;box-shadow:12px 0 30px rgba(0,0,0,.08)}
+  .view.cw .convs.open{display:flex}
+  .cwbar #cwtoggle-list{display:inline-flex}
+  .tool,.approve,.cwwork{margin-left:0}
+}
+
+/* ---------- markdown extras, diagrams, skills, docs ---------- */
+.doctoc{display:flex;gap:8px;flex-wrap:wrap;margin:0 0 26px;max-width:860px}
+.doctoc button{border:1px solid var(--line);background:var(--surface);border-radius:999px;padding:6px 13px;font-size:13.5px;color:var(--muted)}
+.doctoc button:hover{border-color:var(--lemon);color:var(--text)}
+.doc{max-width:760px;margin:0 0 38px;scroll-margin-top:12px}
+.doc h2{font:500 30px/1.15 var(--serif);letter-spacing:-.01em;margin:0 0 12px}
+.doc .body{font-size:16px;line-height:1.65}
+.body a{color:var(--lemon-text);text-underline-offset:2px}
+.body blockquote{margin:0 0 .9em;padding:2px 0 2px 14px;border-left:3px solid var(--lemon);color:var(--muted)}
+.body hr{border:0;border-top:1px solid var(--line);margin:1.2em 0}
+.tablewrap{overflow:auto;margin:0 0 1em}
+.body table{border-collapse:collapse;font-size:14px;min-width:50%}
+.body th,.body td{border:1px solid var(--line);padding:6px 11px;text-align:left;vertical-align:top}
+.body th{background:var(--surface-2);font-weight:600}
+.diagram{border:1px solid var(--line);border-radius:12px;background:var(--surface);margin:0 0 1em;overflow:hidden}
+.diagram>pre{border:0;margin:0;border-radius:0}
+.dgsvg{padding:14px;overflow:auto;text-align:center}
+.dgsvg svg{max-width:100%;height:auto}
+.dgbar{display:flex;gap:8px;padding:8px 12px;border-top:1px solid var(--line-soft);background:var(--bg)}
+.dgbar button{border:1px solid var(--line);background:var(--surface);border-radius:8px;padding:4px 11px;font-size:13px;color:var(--muted)}
+.dgbar button:hover{color:var(--text);border-color:var(--faint)}
+.dgerr{padding:12px 14px;display:grid;gap:8px}
+.dgerr b{color:var(--bad)}
+.dgerr pre{max-height:180px;overflow:auto}
+.svgfig{margin:0 0 1em;text-align:center}
+.svgfig img{max-width:100%;border:1px solid var(--line);border-radius:12px;background:#fff}
+.skset{display:grid;gap:12px}
+.skhead{display:flex;gap:10px;align-items:center;flex-wrap:wrap}
+.skhead h3{margin:0;font:600 20px var(--serif)}
+.skhead .grow{flex:1}
+.skrow{display:grid;grid-template-columns:auto 1fr;gap:2px 12px;padding:10px 0;border-top:1px solid var(--line-soft);cursor:pointer}
+.skrow input{margin-top:5px;width:18px;height:18px;accent-color:var(--lemon-text)}
+.skrow b{font-weight:600}
+.skrow span{grid-column:2;color:var(--muted);font-size:13.5px;line-height:1.45}
+.skrow small{color:var(--faint);font-weight:400;margin-left:6px}
+.skinst{display:flex;gap:10px;flex-wrap:wrap}
+.skinst input{flex:1;min-width:240px;min-height:48px;border:1px solid var(--line);border-radius:12px;padding:0 14px;background:var(--bg);font:14px var(--mono);outline:none}
+.skinst input:focus{border-color:var(--lemon);box-shadow:0 0 0 3px var(--lemon-wash)}
+.skeg{display:flex;gap:8px;flex-wrap:wrap}
+.skeg button{border:1px solid var(--line);background:var(--surface);border-radius:12px;padding:8px 12px;text-align:left;max-width:300px}
+.skeg button:hover{border-color:var(--lemon)}
+.skeg b{display:block;font:600 13px var(--mono)}
+.skeg span{display:block;font-size:12.5px;color:var(--muted);line-height:1.4}
+.cwpick{max-width:780px;margin:0 auto 8px;border:1px solid var(--line);border-radius:12px;background:var(--surface);overflow:hidden;box-shadow:0 6px 24px rgba(0,0,0,.08)}
+.cwpick button{display:block;width:100%;text-align:left;border:0;background:none;padding:8px 14px}
+.cwpick button[aria-selected="true"],.cwpick button:hover{background:var(--lemon-wash)}
+.cwpick b{font:600 13px var(--mono)}
+.cwpick span{display:block;font-size:12.5px;color:var(--muted);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 </style>
 </head>
 <body>
@@ -706,8 +833,10 @@ h4.sub{margin:10px 0 0;font:600 13px var(--sans);color:var(--muted);text-transfo
   <nav class="rail" aria-label="Main">
     <div class="brand"><svg viewBox="0 0 40 40" aria-hidden="true"><circle cx="20" cy="20" r="18" fill="#f7d916"/><circle cx="20" cy="20" r="14.5" fill="none" stroke="#1a1a17" stroke-width="1.4" opacity=".5"/><g stroke="#1a1a17" stroke-width="1.3" opacity=".4"><path d="M20 6v28M6 20h28M10 10l20 20M30 10L10 30"/></g><circle cx="20" cy="20" r="2.6" fill="#1a1a17" opacity=".6"/></svg><span>Zest</span></div>
     <div class="nav">
-      <button data-view="chat" aria-current="page"><svg class="i" viewBox="0 0 24 24"><path d="M21 12a8 8 0 0 1-11.6 7.1L4 20.5l1.5-4.6A8 8 0 1 1 21 12z"/></svg><span>Chat</span></button>
+      <button data-view="cowork" aria-current="page"><svg class="i" viewBox="0 0 24 24"><path d="M21 12a8 8 0 0 1-11.6 7.1L4 20.5l1.5-4.6A8 8 0 1 1 21 12z"/></svg><span>Chat</span></button>
       <button data-view="models"><svg class="i" viewBox="0 0 24 24"><path d="M12 3l8 4.5v9L12 21l-8-4.5v-9z"/><path d="M12 12l8-4.5M12 12L4 7.5M12 12v9"/></svg><span>Models</span></button>
+      <button data-view="skills"><svg class="i" viewBox="0 0 24 24"><path d="M13 3L5 13.5h6L10 21l8-10.5h-6z"/></svg><span>Skills</span></button>
+      <button data-view="docs"><svg class="i" viewBox="0 0 24 24"><path d="M5 4h10a3 3 0 0 1 3 3v13H8a3 3 0 0 1-3-3z"/><path d="M5 17a3 3 0 0 1 3-3h10M9 8h5"/></svg><span>Docs</span></button>
       <button data-view="help"><svg class="i" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M9.5 9.5a2.6 2.6 0 0 1 5 1c0 1.7-2.5 2-2.5 3.6M12 17.2v.1"/></svg><span>Help</span></button>
       <button data-view="advanced"><svg class="i" viewBox="0 0 24 24"><path d="M4 7h9M17 7h3M4 17h3M11 17h9"/><circle cx="15" cy="7" r="2"/><circle cx="9" cy="17" r="2"/></svg><span>Advanced</span><span class="navdot" id="navdot" hidden></span></button>
       <div class="sub" id="subnav">
@@ -739,7 +868,7 @@ h4.sub{margin:10px 0 0;font:600 13px var(--sans);color:var(--muted);text-transfo
     </header>
 
     <!-- CHAT -->
-    <section class="view chat active" id="v-chat">
+    <section class="view chat" id="v-chat">
       <aside class="convs" id="convs" aria-label="Conversations">
         <button class="btn primary new" id="newchat"><svg class="i" viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></svg>New chat</button>
         <div id="convlist"></div>
@@ -768,6 +897,46 @@ h4.sub{margin:10px 0 0;font:600 13px var(--sans);color:var(--muted);text-transfo
         </div>
       </div>
     </section>
+
+    <!-- COWORK -->
+    <section class="view cw" id="v-cowork">
+      <aside class="convs" id="cwlist" aria-label="Conversations">
+        <button class="btn primary new" id="cwnew"><svg class="i" viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></svg>New chat</button>
+        <div id="cwtasks"></div>
+      </aside>
+      <div class="stage">
+        <div class="cwbar" id="cwbar">
+          <button class="btn ghost" id="cwtoggle-list" type="button">Chats</button>
+          <b class="cwtitle" id="cwtitle">New chat</b>
+          <span class="grow"></span>
+          <span class="chip" id="cwmodechip" hidden></span>
+          <button class="btn ghost" id="cwtoggle-side" type="button">Details</button>
+        </div>
+        <div class="thread" id="cwthread" aria-live="polite"><div class="col" id="cwmsgs"></div></div>
+        <div class="composer-wrap">
+          <div id="cwbanner"></div>
+          <div class="cwpick" id="cwpick" role="listbox" aria-label="Skills" hidden></div>
+          <div class="cwqueue" id="cwqueue" hidden></div>
+          <form class="composer" id="cwform">
+            <label class="sr" for="cwinput">Message</label>
+            <textarea id="cwinput" rows="1" placeholder="Ask anything, or describe a job…" autocomplete="off"></textarea>
+            <div class="crow">
+              <button class="btn ghost" id="cwfolderbtn" type="button" hidden></button>
+              <span class="grow"></span>
+              <button class="btn danger" id="cwstop" type="button" hidden>Stop</button>
+              <button class="btn primary" id="cwsend" type="submit">Send</button>
+            </div>
+          </form>
+        </div>
+      </div>
+      <aside class="cwside" id="cwside" aria-label="About this task"></aside>
+    </section>
+
+    <!-- DOCS -->
+    <section class="view" id="v-docs"><div class="pad"><div class="wrap" id="docs"></div></div></section>
+
+    <!-- SKILLS -->
+    <section class="view" id="v-skills"><div class="pad"><div class="wrap" id="skills"></div></div></section>
 
     <!-- MODELS -->
     <section class="view" id="v-models"><div class="pad"><div class="wrap">
@@ -927,7 +1096,7 @@ function toast(msg){ const t = $("#toast"); t.textContent = msg; t.classList.add
 
 /* ======================= state ======================= */
 const S = {
-  view: "chat", models: [], loaded: null, health: null, gpus: [], info: null, hist: {},
+  view: "cowork", models: [], loaded: null, health: null, gpus: [], info: null, hist: {},
   filter: store.get("zest.filter3", "picks"), q: "",
   downloads: [], dlSupported: null, bk: null,
   convs: store.get("zest.convs", []), cur: store.get("zest.cur", null),
@@ -944,7 +1113,7 @@ async function api(path, opts={}){
 }
 
 /* ======================= navigation ======================= */
-const TITLES = {welcome:"Welcome", chat:"Chat", models:"Models", help:"Help", advanced:"Advanced", server:"Server", hardware:"Hardware", backends:"Engines", settings:"All settings", setup:"Setup guide"};
+const TITLES = {welcome:"Welcome", cowork:"Chat", chat:"Earlier chats", skills:"Skills", docs:"Docs", models:"Models", help:"Help", advanced:"Advanced", server:"Server", hardware:"Hardware", backends:"Engines", settings:"All settings", setup:"Setup guide"};
 const ADV = ["advanced","server","hardware","backends","settings","setup"];
 function show(v){
   S.view = v;
@@ -960,6 +1129,9 @@ function show(v){
   $("#crumb").hidden = !(inAdv && v !== "advanced");
   $("#menu").style.display = v === "chat" ? "" : "none";
   if(location.hash !== "#"+v) history.replaceState(null, "", "#"+v);
+  if(v === "cowork" && typeof cwShow === "function") cwShow();
+  if(v === "skills") renderSkills();
+  if(v === "docs") renderDocs();
   if(v === "models") renderModels();
   if(v === "hardware") renderHardware();
   if(v === "backends") loadBackends();
@@ -1134,11 +1306,16 @@ async function cancelDownload(id){
 /* ======================= markdown-lite ======================= */
 function inline(s){
   s = esc(s);
-  s = s.replace(/`([^`\n]+)`/g, "<code>$1</code>");
+  const keep = [];
+  s = s.replace(/`([^`\n]+)`/g, (_, c) => { keep.push("<code>" + c + "</code>"); return "\u0000" + (keep.length - 1) + "\u0000"; });
+  s = s.replace(/\[([^\]\n]+)\]\((https?:\/\/[^\s)]+)\)/g, '<a href="$2" target="_blank" rel="noopener noreferrer">$1</a>');
+  s = s.replace(/\[([^\]\n]+)\]\(#([a-z]+)\)/g, '<a href="#$2" data-go="$2">$1</a>');
   s = s.replace(/\*\*([^*\n]+)\*\*/g, "<strong>$1</strong>");
   s = s.replace(/(^|[^*])\*([^*\n]+)\*(?!\*)/g, "$1<em>$2</em>");
-  return s;
+  return s.replace(/\u0000(\d+)\u0000/g, (_, n) => keep[n]);
 }
+const tableCells = ln => ln.trim().replace(/^\||\|$/g, "").split("|").map(c => c.trim());
+const isTableSep = ln => /^\s*\|?\s*:?-{2,}:?\s*(\|\s*:?-{2,}:?\s*)*\|?\s*$/.test(ln) && ln.includes("-");
 function md(src){
   const out = [], lines = src.split("\n"); let i = 0, para = [];
   const flush = () => { if(para.length){ out.push("<p>"+inline(para.join("\n")).replace(/\n/g,"<br>")+"</p>"); para = []; } };
@@ -1149,8 +1326,21 @@ function md(src){
       flush(); const code = []; i++;
       while(i < lines.length && !lines[i].startsWith("```")) code.push(lines[i++]);
       i++;
+      if(m[1] === "mermaid"){ out.push(`<div class="diagram" data-src="${esc(code.join("\n"))}"><pre><span class="lang">mermaid</span><code>${esc(code.join("\n"))}</code></pre></div>`); continue; }
+      if(m[1] === "svg" && /<\/svg>\s*$/.test(code.join("\n"))){ out.push(`<div class="svgfig"><img alt="Drawing" src="data:image/svg+xml;charset=utf-8,${encodeURIComponent(code.join("\n"))}"></div>`); continue; }
       out.push(`<pre><span class="lang">${esc(m[1])}</span><button class="cp" type="button" aria-label="Copy code">${ICON.copy}</button><code>${esc(code.join("\n"))}</code></pre>`);
       continue;
+    }
+    if(/^\s*([-*_])(\s*\1){2,}\s*$/.test(ln)){ flush(); out.push("<hr>"); i++; continue; }
+    if(/^\s*>/.test(ln)){
+      flush(); const q = [];
+      while(i < lines.length && /^\s*>/.test(lines[i])) q.push(lines[i++].replace(/^\s*>\s?/, ""));
+      out.push("<blockquote>" + md(q.join("\n")) + "</blockquote>"); continue;
+    }
+    if(ln.includes("|") && i + 1 < lines.length && isTableSep(lines[i + 1])){
+      flush(); const head = tableCells(ln); i += 2; const rows = [];
+      while(i < lines.length && lines[i].includes("|") && lines[i].trim()) rows.push(tableCells(lines[i++]));
+      out.push(`<div class="tablewrap"><table><thead><tr>${head.map(c => "<th>" + inline(c) + "</th>").join("")}</tr></thead><tbody>${rows.map(r => "<tr>" + head.map((_, k) => "<td>" + inline(r[k] || "") + "</td>").join("") + "</tr>").join("")}</tbody></table></div>`); continue;
     }
     if((m = ln.match(/^(#{1,3})\s+(.*)/))){ flush(); out.push(`<h${m[1].length}>${inline(m[2])}</h${m[1].length}>`); i++; continue; }
     if(/^\s*[-*]\s+/.test(ln)){
@@ -1545,7 +1735,7 @@ function picksHTML(){
     <div class="engrid">${PICK_ENGINES.map(e => `<article class="card engcard"><div class="ctop"><h3>${e.name}</h3><span class="chip">Advanced</span></div><p class="take">${esc(e.take)}</p><div class="links">${e.links.map(([n, u]) => `<a href="${u}" target="_blank" rel="noopener noreferrer">${esc(n)}</a>`).join("")}</div></article>`).join("")}</div></section>`;
   const harness = `<section class="picktier"><div class="tierhead"><h3>Make any model better: a harness and skills</h3><p>A model gets much more useful when it can search the web and follow skills.</p></div>
     <div class="engrid"><article class="card engcard"><div class="ctop"><h3>OpenChamber</h3><span class="chip lem">Our pick</span></div><p class="take">Our recommended app for working with your models. Connect it through the Server page. We find Unsloth Desktop laggy at the moment, and Hermes more complex than most people need.</p><div class="links"><a href="https://github.com/openchamber/openchamber" target="_blank" rel="noopener noreferrer">OpenChamber on GitHub</a></div></article>
-    <article class="card engcard"><div class="ctop"><h3>obra/superpowers</h3><span class="chip lem">Skills</span></div><p class="take">Give your models a few skills, especially this set, and most of them turn into a very good daily driver.</p><div class="links"><a href="https://github.com/obra/superpowers" target="_blank" rel="noopener noreferrer">obra/superpowers on GitHub</a></div></article></div></section>`;
+    <article class="card engcard"><div class="ctop"><h3>obra/superpowers</h3><span class="chip lem">Skills</span></div><p class="take">Give your models a few skills, especially this set, and most of them turn into a very good daily driver. A trimmed copy already comes with Zest: switch it on under <a href="#skills" data-go="skills">Skills</a>.</p><div class="links"><a href="https://github.com/obra/superpowers" target="_blank" rel="noopener noreferrer">obra/superpowers on GitHub</a></div></article></div></section>`;
   const more = `<section class="picktier more"><p>Want something else? <button class="linkbtn" data-f2="foryou">Browse more models</button> that fit your computer, or <button class="linkbtn" data-hf>add any GGUF model from Hugging Face</button>. If a model's design isn't supported yet, Zest will tell you.</p></section>`;
   return `<div class="picks">${noModels ? `<p class="help2">Models are loading…</p>` : tiers}${eng}${harness}${more}</div>`;
 }
@@ -1569,7 +1759,7 @@ $("#filters").addEventListener("click", e => { const b = e.target.closest("[data
 $("#filters").addEventListener("input", e => { if(e.target.id==="mq"){ S.q = e.target.value; const pos = e.target.selectionStart; renderModels(); const n = $("#mq"); n.focus(); n.setSelectionRange(pos,pos); } });
 function useModel(id, go){
   S.model = id; store.set("zest.model", id); syncModelSelect();
-  if(go){ show("chat"); $("#input").focus(); }
+  if(go){ show("cowork"); $("#cwinput").focus(); }
 }
 $("#v-models").addEventListener("click", async e => {
   const t = e.target.closest("button"); if(!t) return;
@@ -2326,13 +2516,13 @@ const setupClick = async e => {
   if(a === "dl") return startDownload(el.dataset.model);
   if(a === "cancel-dl") return cancelDownload(el.dataset.model);
   if(a === "load-chat"){ const id = $("#startmodel").value; S.model = id; store.set("zest.model", id); syncModelSelect();
-    if(S.loaded === id){ show("chat"); return $("#input").focus(); }
-    return suBusy("load", async () => { await loadModelNow(id); show("chat"); }); }
-  if(a === "finish"){ await suPost("/ui/setup/done", {done: true}); SU.st.setup_done = true; show("chat"); }
+    if(S.loaded === id){ show("cowork"); return $("#cwinput").focus(); }
+    return suBusy("load", async () => { await loadModelNow(id); show("cowork"); }); }
+  if(a === "finish"){ await suPost("/ui/setup/done", {done: true}); SU.st.setup_done = true; show("cowork"); }
   if(a === "w-start"){
     const have = downloadedChat(), pick = have.find(m => m.id === S.model) || have[0];
     if(pick){ S.model = pick.id; store.set("zest.model", pick.id); syncModelSelect(); }
-    await suPost("/ui/setup/done", {done: true}); SU.st.setup_done = true; renderThread(); show("chat"); $("#input").focus();
+    await suPost("/ui/setup/done", {done: true}); SU.st.setup_done = true; renderThread(); show("cowork"); $("#cwinput").focus();
   }
 };
 $("#setup").addEventListener("click", setupClick);
@@ -2398,7 +2588,7 @@ document.addEventListener("click", e => { if(e.target.closest("[data-pick]")){ e
 /* ======================= help + advanced hub ======================= */
 const FAQ = [
   ["What is a model?", "A model is the AI that answers you. It is a big file, usually a few gigabytes, that lives on this computer. Bigger models tend to write better but need a stronger computer and answer more slowly. Zest marks each one as comfortable, snug or too big for your machine."],
-  ["Is my data private?", "Yes. Zest and the models run on this computer. Your chats are saved in this browser window only and are never sent anywhere. The only time Zest goes online is to download a model you ask for."],
+  ["Is my data private?", "Yes. Zest and the models run on this computer. Your conversations are saved on this computer, in Zest's own folder, and are never sent anywhere. Zest only goes online to download a model you ask for, check for Lemonade updates, or fetch skills when you paste a link. The <a href=\"#docs\" data-go=\"docs\">Docs</a> page explains where everything is kept."],
   ["Why is the first answer slow?", "The model has to be loaded into your computer's memory before it can answer. That takes a few seconds to a minute, depending on its size. After that, answers start right away."],
   ["How do I know which model to use?", "It depends on your computer and what you want to do. Start with <b>Our picks</b> on the Models page, where we explain each recommendation. <b>More models</b> shows the rest, hiding anything that won't run well. <p><button class=\"btn\" type=\"button\" data-pick>Show me how to compare models</button></p>"],
   ["What is the context window?", "It is how much of the conversation a model can see at once. Zest uses <b>128k</b> tokens (about 100,000 words) by default, which is a good threshold for usefulness in long chats and agentic work. You can change it for one model under <b>Details</b>, then <b>Settings for this model</b>. A bigger window needs more graphics memory."],
@@ -2406,15 +2596,30 @@ const FAQ = [
   ["Can other apps use my models?", "Yes. Open <b>Advanced</b>, then <b>Server</b>. Zest gives you an address and a key that you can paste into opencode, Hermes, or any chat app or coding assistant that works with an OpenAI-style server."],
   ["Answers are slow or the model won't start", "Close other programs that use your graphics card, such as games or video editors, and try again. If it still struggles, choose a smaller model on the Models page. Models marked “Probably too big” often fail on this computer."]
 ];
+let DOCS = null;
+async function renderDocs(){
+  if(!DOCS){
+    $("#docs").innerHTML = '<div class="hero"><h2>How <span class="hl">Zest</span> works</h2><div class="prog ind"><i></i></div></div>';
+    try{ DOCS = await (await fetch("/ui/docs.md")).text(); }catch{ DOCS = ""; }
+  }
+  const parts = DOCS.split(/^## /m).map(x => x.trim()).filter(Boolean).map(x => { const i = x.indexOf("\n"); return {title: x.slice(0, i), body: x.slice(i + 1)}; });
+  if(!parts.length){ $("#docs").innerHTML = '<p class="lede">The guide could not be loaded. Restart Zest and try again.</p>'; return; }
+  $("#docs").innerHTML = `<div class="hero"><h2>How <span class="hl">Zest</span> works</h2><p>A plain-language guide to everything in Zest: chatting, working in a folder, skills, models and more. No technical knowledge needed.</p></div>
+    <nav class="doctoc" aria-label="Contents">${parts.map((p, i) => `<button type="button" data-doc="${i}">${esc(p.title)}</button>`).join("")}</nav>
+    ${parts.map((p, i) => `<article class="doc" id="doc-${i}"><h2>${esc(p.title)}</h2><div class="body">${md(p.body)}</div></article>`).join("")}`;
+  renderDiagrams($("#docs"), true);
+}
+$("#docs").addEventListener("click", e => { const b = e.target.closest("[data-doc]"); if(b) document.getElementById("doc-" + b.dataset.doc).scrollIntoView({behavior: "smooth", block: "start"}); });
 function renderHelp(){
   $("#help").innerHTML = `<div class="hero"><h2>Need a <span class="hl">hand</span>?</h2><p>The short answers to what people ask most. Nothing here needs any technical knowledge.</p></div>
     <div class="faq">${FAQ.map(([q, a]) => `<details><summary>${q}</summary><p>${a}</p></details>`).join("")}</div>
-    <div class="helpacts"><button class="btn" data-hact="tour">Run the welcome steps again</button><button class="btn" data-hact="restart">Restart the helper</button><button class="btn ghost" data-hact="advanced">Open Advanced</button></div>`;
+    <div class="helpacts"><button class="btn" data-hact="tour">Run the welcome steps again</button><button class="btn" data-hact="restart">Restart the helper</button><button class="btn" data-hact="docs">Read the full guide</button><button class="btn ghost" data-hact="advanced">Open Advanced</button></div>`;
 }
 $("#help").addEventListener("click", async e => {
   const b = e.target.closest("[data-hact]"); if(!b) return;
   if(b.dataset.hact === "tour") return show("welcome");
   if(b.dataset.hact === "advanced") return show("advanced");
+  if(b.dataset.hact === "docs") return show("docs");
   if(b.dataset.hact === "restart"){ b.disabled = true; try{ await api("/ui/engine/restart", {method:"POST", headers:{"Content-Type":"application/json"}, body:"{}"}); toast("Restarting. This takes a few seconds."); }catch(err){ toast(err.message); } b.disabled = false; }
 });
 const ADV_CARDS = [
@@ -2976,10 +3181,520 @@ setInterval(() => fetch("/ui/ping", {method:"POST"}).catch(() => {}), 5000); fet
   if(!S.convs.length || !conv()) { if(S.convs.length) S.cur = S.convs[0].id; else { const c = {id:uid(), title:"New chat", messages:[], system:"", created:Date.now()}; S.convs.push(c); S.cur = c.id; } }
   renderConvs(); syncModelSelect(); renderStatus(); setSendState();
   let h = location.hash.slice(1); if(h === "logs"){ pendingLogScroll = true; h = "server"; }
-  show(TITLES[h] && h !== "welcome" ? h : (SU.st && !SU.st.setup_done ? "welcome" : "chat"));
+  show(TITLES[h] && h !== "welcome" ? h : (SU.st && !SU.st.setup_done ? "welcome" : "cowork"));
   renderThread();
   grow();
 })();
+</script>
+<script>
+/* ======================= Cowork: the Pi agent, working in a folder you choose ======================= */
+const CW = {tasks: [], pi: null, id: null, es: null, cursor: -1, ready: null, state: null, stats: null, running: false,
+            tools: {}, files: new Map(), am: null, queue: {steering: [], followUp: []}, folder: "", mode: "ask", timer: null};
+const CW_MODES = [
+  ["ask", "Ask first", "Reads freely. Asks before every edit and command."],
+  ["edits", "Edit freely", "Edits inside the folder go through. Commands still ask."],
+  ["auto", "Do everything", "Never asks. Only for a folder you can afford to lose."],
+  ["plan", "Look only", "Read-only. It can explore and propose, but not change anything."],
+];
+const CW_TOOLS = {read: "Read", write: "Write", edit: "Edit", bash: "Run", grep: "Search", find: "Find", ls: "List"};
+const cwEl = id => document.getElementById(id);
+const cwDir = p => String(p || "").replace(/\/+$/, "").split("/").pop() || "/";
+
+async function cwLoad(){
+  try{ const r = await api("/ui/cowork"); CW.tasks = r.tasks; CW.pi = r.pi; }catch{ CW.pi = CW.pi || {found: false}; }
+  cwRenderTasks(); cwRenderSide();
+  if(!CW.id) cwRenderHero();
+}
+function cwRenderTasks(){
+  cwEl("cwtasks").innerHTML = CW.tasks.map(t => `<button class="cwtask" data-id="${t.id}" ${t.id === CW.id ? 'aria-current="true"' : ""}>
+    <b>${esc(t.title)}</b><small>${t.chat ? "Chat" : esc(cwDir(t.cwd))}</small>${t.waiting ? '<span class="st wait" title="Needs your answer"></span>' : t.running ? '<span class="st run" title="Working"></span>' : ""}
+    <span class="del" role="button" data-del="${t.id}" title="Delete this task">✕</span></button>`).join("")
+    || '<p class="help" style="padding:6px 10px">Your conversations appear here and pick up where they left off.</p>';
+  cwEl("cwtasks").innerHTML += '<button class="linkbtn" type="button" id="cwolder" style="margin:14px 10px 0">Earlier chats</button>';
+}
+function cwRenderHero(){
+  const m = cwEl("cwmsgs");
+  const recent = [...new Set(CW.tasks.filter(t => !t.chat).map(t => t.cwd))].slice(0, 4);
+  const missing = CW.pi && !CW.pi.found;
+  m.innerHTML = `<div class="cwhero"><h2>What shall we <span class="hl">work on</span>?</h2>
+    <p>Ask anything and it answers, like always. Or choose a folder and the model can read, search, edit and run things there while you watch. It asks before it changes anything unless you say otherwise.</p>
+    <p class="cwnote">Skills teach it new ways of working. Add a set by pasting a GitHub link under <a href="#skills" data-go="skills">Skills</a>.</p>
+    ${missing ? `<div class="cwbanner"><span><b>The Pi agent isn't installed.</b> The Zest AppImage includes it. Running from source? Install it with <code>npm install -g @earendil-works/pi-coding-agent</code>, or point ZEST_PI at it.</span></div>` : ""}
+    ${S.up === false ? `<div class="cwbanner"><span>Lemonade isn't running yet, so there's no model to work with.</span></div>` : ""}
+    <div class="recent">${recent.map(p => `<button type="button" data-folder="${esc(p)}" title="${esc(p)}">${esc(cwDir(p))}</button>`).join("")}</div></div>`;
+  cwSetTitle("New chat"); cwFolderBtn();
+}
+function cwSetTitle(t){ cwEl("cwtitle").textContent = t; }
+function cwFolderBtn(){
+  const b = cwEl("cwfolderbtn");
+  const t = CW.tasks.find(x => x.id === CW.id);
+  b.hidden = !!CW.id && !(t && t.chat);
+  b.textContent = CW.folder && !CW.id ? "Folder: " + cwDir(CW.folder) : "Work in a folder…";
+  b.title = CW.folder && !CW.id ? CW.folder : "Let the model read and change files in a folder";
+}
+function cwNew(){
+  cwClose(); CW.id = null; CW.mode = "ask"; cwReset(); cwRenderHero(); cwRenderTasks(); cwRenderSide(); cwSetRunning(false);
+  cwEl("cwmodechip").hidden = true; cwEl("cwinput").focus();
+}
+function cwReset(){ CW.tools = {}; CW.files = new Map(); CW.am = null; CW.ready = null; CW.state = null; CW.stats = null; CW.queue = {steering: [], followUp: []}; cwEl("cwmsgs").innerHTML = ""; cwEl("cwbanner").innerHTML = ""; cwQueue(); }
+function cwClose(){ if(CW.es){ CW.es.close(); CW.es = null; } clearTimeout(CW.timer); }
+
+function cwOpen(id){
+  cwClose(); CW.id = id; CW.cursor = -1; cwReset();
+  const t = CW.tasks.find(x => x.id === id);
+  if(t){ cwSetTitle(t.title); CW.mode = t.mode; }
+  cwFolderBtn(); cwRenderTasks(); cwRenderSide(); cwConnect();
+  cwEl("cwtasks").parentElement.classList.remove("open");
+}
+function cwConnect(){
+  const id = CW.id; if(!id) return;
+  const es = new EventSource(`/ui/cowork/stream?id=${id}&since=${CW.cursor}`);
+  CW.es = es;
+  es.onmessage = e => { CW.cursor = Number(e.lastEventId); try{ cwEvent(JSON.parse(e.data)); }catch(err){ console.error(err); } };
+  es.onerror = () => {
+    es.close();
+    if(CW.es === es && CW.id === id) CW.timer = setTimeout(() => { if(CW.id === id) cwConnect(); }, 1500);
+  };
+}
+
+/* ---- sending */
+const cwSend = (cmd) => api("/ui/cowork/cmd", {method: "POST", body: JSON.stringify({id: CW.id, cmd})});
+async function cwSubmit(text){
+  text = text.trim(); if(!text) return;
+  if(!CW.id){
+    try{
+      const r = await api("/ui/cowork/new", {method: "POST", body: JSON.stringify({cwd: CW.folder, mode: CW.mode})});
+      await cwLoad(); cwOpenWith(r.task.id, text);
+    }catch(e){ toast(e.message); }
+    return;
+  }
+  cwEl("cwinput").value = ""; cwGrow();
+  try{ await cwSend({type: "prompt", message: text}); }catch(e){ toast(e.message); }
+}
+function cwOpenWith(id, text){
+  cwClose(); CW.id = id; CW.cursor = -1; cwReset(); CW.mode = (CW.tasks.find(t => t.id === id) || {}).mode || "ask";
+  cwEl("cwinput").value = ""; cwGrow(); cwFolderBtn(); cwRenderTasks(); cwRenderSide(); cwSetTitle(text.slice(0, 60));
+  cwSetRunning(true);
+  cwSend({type: "prompt", message: text}).catch(e => toast(e.message));
+  cwConnect();
+}
+function cwPickFolder(){
+  openFs(CW.folder || "", async p => {
+    if(CW.id){
+      const id = CW.id;
+      try{ await api("/ui/cowork/folder", {method: "POST", body: JSON.stringify({id, cwd: p})}); await cwLoad(); cwOpen(id); toast("It can now work in " + cwDir(p) + "."); }catch(e){ toast(e.message); }
+      return;
+    }
+    CW.folder = p; store.set("zest.cowork.folder", p); cwFolderBtn(); cwRenderSide(); cwEl("cwinput").focus();
+  });
+}
+function cwGrow(){ const t = cwEl("cwinput"); t.style.height = "auto"; t.style.height = Math.min(t.scrollHeight, 220) + "px"; }
+function cwSetRunning(on){
+  CW.running = on;
+  cwEl("cwstop").hidden = !on;
+  cwEl("cwsend").textContent = on ? "Add note" : "Send";
+  cwEl("cwinput").placeholder = on ? "Add a note while it works…" : (CW.id ? "Reply…" : "Ask anything, or describe a job…");
+  const w = cwEl("cwmsgs").querySelector(".cwwork");
+  if(on && !w){ const d = document.createElement("div"); d.className = "cwwork"; d.innerHTML = "<i></i><span>Working…</span>"; cwEl("cwmsgs").appendChild(d); cwScroll(); }
+  if(!on && w) w.remove();
+}
+function cwQueue(){
+  const n = CW.queue.steering.length + CW.queue.followUp.length, q = cwEl("cwqueue");
+  q.hidden = !n; q.textContent = n ? `${n} note${n > 1 ? "s" : ""} waiting for the agent to pick up.` : "";
+}
+const cwScroll = () => { const t = cwEl("cwthread"); if(t.scrollHeight - t.scrollTop - t.clientHeight < 240) t.scrollTop = t.scrollHeight; };
+
+/* ---- events */
+function cwEvent(r){
+  const m = cwEl("cwmsgs");
+  switch(r.type){
+    case "zest_history": {
+      m.innerHTML = ""; CW.tools = {}; CW.files = new Map(); CW.am = null;
+      (r.messages || []).forEach(cwHistoryMsg);
+      if(CW.running) cwSetRunning(true);
+      const t = cwEl("cwthread"); t.scrollTop = t.scrollHeight; cwRenderSide();
+      if(!r.messages.length && !m.children.length) m.innerHTML = '<p class="cwnote">Nothing here yet. Tell it what you want done.</p>';
+      cwSend({type: "get_session_stats"}).catch(() => {});
+      break;
+    }
+    case "zest_ready": CW.ready = r; CW.mode = r.mode; cwBanner(); cwRenderSide(); cwSend({type: "get_state"}).catch(() => {}); break;
+    case "agent_start": m.querySelector(".cwnote")?.remove(); cwSetRunning(true); break;
+    case "agent_settled": cwSetRunning(false); cwSend({type: "get_session_stats"}).catch(() => {}); cwLoad(); break;
+    case "message_start": if(r.message.role === "assistant") cwStartAssistant(); break;
+    case "message_update": cwUpdate(r.assistantMessageEvent); break;
+    case "message_end": cwMessageEnd(r.message); break;
+    case "tool_execution_start": cwTool(r.toolCallId, r.toolName, r.args).classList.add("run"); cwToolStatus(r.toolCallId, "run", "Working…"); cwScroll(); break;
+    case "tool_execution_update": cwToolOutput(r.toolCallId, r.toolName, r.args, r.partialResult); break;
+    case "tool_execution_end": cwToolDone(r.toolCallId, r.toolName, r.result, r.isError, r.durationMs); break;
+    case "extension_ui_request": cwUiRequest(r); break;
+    case "zest_answered": m.querySelector(`.approve[data-id="${r.id}"]`)?.remove(); break;
+    case "queue_update": CW.queue = {steering: r.steering || [], followUp: r.followUp || []}; cwQueue(); break;
+    case "compaction_start": cwNote("Tidying up the conversation to make room…"); break;
+    case "compaction_end": cwNote(r.aborted ? "Tidying up was cancelled." : "Conversation tidied up to make room."); cwSend({type: "get_session_stats"}).catch(() => {}); break;
+    case "auto_retry_start": cwNote(`The model hit a problem (${r.errorMessage || "unknown"}). Trying again (${r.attempt} of ${r.maxAttempts})…`); break;
+    case "response": cwResponse(r); break;
+    case "zest_error": cwNote(r.message, true); break;
+    case "zest_exit": cwSetRunning(false); cwNote("The agent stopped. Send a message to start it again."); cwClose(); break;
+  }
+}
+function cwResponse(r){
+  if(!r.success){ if(r.command !== "get_session_stats") toast(r.error || "That didn't work."); return; }
+  if(r.command === "get_state"){ CW.state = r.data; cwRenderSide(); }
+  if(r.command === "get_session_stats"){ CW.stats = r.data; cwRenderSide(); }
+}
+function cwNote(text, bad){
+  const d = document.createElement("div"); d.className = "cwnote" + (bad ? " err" : "");
+  d.innerHTML = bad ? `<pre>${esc(text)}</pre>` : esc(text);
+  const w = cwEl("cwmsgs").querySelector(".cwwork"); cwEl("cwmsgs").insertBefore(d, w); cwScroll();
+}
+function cwBanner(){
+  const r = CW.ready, b = cwEl("cwbanner");
+  if(r && r.ctx && r.ctx < 32768)
+    b.innerHTML = `<div class="cwbanner"><span><b>${esc(r.model)} only has ${r.ctx.toLocaleString()} tokens of room.</b> An agent needs far more to read files and keep track of its work.</span><button class="btn" type="button" data-cwctx="65536">Give it 64k</button><button class="btn" type="button" data-cwctx="131072">128k</button></div>`;
+  else b.innerHTML = "";
+}
+
+/* ---- assistant text */
+function cwStartAssistant(){
+  const d = document.createElement("div"); d.className = "msg bot";
+  d.innerHTML = `<div class="avatar" aria-hidden="true"><svg viewBox="0 0 40 40"><circle cx="20" cy="20" r="18" fill="#f7d916"/><circle cx="20" cy="20" r="2.6" fill="#1a1a17" opacity=".6"/></svg></div><div class="body"></div>`;
+  const w = cwEl("cwmsgs").querySelector(".cwwork"); cwEl("cwmsgs").insertBefore(d, w);
+  CW.am = {el: d.querySelector(".body"), blocks: [], raf: 0};
+}
+function cwBlocksHTML(blocks){
+  return blocks.map(b => {
+    if(b.t === "think"){ const x = (b.text || "").trim(); return x ? `<details class="cwthink"><summary>How it thought</summary>${md(x)}</details>` : ""; }
+    if(b.t === "text"){ const x = (b.text || "").trim(); return x ? md(x) : ""; }
+    return "";
+  }).join("");
+}
+function cwPaint(){ const a = CW.am; if(!a) return; a.raf = 0; a.el.innerHTML = cwBlocksHTML(a.blocks); cwScroll(); }
+function cwUpdate(e){
+  if(!CW.am) cwStartAssistant();
+  const a = CW.am, i = e.contentIndex, k = e.type;
+  if(k === "thinking_start") a.blocks[i] = {t: "think", text: ""};
+  else if(k === "text_start") a.blocks[i] = {t: "text", text: ""};
+  else if(k === "thinking_delta" || k === "text_delta"){ a.blocks[i] = a.blocks[i] || {t: k.startsWith("think") ? "think" : "text", text: ""}; a.blocks[i].text += e.delta; }
+  else return;
+  if(!a.raf) a.raf = requestAnimationFrame(cwPaint);
+}
+function cwMessageEnd(msg){
+  if(msg.role === "user"){ cwUserMsg(msg); return; }
+  if(msg.role !== "assistant") return;
+  if(!CW.am) cwStartAssistant();
+  const blocks = (msg.content || []).map(c => c.type === "thinking" ? {t: "think", text: c.thinking} : c.type === "text" ? {t: "text", text: c.text} : null).filter(Boolean);
+  CW.am.blocks = blocks; cancelAnimationFrame(CW.am.raf);
+  let html = cwBlocksHTML(blocks);
+  if(msg.stopReason === "error") html += `<p class="cwnote err">${esc(cwFriendly(msg.errorMessage))}</p>`;
+  CW.am.el.innerHTML = html;
+  renderDiagrams(CW.am.el, true);
+  if(!html) CW.am.el.closest(".msg").remove();
+  CW.am = null; cwScroll();
+}
+function cwFriendly(m){
+  m = String(m || "The model stopped with an error.");
+  if(/exceeds the available context/i.test(m)) return m + " Give the model a bigger context window (see the notice below), then send your message again.";
+  return m;
+}
+function cwUserMsg(msg){
+  const text = (Array.isArray(msg.content) ? msg.content.filter(c => c.type === "text").map(c => c.text).join("\n") : String(msg.content || ""));
+  if(!text.trim() || text.startsWith("/zest-mode")) return;
+  const d = document.createElement("div"); d.className = "msg user"; d.innerHTML = `<div class="body">${esc(text)}</div>`;
+  const w = cwEl("cwmsgs").querySelector(".cwwork"); cwEl("cwmsgs").insertBefore(d, w); cwScroll();
+}
+function cwHistoryMsg(msg){
+  if(msg.role === "user") return cwUserMsg(msg);
+  if(msg.role === "assistant"){
+    CW.am = null; cwMessageEnd(msg);
+    (msg.content || []).filter(c => c.type === "toolCall").forEach(c => { cwTool(c.id, c.name, c.arguments); cwToolStatus(c.id, "", "…"); });
+    return;
+  }
+  if(msg.role === "toolResult") cwToolDone(msg.toolCallId, msg.toolName, {content: msg.content, details: msg.details}, msg.isError, msg.durationMs);
+}
+
+/* ---- tool cards */
+function cwSkillOf(name, a){
+  const p = name === "read" && a ? String(a.path || a.file_path || "") : "";
+  const m = p.match(/([^/]+)\/SKILL\.md$/);
+  return m ? m[1].replace(/^.*__/, "") : "";
+}
+function cwSummary(name, a){
+  a = a || {};
+  if(name === "bash") return String(a.command || "").split("\n")[0];
+  return String(a.path || a.file_path || a.pattern || a.query || a.glob || "");
+}
+function cwDiff(a){
+  const pairs = [];
+  if(a && a.oldText !== undefined) pairs.push([a.oldText, a.newText]);
+  (a && a.edits || []).forEach(e => pairs.push([e.oldText, e.newText]));
+  return pairs.map(([o, n]) => String(o || "").split("\n").map(l => `<span class="ln del">- ${esc(l)}</span>`).join("") + String(n || "").split("\n").map(l => `<span class="ln add">+ ${esc(l)}</span>`).join("")).join("<hr>");
+}
+function cwDiffText(d){ return String(d || "").split("\n").map(l => `<span class="ln ${l[0] === "+" ? "add" : l[0] === "-" ? "del" : ""}">${esc(l)}</span>`).join(""); }
+function cwTool(id, name, args){
+  let el = CW.tools[id]; if(el) return el;
+  el = document.createElement("div"); el.className = "tool"; el.dataset.id = id; el.dataset.name = name;
+  const skill = cwSkillOf(name, args);
+  const label = skill ? "Skill" : (CW_TOOLS[name] || name);
+  let body = "";
+  if(name === "edit") body = cwDiff(args) || esc(JSON.stringify(args, null, 1));
+  else if(name === "write") body = esc(String(args && args.content || "").slice(0, 6000));
+  else if(name !== "bash") body = esc(JSON.stringify(args || {}, null, 1));
+  el.innerHTML = `<button class="thead" type="button"><span class="tn">${esc(label)}</span><span class="tsum">${esc(skill || cwSummary(name, args))}</span><span class="tst"></span></button>
+    <div class="tbody" ${["edit", "write"].includes(name) ? "" : "hidden"}><pre>${body}</pre></div>`;
+  el._args = args;
+  const w = cwEl("cwmsgs").querySelector(".cwwork"); cwEl("cwmsgs").insertBefore(el, w);
+  CW.tools[id] = el; return el;
+}
+function cwToolStatus(id, cls, text){
+  const el = CW.tools[id]; if(!el) return;
+  el.classList.remove("run", "ok", "bad", "no"); if(cls) el.classList.add(cls);
+  el.querySelector(".tst").textContent = text;
+}
+const cwResultText = r => ((r && r.content) || []).filter(c => c.type === "text").map(c => c.text).join("\n");
+function cwToolOutput(id, name, args, partial){
+  const el = cwTool(id, name, args); if(name !== "bash") return;
+  const t = cwResultText(partial); if(!t) return;
+  const body = el.querySelector(".tbody"); body.hidden = false; body.querySelector("pre").textContent = t.slice(-8000); cwScroll();
+}
+function cwToolDone(id, name, result, isError, ms){
+  const el = cwTool(id, name, {}); const text = cwResultText(result);
+  const declined = /did not allow|read-only \(plan\)/i.test(text);
+  cwToolStatus(id, declined ? "no" : isError ? "bad" : "ok", declined ? "Declined" : isError ? "Failed" : (ms >= 1000 ? (ms / 1000).toFixed(1) + " s" : "Done"));
+  el.closest(".cw") ; const body = el.querySelector(".tbody"), pre = body.querySelector("pre");
+  if(name === "edit" && result && result.details && result.details.diff) pre.innerHTML = cwDiffText(result.details.diff);
+  else if(name === "bash" || name === "read" || isError || declined){ if(text){ pre.textContent = text.slice(-8000); body.hidden = !(isError || declined); } }
+  else if(name !== "write" && text){ pre.textContent = text.slice(0, 8000); }
+  if(["edit", "write"].includes(name) && !isError && !declined){
+    const path = (el._args && (el._args.path || el._args.file_path)) || el.querySelector(".tsum").textContent;
+    if(path){ CW.files.set(path, name === "write" ? "new/changed" : "edited"); cwRenderSide(); }
+  }
+  if(name === "write" || name === "edit") body.hidden = !(isError || declined) && !body.querySelector(".ln.add, .ln.del") ? true : body.hidden;
+}
+document.addEventListener("click", e => { const h = e.target.closest("#cwmsgs .thead"); if(h){ const b = h.nextElementSibling; b.hidden = !b.hidden; } });
+
+/* ---- asking permission */
+function cwUiRequest(r){
+  if(r.method === "notify"){ toast(r.message || ""); return; }
+  if(r.method !== "select") return;
+  let info = null; try{ info = JSON.parse(r.title); }catch{}
+  const verb = !info ? "" : info.tool === "bash" ? "run a command" : info.tool === "write" ? "write a file" : info.tool === "edit" ? "edit a file" : "use " + info.tool;
+  const d = document.createElement("div"); d.className = "approve"; d.dataset.id = r.id;
+  d.innerHTML = `<div class="ahead">${info ? `Zest wants to <b>${esc(verb)}</b>` : esc(r.title)}</div>
+    ${info ? `<pre class="awhat">${esc(info.what)}</pre>` : ""}
+    ${info && info.outside ? `<div class="warn">This is outside the task folder (${esc(info.folder)}).</div>` : ""}
+    <div class="abtns">${(r.options || []).map((o, i) => `<button type="button" class="btn ${i === 0 ? "primary" : /n't|no/i.test(o) ? "danger" : ""}" data-ans="${esc(o)}">${esc(o)}</button>`).join("")}</div>`;
+  const w = cwEl("cwmsgs").querySelector(".cwwork"); cwEl("cwmsgs").insertBefore(d, w); cwScroll();
+  d.querySelector("button").focus({preventScroll: true});
+}
+cwEl("cwmsgs").addEventListener("click", async e => {
+  const b = e.target.closest("[data-ans]"); if(b){
+    const card = b.closest(".approve"); card.querySelectorAll("button").forEach(x => x.disabled = true);
+    try{ await api("/ui/cowork/answer", {method: "POST", body: JSON.stringify({id: CW.id, answer: {id: card.dataset.id, value: b.dataset.ans}})}); }
+    catch(err){ toast(err.message); card.remove(); }
+    return;
+  }
+  const f = e.target.closest("[data-folder]"); if(f){ CW.folder = f.dataset.folder; cwFolderBtn(); cwEl("cwinput").focus(); }
+  const cp = e.target.closest(".cp"); if(cp){ navigator.clipboard?.writeText(cp.parentElement.querySelector("code").textContent); toast("Copied"); }
+});
+cwEl("cwbanner").addEventListener("click", async e => {
+  const b = e.target.closest("[data-cwctx]"); if(!b) return;
+  b.disabled = true; b.textContent = "Reloading the model…";
+  try{
+    const r = await api("/ui/cowork/context", {method: "POST", body: JSON.stringify({id: CW.id, tokens: Number(b.dataset.cwctx)})});
+    if(!r.ok) throw new Error(r.error || "Couldn't change it");
+    toast("Done. The model now has more room."); cwOpen(CW.id);
+  }catch(err){ toast(err.message); cwBanner(); }
+});
+
+/* ---- the side panel */
+function cwRenderSide(){
+  const el = cwEl("cwside"), t = CW.tasks.find(x => x.id === CW.id);
+  const chip = cwEl("cwmodechip"); chip.hidden = !t || t.chat; if(t) chip.textContent = (CW_MODES.find(x => x[0] === CW.mode) || [])[1] || "";
+  const folder = t ? (t.chat ? "" : t.cwd) : CW.folder, plain = t ? t.chat : !CW.folder;
+  const u = CW.stats && CW.stats.contextUsage, pct = u ? Math.min(100, Math.round(u.percent)) : 0;
+  const levels = CW.state && CW.state.model && CW.state.model.reasoning;
+  const files = [...CW.files.entries()];
+  el.innerHTML = `
+    <section><h4>Folder</h4><div class="path">${folder ? esc(folder) : "None. Just chatting."}</div><button class="btn" type="button" id="cwside-folder" style="margin-top:8px">${folder ? "Change folder…" : "Work in a folder…"}</button></section>
+    ${plain ? "" : `<section><h4>How careful</h4><div class="cwmodes">${CW_MODES.map(([k, n, d]) => `<label><input type="radio" name="cwmode" value="${k}" ${CW.mode === k ? "checked" : ""}><b>${n}</b><small>${d}</small></label>`).join("")}</div></section>`}
+    ${t && CW.ready ? `<section><h4>Model</h4><select id="cwmodel" aria-label="Model">${CW.ready.models.map(m => `<option ${m === CW.ready.model ? "selected" : ""}>${esc(m)}</option>`).join("")}</select>
+      ${levels ? `<h4 style="margin-top:12px">Thinking</h4><select id="cwthink" aria-label="Thinking">${["off", "low", "medium", "high"].map(l => `<option ${CW.state.thinkingLevel === l ? "selected" : ""}>${l}</option>`).join("")}</select>` : ""}</section>` : ""}
+    ${u ? `<section><h4>Memory used</h4><div class="cwmeter ${pct > 80 ? "hot" : ""}"><i style="width:${pct}%"></i></div>
+      <p class="help" style="margin:6px 0 8px">${Math.round(u.tokens / 1000)}k of ${Math.round(u.contextWindow / 1000)}k tokens (${pct}%)</p>
+      <button class="btn" type="button" id="cwcompact">Make room</button></section>` : ""}
+    <section><h4>Skills</h4><p class="help" style="margin:0 0 8px">${CW.skillsOn ? CW.skillsOn + " switched on." : "None switched on."}</p><button class="btn" type="button" id="cwside-skills">Manage skills</button></section>
+    ${plain ? "" : `<section><h4>Files it changed</h4>${files.length ? `<div class="cwfiles">${files.map(([p, op]) => `<div><b>${op === "edited" ? "M" : "A"}</b><span title="${esc(p)}">${esc(p)}</span></div>`).join("")}</div>` : '<p class="help">None yet.</p>'}</section>`}`;
+}
+cwEl("cwside").addEventListener("change", async e => {
+  const t = e.target;
+  try{
+    if(t.name === "cwmode"){
+      CW.mode = t.value;
+      if(CW.id){ await api("/ui/cowork/mode", {method: "POST", body: JSON.stringify({id: CW.id, mode: t.value})}); await cwLoad(); }
+      else cwRenderSide();
+    }else if(t.id === "cwmodel"){
+      const id = CW.id; await api("/ui/cowork/model", {method: "POST", body: JSON.stringify({id, model: t.value})}); cwOpen(id);
+    }else if(t.id === "cwthink") await cwSend({type: "set_thinking_level", level: t.value});
+  }catch(err){ toast(err.message); }
+});
+cwEl("cwside").addEventListener("click", e => {
+  if(e.target.id === "cwside-folder") cwPickFolder();
+  if(e.target.id === "cwside-skills") show("skills");
+  if(e.target.id === "cwcompact"){ cwSend({type: "compact"}).catch(err => toast(err.message)); toast("Making room…"); }
+});
+
+/* ---- wiring */
+cwEl("cwform").addEventListener("submit", e => { e.preventDefault(); cwSubmit(cwEl("cwinput").value); });
+cwEl("cwinput").addEventListener("input", cwGrow);
+cwEl("cwinput").addEventListener("keydown", e => { if(e.key === "Enter" && !e.shiftKey && !e.isComposing){ e.preventDefault(); cwSubmit(cwEl("cwinput").value); } });
+cwEl("cwstop").addEventListener("click", () => cwSend({type: "abort"}).catch(err => toast(err.message)));
+cwEl("cwnew").addEventListener("click", cwNew);
+cwEl("cwtasks").addEventListener("click", e => { if(e.target.id === "cwolder") show("chat"); });
+cwEl("cwfolderbtn").addEventListener("click", cwPickFolder);
+cwEl("cwtoggle-list").addEventListener("click", () => cwEl("cwlist").classList.toggle("open"));
+cwEl("cwtoggle-side").addEventListener("click", () => cwEl("cwside").classList.toggle("open"));
+cwEl("cwtasks").addEventListener("click", async e => {
+  const del = e.target.closest("[data-del]");
+  if(del){
+    e.stopPropagation();
+    if(!confirm("Delete this task and its history? Files it changed in your folder stay as they are.")) return;
+    await api("/ui/cowork/delete", {method: "POST", body: JSON.stringify({id: del.dataset.del})});
+    if(CW.id === del.dataset.del) cwNew();
+    return cwLoad();
+  }
+  const b = e.target.closest(".cwtask"); if(b) cwOpen(b.dataset.id);
+});
+setInterval(() => { if(S.view === "cowork" && !document.hidden) cwLoad(); }, 5000);
+CW.folder = store.get("zest.cowork.folder", "") || "";
+
+/* ======================= Diagrams (Mermaid) ======================= */
+let mermaidP = null, dgN = 0;
+function loadMermaid(){
+  if(mermaidP) return mermaidP;
+  mermaidP = new Promise((res, rej) => {
+    const sc = document.createElement("script"); sc.src = "/ui/vendor/mermaid.js";
+    sc.onload = () => { try{ window.mermaid.initialize({startOnLoad: false, securityLevel: "strict", theme: "neutral", fontFamily: "Figtree, sans-serif"}); res(window.mermaid); }catch(e){ rej(e); } };
+    sc.onerror = () => { mermaidP = null; rej(new Error("Diagrams aren't installed in this copy of Zest.")); };
+    document.head.appendChild(sc);
+  });
+  return mermaidP;
+}
+async function renderDiagrams(root, final){
+  if(!final) return;
+  for(const el of root.querySelectorAll(".diagram:not([data-done])")){
+    el.dataset.done = "1";
+    const src = el.dataset.src, id = "dg" + (++dgN);
+    try{
+      const m = await loadMermaid();
+      const {svg} = await m.render(id, src);
+      el._svg = svg; el._src = src;
+      el.innerHTML = `<div class="dgsvg">${svg}</div><div class="dgbar"><button type="button" data-dg="copy">Copy code</button><button type="button" data-dg="svg">Save as image</button></div>`;
+    }catch(e){
+      document.getElementById("d" + id)?.remove();
+      const why = String(e && e.message || e).split("\n").filter(Boolean).slice(0, 3).join("\n");
+      el._src = src; el._why = why;
+      el.innerHTML = `<div class="dgerr"><b>This diagram didn't draw.</b><pre>${esc(why)}</pre>${S.view === "cowork" && CW.id ? '<div class="dgbar" style="border:0;padding:0"><button type="button" data-dg="fix">Ask the model to fix it</button></div>' : ""}<pre><code>${esc(src)}</code></pre></div>`;
+    }
+  }
+}
+document.addEventListener("click", e => {
+  const b = e.target.closest("[data-dg]"); if(!b) return;
+  const el = b.closest(".diagram");
+  if(b.dataset.dg === "copy"){ navigator.clipboard?.writeText(el._src || ""); toast("Diagram code copied"); }
+  if(b.dataset.dg === "svg"){
+    const a = document.createElement("a"); a.href = URL.createObjectURL(new Blob([el._svg], {type: "image/svg+xml"})); a.download = "diagram.svg"; a.click(); setTimeout(() => URL.revokeObjectURL(a.href), 2000);
+  }
+  if(b.dataset.dg === "fix" && !CW.running){
+    cwSubmit("That Mermaid diagram didn't draw. The error was:\n" + (el._why || "unknown") + "\nPlease fix the syntax (quote every label that has spaces or brackets, use simple node ids) and send the whole corrected diagram.");
+  }
+});
+
+/* ======================= Skills ======================= */
+const SK = {sets: [], msg: "", busy: false, link: ""};
+const SK_IDEAS = [
+  ["https://github.com/conorbronsdon/avoid-ai-writing", "avoid-ai-writing", "Edits text so it stops sounding machine-written. Long: suits bigger models."],
+  ["https://github.com/Agents365-ai/drawio-skill", "drawio-skill", "Makes editable draw.io diagram files. Needs Python 3. Suits bigger models."],
+  ["https://github.com/conorbronsdon/agent-skills", "agent-skills", "A few short, tested skills including code review."],
+];
+async function loadSkills(){
+  try{ SK.sets = (await api("/ui/skills")).sets; }catch{}
+  CW.skills = SK.sets.flatMap(s => s.skills.filter(k => k.enabled && k.auto !== false).map(k => ({name: k.name, description: k.description, set: s.id})));
+  CW.skillsOn = SK.sets.reduce((n, s) => n + s.skills.filter(k => k.enabled).length, 0);
+}
+function renderSkills(){
+  loadSkills().then(paintSkills); paintSkills();
+}
+function paintSkills(){
+  if(S.view !== "skills") return;
+  const on = SK.sets.reduce((n, s) => n + s.skills.filter(k => k.enabled).length, 0);
+  const kb = b => b >= 1048576 ? (b / 1048576).toFixed(1) + " MB" : Math.max(1, Math.round(b / 1024)) + " KB";
+  $("#skills").innerHTML = `<p class="lede">Skills are short instruction sheets a model reads when a job calls for them: how to plan before building, how to debug, how to draw a diagram, how to write good Markdown. <b>${on} switched on.</b></p>
+    <section class="panel">
+      <h3>Add skills from a link</h3>
+      <p class="help" style="margin:0">Paste the link to a GitHub page that has skills in it, and Zest adds them all. It works with a whole repository, or with one folder inside it (open the folder on GitHub and copy the address). A skill is a folder with a <code>SKILL.md</code> file.</p>
+      <form class="skinst" id="skform"><input id="sklink" type="text" inputmode="url" autocomplete="off" spellcheck="false" placeholder="https://github.com/owner/repository" value="${esc(SK.link)}" aria-label="Link to a skills repository"><button class="btn primary" type="submit" ${SK.busy ? "disabled" : ""}>${SK.busy ? "Adding…" : "Add skills"}</button></form>
+      ${SK.msg ? `<p class="help" role="status" style="margin:0;color:${SK.msg.startsWith("!") ? "var(--bad)" : "var(--leaf)"}">${esc(SK.msg.replace(/^!/, ""))}</p>` : ""}
+      <details><summary class="help" style="cursor:pointer">Ideas, and what to know first</summary>
+        <div class="skeg" style="margin:10px 0">${SK_IDEAS.map(([u, n, d]) => `<button type="button" data-skidea="${esc(u)}"><b>${n}</b><span>${esc(d)}</span></button>`).join("")}</div>
+        <p class="help">Find more on <a href="https://hermesatlas.com/ecosystem/" target="_blank" rel="noopener noreferrer">Hermes Atlas</a>. Anything that follows the <a href="https://agentskills.io" target="_blank" rel="noopener noreferrer">Agent Skills</a> format works.</p>
+        <p class="help"><b>Only add skills from people you trust.</b> A skill is instructions the model follows, and some come with scripts. While a task is on <i>Ask first</i>, every command still asks you.</p>
+        <p class="help"><b>Fewer is better for small models.</b> Each skill you switch on adds a line the model reads before every answer. A handful of well-chosen skills beats a hundred.</p>
+        <p class="help">Skills are fetched from github.com when you add them. Skills work in a conversation with a folder; the diagram and writing skills also work in a plain chat. Changes apply from the next message.</p></details>
+    </section>
+    ${SK.sets.map(set => `<section class="panel skset" data-set="${esc(set.id)}">
+      <div class="skhead"><h3>${esc(set.name)}</h3>${set.bundled ? '<span class="chip lem">Comes with Zest</span>' : '<span class="chip">Added by you</span>'}${set.license ? `<span class="chip">${esc(set.license)}</span>` : ""}<span class="grow"></span>
+        <button class="btn ghost" type="button" data-skall="1">All on</button><button class="btn ghost" type="button" data-skall="0">All off</button>${set.bundled ? "" : '<button class="btn ghost danger" type="button" data-skrm="1">Remove</button>'}</div>
+      ${set.blurb ? `<p class="help" style="margin:0">${esc(set.blurb)}</p>` : ""}
+      ${set.source ? `<p class="help" style="margin:0"><a href="${esc(set.source)}" target="_blank" rel="noopener noreferrer">${esc(set.source.replace("https://", ""))}</a>${set.author ? " by " + esc(set.author) : ""}</p>` : ""}
+      ${set.note ? `<p class="help" style="margin:0">${esc(set.note)}</p>` : ""}
+      <div>${set.skills.map(k => `<label class="skrow"><input type="checkbox" data-sk="${esc(k.key)}" ${k.enabled ? "checked" : ""}><b>${esc(k.name)}<small>${kb(k.bytes)}</small></b><span>${esc(k.description.length > 230 ? k.description.slice(0, 227) + "…" : k.description)}</span></label>`).join("") || '<p class="help">No skills in this set.</p>'}</div>
+    </section>`).join("")}`;
+}
+async function skPost(path, body){
+  const r = await api(path, {method: "POST", body: JSON.stringify(body)}); SK.sets = r.sets || SK.sets; await loadSkills(); paintSkills(); return r;
+}
+$("#skills").addEventListener("submit", async e => {
+  if(e.target.id !== "skform") return; e.preventDefault();
+  SK.link = $("#sklink").value.trim(); if(!SK.link) return;
+  SK.busy = true; SK.msg = ""; paintSkills();
+  try{ const r = await skPost("/ui/skills/install", {link: SK.link}); SK.msg = `Added ${r.count} skill${r.count === 1 ? "" : "s"}: ${r.names.slice(0, 6).join(", ")}${r.names.length > 6 ? "…" : ""}.`; SK.link = ""; }
+  catch(err){ SK.msg = "!" + err.message; }
+  SK.busy = false; paintSkills();
+});
+$("#skills").addEventListener("click", async e => {
+  const idea = e.target.closest("[data-skidea]"); if(idea){ SK.link = idea.dataset.skidea; paintSkills(); $("#sklink").focus(); return; }
+  const set = e.target.closest("[data-set]"); if(!set) return; const id = set.dataset.set;
+  try{
+    if(e.target.dataset.skall !== undefined) await skPost("/ui/skills/toggle", {set: id, enabled: e.target.dataset.skall === "1"});
+    if(e.target.dataset.skrm && confirm("Remove these skills from Zest?")){ await skPost("/ui/skills/remove", {id}); }
+  }catch(err){ toast(err.message); }
+});
+$("#skills").addEventListener("change", async e => {
+  if(!e.target.dataset.sk) return;
+  try{ await skPost("/ui/skills/toggle", {key: e.target.dataset.sk, enabled: e.target.checked}); }catch(err){ toast(err.message); }
+});
+
+/* ---- the / picker in the composer */
+const PK = {items: [], at: 0};
+function cwPick(){
+  const t = CW.tasks.find(x => x.id === CW.id), v = cwEl("cwinput").value, box = cwEl("cwpick");
+  const ok = v.startsWith("/") && !/\s/.test(v) && (CW.id ? t && !t.chat : !!CW.folder) && CW.skills && CW.skills.length;
+  if(!ok){ box.hidden = true; return; }
+  const q = v.slice(1).replace(/^skill:/, "").toLowerCase();
+  PK.items = CW.skills.filter(k => k.name.toLowerCase().includes(q)).slice(0, 8); PK.at = 0;
+  box.hidden = !PK.items.length;
+  box.innerHTML = PK.items.map((k, i) => `<button type="button" role="option" data-pk="${i}" aria-selected="${i === 0}"><b>/skill:${esc(k.name)}</b><span>${esc(k.description)}</span></button>`).join("");
+}
+function cwPickUse(i){ const k = PK.items[i]; if(!k) return; const ta = cwEl("cwinput"); ta.value = "/skill:" + k.name + " "; cwEl("cwpick").hidden = true; ta.focus(); cwGrow(); }
+cwEl("cwinput").addEventListener("input", cwPick);
+cwEl("cwpick").addEventListener("mousedown", e => { const b = e.target.closest("[data-pk]"); if(b){ e.preventDefault(); cwPickUse(Number(b.dataset.pk)); } });
+cwEl("cwinput").addEventListener("keydown", e => {
+  const box = cwEl("cwpick"); if(box.hidden) return;
+  if(e.key === "ArrowDown" || e.key === "ArrowUp"){ e.preventDefault(); PK.at = (PK.at + (e.key === "ArrowDown" ? 1 : PK.items.length - 1)) % PK.items.length; box.querySelectorAll("button").forEach((b, i) => b.setAttribute("aria-selected", i === PK.at)); }
+  else if(e.key === "Tab" || (e.key === "Enter" && !e.shiftKey)){ e.preventDefault(); e.stopImmediatePropagation(); cwPickUse(PK.at); }
+  else if(e.key === "Escape") box.hidden = true;
+}, true);
+function cwShow(){ cwLoad(); loadSkills().then(cwRenderSide); if(!CW.id){ cwRenderHero(); cwRenderSide(); } cwEl("cwinput").focus(); }
 </script>
 </body>
 </html>

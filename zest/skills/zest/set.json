@@ -1,0 +1,11 @@
+{
+ "name": "Zest basics",
+ "blurb": "Skills written for Zest: diagrams that appear as pictures in the chat, and clear Markdown for documents.",
+ "source": "",
+ "license": "MIT",
+ "author": "Zest",
+ "inline": [
+  "diagrams",
+  "markdown-writing"
+ ]
+}

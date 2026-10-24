@@ -1,8 +1,20 @@
 # Zest
 
-**Run AI models on your own computer, with one download.** Zest is a friendly interface for [Lemonade](https://lemonade-server.ai), the open-source engine that runs language models locally. The Zest AppImage **includes Lemonade**.
+**Run AI models on your own computer, and put them to work, with one download.** Zest is a friendly interface for [Lemonade](https://lemonade-server.ai), the open-source engine that runs language models locally, and for [Pi](https://pi.dev), a coding-agent harness. The Zest AppImage **includes both**.
 
-The idea is to provide an user interface that people who aren't necessarily steeped in technical know-how can still navigate to get open-weights models running on their own hardware. Download Zest, and you're good to go. 
+The idea is to provide a user interface that people who aren't necessarily steeped in technical know-how can still navigate to get open-weights models running on their own hardware, and then do real work with them: chat, draw diagrams, write documents, or let a model read and change the files in a folder while they watch. Download Zest, and you're good to go.
+
+## What's new in version 3
+
+Zest 3 turns the chat window into a co-working space.
+
+- **Chat is now an agent.** The same conversation can be plain Q&A or a model working in a folder you choose, with tool cards for every step, diffs for every edit, and a permission card before anything changes. Four levels of care, from *Ask first* to *Look only*.
+- **Skills.** Short instruction sheets that make small models far more dependable. Superpowers, diagrams and Markdown writing come built in; add more by pasting a GitHub link.
+- **Diagrams in the chat.** Ask for a picture and it is drawn, with copy and save buttons, and a one-press "fix it" if the model got the syntax wrong.
+- **A Docs tab** that explains how everything works in plain language, inside the app.
+- Tables, links and quotes in replies, and chats that are saved on disk and pick up where they left off.
+
+Chats from before version 3 are kept under **Earlier chats**.
 
 ![Zest chat](docs/screenshots/chat.png)
 
@@ -23,7 +35,7 @@ The idea is to provide an user interface that people who aren't necessarily stee
    | **Helper** | Zest starts its own private copy of Lemonade. Nothing to choose. |
    | **Your computer** | Zest looks at your graphics card and downloads the program that suits it (CUDA for NVIDIA, Vulkan for most cards, the processor as a fallback). One button. |
    | **A model** | Three suggestions that fit your computer, labelled Quick, Balanced and Thorough. Quick is LFM2.5 8B A1B (fast, to the point, good with tools, happy on almost any computer), Balanced is Qwen3.6 35B A3B MTP and Thorough is Gemma 4 31B MTP, each only if it fits; otherwise Zest picks by size. Press Download on one. |
-   | **Chat** | Press Start chatting. |
+   | **Chat** | Press Start chatting. Type a question, or press **Work in a folder…** to let the model work on your files. |
 
    People who already have models, or run their own Lemonade, can skip to **Advanced > Setup guide**, which keeps the full set of choices: where models are stored, models you already have (LM Studio, Ollama, llama.cpp and others are found for you), and Lemonade updates.
 
@@ -57,9 +69,11 @@ Lemonade handles models; Zest gives you the choices:
 
 ## Features
 
-Zest is organised around four places in the left-hand menu: **Chat**, **Models**, **Help** and **Advanced**. Everything a newcomer needs is in the first three; everything technical sits behind Advanced.
+Zest is organised around six places in the left-hand menu: **Chat**, **Models**, **Skills**, **Docs**, **Help** and **Advanced**. Everything a newcomer needs is in the first five; everything technical sits behind Advanced. **Docs** is a plain-language guide to all of it, written for people new to local AI (its text lives in [zest/docs.md](zest/docs.md)).
 
-- **Chat** with streaming replies, markdown and code blocks with copy buttons, a collapsible "how it thought" panel for reasoning models, and everyday starter questions. Conversations are kept in your browser.
+- **Chat is powered by [Pi](https://pi.dev), a coding-agent harness that ships inside Zest.** Ask anything and it answers like a normal chat. Press **Work in a folder…** and the same conversation becomes a co-working session: the model reads, searches, edits and runs commands in that folder while you watch, and **asks before it changes anything** (tool cards show each step; edits show a diff). Choose how careful it is per task (**Ask first**, **Edit freely**, **Do everything**, **Look only**), switch models, watch how much of the context window is used, and add notes while it works. Tasks are saved and pick up where they left off. See [docs/COWORK.md](docs/COWORK.md). Conversations from before 2.3 are under **Earlier chats**.
+- **Skills** are short instruction sheets the model reads when a job calls for them. Zest comes with **Superpowers** (a trimmed copy of [obra/superpowers](https://github.com/obra/superpowers): ask what you really want, plan, test first, find a bug's cause before fixing it, prove it works before saying so), a **diagrams** skill (the model writes Mermaid and Zest draws it in the chat, with Copy and Save as image; if it doesn't draw, one button asks the model to fix it) and a **markdown-writing** skill. **To add more, open Skills, paste a link to a GitHub repository (or to one folder in it) and press Add skills.** Any repository that follows the [Agent Skills](https://agentskills.io) format works; [Hermes Atlas](https://hermesatlas.com/ecosystem/) lists many. Switch skills on and off one by one, or by set, and type `/` in a folder conversation to pick one. Only add skills from people you trust. See [docs/COWORK.md](docs/COWORK.md).
+- **Chat** (the older, simpler window, under *Earlier chats*) with streaming replies, markdown and code blocks with copy buttons, a collapsible "how it thought" panel for reasoning models, and everyday starter questions. Those conversations are kept in your browser.
 - **Speed** While a reply is being written, the chat shows the phase (**Loading the model**, **Reading your message**, **Thinking**, **Writing**), a live tokens-per-second figure, a plain word for it (**Very fast**, **Fast**, **Comfortable reading speed**, **Slow**, **Very slow**; about 5 tokens a second is a comfortable reading pace) and a small graph of the speed through the answer. When it finishes, the footer keeps the speed and graph, the tokens, the time to the first token, how fast the model read your message, which model and backend answered, and how much of the context window the conversation uses (for example "Conversation: 34k of 128k"). The status pill at the top shows the live speed too, including for other apps using the Server (marked with a ~ because it is estimated). Each downloaded model card remembers how fast it has been on this computer ("Fast, about 62 tok/s").
 - **Models**: shows you what models you can run and one sentence on whether it will run comfortably on your computer. The fit comes from the memory that is actually *free* on your graphics cards right now, so you can tell before loading whether another program is in the way. The default page, **Our picks**, leads with the models I've tested and recommend. **More models** shows the rest of what Lemonade offers that will run well on your computer. A **Details** fold on each card holds the technical names and **Settings for this model**: context window, backend, devices and the llama-server options (flash attention, cache precision, expert layers in system RAM, GPU splitting, thinking, speculative decoding) as tick boxes and dropdowns with plain explanations, checked against your own `llama-server` before you load.
 - **Context window: 128k by default.** The built-in Lemonade starts with a 128k (or rather, a 131,072-token) context window, a good threshold for usefulness in long chats and agentic work. Zest sets it once, so changing it later in **All settings** sticks, and any model can have its own size under **Settings for this model**. A bigger window needs more graphics memory. 
@@ -92,12 +106,12 @@ On first run Zest walks through four short steps. Here it is offering three down
 
 ![Welcome: choosing a model](docs/screenshots/setup-welcome.png)
 
-### Chat
-Streaming answers with code blocks and copy buttons, speed stats, a model picker, a "how it thought" fold for reasoning models, and per-chat instructions. Chats stay in your browser.
+### Earlier chats
+The window Zest used before version 3 (the screenshots below predate the move to Pi): streaming answers with code blocks and copy buttons, speed stats, a "how it thought" fold for reasoning models, and per-chat instructions. These chats stay in your browser, under **Chat > Earlier chats**. The new Chat, Skills and Docs pages are described under Features.
 
 ![Chat](docs/screenshots/chat.png)
 
-The footer of each reply shows how fast it was written, how fast the model read your message, which model answered and how much of the context window is used. While a reply is being written the same row updates live, with a graph, and the status pill at the top shows the speed.
+In that window, the footer of each reply shows how fast it was written, how fast the model read your message, which model answered and how much of the context window is used. While a reply is being written the same row updates live, with a graph, and the status pill at the top shows the speed.
 
 ![Reply with speed footer](docs/screenshots/chat-speed.png)
 
@@ -196,6 +210,10 @@ cd Zest
 python3 zest/server.py
 ```
 
+Diagrams in Chat need Mermaid: run `./packaging/fetch-vendor.sh` once (a 26 MB download, checked against its published checksum); the AppImage already includes it.
+
+Chat's agent features need [Pi](https://pi.dev) (Node 22.19 or newer): `npm install -g @earendil-works/pi-coding-agent`, or point `ZEST_PI` at a `pi` binary. The AppImage already includes both.
+
 Then open <http://127.0.0.1:13306> (it opens automatically unless you pass `--no-browser`). A source checkout doesn't include Lemonade: on the welcome screen or Advanced > Setup guide, **Download Lemonade** fetches it (about 7 MB), or you can connect to one you already run.
 
 | Flag | Environment variable | Default | Meaning |
@@ -219,7 +237,9 @@ Then open <http://127.0.0.1:13306> (it opens automatically unless you pass `--no
 | Its log (shown on the Logs page) | `~/.local/share/zest/lemond.log` |
 | Links to models you chose to bring in | `~/.local/share/zest/imported-models/` |
 | Models you download | the Hugging Face cache, or the folder you chose |
-| Chats and display preferences | your browser's local storage |
+| Skills you added and which are switched on | `~/.local/share/zest/skills/` |
+| Chat conversations, their transcripts and Pi's configuration (rewritten at each start) | `~/.local/share/zest/cowork/` |
+| Earlier chats (before 2.3) and display preferences | your browser's local storage |
 
 (`XDG_CONFIG_HOME` and `XDG_DATA_HOME` are respected.) To start from scratch, delete `~/.config/zest` and `~/.local/share/zest`. Downloaded models are not in there unless you chose a folder inside it.
 
@@ -227,6 +247,8 @@ Then open <http://127.0.0.1:13306> (it opens automatically unless you pass `--no
 
 Nothing you type into a chat leaves your computer. Zest and Lemonade do contact the following services:
 
+- **Chat with a folder runs entirely locally.** Pi is started offline, with telemetry and update checks off, and talks only to your Lemonade. If you add your own extensions, MCP servers or web tools to Pi, those can reach the network.
+- **codeload.github.com**: only when you paste a link under Skills, to download that repository's skills.
 - **api.github.com and github.com**: looking for and downloading Lemonade updates (the automatic check can be switched off), and Lemonade downloading the backends you install.
 - **Hugging Face**: Lemonade downloading the models you choose, and Zest reading a repository's public file list when you use **Get from Hugging Face**. Gated models, which need a login, are not supported yet.
 - **Benchmark and community sites**: the links in **How do I choose a model?** open in your browser only when you click them. Zest never contacts those sites itself.
@@ -236,6 +258,7 @@ Nothing you type into a chat leaves your computer. Zest and Lemonade do contact 
 Zest is a small Python program with no dependencies (`zest/server.py` plus a few modules) and one HTML page (`zest/index.html`).
 
 - `zest/gateway.py` is the door for other apps and the request recorder. Both it and Zest's own chat forward through one function that streams the answer back untouched while noting whether the model is waiting, thinking (`reasoning_content`, or text inside `<think>` tags) or writing.
+- `zest/agent.py` runs Pi (`pi --mode rpc`, one process per task) against Lemonade through Zest's own `/api/v1` proxy, and relays its JSON events to the page as server-sent events. `zest/pi/zest-gate.js` is the Pi extension that makes it ask before editing or running commands. Details in [docs/COWORK.md](docs/COWORK.md).
 - `zest/hf.py` reads a Hugging Face repository's file list and groups GGUF files by quantisation.
 - `/api/*` is passed straight through to Lemonade, so the page needs no CORS changes. Chat uses the OpenAI-compatible `/api/v1/chat/completions` stream, and model downloads use Lemonade's background download jobs.
 - Everything Zest changes in Lemonade goes through Lemonade's own HTTP API: `/internal/config` and `/internal/set` for settings, `/v1/models/{id}/options` for per-model options, `/v1/install` for backends. Zest does not need the `lemonade` command-line tool.
@@ -257,7 +280,7 @@ Zest is a small Python program with no dependencies (`zest/server.py` plus a few
 ./packaging/build-appimage.sh
 ```
 
-This downloads a relocatable Python, Lemonade's official embeddable build, and `appimagetool` (all pinned by SHA-256), assembles the image and writes `dist/Zest-<version>-x86_64.AppImage` plus a checksum. To bundle a newer Lemonade, change the version and checksum at the top of the script. Pushing a tag that starts with `v` runs the same script in GitHub Actions and attaches the result to the release.
+This downloads a relocatable Python, Node.js, the Pi agent, Lemonade's official embeddable build, and `appimagetool` (all pinned by SHA-256), assembles the image and writes `dist/Zest-<version>-x86_64.AppImage` plus a checksum. To bundle a newer Lemonade, change the version and checksum at the top of the script. Pushing a tag that starts with `v` runs the same script in GitHub Actions and attaches the result to the release.
 
 To cut a release: bump `VERSION` in `zest/server.py`, then `git tag vX.Y.Z && git push --tags`.
 

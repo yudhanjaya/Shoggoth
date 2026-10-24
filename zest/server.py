@@ -23,6 +23,7 @@ from urllib.parse import urlparse, parse_qs
 HERE = os.path.dirname(os.path.abspath(__file__))
 sys.path.insert(0, HERE)          # the AppImage runs Python in isolated mode, which doesn't add this folder itself
 
+import agent       # noqa: E402
 import engine      # noqa: E402
 import gateway     # noqa: E402
 import hardware    # noqa: E402
@@ -30,11 +31,12 @@ import hf          # noqa: E402
 import lem         # noqa: E402
 import llamaargs   # noqa: E402
 import modelscan   # noqa: E402
+import skills      # noqa: E402
 import store       # noqa: E402
 import util        # noqa: E402
 from util import cached, invalidate, run   # noqa: E402
 
-VERSION = "2.2.2"
+VERSION = "3.0.0"
 _last_ping = {"t": None}
 FORCED = {"addr": None}           # set by --lemonade: use exactly that server and skip the setup screen
 LOOPBACK_ONLY = {"on": True}
@@ -134,6 +136,20 @@ class Handler(BaseHTTPRequestHandler):
         self.end_headers()
         self.wfile.write(body)
 
+    def send_vendor(self, name, ctype="text/javascript; charset=utf-8"):
+        """A bundled third-party script (Mermaid). Absent in a source checkout until packaging/fetch-vendor.sh has run."""
+        try:
+            with open(os.path.normpath(os.path.join(HERE, "vendor", name)), "rb") as f:
+                body = f.read()
+        except OSError:
+            return self.send_json({"error": "not installed"}, 404)
+        self.send_response(200)
+        self.send_header("Content-Type", ctype)
+        self.send_header("Content-Length", str(len(body)))
+        self.send_header("Cache-Control", "no-cache" if name.endswith(".md") else "max-age=86400")
+        self.end_headers()
+        self.wfile.write(body)
+
     def read_json(self):
         n = int(self.headers.get("Content-Length") or 0)
         try:
@@ -173,6 +189,10 @@ class Handler(BaseHTTPRequestHandler):
             self.wfile.write(body)
         elif p == "/ui/ping":
             self.send_json({"zest": VERSION})
+        elif p == "/ui/docs.md":
+            self.send_vendor("../docs.md", "text/markdown; charset=utf-8")
+        elif p == "/ui/vendor/mermaid.js":
+            self.send_vendor("mermaid.min.js")
         elif p == "/ui/gpu":
             self.send_json({"gpus": hardware.all_gpus(), "t": time.time()})
         elif p == "/ui/info":
@@ -211,6 +231,14 @@ class Handler(BaseHTTPRequestHandler):
             self.get_server(ids, qids)
         elif p == "/ui/activity":
             self.send_json({"items": gateway.REC.activity()})
+        elif p == "/ui/cowork":
+            self.send_json(agent.state())
+        elif p == "/ui/skills":
+            self.send_json({"sets": skills.scan()})
+        elif p == "/ui/cowork/models":
+            self.send_json({"models": agent.chat_models()})
+        elif p == "/ui/cowork/stream":
+            self.cowork_stream(parse_qs(u.query))
         elif p == "/ui/logs":
             n = min(max(int(parse_qs(u.query).get("n", ["200"])[0]), 10), 1000)
             self.send_json({"lines": read_logs(n)})
@@ -238,7 +266,12 @@ class Handler(BaseHTTPRequestHandler):
             "/ui/setup/mode": self.post_mode, "/ui/setup/done": self.post_done,
             "/ui/engine/check": self.post_engine_check, "/ui/engine/update": self.post_engine_update,
             "/ui/engine/use": self.post_engine_use, "/ui/engine/restart": self.post_engine_restart,
-            "/ui/gateway": self.post_gateway,
+            "/ui/gateway": self.post_gateway, "/ui/cowork/new": self.post_cowork_new,
+            "/ui/cowork/cmd": self.post_cowork_cmd, "/ui/cowork/answer": self.post_cowork_answer,
+            "/ui/cowork/mode": self.post_cowork_mode, "/ui/cowork/delete": self.post_cowork_delete,
+            "/ui/cowork/rename": self.post_cowork_rename, "/ui/cowork/context": self.post_cowork_context,
+            "/ui/cowork/model": self.post_cowork_model, "/ui/cowork/folder": self.post_cowork_folder, "/ui/skills/install": self.post_skills_install,
+            "/ui/skills/remove": self.post_skills_remove, "/ui/skills/toggle": self.post_skills_toggle,
             "/ui/models/storage": self.post_storage, "/ui/models/imports": self.post_imports,
         }.get(p)
         if not handler:
@@ -443,6 +476,106 @@ class Handler(BaseHTTPRequestHandler):
         self.send_json({"gateway": gateway.public_state(s)})
 
 
+    # ---- Cowork: the Pi agent
+    def post_cowork_new(self, body):
+        t = agent.create(body.get("cwd"), body.get("mode", "ask"), str(body.get("model", "")))
+        self.send_json({"ok": True, "task": t})
+
+    def post_cowork_cmd(self, body):
+        self.send_json(agent.command(str(body.get("id", "")), body.get("cmd") or {}))
+
+    def post_cowork_answer(self, body):
+        s = agent.session(str(body.get("id", "")), start=False)
+        a = body.get("answer") or {}
+        if not s or a.get("id") not in s.pending:
+            return self.send_json({"ok": False, "error": "That question was already answered."}, 409)
+        rec = {"type": "extension_ui_response", "id": a["id"]}
+        rec.update({k: a[k] for k in ("value", "confirmed", "cancelled") if k in a})
+        s.answer(rec)
+        self.send_json({"ok": True})
+
+    def post_cowork_mode(self, body):
+        agent.set_mode(str(body.get("id", "")), str(body.get("mode", "")))
+        self.send_json({"ok": True})
+
+    def post_cowork_delete(self, body):
+        agent.delete(str(body.get("id", "")))
+        self.send_json({"ok": True})
+
+    def post_cowork_rename(self, body):
+        agent.rename(str(body.get("id", "")), body.get("title", ""))
+        self.send_json({"ok": True})
+
+    def post_cowork_context(self, body):
+        sid, model = str(body.get("id", "")), ""
+        t = agent.get_task(sid)
+        if not t:
+            return self.send_json({"ok": False, "error": "no such task"}, 404)
+        model = t.get("model", "")
+        ok, msg = agent.set_context(model, max(8192, min(int(body.get("tokens") or 65536), 1048576)))
+        if ok:
+            agent.stop(sid)
+        self.send_json({"ok": ok, "error": msg})
+
+    def post_skills_install(self, body):
+        r = skills.install(body.get("link", ""))
+        agent.restart_idle()
+        self.send_json(dict(r, ok=True, sets=skills.scan()))
+
+    def post_skills_remove(self, body):
+        skills.remove(str(body.get("id", "")))
+        agent.restart_idle()
+        self.send_json({"ok": True, "sets": skills.scan()})
+
+    def post_skills_toggle(self, body):
+        if body.get("set"):
+            skills.toggle_set(str(body["set"]), bool(body.get("enabled")))
+        else:
+            skills.toggle(str(body.get("key", "")), bool(body.get("enabled")))
+        agent.restart_idle()
+        self.send_json({"ok": True, "sets": skills.scan()})
+
+    def post_cowork_folder(self, body):
+        agent.set_folder(str(body.get("id", "")), body.get("cwd", ""))
+        self.send_json({"ok": True})
+
+    def post_cowork_model(self, body):
+        sid = str(body.get("id", ""))
+        agent.stop(sid)
+        agent._update_meta(sid, model=str(body.get("model", "")))
+        self.send_json({"ok": True})
+
+    def cowork_stream(self, q):
+        """Server-sent events: everything the agent does, from the cursor the page last saw."""
+        try:
+            s = agent.session(q.get("id", [""])[0])
+            cursor = int(q.get("since", ["-1"])[0])
+        except (RuntimeError, ValueError) as e:
+            return self.send_json({"error": str(e)}, 400)
+        if not s:
+            return self.send_json({"error": "no such task"}, 404)
+        self.send_response(200)
+        self.send_header("Content-Type", "text/event-stream")
+        self.send_header("Cache-Control", "no-store")
+        self.end_headers()
+        s.watchers += 1
+        try:
+            while True:
+                batch = s.since(cursor)
+                out = b"".join(b"id: %d\ndata: %s\n\n" % (n, json.dumps(r).encode()) for n, r in batch)
+                self.wfile.write(out or b": ping\n\n")
+                self.wfile.flush()
+                if batch:
+                    cursor = batch[-1][0]
+                if batch and batch[-1][1].get("type") == "zest_exit":
+                    return
+        except OSError:
+            pass
+        finally:
+            s.watchers -= 1
+            s.last = time.time()
+
+
 def zest_running(host, port):
     try:
         c = http.client.HTTPConnection(host, port, timeout=1.5)
@@ -489,6 +622,8 @@ def main():
         sys.exit(f"Can't listen on {a.host}:{a.port}: {e}\nTry --port.")
     srv.daemon_threads = True
 
+    agent.set_zest_port(a.port)
+    threading.Thread(target=agent.reaper, daemon=True).start()
     s = store.load()
     if a.lemonade:
         h, _, p = a.lemonade.rpartition(":")
@@ -513,6 +648,7 @@ def main():
     except (KeyboardInterrupt, SystemExit):
         pass
     finally:
+        agent.stop_all()
         gateway.GATEWAY.stop()
         srv.server_close()        # free the port first; stopping Lemonade can take a few seconds
         engine.stop()

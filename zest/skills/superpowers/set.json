@@ -1,0 +1,2 @@
+{"name": "Superpowers", "blurb": "A working method for coding agents: ask what the person really wants, write a plan, test first, find the cause of a bug before fixing it, and prove it works before saying so. This is what makes small models far more dependable.",
+ "source": "https://github.com/obra/superpowers", "license": "MIT", "author": "Jesse Vincent (obra)", "bootstrap": "using-superpowers", "note": "Trimmed to six skills that need no extra tools. Subagent and git-worktree skills are left out."}
