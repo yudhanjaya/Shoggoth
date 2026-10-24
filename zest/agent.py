@@ -13,6 +13,7 @@ import time
 import uuid
 
 import lem
+import piup
 import skills
 import store
 
@@ -39,12 +40,11 @@ def set_zest_port(port):
 # ---------------------------------------------------------------- finding Pi
 def find_pi():
     """Returns ([command...], where) for the Pi we run: the one in the AppImage, ZEST_PI, or `pi` on the PATH."""
-    root = os.path.abspath(os.path.join(HERE, "..", ".."))
-    node, cli = os.path.join(root, "node", "bin", "node"), os.path.join(root, "pi", "dist", "bundle", "cli.js")
-    if os.access(node, os.X_OK) and os.path.isfile(cli):
-        return [node, cli], "bundled"
     if os.environ.get("ZEST_PI"):
         return [os.environ["ZEST_PI"]], "ZEST_PI"
+    cmd, source = piup.command()                 # the bundled Pi or one Zest downloaded, whichever is chosen
+    if cmd:
+        return cmd, source
     found = shutil.which("pi")
     return ([found], "PATH") if found else (None, "")
 
@@ -175,7 +175,7 @@ def list_tasks():
 
 def state():
     cmd, where = find_pi()
-    return {"pi": {"found": bool(cmd), "where": where}, "tasks": list_tasks(), "modes": list(MODES)}
+    return {"pi": {"found": bool(cmd), "where": where, "version": piup.summary()["active"] and piup.summary()["active"]["version"]}, "tasks": list_tasks(), "modes": list(MODES)}
 
 
 def create(cwd, mode="ask", model=""):

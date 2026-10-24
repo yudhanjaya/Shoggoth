@@ -31,6 +31,7 @@ import hf          # noqa: E402
 import lem         # noqa: E402
 import llamaargs   # noqa: E402
 import modelscan   # noqa: E402
+import piup        # noqa: E402
 import skills      # noqa: E402
 import store       # noqa: E402
 import util        # noqa: E402
@@ -233,6 +234,8 @@ class Handler(BaseHTTPRequestHandler):
             self.send_json({"items": gateway.REC.activity()})
         elif p == "/ui/cowork":
             self.send_json(agent.state())
+        elif p == "/ui/pi":
+            self.send_json(piup.summary())
         elif p == "/ui/skills":
             self.send_json({"sets": skills.scan()})
         elif p == "/ui/cowork/models":
@@ -270,7 +273,8 @@ class Handler(BaseHTTPRequestHandler):
             "/ui/cowork/cmd": self.post_cowork_cmd, "/ui/cowork/answer": self.post_cowork_answer,
             "/ui/cowork/mode": self.post_cowork_mode, "/ui/cowork/delete": self.post_cowork_delete,
             "/ui/cowork/rename": self.post_cowork_rename, "/ui/cowork/context": self.post_cowork_context,
-            "/ui/cowork/model": self.post_cowork_model, "/ui/cowork/folder": self.post_cowork_folder, "/ui/skills/install": self.post_skills_install,
+            "/ui/cowork/model": self.post_cowork_model, "/ui/cowork/folder": self.post_cowork_folder, "/ui/skills/install": self.post_skills_install, "/ui/pi/check": self.post_pi_check,
+            "/ui/pi/update": self.post_pi_update, "/ui/pi/use": self.post_pi_use,
             "/ui/skills/remove": self.post_skills_remove, "/ui/skills/toggle": self.post_skills_toggle,
             "/ui/models/storage": self.post_storage, "/ui/models/imports": self.post_imports,
         }.get(p)
@@ -517,6 +521,19 @@ class Handler(BaseHTTPRequestHandler):
             agent.stop(sid)
         self.send_json({"ok": ok, "error": msg})
 
+    def post_pi_check(self, body):
+        try:
+            self.send_json(piup.check())
+        except RuntimeError as e:
+            self.send_json({"error": str(e)}, 502)
+
+    def post_pi_update(self, body):
+        self.send_json({"started": piup.start_update(), "update": dict(piup.UPD)})
+
+    def post_pi_use(self, body):
+        piup.use(str(body.get("version", "")))
+        self.send_json(dict(piup.summary(), ok=True))
+
     def post_skills_install(self, body):
         r = skills.install(body.get("link", ""))
         agent.restart_idle()
@@ -623,6 +640,7 @@ def main():
     srv.daemon_threads = True
 
     agent.set_zest_port(a.port)
+    piup.on_installed.append(agent.restart_idle)
     threading.Thread(target=agent.reaper, daemon=True).start()
     s = store.load()
     if a.lemonade:

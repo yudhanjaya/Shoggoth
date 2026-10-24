@@ -129,7 +129,7 @@ Everything in **Advanced** is optional.
 - **Hardware** shows your graphics cards filling up as models load, and lets you choose which to use.
 - **Engines** shows the programs that run models, and which one each uses (CUDA, Vulkan, ROCm or the processor).
 - **All settings** is every setting Lemonade has, searchable.
-- **Setup guide** updates Lemonade, brings in models you already have from other apps, or connects Zest to a Lemonade you run yourself.
+- **Setup guide** updates Lemonade, updates Pi (the agent helper), brings in models you already have from other apps, or connects Zest to a Lemonade you run yourself.
 
 ## Where things live, and privacy
 
@@ -137,10 +137,11 @@ Everything stays on your computer.
 
 - **Conversations and what the AI did** are saved in Zest's own folder (`~/.local/share/zest/cowork/`). Older chats are in your browser.
 - **Skills you added** are in `~/.local/share/zest/skills/`.
+- **Newer versions of Pi** that you download are in `~/.local/share/zest/pi/`.
 - **Models** are in the Hugging Face cache (`~/.cache/huggingface/hub`), or the folder you chose.
 - **Settings and keys** are in `~/.config/zest/`.
 
-Zest goes online only to: download models you ask for, check for Lemonade updates (you can turn that off), and fetch skills when you paste a link. Pi runs offline and sends nothing anywhere. To start from scratch, delete `~/.config/zest` and `~/.local/share/zest`.
+Zest goes online only to: download models you ask for, check for Lemonade and Pi updates (you can turn that off), and fetch skills when you paste a link. Pi runs offline and sends nothing anywhere. To start from scratch, delete `~/.config/zest` and `~/.local/share/zest`.
 
 ## When something goes wrong
 
