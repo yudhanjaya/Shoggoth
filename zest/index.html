@@ -2281,24 +2281,12 @@ function stepShell(n, key, title, doneFlag, chipHTML, body){
 /* ======================= first-run welcome ======================= */
 const inSetup = () => S.view === "setup" || S.view === "welcome";
 function tierModels(){
-  const v = vramAvail(), cap = Math.max(1, v ? v.avail * 0.8 - 0.8 : 4);
-  const ok = m => !m.downloaded && m.recipe === "llamacpp" && m.size && m.size <= cap && !(m.labels || []).some(l => /embed|rerank/.test(l));
-  const pool = S.models.filter(m => ok(m) && (m.labels || []).includes("chat") && !(m.labels || []).includes("coding") && !/test/i.test(m.id)).sort((a, b) => a.size - b.size);
-  if(!pool.length) return [];
-  // Our picks first, so a newcomer's three choices match the Our picks page; anything that doesn't fit falls back to the size ladder.
-  // Each tier tries its own models in order, so a pick that doesn't fit is replaced by a similar one, not a random small model.
-  const taken = new Set();
-  const want = [["LFM2.5-8B-A1B", "LFM2-8B-A1B-GGUF"],
-                ["Qwen3.6-35B-A3B-MTP-GGUF", "Qwen3.6-35B-A3B-GGUF", "Gemma-4-26B-A4B-it-GGUF"],
-                ["Qwen3.8-27B-GGUF", "Qwen3.6-27B-MTP-GGUF", "Gemma-4-31B-it-MTP-GGUF"]].map(ids => {
-    const m = ids.map(id => pool.find(x => x.id === id)).find(x => x && !taken.has(x.id)); if(m) taken.add(m.id); return m;
-  });
-  const rest = pool.filter(m => !want.includes(m));
-  const fallback = [rest[0], rest[Math.floor((rest.length - 1) / 2)], rest[rest.length - 1]];
-  const pick = want.map((m, i) => m || fallback[i]).filter((m, i, a) => m && a.indexOf(m) === i);
-  const names = pick.length === 1 ? ["Balanced"] : pick.length === 2 ? ["Quick", "Thorough"] : ["Quick", "Balanced", "Thorough"];
+  // A fixed set, whatever the hardware: people with less memory can pick something else under "See every model".
+  const tiers = [["Quick", ["LFM2.5-8B-A1B"]],
+                 ["Balanced", ["Qwen3.6-35B-A3B-MTP-GGUF", "Gemma-4-26B-A4B-it-GGUF"]],
+                 ["Thorough", ["Qwen3.6-27B-MTP-GGUF", "Gemma-4-31B-it-MTP-GGUF"]]];
   const blurb = {Quick: "Answers fast and keeps it short and to the point. Runs on almost any computer.", Balanced: "Our general pick: fast, and good at everyday tasks, research and simple code.", Thorough: "Clear, careful writing, but slower than the others."};
-  return pick.map((m, i) => ({m, tier: names[i], blurb: blurb[names[i]]}));
+  return tiers.flatMap(([tier, ids]) => ids.map(id => S.models.find(m => m.id === id && m.recipe === "llamacpp" && m.size)).filter(Boolean).map(m => ({m, tier, blurb: blurb[tier]})));
 }
 function welcomeStep(){
   const st = SU.st; if(!st) return 0;
@@ -2339,7 +2327,7 @@ function wModel(){
   const tiers = tierModels(), active = (S.downloads || []).filter(isActiveJob);
   const cards = tiers.map(({m, tier, blurb}) => { const j = dlJob(m.id);
     return `<div class="tier"><div><b>${tier}</b><span class="tn">${esc(friendly(m))} · ${m.size.toFixed(1)} GB</span><p>${blurb}</p>${j ? `<div class="prog"><i style="width:${j.percent}%"></i></div><small class="wsmall">${j.percent}%</small>` : ""}</div>
-      ${j ? `<button class="btn" data-act="cancel-dl" data-model="${esc(m.id)}">Cancel</button>` : `<button class="btn primary" data-act="dl" data-model="${esc(m.id)}" ${active.length ? "disabled" : ""}>Download</button>`}</div>`; }).join("");
+      ${j ? `<button class="btn" data-act="cancel-dl" data-model="${esc(m.id)}">Cancel</button>` : m.downloaded ? `<button class="btn" disabled>Downloaded</button>` : `<button class="btn primary" data-act="dl" data-model="${esc(m.id)}" ${active.length ? "disabled" : ""}>Download</button>`}</div>`; }).join("");
   return `<h2>Choose a <span class="hl">model</span></h2><p class="wl">A model is the AI that answers you. It downloads once, then lives on this computer. Pick one to start. You can add more any time.</p>
     <div class="tiers">${cards || `<p class="wsmall">Zest couldn't find a suggestion yet.</p>`}</div>
     ${SU.msg.dl ? `<p class="errline">${esc(SU.msg.dl)}</p>` : ""}
