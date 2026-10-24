@@ -2286,7 +2286,13 @@ function tierModels(){
   const pool = S.models.filter(m => ok(m) && (m.labels || []).includes("chat") && !(m.labels || []).includes("coding") && !/test/i.test(m.id)).sort((a, b) => a.size - b.size);
   if(!pool.length) return [];
   // Our picks first, so a newcomer's three choices match the Our picks page; anything that doesn't fit falls back to the size ladder.
-  const want = ["LFM2.5-8B-A1B", "Qwen3.6-35B-A3B-MTP-GGUF", "Gemma-4-31B-it-MTP-GGUF"].map(id => pool.find(m => m.id === id));
+  // Each tier tries its own models in order, so a pick that doesn't fit is replaced by a similar one, not a random small model.
+  const taken = new Set();
+  const want = [["LFM2.5-8B-A1B", "LFM2-8B-A1B-GGUF"],
+                ["Qwen3.6-35B-A3B-MTP-GGUF", "Qwen3.6-35B-A3B-GGUF", "Gemma-4-26B-A4B-it-GGUF"],
+                ["Qwen3.8-27B-GGUF", "Qwen3.6-27B-MTP-GGUF", "Gemma-4-31B-it-MTP-GGUF"]].map(ids => {
+    const m = ids.map(id => pool.find(x => x.id === id)).find(x => x && !taken.has(x.id)); if(m) taken.add(m.id); return m;
+  });
   const rest = pool.filter(m => !want.includes(m));
   const fallback = [rest[0], rest[Math.floor((rest.length - 1) / 2)], rest[rest.length - 1]];
   const pick = want.map((m, i) => m || fallback[i]).filter((m, i, a) => m && a.indexOf(m) === i);

@@ -37,7 +37,7 @@ Zest runs on Linux. It needs no technical setup: you download one file and follo
    | --- | --- |
    | **Helper** | Zest starts its own private copy of Lemonade. Nothing to choose. |
    | **Your computer** | Zest looks at your graphics card and downloads the program that suits it (CUDA for NVIDIA, Vulkan for most cards, the processor as a fallback). One button. |
-   | **A model** | Three suggestions that fit your computer, labelled Quick, Balanced and Thorough. Quick is LFM2.5 8B A1B (fast, to the point, good with tools, happy on almost any computer), Balanced is Qwen3.6 35B A3B MTP and Thorough is Gemma 4 31B MTP, each only if it fits; otherwise Zest picks by size. Press Download on one. |
+   | **A model** | Three suggestions that fit your computer, labelled Quick, Balanced and Thorough. Quick is LFM2.5 8B A1B (fast, to the point, good with tools, happy on almost any computer), Balanced is Qwen3.6 35B A3B MTP and Thorough is Qwen3.8 27B, each only if it fits and is not already downloaded; if one does not, Zest tries a close alternative (for example Qwen3.6 35B A3B or Gemma 4 26B A4B for Balanced) before picking by size. Press Download on one. |
    | **Chat** | Press Start chatting. Type a question, or press **Work in a folder…** to let the model work on your files. |
 
    People who already have models, or run their own Lemonade, can skip to **Advanced > Setup guide**, which keeps the full set of choices: where models are stored, models you already have (LM Studio, Ollama, llama.cpp and others are found for you), and Lemonade updates.
