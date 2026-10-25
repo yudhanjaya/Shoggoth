@@ -37,7 +37,7 @@ You can repeat the tour any time: **Help**, then **Run the welcome steps again**
 
 ## Chatting
 
-Open **Chat** and type. The first answer takes a little longer because the model has to be loaded into memory. After that, answers start quickly.
+Open **Chat** and type. The bar under the title shows which model will answer and whether it is in memory. Press **Load** to load it ahead of time, or just send a message and Zest loads it first. The first answer takes a little longer for that; after it, answers start quickly. **Unload** frees the graphics memory. While the model works, a small strip under the reply shows what it is doing: 📖 reading your message, 🤔 thinking, ✍️ writing, 🛠️ using a tool (🍋 loading, or 🙋 waiting for your OK, when that is the case). Its thinking appears above the reply and folds away when it is done.
 
 - Your conversations are listed on the left, with any jobs they started nested underneath. Click one to carry on where you left off, even after closing Zest. To delete one, hover over it and press the cross.
 - Speed: the pill at the top shows how fast the model is writing, in tokens per second. Anything above about 5 is comfortable to read.
@@ -132,12 +132,12 @@ Replies can also contain tables, lists, links, quotes and code blocks, shown nea
 
 ## Choosing and managing models
 
-Open **Models**. **Our picks** are the models we have tried and recommend, with a sentence on whether each will run comfortably on your computer. **More models** shows the rest of what Lemonade offers that will run well. **Get it** downloads a model in the background while you carry on. **Get from Hugging Face** adds one from a link.
+Open **Models**. **My picks** are the models I have tried and recommend, with a sentence on whether each will run comfortably on your computer. **More models** shows the rest of what Lemonade offers that will run well. **Get it** downloads a model in the background while you carry on. **Get from Hugging Face** adds one from a link. **Settings** on a downloaded model edits how it runs, and **Chat with it** starts a chat with it. Loading and unloading happen in the chat.
 
 - Will it fit? Zest compares a model's size with the memory that is free on your graphics card right now, and marks it comfortable, snug or too big.
-- For working in a folder, pick a model that handles tools well. Look for tool-calling in its description. Our picks lean that way. Models that are very small can still chat well but often fumble tools.
-- Memory (the context window): this is how much the AI can keep in mind at once. Zest sets a roomy 128k by default. Working in a folder uses a lot of it, because the AI reads files. The Details panel shows how full it is, with a **Make room** button that tidies the older part of the conversation. If a model has very little room, Zest tells you and offers to give it more.
-- **Settings for one model** (under *Details* on its card) let you change its context window, which devices it uses and more. The defaults are fine for nearly everyone.
+- For working in a folder, pick a model that handles tools well. Look for tool-calling in its description. My picks lean that way. Models that are very small can still chat well but often fumble tools.
+- Memory (the context window): this is how much the AI can keep in mind at once. Zest sets a roomy 128k by default. Working in a folder uses a lot of it, because the AI reads files. The Details panel shows how full it is, with a **Make room** button that tidies the older part of the conversation. The context menu in the chat's model bar changes the size.
+- **Settings for one model** (the **Settings** button on its card) let you change which devices it uses, backend options and more. The defaults are fine for nearly everyone. Chat always loads a model with the context size in its model bar.
 
 ## Using your models in other apps
 
@@ -168,7 +168,7 @@ Zest goes online only to: download models you ask for, check for Lemonade and Pi
 
 **The answer never starts, or it is very slow.** The model may still be loading, or it may be too big for your graphics card. Close games and other heavy programs, or pick a smaller model under **Models**.
 
-**"…only has 4,096 tokens of room."** The model was loaded with very little memory. Press the button in the banner to give it 64k or 128k. It reloads the model, which takes a moment.
+**The model seems to have very little memory.** Look at the bar under the chat's title: it shows how much context the model has. Pick 128k from the context menu there and Zest reloads the model, which takes a moment.
 
 **It printed something that looks like code instead of doing the task.** The model did not manage to use its tools. Try asking again more simply, or switch to a stronger model in the Details panel.
 

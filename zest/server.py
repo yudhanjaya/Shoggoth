@@ -239,6 +239,8 @@ class Handler(BaseHTTPRequestHandler):
             self.send_json(piup.summary())
         elif p == "/ui/skills":
             self.send_json({"sets": skills.scan()})
+        elif p == "/ui/model":
+            self.send_json(agent.model_state())
         elif p == "/ui/cowork/models":
             self.send_json({"models": agent.chat_models()})
         elif p == "/ui/cowork/stream":
@@ -282,8 +284,8 @@ class Handler(BaseHTTPRequestHandler):
             "/ui/gateway": self.post_gateway, "/ui/cowork/new": self.post_cowork_new,
             "/ui/cowork/cmd": self.post_cowork_cmd, "/ui/cowork/answer": self.post_cowork_answer,
             "/ui/cowork/mode": self.post_cowork_mode, "/ui/cowork/delete": self.post_cowork_delete,
-            "/ui/cowork/rename": self.post_cowork_rename, "/ui/cowork/context": self.post_cowork_context,
-            "/ui/cowork/model": self.post_cowork_model,
+            "/ui/cowork/rename": self.post_cowork_rename, "/ui/cowork/model": self.post_cowork_model,
+            "/ui/model/load": self.post_model_load, "/ui/model/unload": self.post_model_unload, "/ui/model/ctx": self.post_model_ctx,
             "/ui/cowork/job/new": self.post_job_new, "/ui/cowork/job/ctl": self.post_job_ctl,
             "/ui/cowork/job/apply": self.post_job_apply, "/ui/cowork/job/discard": self.post_job_discard,
             "/ui/cowork/folders": self.post_cowork_folders, "/ui/cowork/seen": self.post_cowork_seen,
@@ -533,16 +535,25 @@ class Handler(BaseHTTPRequestHandler):
         agent.rename(str(body.get("id", "")), body.get("title", ""))
         self.send_json({"ok": True})
 
-    def post_cowork_context(self, body):
-        sid, model = str(body.get("id", "")), ""
-        t = agent.get_task(sid)
-        if not t:
-            return self.send_json({"ok": False, "error": "no such task"}, 404)
-        model = t.get("model", "")
-        ok, msg = agent.set_context(model, max(8192, min(int(body.get("tokens") or 65536), 1048576)))
-        if ok:
-            agent.stop(sid)
-        self.send_json({"ok": ok, "error": msg})
+    # ---- the model in memory (the chat bar)
+    def post_model_load(self, body):
+        """Load (or reload) a model at the chat context size. A size given here becomes the new chat setting."""
+        model = str(body.get("model", "")).strip()
+        ctx = None
+        if body.get("ctx"):
+            ctx = agent.set_chat_ctx(int(body["ctx"]))
+        ok, msg, got = agent.load_model(model, ctx, bool(body.get("force")))
+        invalidate("info")
+        self.send_json({"ok": ok, "error": msg, "ctx": got}, 200 if ok else 502)
+
+    def post_model_unload(self, body):
+        ok, msg = agent.unload_model(str(body.get("model", "")).strip())
+        invalidate("info")
+        self.send_json({"ok": ok, "error": msg}, 200 if ok else 409)
+
+    def post_model_ctx(self, body):
+        """Only remember the context size, for when the model is loaded next."""
+        self.send_json({"ok": True, "ctx": agent.set_chat_ctx(int(body.get("ctx") or agent.DEFAULT_CTX))})
 
     def post_pi_check(self, body):
         try:
@@ -581,6 +592,9 @@ class Handler(BaseHTTPRequestHandler):
 
     def post_cowork_model(self, body):
         sid = str(body.get("id", ""))
+        live = agent.session(sid, start=False)
+        if live and live.running:
+            raise ValueError("Wait for it to finish its current answer first.")
         agent.stop(sid)
         agent._update_meta(sid, model=str(body.get("model", "")))
         self.send_json({"ok": True})

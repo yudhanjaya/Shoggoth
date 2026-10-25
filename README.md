@@ -85,13 +85,13 @@ Lemonade handles models; Zest gives you the choices.
 
 **Choosing the right one**
 
-- **Models**: shows you what models you can run and one sentence on whether it will run comfortably on your computer. The fit comes from the memory that is actually *free* on your graphics cards right now, so you can tell before loading whether another program is in the way. The default page, **Our picks**, leads with the models I've tested and recommend. **More models** shows the rest of what Lemonade offers that will run well on your computer. A **Details** fold on each card holds the technical names and **Settings for this model**: context window, backend, devices and the llama-server options (flash attention, cache precision, expert layers in system RAM, GPU splitting, thinking, speculative decoding) as tick boxes and dropdowns with plain explanations, checked against your own `llama-server` before you load.
-- **Context window: 128k by default.** The built-in Lemonade starts with a 128k (or rather, a 131,072-token) context window, a good threshold for usefulness in long chats and agentic work. Zest sets it once, so changing it later in **All settings** sticks, and any model can have its own size under **Settings for this model**. A bigger window needs more graphics memory.
+- **Models**: shows you what models you can run and one sentence on whether it will run comfortably on your computer. The fit comes from the memory that is actually *free* on your graphics cards right now, so you can tell before loading whether another program is in the way. The default page, **My picks**, leads with the models I've tested and recommend. **More models** shows the rest of what Lemonade offers that will run well on your computer. A **Details** fold on each card holds the technical names and **Settings for this model**: context window, backend, devices and the llama-server options (flash attention, cache precision, expert layers in system RAM, GPU splitting, thinking, speculative decoding) as tick boxes and dropdowns with plain explanations, checked against your own `llama-server` before you load.
+- **Context window: 128k by default.** Chat always loads a model with a 128k (131,072-token) context window, a good threshold for usefulness in long chats and agentic work. The context menu in the chat's model bar changes it for every chat. A size saved under **Settings for this model** is used when other apps load the model through the Server page. A bigger window needs more graphics memory.
 - **How do I choose a model?** A button on Models (and an entry in Help) explains how to pick: will it fit, what is it for, how much it needs to remember. It then links to places to compare and learn about various models: Luke's Dev Lab, Artificial Analysis, LMArena, Aider, the Berkeley Function-Calling Leaderboard, SWE-bench, LiveBench, BenchLM, LLM Stats, r/LocalLLaMA and the Level1Techs forum.
 
 **Loading, unloading and adding**
 
-- **Load, unload, reload and delete.** Every downloaded model has **Load now** (or **Reload** and **Unload** while it is in use) right on its card, so you can free graphics memory or pick up new settings without leaving the page. **Delete from this computer** is under **Details**; it asks first, says how much disk it frees, unloads the model if it is running, and you can download it again later.
+- **Load, unload and reload live in the chat.** A bar under the chat's title shows the model, the context size and whether the model is in memory, with **Load**, **Unload** and **Reload** next to them. Pick a different model there, or change the context size (128k by default; the choice is remembered) and a loaded model is reloaded at the new size. Sending a message to a model that isn't in memory loads it for you, at that size. The **Models** page is for downloading models and editing their settings: each downloaded card has **Chat with it** and **Settings**. **Delete from this computer** is under **Details**; it asks first, says how much disk it frees, unloads the model if it is running, and you can download it again later.
 - **Get from Hugging Face** takes a link or `org/name`, lists the GGUF versions in the repository with their sizes and a plain label (for example "A good balance"), marks which ones fit your computer, and hands the download to Lemonade.
 
 ## Skills
@@ -198,17 +198,17 @@ On first run Zest walks through four short steps. Here it is offering three down
 
 ![Welcome: choosing a model](docs/screenshots/setup-welcome.png)
 
-### Models: our picks
-The Models page opens on **Our picks**, written from our own testing (designing a generation ship, which needs web searches for physics and engineering). Each pick says what it is good at and where it falls short, and the card still shows whether it fits your computer.
+### Models: my picks
+The Models page opens on **My picks**, written from my own testing (designing a generation ship, which needs web searches for physics and engineering). Each pick says what it is good at and where it falls short, and the card still shows whether it fits your computer.
 
 - **Start here: LFM2.5 8B A1B.** Very fast, runs on almost anything, calls tools well, and keeps answers short.
-- **Our general pick: Qwen3.6 35B A3B MTP.** Fast and competent at everyday tasks, research and agent work.
+- **My general pick: Qwen3.6 35B A3B MTP.** Fast and competent at everyday tasks, research and agent work.
 - **If Qwen 3.6 won't run: GLM 4.7 Flash.** Fast, but it makes things up, so it comes with a warning.
 - **Bigger and slower, dense models: Gemma 4 31B MTP and Qwen3.8 27B.** Good answers, but slow. With a GPU and 64 GB of RAM, try Strata instead.
 - **For advanced users: Strata and Maya,** separate inference engines built for huge models, with links and a clear warning that they run outside Zest and Lemonade.
 - **Make any model better:** OpenChamber as the recommended app, and obra/superpowers for skills.
 
-![Our picks](docs/screenshots/picks-top.png)
+![My picks](docs/screenshots/picks-top.png)
 
 ![The general pick, installed, with a fit warning](docs/screenshots/picks-general.png)
 
@@ -232,7 +232,7 @@ The Models page opens on **Our picks**, written from our own testing (designing 
 ![Places to compare models](docs/screenshots/choose-model-sites.png)
 
 ### Settings for one model
-Open **Details > Settings for this model** on any card. Set the context window, backend and devices, and tune `llama-server` with tick boxes and dropdowns instead of flags. Rows you have changed are highlighted, the exact arguments Zest will pass are shown, and anything your `llama-server` does not understand is flagged. **Save and reload** applies it to a model that is already running.
+Press **Settings** on any downloaded card. Set the context window, backend and devices, and tune `llama-server` with tick boxes and dropdowns instead of flags. Rows you have changed are highlighted, the exact arguments Zest will pass are shown, and anything your `llama-server` does not understand is flagged. **Save** keeps it; for a model that is in memory, press **Reload** in the chat's model bar to use the new settings.
 
 ![Model settings](docs/screenshots/model-options.png)
 

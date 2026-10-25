@@ -10,6 +10,7 @@ DEFAULTS = {
     "setup_done": False,
     "existing": {"host": "127.0.0.1", "port": 13305, "api_key": ""},
     "builtin": {"port": 13307, "api_key": "", "version": ""},   # version: "" = newest, or a pinned version, or "bundled"
+    "chat": {"ctx": 131072},  # the context window every chat load asks for (128k): long chats and agent work need the room
     "pi": {"version": ""},   # which Pi (the agent) to run: "" = newest, "bundled" = the one that came with Zest, or a version number
     "models": {"storage": "hf", "custom_dir": "", "imports": []},
     # The door for other apps: its own port, always needs the key, this computer only unless `lan` is on.

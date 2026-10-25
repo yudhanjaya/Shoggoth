@@ -42,7 +42,10 @@ JOB_FINAL = ("done", "stopped", "failed")
 DEFAULT_ROUNDS = 10
 DEFAULT_SECONDS = 2 * 3600
 
+DEFAULT_CTX = 131072         # 128k: the chat context window unless the person picks another in the chat bar
 _lock = threading.RLock()
+_load_lock = threading.Lock()   # one model load at a time; a second request waits, then finds it already loaded
+_loading = {"model": None, "ctx": 0, "since": 0}      # the load in progress, for the chat bar
 _sessions = {}               # id -> Session (running processes only)
 _start_locks = {}            # id -> Lock, so starting one task never blocks reading the list
 _zest_port = {"v": 13306}
@@ -112,26 +115,145 @@ def chat_models():
     return out
 
 
-def model_ctx(model):
-    """The context window this model has (loaded) or would get (not loaded yet), in tokens; 0 when unknown."""
-    for m in lem.get("/v1/health").get("all_models_loaded", []):
-        if m.get("model_name") == model:
-            cmd = m.get("launch_command") or []
-            if "--ctx-size" in cmd:
-                try:
-                    return int(cmd[cmd.index("--ctx-size") + 1])
-                except (ValueError, IndexError):
-                    pass
+def _health():
+    return lem.get("/v1/health")
+
+
+def loaded_state(model, health=None):
+    """(in memory?, its context window in tokens or 0 when Lemonade doesn't say)."""
+    for m in (health if health is not None else _health()).get("all_models_loaded", []):
+        if m.get("model_name") != model:
+            continue
+        cmd = m.get("launch_command") or []
+        if isinstance(cmd, str):
+            cmd = cmd.split()
+        if "--ctx-size" in cmd:
+            try:
+                return True, int(cmd[cmd.index("--ctx-size") + 1])
+            except (ValueError, IndexError):
+                pass
+        return True, 0
+    return False, 0
+
+
+def model_max_ctx(model):
+    """The longest context the model was trained for, when Lemonade knows it (0 when it doesn't)."""
+    for m in lem.get("/v1/models").get("data", []):
+        if m.get("id") == model:
+            try:
+                n = int(m.get("context_length") or 0)
+            except (TypeError, ValueError):
+                return 0
+            return n if n >= 2048 else 0
+    return 0
+
+
+def chat_ctx():
+    """The person's chosen context window for chats (128k unless they changed it in the chat bar)."""
     try:
-        return int(lem.get("/v1/models/%s/options" % model).get("resolved_ctx_size") or 0)
+        return max(2048, int((store.load().get("chat") or {}).get("ctx") or DEFAULT_CTX))
     except (TypeError, ValueError):
-        return 0
+        return DEFAULT_CTX
 
 
-def set_context(model, tokens):
-    """Reload `model` with a bigger window. Returns (ok, message)."""
-    status, payload = lem.request("POST", "/v1/load", {"model_name": model, "ctx_size": int(tokens)}, timeout=600)
-    return status == 200, "" if status == 200 else lem.error_text(payload, "Lemonade couldn't load the model with that size")
+def want_ctx(model):
+    """What a load of `model` asks for: the chat setting, never more than the model can do."""
+    n, top = chat_ctx(), model_max_ctx(model)
+    # "128k" models are listed as 128000; only a model with clearly less room than asked for is held back
+    return top if top and top * 1.05 < n else n
+
+
+def model_ctx(model):
+    """The context window this model has (loaded) or is about to get (not loaded yet), in tokens."""
+    isl, ctx = loaded_state(model)
+    return ctx if isl and ctx else want_ctx(model)
+
+
+def model_state():
+    """What the chat bar shows: the model in memory, how much context it has, and what Zest is loading right now."""
+    h = _health()
+    name = h.get("model_loaded") or None
+    ctx = loaded_state(name, h)[1] if name else 0
+    with _lock:
+        loading = dict(_loading) if _loading["model"] else None
+    return {"loaded": name, "ctx": ctx, "chat_ctx": chat_ctx(), "loading": loading, "default_ctx": DEFAULT_CTX}
+
+
+def _busy_with(model):
+    return [s for s in list(_sessions.values()) if s.running and s.task.get("model") == model]
+
+
+def load_model(model, ctx=None, force=False):
+    """Put `model` in memory with a context window of `ctx` (the chat setting when not given). Waits until it is ready.
+    Returns (ok, message, ctx). A model that is already loaded at that size is left alone; at another size it is reloaded."""
+    if not model:
+        return False, "Choose a model first.", 0
+    with _load_lock:
+        ctx = int(ctx) if ctx else want_ctx(model)
+        isl, cur = loaded_state(model)
+        if isl and cur == ctx and not force:
+            return True, "", ctx
+        if isl and _busy_with(model):
+            return False, "It is answering right now. Wait for it to finish, or stop it, then try again.", cur
+        with _lock:
+            _loading.update(model=model, ctx=ctx, since=time.time())
+        touch()
+        try:
+            if isl:
+                lem.request("POST", "/v1/unload", {"model_name": model}, timeout=60)
+            status, payload = lem.request("POST", "/v1/load", {"model_name": model, "ctx_size": ctx}, timeout=900)
+        finally:
+            with _lock:
+                _loading.update(model=None, ctx=0, since=0)
+            touch()
+        if status == 200:
+            return True, "", ctx
+        return False, lem.error_text(payload, "Lemonade couldn't load the model."), ctx
+
+
+def unload_model(model):
+    """Free the model's memory. Returns (ok, message)."""
+    if _busy_with(model):
+        return False, "It is answering right now. Wait for it to finish, or stop it, then try again."
+    status, payload = lem.request("POST", "/v1/unload", {"model_name": model} if model else {}, timeout=60)
+    touch()
+    return status == 200, "" if status == 200 else lem.error_text(payload, "Lemonade couldn't unload the model.")
+
+
+def set_chat_ctx(tokens):
+    """Remember the context window chats ask for, and let idle chats pick it up on their next message."""
+    tokens = max(2048, min(int(tokens), 1048576))
+    if tokens != chat_ctx():
+        s = store.load()
+        s["chat"] = dict(s.get("chat") or {}, ctx=tokens)
+        store.save(s)
+        restart_idle()           # Pi is told each model's window when it starts
+    return tokens
+
+
+def ensure_loaded(model, s=None):
+    """Before a prompt goes to `model`: load it at the chat context size if it isn't in memory, or has less room than that.
+    The page is told, so it can say "Loading the model" instead of sitting silent. Raises ValueError when it can't be loaded."""
+    if not model:
+        return
+    want = want_ctx(model)
+    isl, cur = loaded_state(model)
+    if isl and (not cur or cur >= want):
+        return
+    if s:
+        s.push({"type": "zest_loading", "model": model, "ctx": want})
+    ok, msg, ctx = load_model(model, want)
+    if not ok:
+        raise ValueError(msg)
+    if s:
+        s.push({"type": "zest_loaded", "model": model, "ctx": ctx})
+
+
+def _pi_model(m, window):
+    # A model that thinks aloud can spend thousands of tokens before it answers, so the answer limit is generous:
+    # a quarter of the window, up to 32k. The old fixed 16k cut a long think off mid-answer.
+    return {"id": m["id"], "name": m["id"], "reasoning": m["reasoning"], "input": ["text", "image"] if m["vision"] else ["text"],
+            "contextWindow": window, "maxTokens": max(4096, min(32768, window // 4))}
 
 
 def write_config(models, default, ctx=0):
@@ -142,10 +264,7 @@ def write_config(models, default, ctx=0):
         "api": "openai-completions",
         "apiKey": "zest",
         "compat": {"supportsDeveloperRole": False, "supportsUsageInStreaming": True},
-        "models": [{"id": m["id"], "name": m["id"], "reasoning": m["reasoning"],
-                    "input": ["text", "image"] if m["vision"] else ["text"],
-                    "contextWindow": ctx if (ctx and m["id"] == default) else min(m["ctx"], 131072),
-                    "maxTokens": 16384} for m in models],
+        "models": [_pi_model(m, ctx if (ctx and m["id"] == default) else min(m["ctx"], DEFAULT_CTX)) for m in models],
     }
     _write(os.path.join(d, "models.json"), {"providers": {"lemonade": provider}})
     settings = {"defaultProvider": "lemonade", "defaultProjectTrust": "never", "quietStartup": True,
@@ -607,6 +726,7 @@ class Session:
             return
         elif t == "message_update":
             e = rec.get("assistantMessageEvent") or {}
+            rec = _slim(rec)
             k = e.get("type", "")
             if k.startswith("thinking"):
                 if self._seg is None or self._seg[1] != "think":
@@ -660,6 +780,24 @@ class Session:
             if not [e for e in self.events if e[0] > cursor]:
                 self.cond.wait(wait)
             return [e for e in self.events if e[0] > cursor]
+
+
+def _slim(rec):
+    """Pi attaches the whole message so far to every streamed word. Over a long think that is hundreds of megabytes
+    for the page to download and parse, so only the new word goes on (and the tool's name when its call starts)."""
+    e = rec.get("assistantMessageEvent")
+    if not isinstance(e, dict):
+        return rec
+    e = dict(e)
+    part = e.pop("partial", None)
+    if e.get("type") == "toolcall_start":
+        try:
+            e["name"] = part["content"][e["contentIndex"]]["name"]
+        except (KeyError, IndexError, TypeError):
+            pass
+    out = {k: v for k, v in rec.items() if k != "message"}
+    out["assistantMessageEvent"] = e
+    return out
 
 
 def _phrase(tool, args):
@@ -792,6 +930,12 @@ def command(sid, cmd):
             _update_meta(sid, pending_notes=[])
         if s.running:
             cmd = dict(cmd, streamingBehavior="steer")
+        else:
+            try:
+                ensure_loaded((t or {}).get("model", ""), s)
+            except ValueError as e:
+                s.push({"type": "zest_load_failed", "message": str(e), "model": (t or {}).get("model", "")})
+                raise
     s.send(cmd)
     return {"ok": True}
 
@@ -1056,6 +1200,7 @@ def _round(jid, c, n):
     """Run one round: prompt Pi, wait for it to settle, then check. Returns settled | pause | stop | time | died."""
     j = get_task(jid)["job"]
     s = session(jid)
+    ensure_loaded(get_task(jid).get("model", ""), s)
     before = s.settled_n
     s.last_text = ""
     notes = j.get("notes", [])

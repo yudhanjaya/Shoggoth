@@ -1,0 +1,116 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Zest type pairings</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,500;9..144,600&family=Figtree:wght@400;500;600;700&family=Young+Serif&family=Nunito+Sans:opsz,wght@6..12,400;6..12,600;6..12,700&family=Bricolage+Grotesque:opsz,wght@12..96,500;12..96,600;12..96,700&family=Fredoka:wght@400;500;600&family=Nunito:wght@400;600;700&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=DM+Serif+Display&family=DM+Sans:opsz,wght@9..40,400;9..40,500;9..40,700&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#fffdf7; --surface:#fff; --surface-2:#f6f4ec; --line:#e4e2d8; --line-soft:#edebe2;
+  --text:#1a1a17; --muted:#58584f; --faint:#6f6f64;
+  --lemon:#f7d916; --lemon-wash:rgba(247,217,22,.22); --leaf:#1b7a3a; --warn:#9a4a00;
+}
+*{box-sizing:border-box}
+body{margin:0;background:#f1eee3;color:var(--text);font:15px/1.55 "Figtree",system-ui,sans-serif;-webkit-font-smoothing:antialiased}
+.page{max-width:1380px;margin:0 auto;padding:36px 24px 70px}
+.page>h1{font:600 30px/1.1 "Fraunces",serif;margin:0 0 8px;letter-spacing:-.02em}
+.page>p{margin:0 0 6px;color:var(--muted);max-width:78ch}
+.legend{display:flex;gap:18px;flex-wrap:wrap;margin:18px 0 26px;padding:14px 16px;background:var(--bg);border:1px solid var(--line);border-radius:14px;font-size:14px;color:var(--muted)}
+.legend b{color:var(--text)}
+.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(420px,1fr));gap:26px}
+.panel{display:grid;gap:10px;align-content:start}
+.meta{display:grid;gap:1px;padding:0 4px}
+.meta b{font:700 15px "Figtree",sans-serif}
+.meta span{font:13.5px "Figtree",sans-serif;color:var(--muted)}
+/* ---- the mini app: every font in it comes from --h (headings) and --b (everything else) */
+.app{background:var(--bg);border:1px solid var(--line);border-radius:18px;overflow:hidden;box-shadow:0 10px 30px rgba(40,36,10,.08);font:var(--bs,16px)/1.55 var(--b),sans-serif;color:var(--text)}
+.app h1,.app h2,.app h3,.app h4,.app .h{font-family:var(--h),serif;font-weight:var(--hw,500);letter-spacing:var(--hls,-.01em);margin:0}
+.top{display:flex;align-items:center;gap:12px;padding:12px 16px;border-bottom:1px solid var(--line-soft)}
+.top svg{width:30px;height:30px;flex:none}
+.top .ttl{font-size:19px;line-height:1.2;flex:1;min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.pill{display:inline-flex;align-items:center;gap:8px;min-height:40px;padding:0 14px;border-radius:999px;border:1px solid var(--line);background:var(--surface);font:600 14px var(--b),sans-serif;color:var(--text)}
+.pill .dot{width:9px;height:9px;border-radius:50%;background:var(--leaf)}
+.pill small{font-weight:500;color:var(--faint);font-size:13px}
+.thread{padding:18px 18px 8px;display:grid;gap:14px}
+.hero{font-size:34px;line-height:1.05}
+.hl{background:linear-gradient(transparent 62%,var(--lemon) 62%)}
+.lede{margin:0;color:var(--muted);font-size:15.5px}
+.user{justify-self:end;max-width:82%;background:var(--surface-2);border-radius:18px 18px 4px 18px;padding:10px 14px}
+.bot{display:grid;grid-template-columns:32px 1fr;gap:10px}
+.bot>svg{width:32px;height:32px}
+.bot p{margin:0 0 8px}
+details{color:var(--muted);border-left:2px solid var(--line);padding-left:12px;margin-bottom:8px;font-size:14px}
+summary{cursor:pointer;color:var(--faint);font-size:14px}
+.tool{display:flex;gap:10px;align-items:center;border:1px solid var(--line);border-radius:12px;background:var(--surface);padding:8px 12px;margin:0 0 8px;font-size:13px}
+.tool .tn{font:700 11.5px var(--b),sans-serif;letter-spacing:.05em;text-transform:uppercase;color:var(--muted)}
+.tool code{font:12.5px "JetBrains Mono",ui-monospace,monospace;flex:1;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.tool .ok{color:var(--leaf);font-size:12.5px}
+.strip{display:inline-flex;gap:2px;padding:3px;border-radius:999px;background:var(--surface-2);border:1px solid var(--line-soft);justify-self:start;margin-left:42px}
+.strip b{display:inline-flex;gap:5px;align-items:center;padding:3px 10px 3px 7px;border-radius:999px;font:500 12.5px var(--b),sans-serif;color:var(--faint);opacity:.6}
+.strip b.on{opacity:1;background:var(--lemon-wash);color:var(--text)}
+.strip b:not(.on) i{filter:grayscale(1)}
+.strip i{font-style:normal}
+.card{margin:6px 18px 0;border:1px solid var(--line);border-radius:16px;background:var(--surface);padding:14px 16px;display:grid;gap:7px}
+.card .ct{display:flex;justify-content:space-between;align-items:center;gap:8px}
+.card h4{font-size:19px}
+.chip{font:600 12px var(--b),sans-serif;padding:2px 9px;border:1px solid color-mix(in srgb,var(--leaf) 40%,transparent);color:var(--leaf);border-radius:999px}
+.card p{margin:0;color:var(--muted);font-size:14.5px}
+.fit{height:7px;border-radius:99px;background:var(--surface-2);overflow:hidden}.fit i{display:block;height:100%;width:62%;background:#5aa774;border-radius:99px}
+.btns{display:flex;gap:8px;margin-top:4px}
+.btn{min-height:44px;padding:0 18px;border-radius:12px;border:1px solid var(--line);background:var(--surface);font:600 14.5px var(--b),sans-serif;color:var(--text)}
+.btn.p{background:var(--lemon);border-color:var(--lemon);color:#1a1700}
+.composer{margin:14px 18px 18px;border:1.5px solid var(--lemon);border-radius:18px;background:var(--surface);padding:12px 14px;display:flex;align-items:center;gap:10px;box-shadow:0 0 0 4px var(--lemon-wash)}
+.composer span{flex:1;color:var(--faint)}
+.small{font-size:13px;color:var(--faint)}
+</style>
+</head>
+<body>
+<div class="page">
+  <h1>Zest type pairings</h1>
+  <p>The same screen set in six pairings, colours untouched. The layout in these panels is also the simplified one I'm proposing: one slim header row (title, and a single model pill that opens the model, context and load controls), the progress strip under the reply, and 16 px body text with 44 px buttons.</p>
+  <p>Read each one at arm's length: look at the big heading, then the small grey text, then the buttons. Which one feels like you'd want to talk to it?</p>
+  <div class="legend"><span><b>Headings</b> carry the personality: the title, card names, the welcome line.</span><span><b>Body</b> carries the work: replies, labels, buttons, small print.</span><span><b>Code</b> stays JetBrains Mono in every option.</span></div>
+  <div class="grid" id="grid"></div>
+</div>
+
+<template id="mark"><svg viewBox="0 0 64 64" aria-hidden="true"><path d="M 12.49 46.19 Q 12.55 44.39 14.99 41.68 C 12.39 30.92 18.75 22.23 22.99 19.58 C 27.23 16.93 37.83 15.03 46.36 22.08 Q 49.86 21.07 51.51 21.81 Q 51.45 23.61 49.01 26.32 C 51.61 37.08 45.25 45.77 41.01 48.42 C 36.77 51.07 26.17 52.97 17.64 45.92 Q 14.14 46.93 12.49 46.19 Z" fill="#f7d916" stroke="#1a1a17" stroke-width="2.4" stroke-linejoin="round"/><path d="M 16.74 34.10 C 17.16 29.12 20.87 25.62 24.26 23.51" fill="none" stroke="#fffdf7" stroke-width="2.6" stroke-linecap="round" opacity=".85"/><path d="M50.5 22C48.5 14 53.5 8 61.5 7C62.5 14.5 58.5 21 50.5 22Z" fill="#2f9e55" stroke="#1a1a17" stroke-width="2" stroke-linejoin="round"/><path d="M52 20.5C55 16.5 58 12 60 8.5" stroke="#1a1a17" stroke-width="1.3" stroke-linecap="round" fill="none" opacity=".6"/></svg></template>
+
+<script>
+const PAIRS = [
+  {n: "1 · Fraunces + Figtree", note: "Today. Warm and a little bookish; the serif heading is the most distinctive thing about Zest.", h: "Fraunces", b: "Figtree", hw: 500, hls: "-.02em"},
+  {n: "2 · Young Serif + Nunito Sans", note: "A softer, rounder serif than Fraunces, with a gentle body face. Friendly without being childish.", h: "Young Serif", b: "Nunito Sans", hw: 400, hls: "-.005em"},
+  {n: "3 · Bricolage Grotesque + Figtree", note: "A characterful sans heading with a slight wobble. Feels modern and a bit cheeky. Keeps today's body text.", h: "Bricolage Grotesque", b: "Figtree", hw: 700, hls: "-.025em"},
+  {n: "4 · Fredoka + Nunito", note: "The most playful: rounded everything. Great for fun, but heavy in long replies and for a technical tool.", h: "Fredoka", b: "Nunito", hw: 500, hls: "0"},
+  {n: "5 · Plus Jakarta Sans, alone", note: "One family at several weights. The calmest and simplest option; friendly through spacing rather than shapes.", h: "Plus Jakarta Sans", b: "Plus Jakarta Sans", hw: 700, hls: "-.02em", bs: "15.5px"},
+  {n: "6 · DM Serif Display + DM Sans", note: "A crisper, more editorial serif with a clean geometric body. Polished; slightly less warm.", h: "DM Serif Display", b: "DM Sans", hw: 400, hls: "-.005em"}
+];
+const mark = document.getElementById("mark").innerHTML;
+document.getElementById("grid").innerHTML = PAIRS.map(p => `
+<article class="panel">
+  <div class="meta"><b>${p.n}</b><span>${p.note}</span></div>
+  <div class="app" style="--h:'${p.h}';--b:'${p.b}';--hw:${p.hw};--hls:${p.hls};${p.bs ? "--bs:" + p.bs : ""}">
+    <div class="top">${mark}<h3 class="ttl">Mountain wallpapers</h3>
+      <span class="pill"><i class="dot"></i>Gemma 4 26B <small>· 128k</small> ▾</span></div>
+    <div class="thread">
+      <h2 class="hero">What shall we <span class="hl">work on</span>?</h2>
+      <p class="lede">Ask anything, or give it a folder to work in. Everything stays on this computer.</p>
+      <div class="user">Find me some 4K mountain wallpapers and save them in a subfolder.</div>
+      <div class="bot">${mark}<div>
+        <details><summary>💭 Thought for 6 s</summary>The user wants drone shots of mountains. I'll make a folder first…</details>
+        <p>I'll make a <b>wallpapers</b> folder and start with three high-resolution landscapes.</p>
+        <div class="tool"><span class="tn">⚡ Run</span><code>mkdir -p wallpapers</code><span class="ok">Done</span></div>
+      </div></div>
+      <div class="strip" aria-hidden="true"><b><i>📖</i>Reading</b><b><i>🤔</i>Thinking</b><b class="on"><i>✍️</i>Writing</b><b><i>🛠️</i>Working</b></div>
+    </div>
+    <div class="card"><div class="ct"><h4>Gemma 4 26B A4B</h4><span class="chip">Loaded</span></div>
+      <p>Understands pictures · Can use tools</p><div class="fit"><i></i></div><p class="small">Large · 17 GB · Runs comfortably on your computer.</p>
+      <div class="btns"><button class="btn p">Chat with it</button><button class="btn">Settings</button></div></div>
+    <div class="composer"><span>Reply…</span><button class="btn p">Send</button></div>
+  </div>
+</article>`).join("");
+</script>
+</body>
+</html>
