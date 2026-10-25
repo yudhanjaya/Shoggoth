@@ -786,7 +786,7 @@ h4.sub{margin:10px 0 0;font:600 13px var(--sans);color:var(--muted);text-transfo
 .cwcut .cwnote{margin:0}
 /* the model bar: which model, how much context, in memory or not */
 .mbar{display:flex;align-items:center;gap:10px;padding:7px 20px;border-bottom:1px solid var(--line-soft);background:var(--surface-2);flex-wrap:wrap}
-.mbar .grow{flex:1}
+.mbar .grow{display:none}
 .mdot{width:9px;height:9px;border-radius:50%;background:var(--steel);flex:none}
 .mdot.on{background:var(--leaf)}.mdot.busy{background:var(--lemon);animation:pulse 1s infinite}
 .mpick{display:inline-flex;align-items:center;gap:6px;min-height:34px;padding:0 10px;border-radius:9px;border:1px solid var(--line);background:var(--surface);font-size:13px;max-width:100%}
@@ -794,9 +794,9 @@ h4.sub{margin:10px 0 0;font:600 13px var(--sans);color:var(--muted);text-transfo
 .mpick select{appearance:none;border:0;background:none;outline:none;color:var(--text);max-width:34ch;text-overflow:ellipsis;cursor:pointer}
 .mpick select:disabled{cursor:default;color:var(--faint)}
 .mpick:has(select:focus-visible){outline:2.5px solid var(--lemon-text);outline-offset:2px}
-.mstate{font-size:13px;color:var(--muted)}
+.mstate{font-size:13px;color:var(--muted);flex:1 1 0;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .mbar .btn{min-height:34px;padding:0 14px}
-@media (max-width:900px){.mbar{padding:6px 14px}.mbar .mpick select{max-width:22ch}.mbar .grow{display:none}.mbar .mstate{flex:1 0 100%;order:9}}
+@media (max-width:900px){.mbar{padding:6px 14px}.mbar .mpick select{max-width:22ch}.mbar .grow{display:none}.mbar .mstate{flex:1 0 100%;order:9;white-space:normal}}
 @media (max-width:1180px){
   .cwside{position:absolute;right:0;top:52px;bottom:0;z-index:5;background:var(--bg);box-shadow:-12px 0 30px rgba(0,0,0,.08);display:none}
   .cwside.open{display:grid}
@@ -3511,6 +3511,7 @@ function cwModelBar(){
   else if(here) st.textContent = ms.ctx ? `In memory · ${fmtTok(ms.ctx)} context${ms.ctx < cfg ? `. The setting is ${fmtTok(cfg)}; it is raised when you next send.` : ""}` : "In memory";
   else if(ms.loaded) st.textContent = `Not loaded. ${friendly(ms.loaded)} is in memory instead; loading this one replaces it.`;
   else st.textContent = "Not loaded. It loads when you send a message, or press Load.";
+  st.title = st.textContent;
   const btn = $("#mbbtn"); btn.textContent = loading ? "Loading…" : here ? "Unload" : "Load";
   btn.disabled = busy; btn.dataset.act = here ? "unload" : "load"; btn.title = CW.running ? "Wait until it has finished answering." : "";
   $("#mbreload").hidden = !here || !!loading; $("#mbreload").disabled = busy;

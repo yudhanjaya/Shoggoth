@@ -4,9 +4,9 @@
 
 The idea is to provide a user interface that people who aren't necessarily steeped in technical know-how can still navigate to get open-weights models running on their own hardware, and then do real work with them: chat, draw diagrams, write documents, or let a model read and change the files in a folder while they watch. Download Zest, and you're good to go.
 
-![Zest chat](docs/screenshots/chat.png)
+![Zest working in a folder](docs/screenshots/work-tools.png)
 
-*Chat, with a side panel for the folder, how careful the model is, and which skills are on.*
+*Chat, working in a folder: it read the code, fixed a bug with a one-line change (shown as a diff) and ran the tests again, step by step.*
 
 **Contents:** [What you can do](#what-you-can-do-with-zest) · [Install and run](#install-and-run) · [Finding your way around](#finding-your-way-around) · [Your first conversation](#your-first-conversation) · [Choosing and managing models](#choosing-and-managing-models) · [Skills](#skills) · [Use your models in other apps](#use-your-models-in-other-apps) · [Keeping everything up to date](#keeping-everything-up-to-date) · [Advanced tools](#advanced-tools) · [Your data and privacy](#your-data-and-privacy) · [Screenshots](#screenshots) · [For developers](#for-developers)
 
@@ -67,7 +67,7 @@ The left-hand menu has six places. Everything a newcomer needs is in the first f
 
 ## Your first conversation
 
-Open **Chat** and type. The first answer takes a little longer because the model has to be loaded into memory.
+Open **Chat** and type. The bar under the title shows which model will answer and whether it is in memory. If it isn't, Zest loads it when you send your first message, so that answer takes a little longer.
 
 **Chat** runs on [Pi](https://pi.dev), a coding-agent harness that ships inside Zest. Ask anything and it answers like a normal chat. Press **Work in a folder…** and the same conversation becomes a co-working session: the model reads, searches, edits and runs commands in that folder while you watch, and asks before it changes anything (tool cards show each step; edits show a diff). Choose how careful it is per chat (**Ask first**, **Edit freely**, **Do everything**, **Look only**), add more folders it can look at or change, switch models, watch how much of the context window is used, and add notes while it works.
 
@@ -183,99 +183,46 @@ Zest and Lemonade do contact the following services:
 ## Screenshots
 
 ### Chat
-
-- Streaming replies, markdown and code blocks with copy buttons, and a collapsible "how it thought" panel for reasoning models.
-- **Speed** While a reply is being written, the chat shows the phase (**Loading the model**, **Reading your message**, **Thinking**, **Writing**), a live tokens-per-second figure, a plain word for it (**Very fast**, **Fast**, **Comfortable reading speed**, **Slow**, **Very slow**; about 5 tokens a second is a comfortable reading pace) and a small graph of the speed through the answer. When it finishes, the footer keeps the speed and graph, the tokens, the time to the first token, how fast the model read your message, which model and backend answered, and how much of the context window the conversation uses (for example "Conversation: 34k of 128k"). The status pill at the top shows the live speed too, including for other apps using the Server (marked with a ~ because it is estimated). Each downloaded model card remembers how fast it has been on this computer ("Fast, about 62 tok/s").
+Replies stream in as they are written. The bar under the title shows which model answers, how much context it has (128k by default) and whether it is in memory, with **Load**, **Unload** and **Reload**. A reasoning model's thinking appears live above its answer and folds away when it is done. Markdown and code blocks come with copy buttons, and a small strip shows what the model is doing: 📖 reading, 🤔 thinking, ✍️ writing, 🛠️ working.
 
 ![Chat](docs/screenshots/chat.png)
 
-The footer of each reply shows how fast it was written, how fast the model read your message, which model answered and how much of the context window is used. While a reply is being written the same row updates live, with a graph, and the status pill at the top shows the speed.
+### Working in a folder
+Press **Work in a folder…** and the same chat can read, search, edit and run things there. Tool cards show each step, edits show a diff, and in **Ask first** and **Edit freely** modes it stops and asks before it runs a command. Here it was asked to fix a folder whose tests were failing: it read the tests and the code, made a one-line change and ran the tests again to confirm.
 
-![Reply with speed footer](docs/screenshots/chat-speed.png)
+![Zest asking before it runs a command](docs/screenshots/work-approve.png)
 
-### Welcome
-On first run Zest walks through four short steps. Here it is offering three downloads that fit the computer.
+![Reading the code, a diff of the fix, and the tests run again](docs/screenshots/work-tools.png)
 
-![Welcome: choosing a model](docs/screenshots/setup-welcome.png)
+### Models
+The Models page is for downloading models and editing how they run. **My picks** leads with the models I've tested and recommend; **On this computer** lists what you have. The meter on each card shows what will fit in the memory that is free on your graphics cards right now; if another program is using it, Zest warns you and names it.
 
-### Models: my picks
-The Models page opens on **My picks**, written from my own testing (designing a generation ship, which needs web searches for physics and engineering). Each pick says what it is good at and where it falls short, and the card still shows whether it fits your computer.
+![Models on this computer](docs/screenshots/models.png)
 
 - **Start here: LFM2.5 8B A1B.** Very fast, runs on almost anything, calls tools well, and keeps answers short.
 - **My general pick: Qwen3.6 35B A3B MTP.** Fast and competent at everyday tasks, research and agent work.
 - **If Qwen 3.6 won't run: GLM 4.7 Flash.** Fast, but it makes things up, so it comes with a warning.
 - **Bigger and slower, dense models: Gemma 4 31B MTP and Qwen3.8 27B.** Good answers, but slow. With a GPU and 64 GB of RAM, try Strata instead.
-- **For advanced users: Strata and Maya,** separate inference engines built for huge models, with links and a clear warning that they run outside Zest and Lemonade.
-- **Make any model better:** OpenChamber as the recommended app, and obra/superpowers for skills.
+- **For advanced users: Strata and Maya,** separate inference engines built for huge models, with a clear warning that they run outside Zest and Lemonade.
+- **Make any model better:** OpenChamber as the app I recommend, and obra/superpowers for skills.
 
-![My picks](docs/screenshots/picks-top.png)
-
-![The general pick, installed, with a fit warning](docs/screenshots/picks-general.png)
-
-![Advanced engines and the harness recommendation](docs/screenshots/picks-engines.png)
-
-### Models: more models
-**More models** (and the filters beside it) lists everything else Lemonade offers. Models you haven't downloaded yet have a **Get it** button with the size. The meter on each card shows what will fit in the VRAM that's free right now; if another program is using the card, Zest warns you and names it.
-
-![More models, on this computer](docs/screenshots/models.png)
-
-**Get from Hugging Face** is for experts. It lists the GGUF versions in a repository, with a plain label, the size, and whether each fits. When Lemonade or llama.cpp refuses a model (for example because its architecture isn't supported yet, it needs a login, it can't be found, or memory or disk is short), Zest shows a plain-language message with the technical details tucked underneath, and offers to open Engines when an update may help.
-
-![Get a model from Hugging Face](docs/screenshots/huggingface.png)
-
-![When a model isn't supported](docs/screenshots/problem-architecture.png)
-
-**How do I choose a model?** Explains what to look for and links to benchmark sites and communities, with a reminder that benchmarks are only a guide.
-
-![How do I choose a model?](docs/screenshots/choose-model.png)
-
-![Places to compare models](docs/screenshots/choose-model-sites.png)
+**Get from Hugging Face** is for experts. It lists the GGUF versions in a repository, with a plain label, the size, and whether each fits. When Lemonade or llama.cpp refuses a model (for example because its architecture isn't supported yet, it needs a login, it can't be found, or memory or disk is short), Zest shows a plain-language message with the technical details tucked underneath, and offers to open Engines when an update may help. **How do I choose a model?** explains what to look for and links to benchmark sites and communities.
 
 ### Settings for one model
-Press **Settings** on any downloaded card. Set the context window, backend and devices, and tune `llama-server` with tick boxes and dropdowns instead of flags. Rows you have changed are highlighted, the exact arguments Zest will pass are shown, and anything your `llama-server` does not understand is flagged. **Save** keeps it; for a model that is in memory, press **Reload** in the chat's model bar to use the new settings.
+Press **Settings** on any downloaded card. Set the backend and devices, and tune `llama-server` with tick boxes and dropdowns instead of flags. Rows you have changed are highlighted, the exact arguments Zest will pass are shown, and anything your `llama-server` does not understand is flagged. **Save** keeps it; for a model that is in memory, press **Reload** in the chat's model bar to use the new settings.
 
 ![Model settings](docs/screenshots/model-options.png)
 
 ### Server: share your models with other apps
-Address, key and copy-paste setup for opencode, Hermes and any OpenAI-compatible app. The key is hidden until you press **Show**, including in the code samples.
+Address, key and copy-paste setup for opencode, Hermes and any OpenAI-compatible app. The key is hidden until you press **Show**, including in the code samples. While an app is working you see a card with a glass that fills as it writes, a pill timeline of the last minute, and a request list. The Lemonade activity log is at the bottom of the same page.
 
 ![Server](docs/screenshots/server.png)
 
-While an app is working you see a card with a glass that fills as it writes, a pill timeline of the last minute, and a request list. The screenshots below show real requests from three apps at once, so two of them are waiting their turn.
-
-![A request in progress](docs/screenshots/server-live.png)
-
-![Request list](docs/screenshots/server-requests.png)
-
-The Lemonade activity log is at the bottom of the same page.
-
-![Activity log on the Server page](docs/screenshots/server-log.png)
-
-### Hardware
-Select GPUs and set their order. Each card shows free VRAM, utilisation, temperature, power and which processes hold memory. Nothing changes until you press **Apply**.
-
-![Hardware](docs/screenshots/hardware.png)
-
-### Engines
-Each engine says in plain words what it does, and a short guide explains which backend to pick. Choose one per engine, or install and update the ones you need.
-
-![Engines](docs/screenshots/backends.png)
-
-### All settings
-Lemonade's own configuration, searchable and saved as you edit.
-
-![All settings](docs/screenshots/settings.png)
-
-### Setup guide
-The full set of choices behind the welcome steps: which Lemonade to use, backends, where models live, and updates.
-
-![Setup guide](docs/screenshots/setup-backend.png)
-
-### Help and Advanced
-
-![Help](docs/screenshots/help.png)
-
-![Advanced](docs/screenshots/advanced.png)
+### The rest of Advanced
+- **Hardware:** select GPUs and set their order. Each card shows free VRAM, utilisation, temperature, power and which processes hold memory. Nothing changes until you press **Apply**.
+- **Engines:** each engine says in plain words what it does, and a short guide explains which backend to pick. Choose one per engine, or install and update the ones you need.
+- **All settings:** Lemonade's own configuration, searchable and saved as you edit.
+- **Setup guide:** the full set of choices behind the welcome steps: which Lemonade to use, backends, where models live, and updates.
 
 ## For developers
 
