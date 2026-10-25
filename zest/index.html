@@ -778,6 +778,110 @@ h4.sub{margin:10px 0 0;font:600 13px var(--sans);color:var(--muted);text-transfo
   .tool,.approve,.cwwork{margin-left:0}
 }
 
+
+/* ---------- cowork: sessions, jobs, workbench ---------- */
+.gl{width:16px;height:16px;flex:none;display:inline-block;vertical-align:-3px}
+.gl.work{color:#d4b500;animation:spin 1.6s linear infinite}
+.gl.need{color:var(--warn)}.gl.done{color:var(--leaf)}.gl.stopped{color:var(--steel)}.gl.interrupted{color:var(--warn)}.gl.paused{color:var(--muted)}.gl.queued{color:var(--steel)}.gl.failed{color:var(--bad)}
+@keyframes spin{to{transform:rotate(360deg)}}
+.cwtask{display:flex;gap:10px;align-items:flex-start}
+.cwtask .gl{margin-top:4px}
+.cwtask .tt{min-width:0;flex:1}
+.cwtask b{padding-right:0}
+.cwtask .del{bottom:auto;top:6px}
+.cwtask.cwjobrow{padding:6px 10px 6px 12px}
+.cwtask.cwjobrow b{font-weight:550;font-size:13.5px}
+.cwkids{margin:0 0 4px 18px;padding-left:8px;border-left:2px solid var(--line-soft);display:grid;gap:1px}
+.cwchips{display:flex;gap:6px;align-items:center;flex-wrap:wrap;position:relative}
+.cwchips .fc{display:inline-flex;gap:6px;align-items:center;border:1px solid var(--line);background:var(--surface);border-radius:999px;padding:3px 11px;font:12.5px var(--mono);color:var(--muted);min-height:30px}
+.cwchips .fc:hover{border-color:var(--lemon)}
+.cwchips .fc.look{border-style:dashed}
+.cwchips .fc small{font:11.5px var(--sans);color:var(--faint)}
+.cwchips .fc.add{font:550 12.5px var(--sans);border-style:dashed}
+.cwfpop{position:absolute;top:calc(100% + 6px);left:0;z-index:8;width:min(340px,86vw);background:var(--surface);border:1px solid var(--line);border-radius:14px;box-shadow:0 14px 40px rgba(0,0,0,.12);padding:14px;display:grid;gap:10px}
+.cwfpop[hidden]{display:none}
+.cwfpop .path{font:12px var(--mono);overflow-wrap:anywhere;color:var(--muted)}
+.cwfpop h5{margin:0;font:600 12px var(--sans);letter-spacing:.06em;text-transform:uppercase;color:var(--faint)}
+.seg{display:inline-flex;border:1px solid var(--line);border-radius:10px;overflow:hidden;background:var(--surface)}
+.seg label{padding:6px 12px;font-size:13.5px;cursor:pointer;color:var(--muted)}
+.seg input{position:absolute;opacity:0;pointer-events:none}
+.seg label:has(input:checked){background:var(--lemon-wash);color:var(--text);font-weight:600}
+.seg label:has(input:focus-visible){outline:2.5px solid var(--lemon-text);outline-offset:-2px}
+.keyrow{display:flex;gap:8px;align-items:center;font:12.5px var(--mono)}
+.keyrow button{margin-left:auto}
+.jobstrip{display:flex;gap:12px;align-items:center;flex-wrap:wrap;padding:8px 20px;border-bottom:1px solid var(--line-soft);background:var(--lemon-wash);font-size:13.5px}
+.jobstrip[hidden]{display:none}
+.jobstrip .grow{flex:1;min-width:120px}
+.jobcard{margin:6px 0 16px 44px}
+.jc{border:1px solid var(--line);border-radius:16px;background:var(--surface);padding:14px 16px;display:grid;gap:9px}
+.jc.working{border-color:var(--lemon);box-shadow:0 0 0 3px var(--lemon-wash)}
+.jc.paused,.jc.interrupted{border-color:color-mix(in srgb,var(--warn) 45%,transparent);background:#fffaf0}
+.jc .jh{display:flex;gap:9px;align-items:center}
+.jc .jh b{font-weight:650;flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.jc .jst{font-size:12.5px;color:var(--muted)}
+.jc .jgoal{margin:0;color:var(--muted);font-size:13.5px;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
+.jc .jprog{display:flex;gap:12px;align-items:center;font-size:12.5px;color:var(--muted)}
+.jc .bar{flex:1;height:6px;border-radius:99px;background:var(--surface-2);overflow:hidden;border:1px solid var(--line-soft)}
+.jc .bar i{display:block;height:100%;background:var(--lemon);border-radius:99px;transition:width .4s var(--ease)}
+.jc.done .bar i{background:var(--leaf)}
+.jc .jmet{display:flex;gap:12px;align-items:center;font:600 13px var(--sans)}
+.jc .spark{width:96px;height:26px;color:var(--lemon-text)}
+.jc .jdoing{margin:0;font-size:13px;color:var(--muted)}
+.jc .jbtns{display:flex;gap:8px;flex-wrap:wrap}
+.jc .jbtns .btn{min-height:34px;padding:0 13px;font-size:13px}
+.ribbon{display:flex;height:10px;border-radius:99px;overflow:hidden;background:var(--surface-2);border:1px solid var(--line-soft)}
+.ribbon i{display:block;height:100%}
+.ribbon .think{background:#efe9bd}.ribbon .write{background:var(--lemon)}.ribbon .cmd{background:#4a4a42}.ribbon .wait{background:var(--warn)}.ribbon .gap{background:transparent}
+.rlegend{display:flex;gap:12px;font-size:11.5px;color:var(--faint)}
+.rlegend span::before{content:"";display:inline-block;width:8px;height:8px;border-radius:3px;margin-right:5px;background:var(--c)}
+.rounds{display:grid;gap:2px;font-size:12.5px;margin:0;padding:0;list-style:none}
+.rounds li{display:grid;grid-template-columns:44px 82px 1fr;gap:8px}
+.rounds li span:first-child{color:var(--faint)}
+.wbtabs{display:flex;gap:4px;margin:-4px 0 4px;border-bottom:1px solid var(--line-soft)}
+.wbtabs button{border:0;background:none;padding:8px 10px;font-weight:550;font-size:13.5px;color:var(--muted);border-bottom:2px solid transparent;margin-bottom:-1px}
+.wbtabs button[aria-selected="true"]{color:var(--text);border-color:var(--lemon)}
+.wbtabs .n{display:inline-block;min-width:18px;padding:0 5px;border-radius:99px;background:var(--lemon-wash);font-size:11.5px;margin-left:5px;text-align:center}
+.cwside{width:340px}
+.chg{display:grid;gap:4px}
+.chg .row{display:grid;grid-template-columns:18px 16px 1fr auto;gap:8px;align-items:center;font:12.5px var(--mono);padding:5px 4px;border-radius:8px;cursor:pointer;overflow-wrap:anywhere}
+.chg .row:hover{background:var(--surface-2)}
+.chg .row b{font-weight:700}.chg .A b{color:var(--leaf)}.chg .M b{color:var(--lemon-text)}.chg .D b{color:var(--bad)}
+.chg .row .pm{font-size:11.5px;color:var(--faint);white-space:nowrap}
+.chg .diff{margin:2px 0 8px;border:1px solid var(--line);border-radius:10px;background:var(--bg);padding:8px;max-height:300px;overflow:auto}
+.chg .diff pre{margin:0;font:12px/1.5 var(--mono);white-space:pre-wrap;overflow-wrap:anywhere}
+.chg .diff .ln{display:block;padding:0 4px;border-radius:3px}
+.chg .diff .ln.add{background:rgba(27,122,58,.13)}.chg .diff .ln.del{background:rgba(179,38,30,.12)}.chg .diff .ln.hunk{color:var(--faint)}
+.jobform{max-width:780px;margin:0 auto 10px;border:1.5px solid var(--lemon);background:var(--surface);border-radius:18px;padding:16px 18px;display:grid;gap:12px}
+.jobform[hidden]{display:none}
+.jobform h3{margin:0;font:600 18px var(--serif)}
+.jobform label.f{display:grid;gap:5px;font-size:13px;font-weight:600;color:var(--muted)}
+.jobform textarea,.jobform input[type=text],.jobform select{width:100%;border:1px solid var(--line);border-radius:10px;padding:8px 11px;background:var(--surface);min-height:38px;font-weight:400;color:var(--text)}
+.jobform textarea{resize:vertical;min-height:62px}
+.jobform .two{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.jobform .opt{display:grid;grid-template-columns:20px 1fr;gap:2px 8px;font-size:13.5px;align-items:start}
+.jobform .opt small{grid-column:2;color:var(--muted)}
+.jobform .fbtns{display:flex;gap:8px;justify-content:flex-end}
+.herocards{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin:0 0 6px}
+.herocards button{text-align:left;border:1px solid var(--line);background:var(--surface);border-radius:16px;padding:16px;display:grid;gap:4px;transition:border-color .15s,transform .1s}
+.herocards button:hover{border-color:var(--lemon)}
+.herocards b{font:600 17px var(--serif)}
+.herocards span{color:var(--muted);font-size:13.5px}
+.approve .key{font-size:12.5px;color:var(--muted)}
+.approve .btn.alw{border-style:dashed}
+.cwmark{display:none}
+.cwplan{margin:0 0 16px 44px}
+@media (max-width:900px){.cwbar{flex-wrap:wrap;row-gap:6px;padding:8px 14px;gap:4px}.cwbar .btn{padding:0 8px;min-height:34px}.cwbar .cwtitle{flex:1;min-width:0}.cwbar .cwchipwrap{order:5;flex:1 0 100%}.jobform{max-height:62dvh;overflow:auto}.jobstrip{padding:8px 14px}.jobcard{margin-left:0}.herocards{grid-template-columns:1fr}.jobform .two{grid-template-columns:1fr}.cwside{width:min(340px,92vw)}}
+.cwchipwrap{position:relative;min-width:0}
+.cwchips .fc{white-space:nowrap}
+.cwbar .cwtitle{flex:0 1 auto;max-width:42%}
+.cwside{grid-template-columns:minmax(0,1fr)}
+.cwside>*,.wbbody>*,.wbbody{min-width:0}
+.cwgrp{min-width:0}
+.cwkids{grid-template-columns:minmax(0,1fr)}
+.cwhero .cwnote{display:block}
+.rounds li{grid-template-columns:62px 74px minmax(0,1fr)}
+.rounds li span:first-child{white-space:nowrap}
+#cwjobbtn{color:var(--text);font-weight:600}
 /* ---------- markdown extras, diagrams, skills, docs ---------- */
 .doctoc{display:flex;gap:8px;flex-wrap:wrap;margin:0 0 26px;max-width:860px}
 .doctoc button{border:1px solid var(--line);background:var(--surface);border-radius:999px;padding:6px 13px;font-size:13.5px;color:var(--muted)}
@@ -908,20 +1012,24 @@ h4.sub{margin:10px 0 0;font:600 13px var(--sans);color:var(--muted);text-transfo
         <div class="cwbar" id="cwbar">
           <button class="btn ghost" id="cwtoggle-list" type="button">Chats</button>
           <b class="cwtitle" id="cwtitle">New chat</b>
+          <div class="cwchipwrap"><div class="cwchips" id="cwchips"></div><div class="cwfpop" id="cwfpop" hidden></div></div>
           <span class="grow"></span>
           <span class="chip" id="cwmodechip" hidden></span>
           <button class="btn ghost" id="cwtoggle-side" type="button">Details</button>
         </div>
+        <div class="jobstrip" id="cwjobstrip" hidden></div>
         <div class="thread" id="cwthread" aria-live="polite"><div class="col" id="cwmsgs"></div></div>
         <div class="composer-wrap">
           <div id="cwbanner"></div>
           <div class="cwpick" id="cwpick" role="listbox" aria-label="Skills" hidden></div>
           <div class="cwqueue" id="cwqueue" hidden></div>
+          <div class="jobform" id="cwjobform" hidden></div>
           <form class="composer" id="cwform">
             <label class="sr" for="cwinput">Message</label>
             <textarea id="cwinput" rows="1" placeholder="Ask anything, or describe a job…" autocomplete="off"></textarea>
             <div class="crow">
               <button class="btn ghost" id="cwfolderbtn" type="button" hidden></button>
+              <button class="btn ghost" id="cwjobbtn" type="button" hidden>Start a job…</button>
               <span class="grow"></span>
               <button class="btn danger" id="cwstop" type="button" hidden>Stop</button>
               <button class="btn primary" id="cwsend" type="submit">Send</button>
@@ -3228,50 +3336,104 @@ const CW_TOOLS = {read: "Read", write: "Write", edit: "Edit", bash: "Run", grep:
 const cwEl = id => document.getElementById(id);
 const cwDir = p => String(p || "").replace(/\/+$/, "").split("/").pop() || "/";
 
+const CW_GL = {
+  work: '<svg class="gl work" viewBox="0 0 16 16" aria-label="Working"><circle cx="8" cy="8" r="5.5" fill="none" stroke="currentColor" stroke-width="2.2" stroke-dasharray="22 13" stroke-linecap="round"/></svg>',
+  queued: '<svg class="gl queued" viewBox="0 0 16 16" aria-label="Waiting"><circle cx="8" cy="8" r="5.5" fill="none" stroke="currentColor" stroke-width="2" stroke-dasharray="2.5 3.5"/></svg>',
+  need: '<svg class="gl need" viewBox="0 0 16 16" aria-label="Needs you"><path d="M8 1.5l6.5 6.5L8 14.5 1.5 8z" fill="currentColor"/></svg>',
+  paused: '<svg class="gl paused" viewBox="0 0 16 16" aria-label="Paused"><rect x="3.5" y="3" width="3" height="10" rx="1" fill="currentColor"/><rect x="9.5" y="3" width="3" height="10" rx="1" fill="currentColor"/></svg>',
+  done: '<svg class="gl done" viewBox="0 0 16 16" aria-label="Done"><circle cx="8" cy="8" r="7" fill="currentColor"/><path d="M4.6 8.2l2.3 2.3 4.5-4.8" fill="none" stroke="#fff" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"/></svg>',
+  stopped: '<svg class="gl stopped" viewBox="0 0 16 16" aria-label="Stopped"><rect x="3" y="3" width="10" height="10" rx="2.5" fill="currentColor"/></svg>',
+  failed: '<svg class="gl failed" viewBox="0 0 16 16" aria-label="Failed"><path d="M3.5 3.5l9 9M12.5 3.5l-9 9" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"/></svg>',
+  interrupted: '<svg class="gl interrupted" viewBox="0 0 16 16" aria-label="Interrupted"><circle cx="8" cy="8" r="6" fill="none" stroke="currentColor" stroke-width="2"/><path d="M8 2a6 6 0 0 1 0 12z" fill="currentColor"/></svg>',
+};
+const CW_JSTATE = {queued: "Waiting", working: "Working", paused: "Paused", done: "Done", stopped: "Stopped", failed: "Failed", interrupted: "Interrupted"};
+const cwJGlyph = j => CW_GL[j.need ? "need" : j.state === "working" ? "work" : j.state] || "";
+const cwDur = s => { s = Math.max(0, Math.round(s)); return s < 90 ? s + " s" : s < 5400 ? Math.round(s / 60) + " min" : (s / 3600).toFixed(1) + " h"; };
+CW.jd = {}; CW.tab = ""; CW.n = 0; CW.extra = []; CW.recent = []; CW.chg = null; CW.title0 = document.title; CW.needSeen = 0;
+const cwFind = id => { for(const t of CW.tasks){ if(t.id === id) return t; for(const j of t.jobs || []) if(j.id === id) return Object.assign({}, j, {isJob: true, parent: t.id, cwd: (CW.jd[j.id] || {}).cwd || "", mode: "edits"}); } return null; };
+const cwChat = () => { const t = cwFind(CW.id); return t && t.isJob ? cwFind(t.parent) : t; };
+
 async function cwLoad(){
-  try{ const r = await api("/ui/cowork"); CW.tasks = r.tasks; CW.pi = r.pi; CW.piVersion = r.pi && r.pi.version; }catch{ CW.pi = CW.pi || {found: false}; }
-  cwRenderTasks(); cwRenderSide();
-  if(!CW.id) cwRenderHero();
+  try{ cwApply(await api("/ui/cowork")); }catch{ CW.pi = CW.pi || {found: false}; cwRenderTasks(); cwRenderSide(); if(!CW.id) cwRenderHero(); }
+}
+function cwApply(r){
+  const prev = new Map(); CW.tasks.forEach(t => (t.jobs || []).forEach(j => prev.set(j.id, j.state)));
+  CW.tasks = r.tasks; CW.pi = r.pi; CW.piVersion = r.pi && r.pi.version; CW.recent = r.folders || [];
+  const need = CW.tasks.reduce((n, t) => n + (t.need || 0), 0);
+  document.title = (need ? `(${need}) ` : "") + CW.title0.replace(/^\(\d+\) /, "");
+  if(need > CW.needSeen) toast("Something is waiting for your answer.");
+  CW.needSeen = need;
+  CW.tasks.forEach(t => (t.jobs || []).forEach(j => {
+    const was = prev.get(j.id);
+    if(was && was !== j.state && ["done", "stopped", "failed"].includes(j.state) && !(S.view === "cowork" && CW.id === t.id && !document.hidden))
+      toast(`Job “${j.title}” ${CW_JSTATE[j.state].toLowerCase()}.`);
+  }));
+  cwRenderTasks();
+  if(CW.id){
+    cwPlaceJobs(); cwJobStrip(); cwRenderSide(); cwChips();
+    const t = cwFind(CW.id);
+    if(t && !t.isJob && ["done", "stopped"].includes((CW.tasks.find(x => x.id === CW.id) || {}).state) && S.view === "cowork" && !document.hidden) cwSeen();
+  }else cwRenderHero();
+  cwPoll();
+}
+function cwLive(){
+  if(CW.live) return;
+  const es = new EventSource("/ui/cowork/live"); CW.live = es;
+  es.onmessage = e => { try{ cwApply(JSON.parse(e.data)); }catch(err){ console.error(err); } };
+  es.onerror = () => { es.close(); CW.live = null; setTimeout(cwLive, 2500); };
+}
+let cwSeenAt = 0;
+function cwSeen(){
+  if(Date.now() - cwSeenAt < 4000) return; cwSeenAt = Date.now();
+  api("/ui/cowork/seen", {method: "POST", body: JSON.stringify({id: (cwChat() || {}).id})}).catch(() => {});
 }
 function cwRenderTasks(){
-  cwEl("cwtasks").innerHTML = CW.tasks.map(t => `<button class="cwtask" data-id="${t.id}" ${t.id === CW.id ? 'aria-current="true"' : ""}>
-    <b>${esc(t.title)}</b><small>${t.chat ? "Chat" : esc(cwDir(t.cwd))}</small>${t.waiting ? '<span class="st wait" title="Needs your answer"></span>' : t.running ? '<span class="st run" title="Working"></span>' : ""}
-    <span class="del" role="button" data-del="${t.id}" title="Delete this task">✕</span></button>`).join("")
+  const jobRow = j => `<button class="cwtask cwjobrow" data-id="${j.id}" ${j.id === CW.id ? 'aria-current="true"' : ""}>${cwJGlyph(j)}<span class="tt"><b>${esc(j.title)}</b><small>${esc(cwJobLine(j))}</small></span></button>`;
+  const html = CW.tasks.map(t => `<div class="cwgrp ${t.need ? "has-need" : ""}"><button class="cwtask" data-id="${t.id}" ${t.id === CW.id ? 'aria-current="true"' : ""}>
+    ${CW_GL[t.state === "work" ? "work" : t.state] || '<span class="gl"></span>'}<span class="tt"><b>${esc(t.title)}</b><small>${esc(t.doing || (t.chat ? "Chat" : cwDir(t.cwd)))}</small></span>
+    <span class="del" role="button" data-del="${t.id}" title="Delete this chat and its jobs">✕</span></button>
+    ${(t.jobs || []).length ? `<div class="cwkids">${t.jobs.map(jobRow).join("")}</div>` : ""}</div>`).join("")
     || '<p class="help" style="padding:6px 10px">Your conversations appear here and pick up where they left off.</p>';
-  cwEl("cwtasks").innerHTML += '<button class="linkbtn" type="button" id="cwolder" style="margin:14px 10px 0">Earlier chats</button>';
+  const box = cwEl("cwtasks"); if(box._h === html) return; box._h = html;
+  box.innerHTML = html + '<button class="linkbtn" type="button" id="cwolder" style="margin:14px 10px 0">Earlier chats</button>';
+}
+function cwJobLine(j){
+  if(j.state === "working") return `Round ${Math.max(1, j.round)} of ${j.rounds_max}${j.doing ? " · " + j.doing : ""}`;
+  if(j.state === "paused") return j.wait_reason === "review" ? "Waiting for your OK" : "Paused";
+  if(j.state === "interrupted") return "Interrupted when Zest closed";
+  if(j.state === "queued") return "Waiting for another job";
+  const s = j.series.filter(x => x != null);
+  return CW_JSTATE[j.state] + (s.length > 1 && j.check_kind === "command" ? ` · ${s[0]} → ${s[s.length - 1]} failing` : ` · ${j.round} round${j.round === 1 ? "" : "s"}`);
 }
 function cwRenderHero(){
   const m = cwEl("cwmsgs");
-  const recent = [...new Set(CW.tasks.filter(t => !t.chat).map(t => t.cwd))].slice(0, 4);
+  const recent = (CW.recent || []).map(f => f.path).slice(0, 4);
   const missing = CW.pi && !CW.pi.found;
+  const hero = recent.join("|") + CW.folder + missing + S.up;
+  if(m._hero === hero && m.querySelector(".cwhero")) return; m._hero = hero;
   m.innerHTML = `<div class="cwhero"><h2>What shall we <span class="hl">work on</span>?</h2>
-    <p>Ask anything and it answers, like always. Or choose a folder and the model can read, search, edit and run things there while you watch. It asks before it changes anything unless you say otherwise.</p>
-    <p class="cwnote">Skills teach it new ways of working. Add a set by pasting a GitHub link under <a href="#skills" data-go="skills">Skills</a>.</p>
+    <p>Ask anything and it answers, like always. Or give it a folder: it can read, search, edit and run things there, and you can hand it a bigger job to keep working on in the background while you do something else.</p>
+    <div class="herocards"><button type="button" id="hero-chat"><b>Just chat</b><span>Ask a question. No files involved.</span></button>
+      <button type="button" id="hero-folder"><b>Work in a folder</b><span>${CW.folder ? "Using " + esc(cwDir(CW.folder)) + ". Click to change." : "Pick a folder it can read and change."}</span></button></div>
+    <div class="recent">${recent.map(p => `<button type="button" data-folder="${esc(p)}" title="${esc(p)}">${esc(cwDir(p))}</button>`).join("")}</div>
+    <p class="cwnote" style="margin-top:18px">Skills teach it new ways of working. Add a set by pasting a GitHub link under <a href="#skills" data-go="skills">Skills</a>.</p>
     ${missing ? `<div class="cwbanner"><span><b>The Pi agent isn't installed.</b> The Zest AppImage includes it. Running from source? Install it with <code>npm install -g @earendil-works/pi-coding-agent</code>, or point ZEST_PI at it.</span></div>` : ""}
-    ${S.up === false ? `<div class="cwbanner"><span>Lemonade isn't running yet, so there's no model to work with.</span></div>` : ""}
-    <div class="recent">${recent.map(p => `<button type="button" data-folder="${esc(p)}" title="${esc(p)}">${esc(cwDir(p))}</button>`).join("")}</div></div>`;
-  cwSetTitle("New chat"); cwFolderBtn();
+    ${S.up === false ? `<div class="cwbanner"><span>Lemonade isn't running yet, so there's no model to work with.</span></div>` : ""}</div>`;
+  cwSetTitle("New chat"); cwFolderBtn(); cwChips();
 }
 function cwSetTitle(t){ cwEl("cwtitle").textContent = t; }
-function cwFolderBtn(){
-  const b = cwEl("cwfolderbtn");
-  const t = CW.tasks.find(x => x.id === CW.id);
-  b.hidden = !!CW.id && !(t && t.chat);
-  b.textContent = CW.folder && !CW.id ? "Folder: " + cwDir(CW.folder) : "Work in a folder…";
-  b.title = CW.folder && !CW.id ? CW.folder : "Let the model read and change files in a folder";
-}
 function cwNew(){
-  cwClose(); CW.id = null; CW.mode = "ask"; cwReset(); cwRenderHero(); cwRenderTasks(); cwRenderSide(); cwSetRunning(false);
+  cwClose(); CW.id = null; CW.mode = "ask"; CW.extra = []; cwReset(); cwRenderHero(); cwRenderTasks(); cwRenderSide(); cwSetRunning(false); cwJobStrip(); cwChips();
   cwEl("cwmodechip").hidden = true; cwEl("cwinput").focus();
 }
-function cwReset(){ CW.tools = {}; CW.files = new Map(); CW.am = null; CW.ready = null; CW.state = null; CW.stats = null; CW.queue = {steering: [], followUp: []}; cwEl("cwmsgs").innerHTML = ""; cwEl("cwbanner").innerHTML = ""; cwQueue(); }
+function cwReset(){ CW.n = 0; cwEl("cwmsgs")._hero = ""; cwEl("cwjobform").hidden = true; CW.tools = {}; CW.files = new Map(); CW.am = null; CW.ready = null; CW.state = null; CW.stats = null; CW.queue = {steering: [], followUp: []}; cwEl("cwmsgs").innerHTML = ""; cwEl("cwbanner").innerHTML = ""; cwQueue(); }
 function cwClose(){ if(CW.es){ CW.es.close(); CW.es = null; } clearTimeout(CW.timer); }
 
 function cwOpen(id){
   cwClose(); CW.id = id; CW.cursor = -1; cwReset();
-  const t = CW.tasks.find(x => x.id === id);
-  if(t){ cwSetTitle(t.title); CW.mode = t.mode; }
-  cwFolderBtn(); cwRenderTasks(); cwRenderSide(); cwConnect();
+  const t = cwFind(id);
+  if(t){ cwSetTitle(t.title); if(!t.isJob) CW.mode = t.mode; else if(!CW.jd[id]) api("/ui/cowork/job?id=" + id).then(d => { CW.jd[id] = d; cwChips(); cwRenderSide(); }).catch(() => {}); }
+  cwFolderBtn(); cwRenderTasks(); cwRenderSide(); cwChips(); cwJobStrip(); cwConnect(); cwSeen(); cwPoll(true);
   cwEl("cwtasks").parentElement.classList.remove("open");
 }
 function cwConnect(){
@@ -3291,13 +3453,13 @@ async function cwSubmit(text){
   text = text.trim(); if(!text) return;
   if(!CW.id){
     try{
-      const r = await api("/ui/cowork/new", {method: "POST", body: JSON.stringify({cwd: CW.folder, mode: CW.mode})});
-      await cwLoad(); cwOpenWith(r.task.id, text);
+      const r = await api("/ui/cowork/new", {method: "POST", body: JSON.stringify({cwd: CW.folder, mode: CW.mode, folders: CW.extra})});
+      CW.extra = []; await cwLoad(); cwOpenWith(r.task.id, text);
     }catch(e){ toast(e.message); }
     return;
   }
   cwEl("cwinput").value = ""; cwGrow();
-  try{ await cwSend({type: "prompt", message: text}); }catch(e){ toast(e.message); }
+  try{ const r = await cwSend({type: "prompt", message: text}); if(r && r.queued) toast("Noted. It will see this at the start of the next round."); }catch(e){ toast(e.message); }
 }
 function cwOpenWith(id, text){
   cwClose(); CW.id = id; CW.cursor = -1; cwReset(); CW.mode = (CW.tasks.find(t => t.id === id) || {}).mode || "ask";
@@ -3313,15 +3475,16 @@ function cwPickFolder(){
       try{ await api("/ui/cowork/folder", {method: "POST", body: JSON.stringify({id, cwd: p})}); await cwLoad(); cwOpen(id); toast("It can now work in " + cwDir(p) + "."); }catch(e){ toast(e.message); }
       return;
     }
-    CW.folder = p; store.set("zest.cowork.folder", p); cwFolderBtn(); cwRenderSide(); cwEl("cwinput").focus();
+    CW.folder = p; store.set("zest.cowork.folder", p); cwFolderBtn(); cwChips(); cwRenderSide(); if(!CW.id) cwRenderHero(); cwEl("cwinput").focus();
   });
 }
 function cwGrow(){ const t = cwEl("cwinput"); t.style.height = "auto"; t.style.height = Math.min(t.scrollHeight, 220) + "px"; }
 function cwSetRunning(on){
   CW.running = on;
-  cwEl("cwstop").hidden = !on;
+  const jv = (cwFind(CW.id) || {}).isJob;
+  cwEl("cwstop").hidden = !on || !!jv;
   cwEl("cwsend").textContent = on ? "Add note" : "Send";
-  cwEl("cwinput").placeholder = on ? "Add a note while it works…" : (CW.id ? "Reply…" : "Ask anything, or describe a job…");
+  cwEl("cwinput").placeholder = jv ? "Add a note for the next round…" : on ? "Add a note while it works…" : (CW.id ? "Reply…" : "Ask anything, or describe a job…");
   const w = cwEl("cwmsgs").querySelector(".cwwork");
   if(on && !w){ const d = document.createElement("div"); d.className = "cwwork"; d.innerHTML = "<i></i><span>Working…</span>"; cwEl("cwmsgs").appendChild(d); cwScroll(); }
   if(!on && w) w.remove();
@@ -3337,20 +3500,21 @@ function cwEvent(r){
   const m = cwEl("cwmsgs");
   switch(r.type){
     case "zest_history": {
-      m.innerHTML = ""; CW.tools = {}; CW.files = new Map(); CW.am = null;
+      m.innerHTML = ""; CW.tools = {}; CW.files = new Map(); CW.am = null; CW.n = 0;
       (r.messages || []).forEach(cwHistoryMsg);
       if(CW.running) cwSetRunning(true);
       const t = cwEl("cwthread"); t.scrollTop = t.scrollHeight; cwRenderSide();
       if(!r.messages.length && !m.children.length) m.innerHTML = '<p class="cwnote">Nothing here yet. Tell it what you want done.</p>';
       cwSend({type: "get_session_stats"}).catch(() => {});
+      cwPlaceJobs();
       break;
     }
     case "zest_ready": CW.ready = r; CW.mode = r.mode; cwBanner(); cwRenderSide(); cwSend({type: "get_state"}).catch(() => {}); break;
-    case "agent_start": m.querySelector(".cwnote")?.remove(); cwSetRunning(true); break;
-    case "agent_settled": cwSetRunning(false); cwSend({type: "get_session_stats"}).catch(() => {}); cwLoad(); break;
+    case "agent_start": m.querySelector(".cwnote")?.remove(); m.querySelector(".cwplan")?.remove(); cwSetRunning(true); break;
+    case "agent_settled": cwSetRunning(false); cwPlanBar(); cwSend({type: "get_session_stats"}).catch(() => {}); cwLoad(); break;
     case "message_start": if(r.message.role === "assistant") cwStartAssistant(); break;
     case "message_update": cwUpdate(r.assistantMessageEvent); break;
-    case "message_end": cwMessageEnd(r.message); break;
+    case "message_end": cwMessageEnd(r.message); cwMark(); break;
     case "tool_execution_start": cwTool(r.toolCallId, r.toolName, r.args).classList.add("run"); cwToolStatus(r.toolCallId, "run", "Working…"); cwScroll(); break;
     case "tool_execution_update": cwToolOutput(r.toolCallId, r.toolName, r.args, r.partialResult); break;
     case "tool_execution_end": cwToolDone(r.toolCallId, r.toolName, r.result, r.isError, r.durationMs); break;
@@ -3364,6 +3528,14 @@ function cwEvent(r){
     case "zest_error": cwNote(r.message, true); break;
     case "zest_exit": cwSetRunning(false); cwNote("The agent stopped. Send a message to start it again."); cwClose(); break;
   }
+}
+function cwPlanBar(){
+  const t = cwChat(), cur = cwFind(CW.id), m = cwEl("cwmsgs");
+  m.querySelector(".cwplan")?.remove();
+  if(CW.mode !== "plan" || !t || t.chat || (cur && cur.isJob)) return;
+  const last = [...m.querySelectorAll(".msg.bot .body")].pop(); if(!last || last.textContent.trim().length < 80) return;
+  const d = document.createElement("div"); d.className = "cwplan"; d.innerHTML = '<button class="btn" type="button" data-plan2job="1">Run this plan as a job…</button>';
+  m.insertBefore(d, m.querySelector(".cwwork")); const c = last.cloneNode(true); c.querySelectorAll("details").forEach(x => x.remove()); d._text = c.innerText.trim(); cwScroll();
 }
 function cwResponse(r){
   if(!r.success){ if(r.command !== "get_session_stats") toast(r.error || "That didn't work."); return; }
@@ -3425,12 +3597,14 @@ function cwFriendly(m){
   return m;
 }
 function cwUserMsg(msg){
-  const text = (Array.isArray(msg.content) ? msg.content.filter(c => c.type === "text").map(c => c.text).join("\n") : String(msg.content || ""));
+  let text = (Array.isArray(msg.content) ? msg.content.filter(c => c.type === "text").map(c => c.text).join("\n") : String(msg.content || ""));
+  text = text.replace(/<zest-note>[\s\S]*?<\/zest-note>\s*/g, "");
   if(!text.trim() || text.startsWith("/zest-mode")) return;
   const d = document.createElement("div"); d.className = "msg user"; d.innerHTML = `<div class="body">${esc(text)}</div>`;
   const w = cwEl("cwmsgs").querySelector(".cwwork"); cwEl("cwmsgs").insertBefore(d, w); cwScroll();
 }
-function cwHistoryMsg(msg){
+function cwHistoryMsg(msg){ cwHistoryMsg0(msg); cwMark(); }
+function cwHistoryMsg0(msg){
   if(msg.role === "user") return cwUserMsg(msg);
   if(msg.role === "assistant"){
     CW.am = null; cwMessageEnd(msg);
@@ -3510,7 +3684,8 @@ function cwUiRequest(r){
   d.innerHTML = `<div class="ahead">${info ? `Zest wants to <b>${esc(verb)}</b>` : esc(r.title)}</div>
     ${info ? `<pre class="awhat">${esc(info.what)}</pre>` : ""}
     ${info && info.outside ? `<div class="warn">This is outside the task folder (${esc(info.folder)}).</div>` : ""}
-    <div class="abtns">${(r.options || []).map((o, i) => `<button type="button" class="btn ${i === 0 ? "primary" : /n't|no/i.test(o) ? "danger" : ""}" data-ans="${esc(o)}">${esc(o)}</button>`).join("")}</div>`;
+    <div class="abtns">${(r.options || []).map((o, i) => `<button type="button" class="btn ${i === 0 ? "primary" : /n't|no/i.test(o) ? "danger" : /^Always/.test(o) ? "alw" : ""}" data-ans="${esc(o)}">${esc(o)}</button>`).join("")}</div>
+    ${info && info.key ? `<div class="key">“Always allow ${esc(info.key)}” remembers it for this folder. Anything else still asks.</div>` : ""}`;
   const w = cwEl("cwmsgs").querySelector(".cwwork"); cwEl("cwmsgs").insertBefore(d, w); cwScroll();
   d.querySelector("button").focus({preventScroll: true});
 }
@@ -3521,7 +3696,7 @@ cwEl("cwmsgs").addEventListener("click", async e => {
     catch(err){ toast(err.message); card.remove(); }
     return;
   }
-  const f = e.target.closest("[data-folder]"); if(f){ CW.folder = f.dataset.folder; cwFolderBtn(); cwEl("cwinput").focus(); }
+  const f = e.target.closest("[data-folder]"); if(f){ CW.folder = f.dataset.folder; store.set("zest.cowork.folder", CW.folder); cwFolderBtn(); cwChips(); cwRenderSide(); cwRenderHero(); cwEl("cwinput").focus(); }
   const cp = e.target.closest(".cp"); if(cp){ navigator.clipboard?.writeText(cp.parentElement.querySelector("code").textContent); toast("Copied"); }
 });
 cwEl("cwbanner").addEventListener("click", async e => {
@@ -3534,18 +3709,228 @@ cwEl("cwbanner").addEventListener("click", async e => {
   }catch(err){ toast(err.message); cwBanner(); }
 });
 
-/* ---- the side panel */
-function cwRenderSide(){
-  const el = cwEl("cwside"), t = CW.tasks.find(x => x.id === CW.id);
-  const chip = cwEl("cwmodechip"); chip.hidden = !t || t.chat; if(t) chip.textContent = (CW_MODES.find(x => x[0] === CW.mode) || [])[1] || "";
+/* ---- folders on the stage */
+function cwFolderBtn(){
+  const b = cwEl("cwfolderbtn"), t = cwChat();
+  b.hidden = !!CW.id && !(t && t.chat);
+  b.textContent = CW.folder && !CW.id ? "Folder: " + cwDir(CW.folder) : "Work in a folder…";
+  b.title = CW.folder && !CW.id ? CW.folder : "Let the model read and change files in a folder";
+  b.hidden = b.hidden || (!CW.id && !!CW.folder);
+  const jb = cwEl("cwjobbtn"), cur = cwFind(CW.id);
+  jb.hidden = !!(cur && cur.isJob) || (CW.id ? !(t && !t.chat) : !CW.folder);
+}
+function cwChips(){
+  const box = cwEl("cwchips"), t = cwChat(), cur = cwFind(CW.id), isJob = !!(cur && cur.isJob);
+  const main = t ? (t.chat ? "" : t.cwd) : CW.folder, extra = t ? (t.folders || []) : CW.extra;
+  let h = "";
+  if(main){
+    h = `<button class="fc" type="button" data-fc="main" title="${esc(main)}"><svg class="i" style="width:14px;height:14px" viewBox="0 0 24 24"><path d="M3 7a2 2 0 0 1 2-2h4l2 2h8a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/></svg>${esc(cwDir(main))}<small>${isJob && (cur.copy) ? "working copy" : "can change"}</small></button>`;
+    extra.forEach((f, i) => h += `<button class="fc ${f.access === "read" ? "look" : ""}" type="button" data-fc="${i}" title="${esc(f.path)}">${esc(cwDir(f.path))}<small>${f.access === "read" ? "look only" : "can change"}</small></button>`);
+    if(!isJob) h += `<button class="fc add" type="button" data-fc="add">+ Folder</button>`;
+  }
+  if(box._h !== h){ box._h = h; box.innerHTML = h; }
+}
+function cwFolderPop(which, anchor){
+  const pop = cwEl("cwfpop"), t = cwChat();
+  if(!pop.hidden && pop.dataset.w === which){ pop.hidden = true; return; }
+  pop.dataset.w = which;
+  const main = t ? t.cwd : CW.folder, extra = t ? (t.folders || []) : CW.extra;
+  if(which === "main"){
+    const rec = (CW.recent || []).find(f => f.path === main) || {allow: []};
+    pop.innerHTML = `<h5>Working folder</h5><div class="path">${esc(main)}</div>
+      <h5>Commands it may always run here</h5>${rec.allow.length ? rec.allow.map(k => `<div class="keyrow"><span>${esc(k)}</span><button class="btn ghost" type="button" data-unallow="${esc(k)}" style="min-height:30px">Remove</button></div>`).join("") : '<p class="help" style="margin:0">None yet. When it asks to run a command you can choose “Always allow”.</p>'}
+      ${!t || t.chat ? '<button class="btn" type="button" data-fc-change="1">Change folder…</button>' : ""}`;
+  }else{
+    const f = extra[+which]; if(!f) return;
+    pop.innerHTML = `<h5>Extra folder</h5><div class="path">${esc(f.path)}</div>
+      <div class="seg" role="radiogroup" aria-label="Access"><label><input type="radio" name="fcacc" value="write" ${f.access !== "read" ? "checked" : ""}>Can change</label><label><input type="radio" name="fcacc" value="read" ${f.access === "read" ? "checked" : ""}>Look only</label></div>
+      <button class="btn danger" type="button" data-fc-remove="${which}">Remove from this chat</button>`;
+  }
+  pop.hidden = false;
+}
+async function cwSaveFolders(list){
+  if(!CW.id){ CW.extra = list; cwChips(); return; }
+  try{ await api("/ui/cowork/folders", {method: "POST", body: JSON.stringify({id: (cwChat() || {}).id, folders: list})}); await cwLoad(); }
+  catch(e){ toast(e.message); }
+}
+function cwAddFolder(){
+  openFs("", p => { const t = cwChat(), cur = (t ? t.folders : CW.extra) || []; if(cur.some(f => f.path === p)) return; cwSaveFolders(cur.concat([{path: p, access: "read"}])); toast("Added as look only. Change it if the model should edit there."); });
+}
+
+/* ---- jobs: strip, cards */
+function cwJBtns(j){
+  const b = (a, label, cls = "") => `<button class="btn ${cls}" type="button" data-jctl="${a}" data-jid="${j.id}">${label}</button>`;
+  let h = "";
+  if(j.state === "working") h += b("pause", "Pause") + b("stop", "Stop", "danger");
+  else if(j.state === "paused") h += b("resume", j.wait_reason === "review" ? "Continue" : "Resume", "primary") + b("stop", "Stop", "danger");
+  else if(j.state === "interrupted") h += b("continue", "Continue", "primary") + b("stop", "Stop", "danger");
+  else if(j.state === "queued") h += b("stop", "Cancel", "danger");
+  else{
+    if(j.copy && !["applied", "discarded"].includes(j.copy_state)) h += `<button class="btn primary" type="button" data-jreview="${j.id}">Review changes</button>`;
+    else if(j.watched) h += `<button class="btn" type="button" data-jreview="${j.id}">See what changed</button>`;
+    h += b("remove", "Remove", "ghost");
+  }
+  return h;
+}
+function cwSpark(series){
+  const v = series.filter(x => x != null); if(v.length < 2) return "";
+  const mx = Math.max(...v, 1), pts = v.map((y, i) => `${(i / (v.length - 1) * 100).toFixed(1)},${(25 - (y / mx) * 21).toFixed(1)}`).join(" ");
+  return `<svg class="spark" viewBox="0 0 100 28" preserveAspectRatio="none" aria-hidden="true"><polyline points="${pts}" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linejoin="round" stroke-linecap="round" vector-effect="non-scaling-stroke"/></svg>`;
+}
+function cwRibbon(d){
+  const tl = d && d.timeline; if(!tl || !tl.length) return "";
+  const t0 = tl[0][0], t1 = Math.max(tl[tl.length - 1][1], t0 + 60), span = t1 - t0; let pos = t0, h = "";
+  tl.forEach(([a, b, k]) => { if(a > pos) h += `<i class="gap" style="width:${(a - pos) / span * 100}%"></i>`; h += `<i class="${k}" style="width:${Math.max(.4, (b - a) / span * 100)}%"></i>`; pos = Math.max(pos, b); });
+  return `<div class="ribbon" role="img" aria-label="What it has been doing">${h}</div>`;
+}
+function cwJobCard(j, d, full){
+  const s = j.series.filter(x => x != null), cmd = j.check_kind === "command";
+  const pct = j.state === "done" ? 100 : Math.min(100, Math.round(j.round / j.rounds_max * 100));
+  const met = s.length > 1 && cmd ? `<span>${s[0]} → <b>${s[s.length - 1]}</b> failing</span>${cwSpark(j.series)}` : (cmd && s.length ? `<span><b>${s[0]}</b> failing</span>` : "");
+  const line = ["done", "stopped", "failed"].includes(j.state) ? (j.stop_reason || "") : j.state === "interrupted" ? "Zest was closed while this was working. Continue picks up where it left off." : (j.doing || "");
+  const rounds = full && d ? d.results.filter(r => r.n > 0) : [];
+  return `<div class="jc ${j.state}"><div class="jh">${cwJGlyph(j)}<b>${esc(j.title)}</b><span class="jst">${j.need ? "Needs you" : CW_JSTATE[j.state]}</span></div>
+    ${full ? `<p class="jgoal">${esc(j.goal)}</p>` : ""}
+    <div class="jprog"><div class="bar"><i style="width:${pct}%"></i></div><span>Round ${Math.max(j.round, j.state === "working" ? 1 : 0)} of ${j.rounds_max} · ${cwDur(j.spent)}</span></div>
+    ${met ? `<div class="jmet">${met}</div>` : ""}
+    ${line ? `<p class="jdoing">${esc(line)}</p>` : ""}
+    ${full ? cwRibbon(d) + (d && d.timeline && d.timeline.length ? '<div class="rlegend" style="--c:0"><span style="--c:#efe9bd">thinking</span><span style="--c:var(--lemon)">writing</span><span style="--c:#4a4a42">running</span><span style="--c:var(--warn)">waiting</span></div>' : "") : ""}
+    ${rounds.length ? `<ul class="rounds">${rounds.map(r => `<li><span>Round ${r.n}</span><span>${esc(r.summary || "")}</span><span>${esc(r.note || "")}</span></li>`).join("")}</ul>` : ""}
+    <div class="jbtns">${cwJBtns(j)}<button class="btn ghost" type="button" data-jopen="${j.id}">Open</button></div></div>`;
+}
+function cwPlaceJobs(){
+  const m = cwEl("cwmsgs"), t = CW.tasks.find(x => x.id === CW.id);
+  if(!t){ m.querySelectorAll(".jobcard").forEach(x => x.remove()); return; }
+  const ids = new Set((t.jobs || []).map(j => j.id));
+  m.querySelectorAll(".jobcard").forEach(x => { if(!ids.has(x.dataset.job)) x.remove(); });
+  for(const j of t.jobs || []){
+    let el = m.querySelector(`.jobcard[data-job="${j.id}"]`);
+    if(!el){
+      el = document.createElement("div"); el.className = "jobcard"; el.dataset.job = j.id; el.dataset.after = j.after_msgs;
+      const marks = [...m.querySelectorAll(".cwmark")].filter(x => +x.dataset.n <= j.after_msgs), a = marks[marks.length - 1];
+      let ref = a ? a.nextSibling : m.querySelector(".cwwork");
+      while(ref && ref.classList && ref.classList.contains("jobcard") && +ref.dataset.after <= j.after_msgs) ref = ref.nextSibling;
+      m.insertBefore(el, ref || null);
+      cwScroll();
+    }
+    const html = cwJobCard(j, CW.jd[j.id], false);
+    if(el._h !== html){ el._h = html; el.innerHTML = html; }
+  }
+}
+function cwJobStrip(){
+  const el = cwEl("cwjobstrip"), t = cwFind(CW.id);
+  if(!t || !t.isJob){ el.hidden = true; el._h = ""; return; }
+  const par = cwFind(t.parent), html = `<button class="linkbtn" type="button" data-back="${t.parent}">← ${esc(par ? par.title : "Back")}</button>${cwJGlyph(t)}<span class="grow"><b>${t.need ? "Needs you" : CW_JSTATE[t.state]}</b> · ${esc(cwJobLine(t))}</span>${cwJBtns(t)}`;
+  el.hidden = false; if(el._h !== html){ el._h = html; el.innerHTML = html; }
+  cwEl("cwinput").placeholder = ["working", "queued"].includes(t.state) ? "Add a note for the next round…" : "Add a note for when it continues…";
+}
+let cwPollAt = 0;
+function cwPoll(force){
+  if(!CW.id) return; const now = Date.now(); if(!force && now - cwPollAt < 2500) return; cwPollAt = now;
+  const chat = cwChat(); if(!chat) return;
+  (chat.jobs || []).forEach(async j => {
+    const live = ["working", "paused", "queued"].includes(j.state), d = CW.jd[j.id];
+    if(!live && d && d.state === j.state && d.round === j.round) return;
+    try{ CW.jd[j.id] = await api("/ui/cowork/job?id=" + j.id); cwPlaceJobs(); if(CW.tab === "jobs") cwRenderSide(); }catch{}
+    if(((j.copy && !["applied", "discarded"].includes(j.copy_state)) || j.watched) && (live || !CW.chgs[j.id] || CW.chgs[j.id].st !== j.state)){
+      try{ const c = await api("/ui/cowork/job/changes?id=" + j.id); CW.chgs[j.id] = {files: c.files, st: j.state}; if(CW.tab === "changes" || CW.tab === "jobs") cwRenderSide(); }catch{}
+    }
+  });
+}
+CW.chgs = {};
+setInterval(() => { if(S.view === "cowork" && !document.hidden && CW.id) cwPoll(true); }, 4000);
+
+/* ---- starting a job */
+async function cwEnsureChat(){
+  if(CW.id) return (cwChat() || {}).id;
+  const r = await api("/ui/cowork/new", {method: "POST", body: JSON.stringify({cwd: CW.folder, mode: CW.mode, folders: CW.extra})});
+  CW.extra = []; await cwLoad(); cwOpen(r.task.id); return r.task.id;
+}
+function cwJobForm(prefill){
+  const f = cwEl("cwjobform");
+  if(!f.hidden && prefill === undefined){ f.hidden = true; return; }
+  const goal = prefill !== undefined ? prefill : cwEl("cwinput").value.trim(), folder = (cwChat() || {}).cwd || CW.folder;
+  f.innerHTML = `<h3>Start a job</h3><p class="help" style="margin:-6px 0 0">It works on this in the background, round after round, and checks its own progress. You can keep chatting.</p>
+    <label class="f">What should it get done?<textarea id="jf-goal" placeholder="e.g. Make the importer tests pass without changing the tests">${esc(goal)}</textarea></label>
+    <div><div class="seg" role="radiogroup" aria-label="How it knows it is done"><label><input type="radio" name="jfk" value="command" checked>A command passes</label><label><input type="radio" name="jfk" value="words">In my words</label></div></div>
+    <label class="f"><span id="jf-cl">Done when this command succeeds</span><input type="text" id="jf-check" placeholder="python3 -m pytest -q" autocomplete="off" spellcheck="false"></label>
+    <div class="two"><label class="f">Stop after<select id="jf-rounds"><option value="5">5 rounds</option><option value="10" selected>10 rounds</option><option value="20">20 rounds</option><option value="50">50 rounds</option></select></label>
+      <label class="f">Or after<select id="jf-time"><option value="1800">30 minutes</option><option value="3600">1 hour</option><option value="7200" selected>2 hours</option><option value="14400">4 hours</option><option value="28800">8 hours</option></select></label></div>
+    <div class="opt"><input type="radio" name="jfw" id="jfw1" value="copy" checked><label for="jfw1"><b>Work on a copy</b></label><small>Your folder stays untouched. You look over the changes and apply the ones you want.</small></div>
+    <div class="opt"><input type="radio" name="jfw" id="jfw2" value="live"><label for="jfw2"><b>Work in the folder itself</b></label><small>Changes land straight away. Best with a git repo you can roll back.</small></div>
+    <div class="opt"><input type="checkbox" id="jf-review"><label for="jf-review"><b>Wait for my OK after each round</b></label></div>
+    <p class="cwnote err" id="jf-err" hidden></p>
+    <div class="fbtns"><button class="btn ghost" type="button" id="jf-cancel">Cancel</button><button class="btn primary" type="button" id="jf-go">Start job</button></div>`;
+  f.hidden = false; cwEl("jf-goal").focus();
+  if(folder) api("/ui/cowork/folder/info?path=" + encodeURIComponent(folder)).then(i => {
+    if(i.too_big){ const w = cwEl("jfw2"); if(w){ w.checked = true; cwEl("jfw1").disabled = true; } cwEl("jf-err").hidden = false; cwEl("jf-err").textContent = "This folder is too big to copy, so the job will work in it directly."; }
+  }).catch(() => {});
+}
+async function cwJobGo(){
+  const q = id => cwEl(id), err = q("jf-err"); err.hidden = true;
+  const kind = document.querySelector('input[name="jfk"]:checked').value;
+  const spec = {goal: q("jf-goal").value.trim(), check: q("jf-check").value.trim(), check_kind: kind, rounds: +q("jf-rounds").value, seconds: +q("jf-time").value,
+                copy: document.querySelector('input[name="jfw"]:checked').value === "copy", review: q("jf-review").checked};
+  if(!spec.goal){ err.hidden = false; err.textContent = "Say what the job should get done."; return; }
+  if(kind === "command" && !spec.check){ spec.check_kind = "words"; }
+  q("jf-go").disabled = true;
+  try{
+    const parent = await cwEnsureChat();
+    const r = await api("/ui/cowork/job/new", {method: "POST", body: JSON.stringify({parent, job: spec})});
+    cwEl("cwjobform").hidden = true; cwEl("cwinput").value = ""; cwGrow(); CW.tab = "jobs"; await cwLoad(); cwPoll(true);
+    toast("Job started. You can keep chatting while it works.");
+  }catch(e){ err.hidden = false; err.textContent = e.message; q("jf-go").disabled = false; }
+}
+document.addEventListener("change", e => {
+  if(e.target.name === "jfk"){
+    const w = e.target.value === "words";
+    cwEl("jf-cl").textContent = w ? "Describe what “done” looks like (optional)" : "Done when this command succeeds";
+    cwEl("jf-check").placeholder = w ? "e.g. the page loads without console errors" : "python3 -m pytest -q";
+  }
+  if(e.target.name === "fcacc"){
+    const t = cwChat(), which = +cwEl("cwfpop").dataset.w, cur = ((t ? t.folders : CW.extra) || []).map(f => Object.assign({}, f));
+    if(cur[which]){ cur[which].access = e.target.value; cwSaveFolders(cur); }
+  }
+});
+
+/* ---- the workbench: jobs, changes, details */
+function cwWbTabs(chat){
+  const jobs = (chat && chat.jobs) || [], n = jobs.filter(j => ["working", "paused", "queued", "interrupted"].includes(j.state)).length;
+  const cn = Object.entries(CW.chgs).filter(([id]) => jobs.some(j => j.id === id && !["applied", "discarded"].includes(j.copy_state))).reduce((a, [, c]) => a + (c.files || []).length, 0);
+  const tabs = [["jobs", "Jobs", jobs.length ? n || "" : ""], ["changes", "Changes", cn || ""], ["details", "Details", ""]];
+  if(!jobs.length && CW.tab !== "details" && CW.tab !== "changes") CW.tab = "details";
+  if(!CW.tab) CW.tab = jobs.length ? "jobs" : "details";
+  return `<div class="wbtabs" role="tablist">${tabs.map(([k, l, c]) => `<button type="button" role="tab" data-wbtab="${k}" aria-selected="${CW.tab === k}">${l}${c ? `<span class="n">${c}</span>` : ""}</button>`).join("")}</div>`;
+}
+function cwJobsTab(chat){
+  const jobs = (chat && chat.jobs) || [];
+  if(!jobs.length) return `<p class="help" style="margin:0">No jobs yet. A job is a bigger piece of work that keeps going in the background, round after round, until a check you choose passes.${chat && !chat.chat ? ' Use <b>Start a job</b> under the message box.' : " Choose a folder first."}</p>`;
+  return `<div style="display:grid;gap:12px">${jobs.slice().reverse().map(j => cwJobCard(j, CW.jd[j.id], true)).join("")}</div>`;
+}
+function cwChangesTab(chat){
+  const jobs = ((chat && chat.jobs) || []).filter(j => (j.copy ? !["applied", "discarded"].includes(j.copy_state) : j.watched) && CW.chgs[j.id] && CW.chgs[j.id].files.length);
+  if(!jobs.length) return `<p class="help" style="margin:0">Nothing to review. When a job has changed files, they show up here: a job working on a copy waits for you to apply them, and a job working in the folder itself shows what it already changed.</p>`;
+  if(!CW.chgId || !jobs.some(j => j.id === CW.chgId)) CW.chgId = jobs[jobs.length - 1].id;
+  const j = jobs.find(x => x.id === CW.chgId), c = CW.chgs[j.id], busy = ["working", "paused", "queued"].includes(j.state);
+  const sel = CW.sel || (CW.sel = new Set()), ro = !j.copy;
+  return `${jobs.length > 1 ? `<select id="chgjob" aria-label="Job" style="margin-bottom:10px">${jobs.map(x => `<option value="${x.id}" ${x.id === j.id ? "selected" : ""}>${esc(x.title)}</option>`).join("")}</select>` : `<p class="help" style="margin:0 0 8px"><b>${esc(j.title)}</b></p>`}
+    ${busy ? '<p class="help" style="margin:0 0 8px">Still working. Stop or finish the job before applying.</p>' : ""}
+    <div class="chg">${c.files.map(f => `<div class="${f.status}"><div class="row" data-chgfile="${esc(f.path)}">${ro ? "<span></span>" : `<input type="checkbox" data-chgsel="${esc(f.path)}" ${sel.has(f.path) ? "checked" : ""} aria-label="Select ${esc(f.path)}">`}<b>${f.status}</b><span>${esc(f.path)}</span><span class="pm">${f.binary ? "binary" : `+${f.add} −${f.del}`}</span></div>
+      ${CW.diffOpen === j.id + ":" + f.path ? `<div class="diff"><pre>${CW.diffText === undefined ? "Loading…" : CW.diffText}</pre></div>` : ""}</div>`).join("")}</div>
+    ${ro ? '<p class="help" style="margin:10px 0 0">This job worked in your folder itself, so these changes are already there. This list compares the folder with how it was when the job started.</p>' : ""}
+    ${ro ? "" : `<div class="jbtns" style="margin-top:12px"><button class="btn primary" type="button" data-chgapply="${j.id}" ${busy ? "disabled" : ""}>${sel.size ? `Apply ${sel.size} selected` : `Apply all ${c.files.length}`}</button><button class="btn danger" type="button" data-chgdiscard="${j.id}" ${busy ? "disabled" : ""}>Throw away</button></div>
+    <p class="help" style="margin:8px 0 0">Applying copies the files into your folder. A file you changed there since the copy was made is skipped, never overwritten.</p>`}`;
+}
+function cwDetailsTab(t){
+  const cur = cwFind(CW.id), isJob = !!(cur && cur.isJob);
   const folder = t ? (t.chat ? "" : t.cwd) : CW.folder, plain = t ? t.chat : !CW.folder;
   const u = CW.stats && CW.stats.contextUsage, pct = u ? Math.min(100, Math.round(u.percent)) : 0;
   const levels = CW.state && CW.state.model && CW.state.model.reasoning;
   const files = [...CW.files.entries()];
-  el.innerHTML = `
-    <section><h4>Folder</h4><div class="path">${folder ? esc(folder) : "None. Just chatting."}</div><button class="btn" type="button" id="cwside-folder" style="margin-top:8px">${folder ? "Change folder…" : "Work in a folder…"}</button></section>
-    ${plain ? "" : `<section><h4>How careful</h4><div class="cwmodes">${CW_MODES.map(([k, n, d]) => `<label><input type="radio" name="cwmode" value="${k}" ${CW.mode === k ? "checked" : ""}><b>${n}</b><small>${d}</small></label>`).join("")}</div></section>`}
-    ${t && CW.ready ? `<section><h4>Model</h4><select id="cwmodel" aria-label="Model">${CW.ready.models.map(m => `<option ${m === CW.ready.model ? "selected" : ""}>${esc(m)}</option>`).join("")}</select>
+  return `
+    <section><h4>Folder</h4><div class="path">${folder ? esc(folder) : "None. Just chatting."}</div>${isJob ? "" : `<button class="btn" type="button" id="cwside-folder" style="margin-top:8px">${folder ? "Change folder…" : "Work in a folder…"}</button>`}</section>
+    ${plain || isJob ? "" : `<section><h4>How careful</h4><div class="cwmodes">${CW_MODES.map(([k, n, d]) => `<label><input type="radio" name="cwmode" value="${k}" ${CW.mode === k ? "checked" : ""}><b>${n}</b><small>${d}</small></label>`).join("")}</div></section>`}
+    ${CW.id && CW.ready ? `<section><h4>Model</h4><select id="cwmodel" aria-label="Model">${CW.ready.models.map(m => `<option ${m === CW.ready.model ? "selected" : ""}>${esc(m)}</option>`).join("")}</select>
       ${levels ? `<h4 style="margin-top:12px">Thinking</h4><select id="cwthink" aria-label="Thinking">${["off", "low", "medium", "high"].map(l => `<option ${CW.state.thinkingLevel === l ? "selected" : ""}>${l}</option>`).join("")}</select>` : ""}</section>` : ""}
     ${u ? `<section><h4>Memory used</h4><div class="cwmeter ${pct > 80 ? "hot" : ""}"><i style="width:${pct}%"></i></div>
       <p class="help" style="margin:6px 0 8px">${Math.round(u.tokens / 1000)}k of ${Math.round(u.contextWindow / 1000)}k tokens (${pct}%)</p>
@@ -3554,6 +3939,36 @@ function cwRenderSide(){
     ${CW.piVersion ? `<p class="help" style="margin:0">Agent: Pi ${esc(CW.piVersion)}${SU.pi.check && SU.pi.check.update_available ? ` · <a href="#setup" data-go="setup">update available</a>` : ""}</p>` : ""}
     ${plain ? "" : `<section><h4>Files it changed</h4>${files.length ? `<div class="cwfiles">${files.map(([p, op]) => `<div><b>${op === "edited" ? "M" : "A"}</b><span title="${esc(p)}">${esc(p)}</span></div>`).join("")}</div>` : '<p class="help">None yet.</p>'}</section>`}`;
 }
+function cwRenderSide(){
+  const el = cwEl("cwside"), t = cwChat(), cur = cwFind(CW.id);
+  const chip = cwEl("cwmodechip"); chip.hidden = !t || t.chat || !!(cur && cur.isJob); if(t) chip.textContent = (CW_MODES.find(x => x[0] === CW.mode) || [])[1] || "";
+  const hasJobs = !!(t && (t.jobs || []).length);
+  const tabs = CW.id ? cwWbTabs(t) : "";
+  const body = !CW.id ? cwDetailsTab(t) : CW.tab === "jobs" ? cwJobsTab(t) : CW.tab === "changes" ? cwChangesTab(t) : cwDetailsTab(t);
+  const html = tabs + `<div class="wbbody" style="display:grid;gap:18px">${body}</div>`;
+  const keep = el.querySelector("select:focus, input[type=text]:focus");
+  if(keep || el._h === html) return;
+  const sc = el.scrollTop; el._h = html; el.innerHTML = html; el.scrollTop = sc;
+  cwEl("cwtoggle-side").textContent = hasJobs && CW.tab !== "details" ? "Workbench" : "Details";
+}
+async function cwChgDiff(jid, path){
+  const key = jid + ":" + path;
+  if(CW.diffOpen === key){ CW.diffOpen = null; return cwRenderSide(); }
+  CW.diffOpen = key; CW.diffText = undefined; cwRenderSide();
+  try{ const d = await api(`/ui/cowork/job/diff?id=${jid}&path=${encodeURIComponent(path)}`); CW.diffText = cwDiffText(d.text) + (d.truncated ? '<span class="ln">… (cut off)</span>' : ""); }
+  catch(e){ CW.diffText = esc(e.message); }
+  cwRenderSide();
+}
+async function cwChgApply(jid){
+  const only = CW.sel && CW.sel.size ? [...CW.sel] : null;
+  try{
+    const r = await api("/ui/cowork/job/apply", {method: "POST", body: JSON.stringify({id: jid, only})});
+    CW.sel = new Set(); delete CW.chgs[jid]; CW.diffOpen = null;
+    toast(`${r.applied.length} file${r.applied.length === 1 ? "" : "s"} applied to your folder.` + (r.conflicts.length ? ` ${r.conflicts.length} skipped because you changed ${r.conflicts.length === 1 ? "it" : "them"} there: ${r.conflicts.map(c => c.path).join(", ")}.` : ""));
+    await cwLoad(); cwPoll(true);
+  }catch(e){ toast(e.message); }
+}
+
 cwEl("cwside").addEventListener("change", async e => {
   const t = e.target;
   try{
@@ -3571,6 +3986,57 @@ cwEl("cwside").addEventListener("click", e => {
   if(e.target.id === "cwside-skills") show("skills");
   if(e.target.id === "cwcompact"){ cwSend({type: "compact"}).catch(err => toast(err.message)); toast("Making room…"); }
 });
+
+/* ---- clicks on jobs, folders, changes */
+function cwMark(){
+  CW.n++; const i = document.createElement("i"); i.className = "cwmark"; i.dataset.n = CW.n;
+  const m = cwEl("cwmsgs"); m.insertBefore(i, m.querySelector(".cwwork"));
+}
+document.addEventListener("click", async e => {
+  const t = e.target, q = s => t.closest(s); let b;
+  if(!q(".cwchipwrap") && !cwEl("cwfpop").hidden) cwEl("cwfpop").hidden = true;
+  if((b = q("[data-jctl]"))){
+    const a = b.dataset.jctl, id = b.dataset.jid, par = (cwFind(id) || {}).parent;
+    if(a === "remove" && !confirm("Remove this job and its history? Changes you already applied stay in your folder.")) return;
+    b.disabled = true;
+    try{
+      await api("/ui/cowork/job/ctl", {method: "POST", body: JSON.stringify({id, action: a})});
+      if(a === "remove" && CW.id === id && par){ await cwLoad(); cwOpen(par); } else await cwLoad();
+    }catch(err){ toast(err.message); b.disabled = false; }
+    return;
+  }
+  if((b = q("[data-jopen]"))){ cwOpen(b.dataset.jopen); return; }
+  if((b = q("[data-back]"))){ cwOpen(b.dataset.back); return; }
+  if((b = q("[data-jreview]"))){ CW.tab = "changes"; CW.chgId = b.dataset.jreview; CW.sel = new Set(); cwEl("cwside").classList.add("open"); cwPoll(true); cwRenderSide(); return; }
+  if((b = q("[data-wbtab]"))){ CW.tab = b.dataset.wbtab; cwRenderSide(); return; }
+  if((b = q("[data-fc]"))){ if(b.dataset.fc === "add") cwAddFolder(); else cwFolderPop(b.dataset.fc); return; }
+  if(q("[data-fc-change]")){ cwEl("cwfpop").hidden = true; cwPickFolder(); return; }
+  if((b = q("[data-fc-remove]"))){
+    const c = cwChat(), cur = ((c ? c.folders : CW.extra) || []).filter((_, i) => i !== +b.dataset.fcRemove);
+    cwEl("cwfpop").hidden = true; cwSaveFolders(cur); return;
+  }
+  if((b = q("[data-unallow]"))){
+    const c = cwChat();
+    try{ await api("/ui/cowork/allow/remove", {method: "POST", body: JSON.stringify({path: c ? c.cwd : CW.folder, key: b.dataset.unallow})}); cwEl("cwfpop").hidden = true; await cwLoad(); toast("It will ask before running that again."); }catch(err){ toast(err.message); }
+    return;
+  }
+  if(t.matches("[data-chgsel]")){ const s = CW.sel || (CW.sel = new Set()); t.checked ? s.add(t.dataset.chgsel) : s.delete(t.dataset.chgsel); cwRenderSide(); return; }
+  if((b = q("[data-chgfile]"))){ cwChgDiff(CW.chgId, b.dataset.chgfile); return; }
+  if((b = q("[data-chgapply]"))){ b.disabled = true; cwChgApply(b.dataset.chgapply); return; }
+  if((b = q("[data-chgdiscard]"))){
+    if(!confirm("Throw away this copy and its changes? Your folder isn't touched.")) return;
+    try{ await api("/ui/cowork/job/discard", {method: "POST", body: JSON.stringify({id: b.dataset.chgdiscard})}); delete CW.chgs[b.dataset.chgdiscard]; await cwLoad(); }catch(err){ toast(err.message); }
+    return;
+  }
+  if(t.id === "cwjobbtn"){ cwJobForm(); return; }
+  if((b = q("[data-plan2job]"))){ const txt = (b.parentElement._text || "").slice(0, 3000); cwJobForm("Carry out this plan:\n\n" + txt); cwEl("cwjobform").scrollIntoView({block: "nearest"}); return; }
+  if(t.id === "jf-go"){ cwJobGo(); return; }
+  if(t.id === "jf-cancel"){ cwEl("cwjobform").hidden = true; return; }
+  if(q("#hero-chat")){ cwEl("cwinput").focus(); return; }
+  if(q("#hero-folder")){ cwPickFolder(); return; }
+});
+document.addEventListener("change", e => { if(e.target.id === "chgjob"){ CW.chgId = e.target.value; CW.sel = new Set(); CW.diffOpen = null; cwRenderSide(); } });
+document.addEventListener("keydown", e => { if(e.key === "Escape"){ cwEl("cwfpop").hidden = true; if(!cwEl("cwjobform").hidden) cwEl("cwjobform").hidden = true; } });
 
 /* ---- wiring */
 cwEl("cwform").addEventListener("submit", e => { e.preventDefault(); cwSubmit(cwEl("cwinput").value); });
@@ -3593,7 +4059,6 @@ cwEl("cwtasks").addEventListener("click", async e => {
   }
   const b = e.target.closest(".cwtask"); if(b) cwOpen(b.dataset.id);
 });
-setInterval(() => { if(S.view === "cowork" && !document.hidden) cwLoad(); }, 5000);
 CW.folder = store.get("zest.cowork.folder", "") || "";
 
 /* ======================= Diagrams (Mermaid) ======================= */
@@ -3723,7 +4188,7 @@ cwEl("cwinput").addEventListener("keydown", e => {
   else if(e.key === "Tab" || (e.key === "Enter" && !e.shiftKey)){ e.preventDefault(); e.stopImmediatePropagation(); cwPickUse(PK.at); }
   else if(e.key === "Escape") box.hidden = true;
 }, true);
-function cwShow(){ cwLoad(); loadSkills().then(cwRenderSide); if(!CW.id){ cwRenderHero(); cwRenderSide(); } cwEl("cwinput").focus(); }
+function cwShow(){ cwLoad(); cwLive(); loadSkills().then(cwRenderSide); if(!CW.id){ cwRenderHero(); cwRenderSide(); } cwEl("cwinput").focus(); }
 </script>
 </body>
 </html>

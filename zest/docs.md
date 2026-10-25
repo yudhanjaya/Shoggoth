@@ -39,12 +39,11 @@ You can repeat the tour any time: **Help**, then **Run the welcome steps again**
 
 Open **Chat** and type. The first answer takes a little longer because the model has to be loaded into memory. After that, answers start quickly.
 
-- Your conversations are listed on the left. Click one to carry on where you left off, even after closing Zest. To delete one, hover over it and press the cross.
+- Your conversations are listed on the left, with any jobs they started nested underneath. Click one to carry on where you left off, even after closing Zest. To delete one, hover over it and press the cross.
 - Speed: the pill at the top shows how fast the model is writing, in tokens per second. Anything above about 5 is comfortable to read.
 - How it thought: some models think before they answer. A small *How it thought* fold shows that thinking if you are curious.
 - Adding a note: if an answer is taking a while, you can type again. Your note is passed along when the AI is ready for it. Press **Stop** to cancel what it is doing.
-- Details (top right) opens a side panel: the folder, how careful it is, which model is answering, how full its memory is, which skills are on, and which files it has changed.
-- Earlier chats (link at the bottom of the list) holds conversations from before version 3. They stay in your browser and still work.
+- The side panel (top right) has three tabs. **Jobs** shows background jobs, **Changes** shows what a job changed, and **Details** shows the folder, how careful it is, which model is answering, how full its memory is, and which skills are on.
 
 A chat with no folder is a plain conversation. The AI cannot see or change anything on your computer.
 
@@ -60,7 +59,27 @@ Try asking: *"Look through this folder and tell me what it's for"*, *"Write a RE
 
 Every step appears as a small card in the conversation: what it read, what it changed, what it ran, and what came back. Click a card to open it. Edits show the old line and the new line, in red and green.
 
-You can give a conversation a folder at any point, or change its folder from the Details panel. Delete a conversation and the files it changed stay exactly as they are.
+You can give a conversation a folder at any point, or change its folder from the Details tab. To let it see another folder as well, press **+ Folder** at the top. A new folder is **look only** by default: the AI can read it but not change it. Click its label to let it change files there too.
+
+Delete a conversation and the files it changed stay exactly as they are.
+
+## Jobs
+
+A **job** is a bigger piece of work that the AI keeps going on its own while you do something else. Use it when one answer is not enough, such as "make the tests pass" or "tidy up these notes".
+
+Press **Start a job…** under the message box (a chat with a folder only), then fill in:
+
+- **What should it get done?** Describe the goal in plain words.
+- **Done when.** Either a command that succeeds, such as `python3 -m pytest -q`, or a description in your own words. Zest runs the command itself after every round, so it does not depend on the AI saying it is finished.
+- **Limits.** The most rounds and the most time it may use.
+- **Where it works.** The safe choice is **a copy**: your folder stays untouched while the job runs. Choose **the folder itself** only for something you can roll back.
+- **Wait for my OK after each round**, if you want to look in between.
+
+The job appears as a card in the conversation and under its chat in the list. The card shows the round, how the check is going, and what the AI is doing right now. You can **Pause**, **Resume** or **Stop** it, or **Open** it to read everything it did and add a note for the next round. A job also stops by itself if the check stops improving, so it does not go round in circles.
+
+When a job on a copy finishes, open the **Changes** tab. Click a file to see exactly what changed, tick the ones you want, and press **Apply**. A file you changed yourself in the meantime is skipped, never overwritten. **Throw away** deletes the copy. For a job that worked in the folder itself, the tab shows what changed, but the changes are already there.
+
+If you close Zest while a job is working, it comes back as **Interrupted** and **Continue** picks up where it stopped. Zest stays open while a job is working, even if you close the tab.
 
 Smaller models make mistakes. They can misread a file, invent details, or fail to use a tool at all. That is why Zest asks before it acts, and why it is worth trying a folder you have a copy of first.
 
@@ -70,12 +89,14 @@ Under **How careful** in the Details panel, choose how much the AI may do withou
 
 | Setting | What happens |
 | --- | --- |
-| **Ask first** (the usual) | It may look at things freely. Before every edit, new file or command, a card asks you: **Allow**, **Allow for this session**, or **Don't allow**. |
+| **Ask first** (the usual) | It may look at things freely. Before every edit, new file or command, a card asks you: **Allow**, **Allow for this session**, or **Don't allow**. For a command you can also choose **Always allow**. |
 | **Edit freely** | Edits to files inside the folder go ahead without asking. Commands, and anything outside the folder, still ask. |
 | **Do everything** | It never asks. Use this only for a folder you can afford to lose. |
 | **Look only** | It can read and propose, but cannot change anything. Good for "review this and tell me what you'd do". |
 
 You can change the setting while a task is running. If the AI asks permission outside the folder you chose, the card says so in plain words.
+
+**Always allow** remembers a command for that folder, such as `python3 -m pytest`, so it stops asking. It only counts when the whole line is made of commands you allowed, and it is never offered for commands that can do anything, like `rm`, `curl` or `sh`. To take one back, click the folder name at the top and press **Remove**. A folder set to **look only** can never be changed, in any setting except **Do everything**.
 
 These questions help, but they cannot stop a harmful command that you allow. If you allow a command, it runs with your own permissions, the same as if you had typed it. Read what the card shows before pressing Allow, and keep copies of anything precious.
 
@@ -135,7 +156,7 @@ Everything in **Advanced** is optional.
 
 Everything stays on your computer.
 
-- **Conversations and what the AI did** are saved in Zest's own folder (`~/.local/share/zest/cowork/`). Older chats are in your browser.
+- **Conversations and what the AI did** are saved in Zest's own folder (`~/.local/share/zest/cowork/`). That includes the copies that jobs work on until you apply or throw them away.
 - **Skills you added** are in `~/.local/share/zest/skills/`.
 - **Newer versions of Pi** that you download are in `~/.local/share/zest/pi/`.
 - **Models** are in the Hugging Face cache (`~/.cache/huggingface/hub`), or the folder you chose.
@@ -151,7 +172,7 @@ Zest goes online only to: download models you ask for, check for Lemonade and Pi
 
 **It printed something that looks like code instead of doing the task.** The model did not manage to use its tools. Try asking again more simply, or switch to a stronger model in the Details panel.
 
-**It keeps asking permission.** That is *Ask first* doing its job. Choose **Allow for this session** for that kind of action, or switch to **Edit freely** for a folder you trust.
+**It keeps asking permission.** That is *Ask first* doing its job. Choose **Allow for this session** for edits, **Always allow** for a command you run often, or switch to **Edit freely** for a folder you trust.
 
 **A diagram did not draw.** Press **Ask the model to fix it**. If it still fails, ask for a simpler diagram with fewer boxes.
 
@@ -171,3 +192,4 @@ Zest goes online only to: download models you ask for, check for Lemonade and Pi
 - **Tool**: something the AI can use, such as reading a file or running a command.
 - **Backend (or engine)**: the program that runs a model on your hardware (CUDA, Vulkan, ROCm, processor).
 - **Folder (task)**: a conversation where the AI works in a folder you chose.
+- **Job**: a goal the AI works on in the background, round after round, until a check you chose passes.

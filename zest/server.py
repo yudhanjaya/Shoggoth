@@ -25,6 +25,7 @@ sys.path.insert(0, HERE)          # the AppImage runs Python in isolated mode, w
 
 import agent       # noqa: E402
 import engine      # noqa: E402
+import folders     # noqa: E402
 import gateway     # noqa: E402
 import hardware    # noqa: E402
 import hf          # noqa: E402
@@ -37,7 +38,7 @@ import store       # noqa: E402
 import util        # noqa: E402
 from util import cached, invalidate, run   # noqa: E402
 
-VERSION = "3.1.0"
+VERSION = "3.2.0"
 _last_ping = {"t": None}
 FORCED = {"addr": None}           # set by --lemonade: use exactly that server and skip the setup screen
 LOOPBACK_ONLY = {"on": True}
@@ -242,6 +243,15 @@ class Handler(BaseHTTPRequestHandler):
             self.send_json({"models": agent.chat_models()})
         elif p == "/ui/cowork/stream":
             self.cowork_stream(parse_qs(u.query))
+        elif p == "/ui/cowork/live":
+            self.cowork_live(parse_qs(u.query))
+        elif p.startswith("/ui/cowork/job"):
+            self.get_cowork_job(p, parse_qs(u.query))
+        elif p == "/ui/cowork/folder/info":
+            try:
+                self.send_json(folders.info(parse_qs(u.query).get("path", [""])[0]))
+            except ValueError as e:
+                self.send_json({"error": str(e)}, 400)
         elif p == "/ui/logs":
             n = min(max(int(parse_qs(u.query).get("n", ["200"])[0]), 10), 1000)
             self.send_json({"lines": read_logs(n)})
@@ -273,7 +283,11 @@ class Handler(BaseHTTPRequestHandler):
             "/ui/cowork/cmd": self.post_cowork_cmd, "/ui/cowork/answer": self.post_cowork_answer,
             "/ui/cowork/mode": self.post_cowork_mode, "/ui/cowork/delete": self.post_cowork_delete,
             "/ui/cowork/rename": self.post_cowork_rename, "/ui/cowork/context": self.post_cowork_context,
-            "/ui/cowork/model": self.post_cowork_model, "/ui/cowork/folder": self.post_cowork_folder, "/ui/skills/install": self.post_skills_install, "/ui/pi/check": self.post_pi_check,
+            "/ui/cowork/model": self.post_cowork_model,
+            "/ui/cowork/job/new": self.post_job_new, "/ui/cowork/job/ctl": self.post_job_ctl,
+            "/ui/cowork/job/apply": self.post_job_apply, "/ui/cowork/job/discard": self.post_job_discard,
+            "/ui/cowork/folders": self.post_cowork_folders, "/ui/cowork/seen": self.post_cowork_seen,
+            "/ui/cowork/allow/remove": self.post_allow_remove, "/ui/cowork/folder": self.post_cowork_folder, "/ui/skills/install": self.post_skills_install, "/ui/pi/check": self.post_pi_check,
             "/ui/pi/update": self.post_pi_update, "/ui/pi/use": self.post_pi_use,
             "/ui/skills/remove": self.post_skills_remove, "/ui/skills/toggle": self.post_skills_toggle,
             "/ui/models/storage": self.post_storage, "/ui/models/imports": self.post_imports,
@@ -482,7 +496,7 @@ class Handler(BaseHTTPRequestHandler):
 
     # ---- Cowork: the Pi agent
     def post_cowork_new(self, body):
-        t = agent.create(body.get("cwd"), body.get("mode", "ask"), str(body.get("model", "")))
+        t = agent.create(body.get("cwd"), body.get("mode", "ask"), str(body.get("model", "")), body.get("folders"))
         self.send_json({"ok": True, "task": t})
 
     def post_cowork_cmd(self, body):
@@ -495,6 +509,15 @@ class Handler(BaseHTTPRequestHandler):
             return self.send_json({"ok": False, "error": "That question was already answered."}, 409)
         rec = {"type": "extension_ui_response", "id": a["id"]}
         rec.update({k: a[k] for k in ("value", "confirmed", "cancelled") if k in a})
+        asked = s.pending.get(a["id"]) or {}
+        val = str(a.get("value", ""))
+        if val.startswith("Always allow "):
+            try:
+                key = (json.loads(asked.get("title", "{}")) or {}).get("key") or ""
+            except ValueError:
+                key = ""
+            if key and val == "Always allow " + key:
+                agent.remember_allow(str(body.get("id", "")), key)
         s.answer(rec)
         self.send_json({"ok": True})
 
@@ -562,6 +585,66 @@ class Handler(BaseHTTPRequestHandler):
         agent._update_meta(sid, model=str(body.get("model", "")))
         self.send_json({"ok": True})
 
+    def get_cowork_job(self, p, q):
+        jid = q.get("id", [""])[0]
+        try:
+            if p == "/ui/cowork/job":
+                self.send_json(agent.job_detail(jid))
+            elif p == "/ui/cowork/job/changes":
+                self.send_json(agent.job_changes(jid))
+            elif p == "/ui/cowork/job/diff":
+                self.send_json(agent.job_diff(jid, q.get("path", [""])[0]))
+            else:
+                self.send_json({"error": "not found"}, 404)
+        except ValueError as e:
+            self.send_json({"error": str(e)}, 400)
+
+    def post_job_new(self, body):
+        t = agent.create_job(str(body.get("parent", "")), body.get("job") or {})
+        self.send_json({"ok": True, "id": t["id"]})
+
+    def post_job_ctl(self, body):
+        self.send_json(agent.ctl_job(str(body.get("id", "")), str(body.get("action", ""))))
+
+    def post_job_apply(self, body):
+        only = body.get("only")
+        self.send_json(dict(agent.job_apply(str(body.get("id", "")), only if isinstance(only, list) else None), ok=True))
+
+    def post_job_discard(self, body):
+        self.send_json(agent.job_discard(str(body.get("id", ""))))
+
+    def post_cowork_folders(self, body):
+        agent.set_folders(str(body.get("id", "")), body.get("folders") or [])
+        self.send_json({"ok": True})
+
+    def post_cowork_seen(self, body):
+        agent.seen(str(body.get("id", "")))
+        self.send_json({"ok": True})
+
+    def post_allow_remove(self, body):
+        folders.allow_remove(str(body.get("path", "")), str(body.get("key", "")))
+        agent.restart_idle()      # idle chats restart on their next message and pick up the shorter list
+        self.send_json({"ok": True})
+
+    def cowork_live(self, q):
+        """One stream for the whole sidebar: the task list, sent again whenever anything in it changes."""
+        self.send_response(200)
+        self.send_header("Content-Type", "text/event-stream")
+        self.send_header("Cache-Control", "no-store")
+        self.end_headers()
+        ver = -1
+        try:
+            while True:
+                cur = agent.wait_change(ver, 15)
+                if cur == ver:
+                    self.wfile.write(b": ping\n\n")
+                else:
+                    ver = cur
+                    self.wfile.write(b"data: " + json.dumps(agent.state()).encode() + b"\n\n")
+                self.wfile.flush()
+        except OSError:
+            pass
+
     def cowork_stream(self, q):
         """Server-sent events: everything the agent does, from the cursor the page last saw."""
         try:
@@ -607,6 +690,8 @@ def watchdog(srv, grace):
     started = time.time()
     while True:
         time.sleep(5)
+        if agent.busy():
+            continue              # a job is running or waiting on you: stay open even with the tab closed
         last = _last_ping["t"]
         if (last and time.time() - last > grace) or (not last and time.time() - started > 300):
             srv.shutdown()
@@ -640,6 +725,7 @@ def main():
     srv.daemon_threads = True
 
     agent.set_zest_port(a.port)
+    agent.recover()
     piup.on_installed.append(agent.restart_idle)
     threading.Thread(target=agent.reaper, daemon=True).start()
     s = store.load()

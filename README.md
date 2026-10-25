@@ -6,14 +6,15 @@ The idea is to provide a user interface that people who aren't necessarily steep
 
 ![Zest chat](docs/screenshots/chat.png)
 
-*This shows the earlier chat window. The new Chat page looks similar and adds a side panel for the folder, how careful the model is, and which skills are on.*
+*Chat, with a side panel for the folder, how careful the model is, and which skills are on.*
 
-**Contents:** [What you can do](#what-you-can-do-with-zest) · [Install and run](#install-and-run) · [Finding your way around](#finding-your-way-around) · [Your first conversation](#your-first-conversation) · [Choosing and managing models](#choosing-and-managing-models) · [Skills](#skills) · [Use your models in other apps](#use-your-models-in-other-apps) · [Keeping everything up to date](#keeping-everything-up-to-date) · [Advanced tools](#advanced-tools) · [Your data and privacy](#your-data-and-privacy) · [Screenshots](#screenshots) · [For developers](#for-developers) · [What is new in version 3](#what-is-new-in-version-3)
+**Contents:** [What you can do](#what-you-can-do-with-zest) · [Install and run](#install-and-run) · [Finding your way around](#finding-your-way-around) · [Your first conversation](#your-first-conversation) · [Choosing and managing models](#choosing-and-managing-models) · [Skills](#skills) · [Use your models in other apps](#use-your-models-in-other-apps) · [Keeping everything up to date](#keeping-everything-up-to-date) · [Advanced tools](#advanced-tools) · [Your data and privacy](#your-data-and-privacy) · [Screenshots](#screenshots) · [For developers](#for-developers)
 
 ## What you can do with Zest
 
 - **Chat with an AI that runs on your own computer.** Nothing you type leaves it.
 - **Let it work on your files.** Choose a folder and the model can read, search, edit and run things there while you watch. It asks before it changes anything.
+- **Hand it a bigger job.** A job keeps working in the background, round after round, and checks its own progress. You review what it changed before anything touches your folder.
 - **Draw diagrams and write documents.** Ask for a picture or a README and get one, shown right in the chat.
 - **Teach it new tricks with skills.** Short instruction sheets that make small models far more dependable. Add more by pasting a link.
 - **Pick and manage models.** Zest tells you which ones will run comfortably on your computer and downloads them for you.
@@ -68,7 +69,9 @@ The left-hand menu has six places. Everything a newcomer needs is in the first f
 
 Open **Chat** and type. The first answer takes a little longer because the model has to be loaded into memory.
 
-**Chat** runs on [Pi](https://pi.dev), a coding-agent harness that ships inside Zest. Ask anything and it answers like a normal chat. Press **Work in a folder…** and the same conversation becomes a co-working session: the model reads, searches, edits and runs commands in that folder while you watch, and asks before it changes anything (tool cards show each step; edits show a diff). Choose how careful it is per task (**Ask first**, **Edit freely**, **Do everything**, **Look only**), switch models, watch how much of the context window is used, and add notes while it works. Tasks are saved and pick up where they left off. See [docs/COWORK.md](docs/COWORK.md). Conversations from before version 3 are under **Earlier chats**.
+**Chat** runs on [Pi](https://pi.dev), a coding-agent harness that ships inside Zest. Ask anything and it answers like a normal chat. Press **Work in a folder…** and the same conversation becomes a co-working session: the model reads, searches, edits and runs commands in that folder while you watch, and asks before it changes anything (tool cards show each step; edits show a diff). Choose how careful it is per chat (**Ask first**, **Edit freely**, **Do everything**, **Look only**), add more folders it can look at or change, switch models, watch how much of the context window is used, and add notes while it works.
+
+For bigger work, press **Start a job…**. Say what should get done and how Zest can tell it is done, such as a test command that passes. The job runs in the background, round after round, and stops when the check passes, when it hits its round or time limit, or when it stops making progress. By default it works on a copy of your folder; the **Changes** tab shows what it changed and you apply what you want. Jobs are listed under their chat, and you can keep chatting while they work. Chats and jobs are saved and pick up where they left off. See [docs/COWORK.md](docs/COWORK.md).
 
 ## Choosing and managing models
 
@@ -160,8 +163,8 @@ A few things work differently with a Lemonade you run yourself: Zest can't updat
 | Models you download | the Hugging Face cache, or the folder you chose |
 | Skills you added and which are switched on | `~/.local/share/zest/skills/` |
 | Newer versions of Pi that you downloaded | `~/.local/share/zest/pi/<version>/` |
-| Chat conversations, their transcripts and Pi's configuration (rewritten at each start) | `~/.local/share/zest/cowork/` |
-| Earlier chats (before version 3) and display preferences | your browser's local storage |
+| Chat conversations, jobs, their transcripts, the folders Zest has worked in (and the commands you always allow there), work copies of folders awaiting review, and Pi's configuration (rewritten at each start) | `~/.local/share/zest/cowork/` |
+| Display preferences | your browser's local storage |
 
 (`XDG_CONFIG_HOME` and `XDG_DATA_HOME` are respected.) To start from scratch, delete `~/.config/zest` and `~/.local/share/zest`. Downloaded models are not in there unless you chose a folder inside it.
 
@@ -179,16 +182,14 @@ Zest and Lemonade do contact the following services:
 
 ## Screenshots
 
-### Earlier chats
+### Chat
 
-The window Zest used before version 3. Conversations from then are kept in your browser, under **Chat > Earlier chats**. The screenshots in this section predate the move to Pi, so the new Chat, Skills, Docs and update panels are not shown yet.
-
-- It has streaming replies, markdown and code blocks with copy buttons, a collapsible "how it thought" panel for reasoning models, and everyday starter questions. Those conversations are kept in your browser.
+- Streaming replies, markdown and code blocks with copy buttons, and a collapsible "how it thought" panel for reasoning models.
 - **Speed** While a reply is being written, the chat shows the phase (**Loading the model**, **Reading your message**, **Thinking**, **Writing**), a live tokens-per-second figure, a plain word for it (**Very fast**, **Fast**, **Comfortable reading speed**, **Slow**, **Very slow**; about 5 tokens a second is a comfortable reading pace) and a small graph of the speed through the answer. When it finishes, the footer keeps the speed and graph, the tokens, the time to the first token, how fast the model read your message, which model and backend answered, and how much of the context window the conversation uses (for example "Conversation: 34k of 128k"). The status pill at the top shows the live speed too, including for other apps using the Server (marked with a ~ because it is estimated). Each downloaded model card remembers how fast it has been on this computer ("Fast, about 62 tok/s").
 
 ![Chat](docs/screenshots/chat.png)
 
-In that window, the footer of each reply shows how fast it was written, how fast the model read your message, which model answered and how much of the context window is used. While a reply is being written the same row updates live, with a graph, and the status pill at the top shows the speed.
+The footer of each reply shows how fast it was written, how fast the model read your message, which model answered and how much of the context window is used. While a reply is being written the same row updates live, with a graph, and the status pill at the top shows the speed.
 
 ![Reply with speed footer](docs/screenshots/chat-speed.png)
 
@@ -335,18 +336,6 @@ Zest is a small Python program with no dependencies (`zest/server.py` plus a few
 This downloads a relocatable Python, Node.js, the Pi agent, Lemonade's official embeddable build, and `appimagetool` (all pinned by SHA-256), assembles the image and writes `dist/Zest-<version>-x86_64.AppImage` plus a checksum. To bundle a newer Lemonade, change the version and checksum at the top of the script. Pushing a tag that starts with `v` runs the same script in GitHub Actions and attaches the result to the release.
 
 To cut a release: bump `VERSION` in `zest/server.py`, then `git tag vX.Y.Z && git push --tags`.
-
-## What is new in version 3
-
-Zest 3 turns the chat window into a co-working space.
-
-- **Chat is now an agent:** the same conversation can be plain Q&A or a model working in a folder you choose, with tool cards for every step, diffs for every edit, and a permission card before anything changes. Four levels of care, from *Ask first* to *Look only*.
-- **Skills:** short instruction sheets that make small models far more dependable. Superpowers, diagrams and Markdown writing come built in; add more by pasting a GitHub link.
-- **Diagrams in the chat:** ask for a picture and it is drawn, with copy and save buttons, and a one-press "fix it" if the model got the syntax wrong.
-- A **Docs** tab that explains how everything works in plain language, inside the app.
-- Tables, links and quotes in replies, and chats that are saved on disk and pick up where they left off.
-
-Chats from before version 3 are kept under **Earlier chats**.
 
 ## Zest is built on:
 

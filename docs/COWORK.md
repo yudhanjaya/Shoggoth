@@ -1,6 +1,6 @@
 # Chat and Cowork
 
-From version 3 the Chat page is a front end for [Pi](https://pi.dev), the minimal coding-agent harness. One conversation can be plain Q&A or an agent working in a folder; the page, the saved list and the transcript are the same.
+The Chat page is a front end for [Pi](https://pi.dev), the minimal coding-agent harness. One conversation can be plain Q&A or an agent working in a folder; the page, the saved list and the transcript are the same.
 
 ## How the pieces fit
 
@@ -23,6 +23,23 @@ Zest /api/v1 (proxy, so it shows on the Server page) ──► Lemonade ──�
 - **Packaging:** the AppImage carries Node 22 (binary only) and Pi's self-contained bundle plus `jiti`, all pinned by checksum. Running from source uses `ZEST_PI` or `pi` on the PATH.
 - **Updating Pi:** `zest/piup.py`, shown under Advanced > Setup guide, works like the Lemonade update. It asks the npm registry for the latest release, downloads the tarball and the exact `jiti` version that release depends on, checks both against npm's sha512 integrity, unpacks them to `~/.local/share/zest/pi/<version>/`, and starts the new Pi once in RPC mode with Zest's extensions loaded. Only a Pi that passes is offered; otherwise nothing is installed. The copy that came with the AppImage is never touched, the two newest downloads are kept, and *Go back to the version that came with Zest* pins the bundled one. A new major version is not offered, since Zest has not been checked against it, and neither is a release that needs a newer Node than the bundled one. Idle tasks restart on their next message and pick up the new Pi; a task that is working finishes on the old one.
 
+## Chats, jobs and folders
+
+A **chat** is a conversation, optionally in a folder (plus extra folders that are *Can change* or *Look only*). A **job** is a goal a chat hands off to run in the background. Each job is a task of its own: its own Pi process, its own transcript, parented to the chat that started it. Jobs are listed under their chat in the sidebar and as a card in the thread, anchored where the chat was when it started (`after_msgs`).
+
+- **Rounds:** a small orchestrator thread per job (`_job_loop` in `agent.py`) prompts Pi, waits for `agent_settled`, then runs the check itself. The model never decides when to stop. A check is either a command run in the job's folder (exit 0 means done; a trailing "N failed" count feeds the sparkline) or, for "in my words", the model ending a round with `STATUS: DONE`.
+- **Limits:** a job stops after its round limit, its time limit (only time spent working counts), or when the failure count has not fallen for three rounds. Pause finishes nothing: it aborts the round in progress and the same round runs again on resume. "Wait for my OK after each round" pauses with `wait_reason: review`, which the sidebar shows as needing you.
+- **Work on a copy** (the default): `workcopy.py` copies the folder (leaving out `.git` unless small, `node_modules`, virtualenvs, build output) to `cowork/copies/<job>/work`, keeps a pristine copy of small files in `base/` and a signature of every file in `manifest.json`. **Changes** compares the copy to that record, so the user's repo is never touched and needs no git. **Apply** copies files back and refuses any file the user edited in the meantime. Folders over 30,000 files or 300 MB are not copied; the job form offers to work in the folder itself.
+- **Work in the folder itself:** one such job per folder runs at a time; a second waits (`queued`). Zest records the folder when the job starts (`workcopy.snapshot`, no copy), so **Changes** can still list what the job changed, read-only, since those changes are already in place.
+- **Memory of trust:** `folders.py` keeps per-folder trust in `cowork/folders.json`: the approval mode a new chat there starts in and the commands the user chose **Always allow**. `zest-gate.js` reads them from `ZEST_ALLOW` and only honours a remembered command when the whole line is built from allowed commands joined by `&&`, `||`, `;` or `|`. Substitution, redirection, backticks, backslashes, newlines and `&` make a line unparseable, so it asks. Programs that can run anything (`sh`, `curl`, `rm`, `ssh`, `docker`, `env`…) are never offered. `python`, `npm`, `git` and similar are remembered together with their subcommand (`python3 -m pytest`, `npm run build`), not alone.
+- **Look only** folders are enforced in the gate in every mode except Do everything: an edit there is refused with a reason the model can relay. Like the rest of the gate it is a prompt-level guard, not a sandbox.
+- **Live updates:** `GET /ui/cowork/live` streams the whole sidebar state whenever anything in it changes (no polling). The tab title shows how many things wait for the user.
+- **Closing Zest:** the watchdog does not quit while a job is working or a question is unanswered. If Zest is stopped anyway, jobs that were working are marked *interrupted* at the next start, and **Continue** resumes them from the transcript with the time already spent kept.
+- **Plan to job:** in Look only mode, a long answer gets a **Run this plan as a job…** button that opens the job form with the plan as the goal.
+- **Telling the chat:** when a job ends, a short note is queued and added (hidden, in `<zest-note>` tags) to the chat's next message so the model knows what happened.
+
+Routes added: `GET /ui/cowork/live`, `/ui/cowork/job`, `/ui/cowork/job/changes`, `/ui/cowork/job/diff`, `/ui/cowork/folder/info`; `POST /ui/cowork/job/new`, `/job/ctl` (pause, resume, continue, stop, remove), `/job/apply`, `/job/discard`, `/ui/cowork/folders`, `/ui/cowork/seen`, `/ui/cowork/allow/remove`.
+
 ## Skills
 
 `zest/skills.py` owns them. Bundled sets live in `zest/skills/<set>/` (each with a `set.json` and a `skills/` folder); sets installed from a link live in `~/.local/share/zest/skills/sets/`, with the on/off choices in `state.json`.
@@ -40,8 +57,8 @@ Pi Durable is an experimental TypeScript library for hosting many crash-recovera
 
 ## Not built yet
 
-- Opening a changed file or showing a task-wide diff (the side panel lists files; diffs appear in each Edit card).
+- Undoing a live job's changes (they can be seen but not reverted from the page).
+- Several jobs in one folder running together (live jobs take turns; copy jobs can run side by side but their changes are applied one at a time).
 - Images in the composer (Pi accepts them; Zest does not send any).
 - Prompt templates and MCP servers from a Zest settings page. Pi reads its own agent directory; Zest rewrites only `models.json` and `settings.json` there.
 - Skills from places other than GitHub (npm, plain URLs, a local folder), and updating an installed set in place (adding the link again replaces it).
-- Importing the old browser-stored chats into Pi sessions.

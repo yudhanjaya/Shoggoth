@@ -159,19 +159,30 @@ def toggle_set(sid, enabled):
 
 # ---------------------------------------------------------------- what Pi gets
 def live_dir():
-    """A folder of links to the enabled skills; Pi loads skills from here and nowhere else."""
+    """A folder of links to the enabled skills; Pi loads skills from here and nowhere else.
+
+    Updated in place, never emptied and rebuilt: other tasks (a job running in the background, say) may be reading
+    skills from this folder while a new task starts."""
     d = os.path.join(store.data_dir(), "cowork", "skills-live")
-    shutil.rmtree(d, ignore_errors=True)
     os.makedirs(d, exist_ok=True)
-    count = 0
+    off = set(_state()["disabled"])
+    want = {}
     for sid, folder, _ in _set_dirs():
-        off = set(_state()["disabled"])
         for name, path in _skills_in(folder):
-            if "%s/%s" % (sid, name) in off:
-                continue
-            os.symlink(path, os.path.join(d, "%s__%s" % (sid, name)))
-            count += 1
-    return d, count
+            if "%s/%s" % (sid, name) not in off:
+                want["%s__%s" % (sid, name)] = path
+    for entry in os.listdir(d):
+        link = os.path.join(d, entry)
+        if entry not in want or not os.path.islink(link) or os.readlink(link) != want[entry]:
+            try:
+                os.remove(link) if os.path.islink(link) or os.path.isfile(link) else shutil.rmtree(link)
+            except OSError:
+                pass
+    for entry, path in want.items():
+        link = os.path.join(d, entry)
+        if not os.path.lexists(link):
+            os.symlink(path, link)
+    return d, len(want)
 
 
 def bootstrap():
