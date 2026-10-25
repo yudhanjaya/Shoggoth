@@ -90,6 +90,15 @@ export default function (pi) {
 
   pi.on("tool_call", async (event, ctx) => {
     const tool = event.toolName;
+    // A web search reads nothing on this computer but sends the person's words to a search engine, so it asks in every mode
+    // except "auto" (including read-only plan mode), and "Allow for this session" covers the rest of the conversation.
+    if (tool === "web_search" && mode !== "auto" && !granted.has(tool)) {
+      const query = String((event.input && event.input.query) || "");
+      const choice = await ctx.ui.select(JSON.stringify({ tool, what: query, outside: false, folder: home, key: null }), [ALLOW, SESSION, DENY]);
+      if (choice === SESSION) granted.add(tool);
+      if (choice === ALLOW || choice === SESSION) return undefined;
+      return { block: true, reason: "The user did not allow this search. Answer from what you know, or ask what they would like instead." };
+    }
     if (READ_ONLY.has(tool) || mode === "auto") return undefined;
 
     if (mode === "plan") {

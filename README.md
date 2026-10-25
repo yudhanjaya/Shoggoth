@@ -12,7 +12,7 @@ The idea is to provide a user interface that people who aren't necessarily steep
 
 ## What you can do with Zest
 
-- **Chat with an AI that runs on your own computer.** Nothing you type leaves it.
+- **Chat with an AI that runs on your own computer.** Nothing you type leaves it, unless you let the model search the web: it asks first, every time.
 - **Let it work on your files.** Choose a folder and the model can read, search, edit and run things there while you watch. It asks before it changes anything.
 - **Hand it a bigger job.** A job keeps working in the background, round after round, and checks its own progress. You review what it changed before anything touches your folder.
 - **Draw diagrams and write documents.** Ask for a picture or a README and get one, shown right in the chat.
@@ -170,10 +170,11 @@ A few things work differently with a Lemonade you run yourself: Zest can't updat
 
 ### Privacy
 
-Nothing you type into a chat leaves your computer. A chat with a folder runs entirely locally: Pi is started offline, with telemetry and update checks off, and talks only to your Lemonade. If you add your own extensions, MCP servers or web tools to Pi, those can reach the network.
+Nothing you type into a chat leaves your computer, with one exception you control: the model has a **web search** tool, and every search asks first, showing the exact words it wants to search for. Those words, and only those, go to the search provider. You can switch it off for good in the chat's Details panel. The default is DuckDuckGo, which needs no key but has no official search service, so it can refuse automated searches; Zest makes one request per search, never retries, and then tells you to get a free [Brave Search](https://brave.com/search/api/) or [Tavily](https://app.tavily.com/) key, which you paste into the same panel (it is stored in Zest's settings file on this computer). A chat with a folder runs locally apart from that: Pi is started offline, with telemetry and update checks off, and talks only to your Lemonade. If you add your own extensions, MCP servers or web tools to Pi, those can reach the network.
 
 Zest and Lemonade do contact the following services:
 
+- **html.duckduckgo.com, api.search.brave.com or api.tavily.com**: only when you allow the model to search the web, whichever provider you chose, with the words of that search.
 - **codeload.github.com**: only when you paste a link under Skills, to download that repository's skills.
 - **registry.npmjs.org**: looking for and downloading Pi updates (the same automatic-check switch covers it).
 - **api.github.com and github.com**: looking for and downloading Lemonade updates (the automatic check can be switched off), and Lemonade downloading the backends you install.

@@ -782,6 +782,8 @@ h4.sub{margin:10px 0 0;font:600 13px var(--sans);color:var(--muted);text-transfo
 .cwthink.live .tk{white-space:pre-wrap;overflow-wrap:anywhere}
 .cwthink .tk>:first-child{margin-top:0}.cwthink .tk>:last-child{margin-bottom:0}
 .cwprep{display:flex;align-items:center;color:var(--faint);font-size:13px;margin:0 0 .8em}
+.cwskey{display:flex;gap:8px;margin-top:10px}.cwskey input{flex:1;min-width:0;min-height:38px;border:1px solid var(--line);border-radius:10px;background:var(--surface);padding:0 10px}
+#cwsearchsec.flash{animation:flashbg 1.8s}@keyframes flashbg{0%,60%{background:var(--lemon-wash);box-shadow:0 0 0 8px var(--lemon-wash)}100%{background:none;box-shadow:none}}
 .cwcut{display:flex;gap:12px;align-items:center;flex-wrap:wrap;margin:.4em 0 0}
 .cwcut .cwnote{margin:0}
 /* the model bar: which model, how much context, in memory or not */
@@ -2755,7 +2757,7 @@ document.addEventListener("click", e => { if(e.target.closest("[data-pick]")){ e
 /* ======================= help + advanced hub ======================= */
 const FAQ = [
   ["What is a model?", "A model is the AI that answers you. It is a big file, usually a few gigabytes, that lives on this computer. Bigger models tend to write better but need a stronger computer and answer more slowly. Zest marks each one as comfortable, snug or too big for your machine."],
-  ["Is my data private?", "Yes. Zest and the models run on this computer. Your conversations are saved on this computer, in Zest's own folder, and are never sent anywhere. Zest only goes online to download a model you ask for, check for Lemonade updates, or fetch skills when you paste a link. The <a href=\"#docs\" data-go=\"docs\">Docs</a> page explains where everything is kept."],
+  ["Is my data private?", "Yes. Zest and the models run on this computer. Your conversations are saved on this computer, in Zest's own folder, and are never sent anywhere. Zest only goes online to download a model you ask for, check for Lemonade updates, fetch skills when you paste a link, or search the web when you allow the model to (it asks first, every time, and you can switch it off in the chat's Details panel). The <a href=\"#docs\" data-go=\"docs\">Docs</a> page explains where everything is kept."],
   ["Why is the first answer slow?", "The model has to be loaded into your computer's memory before it can answer. That takes a few seconds to a minute, depending on its size. After that, answers start right away."],
   ["How do I know which model to use?", "It depends on your computer and what you want to do. Start with <b>My picks</b> on the Models page, where I explain each recommendation. <b>More models</b> shows the rest, hiding anything that won't run well. <p><button class=\"btn\" type=\"button\" data-pick>Show me how to compare models</button></p>"],
   ["What is the context window?", "It is how much of the conversation a model can see at once. Zest uses <b>128k</b> tokens (about 100,000 words) by default, which is a good threshold for usefulness in long chats and agentic work. You can change it for one model under <b>Details</b>, then <b>Settings for this model</b>. A bigger window needs more graphics memory."],
@@ -3363,7 +3365,7 @@ const CW_MODES = [
   ["auto", "Do everything", "Never asks. Only for a folder you can afford to lose."],
   ["plan", "Look only", "Read-only. It can explore and propose, but not change anything."],
 ];
-const CW_TOOLS = {read: "Read", write: "Write", edit: "Edit", bash: "Run", grep: "Search", find: "Find", ls: "List"};
+const CW_TOOLS = {read: "Read", write: "Write", edit: "Edit", bash: "Run", grep: "Search", find: "Find", ls: "List", web_search: "Web"};
 const cwEl = id => document.getElementById(id);
 const cwDir = p => String(p || "").replace(/\/+$/, "").split("/").pop() || "/";
 
@@ -3389,7 +3391,7 @@ async function cwLoad(){
 }
 function cwApply(r){
   const prev = new Map(); CW.tasks.forEach(t => (t.jobs || []).forEach(j => prev.set(j.id, j.state)));
-  CW.tasks = r.tasks; CW.pi = r.pi; CW.piVersion = r.pi && r.pi.version; CW.recent = r.folders || [];
+  CW.tasks = r.tasks; CW.pi = r.pi; CW.search = r.search || {enabled: true, provider: "duckduckgo"}; CW.piVersion = r.pi && r.pi.version; CW.recent = r.folders || [];
   const need = CW.tasks.reduce((n, t) => n + (t.need || 0), 0);
   document.title = (need ? `(${need}) ` : "") + CW.title0.replace(/^\(\d+\) /, "");
   if(need > CW.needSeen) toast("Something is waiting for your answer.");
@@ -3614,7 +3616,7 @@ function cwEvent(r){
     case "message_end": cwMessageEnd(r.message); cwMark(); break;
     case "tool_execution_start": cwTool(r.toolCallId, r.toolName, r.args).classList.add("run"); cwToolStatus(r.toolCallId, "run", "Working…"); cwPhase("tool", `${CW_TOOLS[r.toolName] || r.toolName}: ${cwSummary(r.toolName, r.args).slice(0, 70)}`); cwScroll(); break;
     case "tool_execution_update": cwToolOutput(r.toolCallId, r.toolName, r.args, r.partialResult); break;
-    case "tool_execution_end": cwToolDone(r.toolCallId, r.toolName, r.result, r.isError, r.durationMs); cwPhase("read", "Reading what came back…"); break;
+    case "tool_execution_end": cwToolDone(r.toolCallId, r.toolName, r.result, r.isError, r.durationMs); cwSearchNudge(r); cwPhase("read", "Reading what came back…"); break;
     case "extension_ui_request": cwUiRequest(r); break;
     case "zest_answered": m.querySelector(`.approve[data-id="${r.id}"]`)?.remove(); cwPhase("think", "Thinking…"); break;
     case "queue_update": CW.queue = {steering: r.steering || [], followUp: r.followUp || []}; cwQueue(); break;
@@ -3649,7 +3651,7 @@ function cwNote(text, bad){
    instead of the whole message being rebuilt: open/closed state survives, and a long think stays cheap to show. */
 const CW_STEPS = [["load", "🍋", "Loading", 1], ["read", "📖", "Reading"], ["think", "🤔", "Thinking"], ["write", "✍️", "Writing"], ["tool", "🛠️", "Working"], ["ask", "🙋", "Your OK", 1]];
 const CW_STRIP = '<div class="pstrip" aria-hidden="true">' + CW_STEPS.map(([k, e, l, x]) => `<b data-p="${k}"${x ? ' class="x"' : ""}><span class="em">${e}</span><span>${l}</span></b>`).join("") + "</div>";
-const CW_EMOJI = {read: "📖", write: "📝", edit: "✏️", bash: "⚡", grep: "🔎", find: "🔎", ls: "📁", skill: "🧰"};
+const CW_EMOJI = {read: "📖", write: "📝", edit: "✏️", bash: "⚡", grep: "🔎", find: "🔎", ls: "📁", skill: "🧰", web_search: "🌐"};
 function cwWorkText(t){ CW.phaseText = t; const w = cwEl("cwmsgs").querySelector(".cwwork .pt"); if(w) w.textContent = t; }
 /* which step the strip lights up, and a few words beside it */
 function cwPhase(p, text){
@@ -3832,13 +3834,20 @@ function cwToolDone(id, name, result, isError, ms){
 }
 document.addEventListener("click", e => { const h = e.target.closest("#cwmsgs .thead"); if(h){ const b = h.nextElementSibling; b.hidden = !b.hidden; } });
 
+/* DuckDuckGo refused a search: say what to do about it, once, right in the chat */
+function cwSearchNudge(r){
+  if(r.toolName !== "web_search" || !r.isError || !/API key/.test(cwResultText(r.result)) || cwEl("cwmsgs").querySelector(".cwsnudge")) return;
+  const d = document.createElement("div"); d.className = "cwcut cwsnudge";
+  d.innerHTML = `<p class="cwnote err"><span class="em" aria-hidden="true">🌐</span><span>DuckDuckGo refused the search. For web search that works every time, get a free key from <a href="${SEARCH_KEY_PAGE.brave}" target="_blank" rel="noopener noreferrer">Brave Search</a> or <a href="${SEARCH_KEY_PAGE.tavily}" target="_blank" rel="noopener noreferrer">Tavily</a> and add it in the Details panel.</span></p><button class="btn" type="button" data-cwsearchset="1">Open web search settings</button>`;
+  const w = cwEl("cwmsgs").querySelector(".cwwork"); cwEl("cwmsgs").insertBefore(d, w); cwScroll();
+}
 /* ---- asking permission */
 function cwUiRequest(r){
   if(r.method === "notify"){ toast(r.message || ""); return; }
   if(r.method !== "select") return;
   cwPhase("ask", "Waiting for your OK");
   let info = null; try{ info = JSON.parse(r.title); }catch{}
-  const verb = !info ? "" : info.tool === "bash" ? "run a command" : info.tool === "write" ? "write a file" : info.tool === "edit" ? "edit a file" : "use " + info.tool;
+  const verb = !info ? "" : info.tool === "web_search" ? "search the web for" : info.tool === "bash" ? "run a command" : info.tool === "write" ? "write a file" : info.tool === "edit" ? "edit a file" : "use " + info.tool;
   const d = document.createElement("div"); d.className = "approve"; d.dataset.id = r.id;
   d.innerHTML = `<div class="ahead"><span class="em" aria-hidden="true">🙋</span> ${info ? `Zest wants to <b>${esc(verb)}</b>` : esc(r.title)}</div>
     ${info ? `<pre class="awhat">${esc(info.what)}</pre>` : ""}
@@ -3849,6 +3858,7 @@ function cwUiRequest(r){
   d.querySelector("button").focus({preventScroll: true});
 }
 cwEl("cwmsgs").addEventListener("click", async e => {
+  if(e.target.closest("[data-cwsearchset]")){ CW.tab = "details"; cwEl("cwside").classList.add("open"); cwRenderSide(); const sec = cwEl("cwsearchsec"); if(sec){ sec.scrollIntoView({block: "center"}); sec.classList.add("flash"); setTimeout(() => sec.classList.remove("flash"), 1800); } return; }
   const more = e.target.closest("[data-cwcontinue]"); if(more){ more.disabled = true; cwSubmit("Continue where you stopped."); return; }
   const b = e.target.closest("[data-ans]"); if(b){
     const card = b.closest(".approve"); card.querySelectorAll("button").forEach(x => x.disabled = true);
@@ -4071,6 +4081,17 @@ function cwChangesTab(chat){
     ${ro ? "" : `<div class="jbtns" style="margin-top:12px"><button class="btn primary" type="button" data-chgapply="${j.id}" ${busy ? "disabled" : ""}>${sel.size ? `Apply ${sel.size} selected` : `Apply all ${c.files.length}`}</button><button class="btn danger" type="button" data-chgdiscard="${j.id}" ${busy ? "disabled" : ""}>Throw away</button></div>
     <p class="help" style="margin:8px 0 0">Applying copies the files into your folder. A file you changed there since the copy was made is skipped, never overwritten.</p>`}`;
 }
+const SEARCH_PROVIDERS = {duckduckgo: ["DuckDuckGo", "No key, but it often refuses"], brave: ["Brave Search", "Free key, dependable"], tavily: ["Tavily", "Free key, made for AI"]};
+const SEARCH_KEY_PAGE = {brave: "https://brave.com/search/api/", tavily: "https://app.tavily.com/"};
+function cwSearchSection(){
+  const c = CW.search || {}, on = c.enabled !== false, p = c.provider || "duckduckgo", keyed = p !== "duckduckgo", has = p === "brave" ? c.has_brave : p === "tavily" ? c.has_tavily : false;
+  return `<section id="cwsearchsec"><h4>Web search</h4><label class="chk"><input type="checkbox" id="cwsearch" ${on ? "checked" : ""}> Let the model search the web</label>
+    <p class="help" style="margin:6px 0 0">It asks before every search and shows the words. Those words go to the search provider below; nothing else leaves this computer.</p>
+    ${on ? `<label class="sr" for="cwsprov">Search provider</label><select id="cwsprov" style="margin-top:10px">${Object.entries(SEARCH_PROVIDERS).map(([k, [n, d]]) => `<option value="${k}" ${p === k ? "selected" : ""}>${n} · ${d}</option>`).join("")}</select>
+      ${keyed ? `<div class="cwskey"><input type="password" id="cwskey" autocomplete="off" spellcheck="false" placeholder="${has ? "Replace saved key" : "Paste your key"}" aria-label="${SEARCH_PROVIDERS[p][0]} API key"><button class="btn" type="button" id="cwssave">Save key</button></div>
+        <p class="help" style="margin:6px 0 0">${has ? "Key saved on this computer. " : ""}<a href="${SEARCH_KEY_PAGE[p]}" target="_blank" rel="noopener noreferrer">Get a free ${SEARCH_PROVIDERS[p][0]} key</a></p>` : `<p class="help" style="margin:8px 0 0">DuckDuckGo has no official search service, so Zest reads its results page. It refuses after a few quick searches. For something dependable, choose Brave Search or Tavily and use a free key.</p>`}
+      <div style="margin-top:10px;display:flex;gap:10px;align-items:center;flex-wrap:wrap"><button class="btn" type="button" id="cwstest">Test search</button><span class="help" id="cwsmsg" role="status" style="margin:0">${esc(CW.searchMsg || "")}</span></div>` : ""}</section>`;
+}
 function cwDetailsTab(t){
   const cur = cwFind(CW.id), isJob = !!(cur && cur.isJob);
   const folder = t ? (t.chat ? "" : t.cwd) : CW.folder, plain = t ? t.chat : !CW.folder;
@@ -4084,6 +4105,7 @@ function cwDetailsTab(t){
     ${u ? `<section><h4>Memory used</h4><div class="cwmeter ${pct > 80 ? "hot" : ""}"><i style="width:${pct}%"></i></div>
       <p class="help" style="margin:6px 0 8px">${Math.round(u.tokens / 1000)}k of ${Math.round(u.contextWindow / 1000)}k tokens (${pct}%)</p>
       <button class="btn" type="button" id="cwcompact">Make room</button></section>` : ""}
+    ${cwSearchSection()}
     <section><h4>Skills</h4><p class="help" style="margin:0 0 8px">${CW.skillsOn ? CW.skillsOn + " switched on." : "None switched on."}</p><button class="btn" type="button" id="cwside-skills">Manage skills</button></section>
     ${CW.piVersion ? `<p class="help" style="margin:0">Agent: Pi ${esc(CW.piVersion)}${SU.pi.check && SU.pi.check.update_available ? ` · <a href="#setup" data-go="setup">update available</a>` : ""}</p>` : ""}
     ${plain ? "" : `<section><h4>Files it changed</h4>${files.length ? `<div class="cwfiles">${files.map(([p, op]) => `<div><b>${op === "edited" ? "M" : "A"}</b><span title="${esc(p)}">${esc(p)}</span></div>`).join("")}</div>` : '<p class="help">None yet.</p>'}</section>`}`;
@@ -4096,7 +4118,7 @@ function cwRenderSide(){
   const tabs = CW.id ? cwWbTabs(t) : "";
   const body = !CW.id ? cwDetailsTab(t) : CW.tab === "jobs" ? cwJobsTab(t) : CW.tab === "changes" ? cwChangesTab(t) : cwDetailsTab(t);
   const html = tabs + `<div class="wbbody" style="display:grid;gap:18px">${body}</div>`;
-  const keep = el.querySelector("select:focus, input[type=text]:focus");
+  const keep = el.querySelector("select:focus, input[type=text]:focus, input[type=password]:focus");
   if(keep || el._h === html) return;
   const sc = el.scrollTop; el._h = html; el.innerHTML = html; el.scrollTop = sc;
   cwEl("cwtoggle-side").textContent = hasJobs && CW.tab !== "details" ? "Workbench" : "Details";
@@ -4126,10 +4148,26 @@ cwEl("cwside").addEventListener("change", async e => {
       CW.mode = t.value;
       if(CW.id){ await api("/ui/cowork/mode", {method: "POST", body: JSON.stringify({id: CW.id, mode: t.value})}); await cwLoad(); }
       else cwRenderSide();
+    }else if(t.id === "cwsearch"){
+      await cwSearchSet({enabled: t.checked}); toast(t.checked ? "The model can search the web, and asks first each time." : "Web search is off.");
+      if(CW.id){ const id = CW.id; await cwLoad(); cwOpen(id); }
+    }else if(t.id === "cwsprov"){ CW.searchMsg = ""; await cwSearchSet({provider: t.value });
     }else if(t.id === "cwthink") await cwSend({type: "set_thinking_level", level: t.value});
   }catch(err){ toast(err.message); }
 });
-cwEl("cwside").addEventListener("click", e => {
+async function cwSearchSet(body){ const r = await api("/ui/search/settings", {method: "POST", body: JSON.stringify(body)}); CW.search = r; cwRenderSide(); return r; }
+cwEl("cwside").addEventListener("click", async e => {
+  if(e.target.id === "cwssave"){
+    const k = cwEl("cwskey").value.trim(), p = (CW.search || {}).provider;
+    if(!k) return toast("Paste the key first.");
+    try{ await cwSearchSet(p === "brave" ? {brave_key: k} : {tavily_key: k}); CW.searchMsg = "Key saved. Press Test search to check it."; cwRenderSide(); toast("Key saved on this computer."); }catch(err){ toast(err.message); }
+  }
+  if(e.target.id === "cwstest"){
+    e.target.disabled = true; CW.searchMsg = "Searching…"; cwEl("cwsmsg").textContent = CW.searchMsg;
+    try{ const r = await api("/ui/search/test", {method: "POST", body: "{}"}); CW.searchMsg = (r.ok ? "✅ " : "⚠️ ") + r.message + (r.need_key ? " Choose Brave Search or Tavily and add a free key." : ""); }
+    catch(err){ CW.searchMsg = "⚠️ " + err.message; }
+    cwRenderSide();
+  }
   if(e.target.id === "cwside-folder") cwPickFolder();
   if(e.target.id === "cwside-skills") show("skills");
   if(e.target.id === "cwcompact"){ cwSend({type: "compact"}).catch(err => toast(err.message)); toast("Making room…"); }

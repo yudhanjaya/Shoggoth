@@ -1,6 +1,6 @@
 ## What Zest is
 
-Zest lets you use AI on your own computer. You talk to it like a chat app, but nothing leaves your machine: the AI, your conversations and your files all stay here.
+Zest lets you use AI on your own computer. You talk to it like a chat app, but nothing leaves your machine: the AI, your conversations and your files all stay here. The one exception is web search, which you control: if the model wants to look something up, it asks first and shows the words it will search for.
 
 You can use it in two ways, and switch between them whenever you like:
 
@@ -46,6 +46,8 @@ Open **Chat** and type. The bar under the title shows which model will answer an
 - The side panel (top right) has three tabs. **Jobs** shows background jobs, **Changes** shows what a job changed, and **Details** shows the folder, how careful it is, which model is answering, how full its memory is, and which skills are on.
 
 A chat with no folder is a plain conversation. The AI cannot see or change anything on your computer.
+
+**Web search.** When a question needs something recent or the AI is unsure, it can search the web. Every search asks first and shows the exact words it wants to search for, so you decide what leaves your computer. Choose **Allow for this session** to stop being asked in that chat. You get only the titles, links and short snippets of the top results. By default it uses DuckDuckGo, which needs no key but has no official search service, so it can refuse. When that happens Zest does not keep retrying: it tells you, and the AI carries on from what it knows. For search that works every time, get a free key from [Brave Search](https://brave.com/search/api/) or [Tavily](https://app.tavily.com/), then open the **Details** panel, find **Web search**, choose the provider, paste the key and press **Test search**. The key is kept on this computer and never shown again. You can also switch web search off there.
 
 ## Working in a folder
 

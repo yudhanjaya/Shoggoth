@@ -13,11 +13,13 @@ import json
 import os
 import re
 import signal
+import socket
 import sys
 import threading
 import time
 import webbrowser
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
+import urllib.parse
 from urllib.parse import urlparse, parse_qs
 
 HERE = os.path.dirname(os.path.abspath(__file__))
@@ -36,9 +38,10 @@ import piup        # noqa: E402
 import skills      # noqa: E402
 import store       # noqa: E402
 import util        # noqa: E402
+import websearch   # noqa: E402
 from util import cached, invalidate, run   # noqa: E402
 
-VERSION = "3.3.0"
+VERSION = "3.3.1"
 _last_ping = {"t": None}
 FORCED = {"addr": None}           # set by --lemonade: use exactly that server and skip the setup screen
 LOOPBACK_ONLY = {"on": True}
@@ -239,6 +242,8 @@ class Handler(BaseHTTPRequestHandler):
             self.send_json(piup.summary())
         elif p == "/ui/skills":
             self.send_json({"sets": skills.scan()})
+        elif p == "/ui/search":
+            self.get_search(parse_qs(u.query))
         elif p == "/ui/model":
             self.send_json(agent.model_state())
         elif p == "/ui/cowork/models":
@@ -285,7 +290,7 @@ class Handler(BaseHTTPRequestHandler):
             "/ui/cowork/cmd": self.post_cowork_cmd, "/ui/cowork/answer": self.post_cowork_answer,
             "/ui/cowork/mode": self.post_cowork_mode, "/ui/cowork/delete": self.post_cowork_delete,
             "/ui/cowork/rename": self.post_cowork_rename, "/ui/cowork/model": self.post_cowork_model,
-            "/ui/model/load": self.post_model_load, "/ui/model/unload": self.post_model_unload, "/ui/model/ctx": self.post_model_ctx,
+            "/ui/search/settings": self.post_search_settings, "/ui/search/test": self.post_search_test, "/ui/model/load": self.post_model_load, "/ui/model/unload": self.post_model_unload, "/ui/model/ctx": self.post_model_ctx,
             "/ui/cowork/job/new": self.post_job_new, "/ui/cowork/job/ctl": self.post_job_ctl,
             "/ui/cowork/job/apply": self.post_job_apply, "/ui/cowork/job/discard": self.post_job_discard,
             "/ui/cowork/folders": self.post_cowork_folders, "/ui/cowork/seen": self.post_cowork_seen,
@@ -535,6 +540,30 @@ class Handler(BaseHTTPRequestHandler):
         agent.rename(str(body.get("id", "")), body.get("title", ""))
         self.send_json({"ok": True})
 
+    # ---- web search for the chat (asked first by the approval gate in Pi; Zest only does the fetching)
+    def get_search(self, q):
+        if not agent.search_enabled():
+            return self.send_json({"error": "Web search is switched off in Zest."}, 403)
+        try:
+            self.send_json({"results": websearch.search(q.get("q", [""])[0], int(q.get("n", ["6"])[0] or 6), agent.search_config())})
+        except websearch.SearchError as e:
+            # the model reads this text: when DuckDuckGo refuses, it is told to send the person to get a key
+            self.send_json({"error": websearch.NEED_KEY if e.need_key else str(e), "need_key": e.need_key}, 502)
+        except ValueError as e:
+            self.send_json({"error": str(e)}, 400)
+
+    def post_search_settings(self, body):
+        agent.set_search(body.get("enabled"), body.get("provider"), body.get("brave_key"), body.get("tavily_key"))
+        self.send_json(dict(agent.search_public(), ok=True))
+
+    def post_search_test(self, body):
+        """The Test button: one real search with the settings as they are, reported in plain words."""
+        try:
+            r = websearch.search("zest lemon", 3, agent.search_config())
+            self.send_json({"ok": True, "message": "It works: %d results, the first from %s." % (len(r), urllib.parse.urlparse(r[0]["url"]).netloc)})
+        except websearch.SearchError as e:
+            self.send_json({"ok": False, "need_key": e.need_key, "message": str(e)})
+
     # ---- the model in memory (the chat bar)
     def post_model_load(self, body):
         """Load (or reload) a model at the chat context size. A size given here becomes the new chat setting."""
@@ -691,12 +720,13 @@ class Handler(BaseHTTPRequestHandler):
 
 
 def zest_running(host, port):
+    """The version of the Zest answering on this port, or None when it isn't Zest (or nothing is there)."""
     try:
         c = http.client.HTTPConnection(host, port, timeout=1.5)
         c.request("GET", "/ui/ping")
-        return "zest" in json.loads(c.getresponse().read())
-    except (OSError, ValueError):
-        return False
+        return json.loads(c.getresponse().read()).get("zest")
+    except (OSError, ValueError, AttributeError):
+        return None
 
 
 def watchdog(srv, grace):
@@ -727,11 +757,23 @@ def main():
     shown = "127.0.0.1" if a.host in ("0.0.0.0", "::") else a.host
     url = f"http://{shown}:{a.port}"
 
-    if zest_running(shown, a.port):  # second launch: just show the existing one
+    there = zest_running(shown, a.port)
+    if there == VERSION:  # second launch: just show the existing one
         print(f"Zest is already running at {url}")
         if not a.no_browser:
             webbrowser.open(url)
         return
+    if there:
+        # An older Zest is still running (its window may be hidden). Showing it would open the old interface, so start
+        # this one beside it on the next free port; the old one quits by itself a few minutes after its tab closes.
+        for p in range(a.port + 1, a.port + 11):
+            if not zest_running(shown, p):
+                try:
+                    socket.create_connection((shown, p), timeout=0.3).close()
+                except OSError:
+                    print(f"Zest {there} is still running on port {a.port}; starting Zest {VERSION} on port {p} instead.", flush=True)
+                    a.port, url = p, f"http://{shown}:{p}"
+                    break
     try:
         srv = ThreadingHTTPServer((a.host, a.port), Handler)
     except OSError as e:

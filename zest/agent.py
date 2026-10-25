@@ -27,12 +27,14 @@ import workcopy
 HERE = os.path.dirname(os.path.abspath(__file__))
 GATE = os.path.join(HERE, "pi", "zest-gate.js")
 SKILLS_EXT = os.path.join(HERE, "pi", "zest-skills.js")
+SEARCH_EXT = os.path.join(HERE, "pi", "zest-search.js")
 MODES = ("ask", "edits", "auto", "plan")
 FORWARD = {"prompt", "steer", "follow_up", "abort", "clear_queue", "get_state", "get_session_stats", "set_model",
            "set_thinking_level", "compact", "get_available_models", "get_commands", "new_session"}
 IDLE_STOP = 20 * 60          # a quiet task's process is stopped after this long; reopening it resumes the transcript
 CHAT_PROMPT = ("You are Zest, a friendly assistant running on the user's own computer. Answer clearly and concisely. "
                "You cannot see or change any files in this conversation; if the user wants that, tell them to choose a folder to work in.")
+CHAT_SEARCH = " You can look things up with the web_search tool; the user is asked before each search."
 JOB_PROMPT = ("This is a background job. Nobody is watching each step, so work on your own toward the goal and only stop to ask "
               "the user something when you are truly blocked. Work in rounds: in each one make the most useful progress you can, "
               "then stop and say in one short sentence what you changed.")
@@ -281,11 +283,46 @@ def _write(path, obj):
     os.replace(tmp, path)
 
 
+def search_enabled():
+    return bool((store.load().get("search") or {}).get("enabled", True))
+
+
+def search_config():
+    return dict(store.load().get("search") or {})
+
+
+def search_public():
+    """What the page may see: never the keys themselves."""
+    c = search_config()
+    return {"enabled": bool(c.get("enabled", True)), "provider": c.get("provider") or "duckduckgo",
+            "has_brave": bool(c.get("brave_key")), "has_tavily": bool(c.get("tavily_key"))}
+
+
+def set_search(enabled=None, provider=None, brave_key=None, tavily_key=None):
+    """Change any of the web search settings; a key left as None is kept, "" removes it."""
+    s = store.load()
+    c = dict(s.get("search") or {})
+    was = bool(c.get("enabled", True))
+    if enabled is not None:
+        c["enabled"] = bool(enabled)
+    if provider in ("duckduckgo", "brave", "tavily"):
+        c["provider"] = provider
+    if brave_key is not None:
+        c["brave_key"] = str(brave_key).strip()
+    if tavily_key is not None:
+        c["tavily_key"] = str(tavily_key).strip()
+    s["search"] = c
+    store.save(s)
+    if was != bool(c.get("enabled", True)):
+        restart_idle()       # Pi learns whether it has the tool when it starts
+
+
 def _env(mode="ask", inject=(), extra_folders=(), allow=()):
     e = dict(os.environ)
     e.update(PI_CODING_AGENT_DIR=agent_dir(), PI_OFFLINE="1", PI_TELEMETRY="0", PI_SKIP_VERSION_CHECK="1",
              ZEST_APPROVAL=mode, ZEST_INJECT=json.dumps(list(inject)), NO_COLOR="1",
-             ZEST_FOLDERS=json.dumps(list(extra_folders)), ZEST_ALLOW=json.dumps(list(allow)))
+             ZEST_FOLDERS=json.dumps(list(extra_folders)), ZEST_ALLOW=json.dumps(list(allow)),
+             ZEST_SEARCH="1" if search_enabled() else "0", ZEST_SEARCH_URL="http://127.0.0.1:%d/ui/search" % _zest_port["v"])
     return e
 
 
@@ -438,7 +475,7 @@ def _lower(s):
 def state():
     cmd, where = find_pi()
     return {"pi": {"found": bool(cmd), "where": where, "version": piup.summary()["active"] and piup.summary()["active"]["version"]},
-            "tasks": list_tasks(), "modes": list(MODES), "folders": folderstore.recent(8), "busy": busy()}
+            "tasks": list_tasks(), "modes": list(MODES), "folders": folderstore.recent(8), "busy": busy(), "search": search_public()}
 
 
 def _clean_folders(extra, cwd):
@@ -606,7 +643,7 @@ class Session:
         t = self.task
         sdir = os.path.join(store.data_dir(), "cowork", "sessions", self.id)
         os.makedirs(sdir, exist_ok=True)
-        args = cmd + ["--mode", "rpc", "--session-dir", sdir, "--no-approve", "-e", GATE, "-e", SKILLS_EXT]
+        args = cmd + ["--mode", "rpc", "--session-dir", sdir, "--no-approve", "-e", GATE, "-e", SKILLS_EXT, "-e", SEARCH_EXT]
         chat = bool(t.get("chat"))
         if chat:
             inject = skills.inline()                   # no tools in a plain chat, so the short skills are put in the prompt
@@ -618,7 +655,8 @@ class Session:
         if any(f.endswith(".jsonl") for f in os.listdir(sdir)):
             args.append("--continue")
         if chat:
-            args += ["--no-tools", "--system-prompt", CHAT_PROMPT]
+            # no file tools in a plain chat; extension tools (web search) stay
+            args += ["--no-builtin-tools", "--system-prompt", CHAT_PROMPT + (CHAT_SEARCH if search_enabled() else "")]
         else:
             note = _folders_note(t)
             if _is_job(t):
