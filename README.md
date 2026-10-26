@@ -39,7 +39,7 @@ Zest runs on Linux. It needs no technical setup: you download one file and follo
    | **Helper** | Zest starts its own private copy of Lemonade. Nothing to choose. |
    | **Your computer** | Zest looks at your graphics card and downloads the program that suits it (CUDA for NVIDIA, Vulkan for most cards, the processor as a fallback). One button. |
    | **A model** | Suggestions in three tiers. Quick is LFM2.5 8B A1B (fast, to the point, good with tools, happy on almost any computer). Balanced is Qwen3.6 35B A3B MTP or Gemma 4 26B A4B. Thorough is Qwen3.6 27B MTP or Gemma 4 31B MTP. Press Download on one. If a model is too big for your computer, **See every model** has smaller ones. |
-   | **Chat** | Press Start chatting. Type a question, or press **Work in a folder…** to let the model work on your files. |
+   | **Chat** | Press Start chatting. Type a question or a task. The model works in your home folder unless you choose another folder. |
 
    People who already have models, or run their own Lemonade, can skip to **Advanced > Setup guide**, which keeps the full set of choices: where models are stored, models you already have (LM Studio, Ollama, llama.cpp and others are found for you), and Lemonade updates.
 
@@ -69,7 +69,7 @@ The left-hand menu has six places. Everything a newcomer needs is in the first f
 
 Open **Chat** and type. The bar under the title shows which model will answer and whether it is in memory. If it isn't, Zest loads it when you send your first message, so that answer takes a little longer.
 
-**Chat** runs on [Pi](https://pi.dev), a coding-agent harness that ships inside Zest. Ask anything and it answers like a normal chat. Press **Work in a folder…** and the same conversation becomes a co-working session: the model reads, searches, edits and runs commands in that folder while you watch, and asks before it changes anything (tool cards show each step; edits show a diff). Choose how careful it is per chat (**Ask first**, **Edit freely**, **Do everything**, **Look only**), add more folders it can look at or change, switch models, watch how much of the context window is used, and add notes while it works.
+**Chat** runs on [Pi](https://pi.dev), a coding-agent harness that ships inside Zest. Every chat is a co-working session: the model reads, searches, edits and runs commands (it has a terminal) in a folder while you watch. Pick the folder, or leave it and it works in your home folder, and says so at the top of the chat; there it starts on **Ask first**, and jobs need a project folder. It answers questions like a normal chat too, and asks before it changes anything (tool cards show each step; edits show a diff). Choose how careful it is per chat (**Ask first**, **Edit freely**, **Do everything**, **Look only**), add more folders it can look at or change, switch models, watch how much of the context window is used, and add notes while it works.
 
 For bigger work, press **Start a job…**. Say what should get done and how Zest can tell it is done, such as a test command that passes. The job runs in the background, round after round, and stops when the check passes, when it hits its round or time limit, or when it stops making progress. By default it works on a copy of your folder; the **Changes** tab shows what it changed and you apply what you want. Jobs are listed under their chat, and you can keep chatting while they work. Chats and jobs are saved and pick up where they left off. See [docs/COWORK.md](docs/COWORK.md).
 
@@ -189,7 +189,7 @@ Replies stream in as they are written. The bar under the title shows which model
 ![Chat](docs/screenshots/chat.png)
 
 ### Working in a folder
-Press **Work in a folder…** and the same chat can read, search, edit and run things there. Tool cards show each step, edits show a diff, and in **Ask first** and **Edit freely** modes it stops and asks before it runs a command. Here it was asked to fix a folder whose tests were failing: it read the tests and the code, made a one-line change and ran the tests again to confirm.
+Every chat works in a folder (your home folder unless you choose one) and can read, search, edit and run things there. Tool cards show each step, edits show a diff, and in **Ask first** and **Edit freely** modes it stops and asks before it runs a command. Here it was asked to fix a folder whose tests were failing: it read the tests and the code, made a one-line change and ran the tests again to confirm.
 
 ![Zest asking before it runs a command](docs/screenshots/work-approve.png)
 

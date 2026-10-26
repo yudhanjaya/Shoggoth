@@ -895,6 +895,8 @@ h4.sub{margin:10px 0 0;font:600 13px var(--sans);color:var(--muted);text-transfo
 .jobform .opt small{grid-column:2;color:var(--muted)}
 .jobform .fbtns{display:flex;gap:8px;justify-content:flex-end}
 .herocards{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin:0 0 6px}
+.herocards.one{grid-template-columns:1fr}.herocards .mono{font-size:12.5px;color:var(--muted);overflow-wrap:anywhere}
+.cwhome{align-items:flex-start;margin:0 0 18px 44px}.cwhome code{font:12.5px var(--mono)}
 .herocards button{text-align:left;border:1px solid var(--line);background:var(--surface);border-radius:16px;padding:16px;display:grid;gap:4px;transition:border-color .15s,transform .1s}
 .herocards button:hover{border-color:var(--lemon)}
 .herocards b{font:400 17px var(--serif)}
@@ -905,6 +907,7 @@ h4.sub{margin:10px 0 0;font:600 13px var(--sans);color:var(--muted);text-transfo
 .cwplan{margin:0 0 16px 44px}
 @media (max-width:900px){.cwbar{flex-wrap:wrap;row-gap:6px;padding:8px 14px;gap:4px}.cwbar .btn{padding:0 8px;min-height:34px}.cwbar .cwtitle{flex:1;min-width:0}.cwbar .cwchipwrap{order:5;flex:1 0 100%}.jobform{max-height:62dvh;overflow:auto}.jobstrip{padding:8px 14px}.jobcard{margin-left:0}.herocards{grid-template-columns:1fr}.jobform .two{grid-template-columns:1fr}.cwside{width:min(340px,92vw)}}
 .cwchipwrap{position:relative;min-width:0}
+@media (max-width:1240px){.cwbar{flex-wrap:wrap;row-gap:6px}.cwbar .cwtitle{flex:1;min-width:0;max-width:none}.cwbar .cwchipwrap{order:5;flex:1 0 100%}}
 .cwchips .fc{white-space:nowrap}
 .cwbar .cwtitle{flex:0 1 auto;max-width:42%}
 .cwside{grid-template-columns:minmax(0,1fr)}
@@ -3391,7 +3394,7 @@ async function cwLoad(){
 }
 function cwApply(r){
   const prev = new Map(); CW.tasks.forEach(t => (t.jobs || []).forEach(j => prev.set(j.id, j.state)));
-  CW.tasks = r.tasks; CW.pi = r.pi; CW.search = r.search || {enabled: true, provider: "duckduckgo"}; CW.piVersion = r.pi && r.pi.version; CW.recent = r.folders || [];
+  CW.tasks = r.tasks; CW.home = r.home || CW.home || ""; CW.pi = r.pi; CW.search = r.search || {enabled: true, provider: "duckduckgo"}; CW.piVersion = r.pi && r.pi.version; CW.recent = r.folders || [];
   const need = CW.tasks.reduce((n, t) => n + (t.need || 0), 0);
   document.title = (need ? `(${need}) ` : "") + CW.title0.replace(/^\(\d+\) /, "");
   if(need > CW.needSeen) toast("Something is waiting for your answer.");
@@ -3423,7 +3426,7 @@ function cwSeen(){
 function cwRenderTasks(){
   const jobRow = j => `<button class="cwtask cwjobrow" data-id="${j.id}" ${j.id === CW.id ? 'aria-current="true"' : ""}>${cwJGlyph(j)}<span class="tt"><b>${esc(j.title)}</b><small>${esc(cwJobLine(j))}</small></span></button>`;
   const html = CW.tasks.map(t => `<div class="cwgrp ${t.need ? "has-need" : ""}"><button class="cwtask" data-id="${t.id}" ${t.id === CW.id ? 'aria-current="true"' : ""}>
-    ${CW_GL[t.state === "work" ? "work" : t.state] || '<span class="gl"></span>'}<span class="tt"><b>${esc(t.title)}</b><small>${esc(t.doing || (t.chat ? "Chat" : cwDir(t.cwd)))}</small></span>
+    ${CW_GL[t.state === "work" ? "work" : t.state] || '<span class="gl"></span>'}<span class="tt"><b>${esc(t.title)}</b><small>${esc(t.doing || (t.chat ? "Chat" : t.home ? "Home folder" : cwDir(t.cwd)))}</small></span>
     <span class="del" role="button" data-del="${t.id}" title="Delete this chat and its jobs">✕</span></button>
     ${(t.jobs || []).length ? `<div class="cwkids">${t.jobs.map(jobRow).join("")}</div>` : ""}</div>`).join("")
     || '<p class="help" style="padding:6px 10px">Your conversations appear here and pick up where they left off.</p>';
@@ -3442,17 +3445,23 @@ function cwRenderHero(){
   const m = cwEl("cwmsgs");
   const recent = (CW.recent || []).map(f => f.path).slice(0, 4);
   const missing = CW.pi && !CW.pi.found;
-  const hero = recent.join("|") + CW.folder + missing + S.up;
+  const hero = recent.join("|") + CW.folder + CW.home + missing + S.up;
   if(m._hero === hero && m.querySelector(".cwhero")) return; m._hero = hero;
   m.innerHTML = `<div class="cwhero"><h2>What shall we <span class="hl">work on</span>?</h2>
-    <p>Ask anything and it answers, like always. Or give it a folder: it can read, search, edit and run things there, and you can hand it a bigger job to keep working on in the background while you do something else.</p>
-    <div class="herocards"><button type="button" id="hero-chat"><b><span class="em" aria-hidden="true">💬</span> Just chat</b><span>Ask a question. No files involved.</span></button>
-      <button type="button" id="hero-folder"><b><span class="em" aria-hidden="true">📁</span> Work in a folder</b><span>${CW.folder ? "Using " + esc(cwDir(CW.folder)) + ". Click to change." : "Pick a folder it can read and change."}</span></button></div>
+    <p>Ask a question, or give it a task. It can read and search files, edit them and run commands on this computer, and it asks before it changes anything.</p>
+    <div class="herocards one"><button type="button" id="hero-folder"><b><span class="em" aria-hidden="true">📁</span> ${CW.folder ? "Working in " + esc(cwDir(CW.folder)) : "Working in your home folder"}</b><span class="mono">${esc(CW.folder || CW.home || "~")}</span><span>${CW.folder ? "Click to choose a different folder." : "Click to pick a project folder instead, so it stays focused."}</span></button></div>
     <div class="recent">${recent.map(p => `<button type="button" data-folder="${esc(p)}" title="${esc(p)}">${esc(cwDir(p))}</button>`).join("")}</div>
     <p class="cwnote" style="margin-top:18px">Skills teach it new ways of working. Add a set by pasting a GitHub link under <a href="#skills" data-go="skills">Skills</a>.</p>
     ${missing ? `<div class="cwbanner"><span><b>The Pi agent isn't installed.</b> The Zest AppImage includes it. Running from source? Install it with <code>npm install -g @earendil-works/pi-coding-agent</code>, or point ZEST_PI at it.</span></div>` : ""}
     ${S.up === false ? `<div class="cwbanner"><span>Lemonade isn't running yet, so there's no model to work with.</span></div>` : ""}</div>`;
   cwSetTitle("New chat"); cwFolderBtn(); cwChips();
+}
+/* a chat that works in the home folder says so at the top of the conversation, before anything is asked */
+function cwHomeNote(){
+  const t = cwChat(), m = cwEl("cwmsgs"); if(!t || !t.home || m.querySelector(".cwhome")) return;
+  const d = document.createElement("div"); d.className = "cwnote cwhome";
+  d.innerHTML = `<span class="em" aria-hidden="true">📁</span><span>Working in your home folder, <code>${esc(t.cwd)}</code>. It can read files and run commands here, and asks before it changes anything. <button class="linkbtn" type="button" data-fc-change="1">Choose a different folder…</button></span>`;
+  m.insertBefore(d, m.firstChild);
 }
 function cwSetTitle(t){ cwEl("cwtitle").textContent = t; }
 function cwNew(){
@@ -3602,7 +3611,7 @@ function cwEvent(r){
       const t = cwEl("cwthread"); t.scrollTop = t.scrollHeight; cwRenderSide();
       if(!r.messages.length && !m.children.length) m.innerHTML = '<p class="cwnote">Nothing here yet. Tell it what you want done.</p>';
       cwSend({type: "get_session_stats"}).catch(() => {});
-      cwPlaceJobs();
+      cwPlaceJobs(); cwHomeNote();
       break;
     }
     case "zest_ready": CW.ready = r; CW.mode = r.mode; cwRenderSide(); cwModelBar(); cwSend({type: "get_state"}).catch(() => {}); break;
@@ -3872,19 +3881,20 @@ cwEl("cwmsgs").addEventListener("click", async e => {
 /* ---- folders on the stage */
 function cwFolderBtn(){
   const b = cwEl("cwfolderbtn"), t = cwChat();
+  // a new chat shows where it will work; an older plain chat can still be given a folder; any other chat has its folder chip above
   b.hidden = !!CW.id && !(t && t.chat);
-  b.textContent = CW.folder && !CW.id ? "Folder: " + cwDir(CW.folder) : "Work in a folder…";
-  b.title = CW.folder && !CW.id ? CW.folder : "Let the model read and change files in a folder";
-  b.hidden = b.hidden || (!CW.id && !!CW.folder);
+  b.textContent = !CW.id ? (CW.folder ? "Folder: " + cwDir(CW.folder) : "Folder: home") : "Work in a folder…";
+  b.title = !CW.id ? (CW.folder || CW.home || "Your home folder") + ". Click to choose a different folder." : "Let the model read and change files in a folder";
   const jb = cwEl("cwjobbtn"), cur = cwFind(CW.id);
-  jb.hidden = !!(cur && cur.isJob) || (CW.id ? !(t && !t.chat) : !CW.folder);
+  jb.hidden = !!(cur && cur.isJob) || (CW.id ? !(t && !t.chat && !t.home) : !CW.folder);
 }
 function cwChips(){
   const box = cwEl("cwchips"), t = cwChat(), cur = cwFind(CW.id), isJob = !!(cur && cur.isJob);
-  const main = t ? (t.chat ? "" : t.cwd) : CW.folder, extra = t ? (t.folders || []) : CW.extra;
+  const main = t ? (t.chat ? "" : t.cwd) : (CW.folder || CW.home), extra = t ? (t.folders || []) : CW.extra;
+  const isHome = t ? !!t.home : !CW.folder;
   let h = "";
   if(main){
-    h = `<button class="fc" type="button" data-fc="main" title="${esc(main)}"><svg class="i" style="width:14px;height:14px" viewBox="0 0 24 24"><path d="M3 7a2 2 0 0 1 2-2h4l2 2h8a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/></svg>${esc(cwDir(main))}<small>${isJob && (cur.copy) ? "working copy" : "can change"}</small></button>`;
+    h = `<button class="fc" type="button" data-fc="main" title="${esc(main)}"><svg class="i" style="width:14px;height:14px" viewBox="0 0 24 24"><path d="M3 7a2 2 0 0 1 2-2h4l2 2h8a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/></svg>${isHome ? "Home folder" : esc(cwDir(main))}<small>${isJob && (cur.copy) ? "working copy" : "can change"}</small></button>`;
     extra.forEach((f, i) => h += `<button class="fc ${f.access === "read" ? "look" : ""}" type="button" data-fc="${i}" title="${esc(f.path)}">${esc(cwDir(f.path))}<small>${f.access === "read" ? "look only" : "can change"}</small></button>`);
     if(!isJob) h += `<button class="fc add" type="button" data-fc="add">+ Folder</button>`;
   }
@@ -3899,7 +3909,7 @@ function cwFolderPop(which, anchor){
     const rec = (CW.recent || []).find(f => f.path === main) || {allow: []};
     pop.innerHTML = `<h5>Working folder</h5><div class="path">${esc(main)}</div>
       <h5>Commands it may always run here</h5>${rec.allow.length ? rec.allow.map(k => `<div class="keyrow"><span>${esc(k)}</span><button class="btn ghost" type="button" data-unallow="${esc(k)}" style="min-height:30px">Remove</button></div>`).join("") : '<p class="help" style="margin:0">None yet. When it asks to run a command you can choose “Always allow”.</p>'}
-      ${!t || t.chat ? '<button class="btn" type="button" data-fc-change="1">Change folder…</button>' : ""}`;
+      ${!t || t.chat || t.home ? '<button class="btn" type="button" data-fc-change="1">Change folder…</button>' : ""}`;
   }else{
     const f = extra[+which]; if(!f) return;
     pop.innerHTML = `<h5>Extra folder</h5><div class="path">${esc(f.path)}</div>
@@ -4094,12 +4104,12 @@ function cwSearchSection(){
 }
 function cwDetailsTab(t){
   const cur = cwFind(CW.id), isJob = !!(cur && cur.isJob);
-  const folder = t ? (t.chat ? "" : t.cwd) : CW.folder, plain = t ? t.chat : !CW.folder;
+  const folder = t ? (t.chat ? "" : t.cwd) : (CW.folder || CW.home), plain = t ? t.chat : false, isHome = t ? !!t.home : !CW.folder;
   const u = CW.stats && CW.stats.contextUsage, pct = u ? Math.min(100, Math.round(u.percent)) : 0;
   const levels = CW.state && CW.state.model && CW.state.model.reasoning;
   const files = [...CW.files.entries()];
   return `
-    <section><h4>Folder</h4><div class="path">${folder ? esc(folder) : "None. Just chatting."}</div>${isJob ? "" : `<button class="btn" type="button" id="cwside-folder" style="margin-top:8px">${folder ? "Change folder…" : "Work in a folder…"}</button>`}</section>
+    <section><h4>Folder</h4><div class="path">${folder ? esc(folder) : "None. Just chatting."}</div>${isHome ? '<p class="help" style="margin:6px 0 0"><b>This is your home folder.</b> Choose a project folder for focused work. In your home folder, <b>Ask first</b> is the safe choice.</p>' : ""}${isJob ? "" : `<button class="btn" type="button" id="cwside-folder" style="margin-top:8px">${folder ? "Change folder…" : "Work in a folder…"}</button>`}</section>
     ${plain || isJob ? "" : `<section><h4>How careful</h4><div class="cwmodes">${CW_MODES.map(([k, n, d]) => `<label><input type="radio" name="cwmode" value="${k}" ${CW.mode === k ? "checked" : ""}><b>${n}</b><small>${d}</small></label>`).join("")}</div></section>`}
     ${CW.id && CW.ready && levels ? `<section><h4>Thinking</h4><select id="cwthink" aria-label="Thinking">${["off", "low", "medium", "high"].map(l => `<option ${CW.state.thinkingLevel === l ? "selected" : ""}>${l}</option>`).join("")}</select></section>` : ""}
     ${u ? `<section><h4>Memory used</h4><div class="cwmeter ${pct > 80 ? "hot" : ""}"><i style="width:${pct}%"></i></div>
@@ -4218,7 +4228,6 @@ document.addEventListener("click", async e => {
   if((b = q("[data-plan2job]"))){ const txt = (b.parentElement._text || "").slice(0, 3000); cwJobForm("Carry out this plan:\n\n" + txt); cwEl("cwjobform").scrollIntoView({block: "nearest"}); return; }
   if(t.id === "jf-go"){ cwJobGo(); return; }
   if(t.id === "jf-cancel"){ cwEl("cwjobform").hidden = true; return; }
-  if(q("#hero-chat")){ cwEl("cwinput").focus(); return; }
   if(q("#hero-folder")){ cwPickFolder(); return; }
 });
 document.addEventListener("change", e => { if(e.target.id === "chgjob"){ CW.chgId = e.target.value; CW.sel = new Set(); CW.diffOpen = null; cwRenderSide(); } });
@@ -4358,7 +4367,7 @@ $("#skills").addEventListener("change", async e => {
 const PK = {items: [], at: 0};
 function cwPick(){
   const t = CW.tasks.find(x => x.id === CW.id), v = cwEl("cwinput").value, box = cwEl("cwpick");
-  const ok = v.startsWith("/") && !/\s/.test(v) && (CW.id ? t && !t.chat : !!CW.folder) && CW.skills && CW.skills.length;
+  const ok = v.startsWith("/") && !/\s/.test(v) && (CW.id ? t && !t.chat : true) && CW.skills && CW.skills.length;
   if(!ok){ box.hidden = true; return; }
   const q = v.slice(1).replace(/^skill:/, "").toLowerCase();
   PK.items = CW.skills.filter(k => k.name.toLowerCase().includes(q)).slice(0, 8); PK.at = 0;

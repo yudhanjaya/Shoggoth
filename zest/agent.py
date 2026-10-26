@@ -475,7 +475,7 @@ def _lower(s):
 def state():
     cmd, where = find_pi()
     return {"pi": {"found": bool(cmd), "where": where, "version": piup.summary()["active"] and piup.summary()["active"]["version"]},
-            "tasks": list_tasks(), "modes": list(MODES), "folders": folderstore.recent(8), "busy": busy(), "search": search_public()}
+            "tasks": list_tasks(), "modes": list(MODES), "folders": folderstore.recent(8), "busy": busy(), "search": search_public(), "home": home_dir()}
 
 
 def _clean_folders(extra, cwd):
@@ -493,22 +493,24 @@ def _clean_folders(extra, cwd):
     return out
 
 
+def home_dir():
+    return os.path.realpath(os.path.expanduser("~"))
+
+
 def create(cwd, mode=None, model="", extra_folders=None):
-    """A task with a folder is an agent working there; without one it is a plain chat (Pi with its tools off)."""
+    """Every chat is a working session with the full toolset (read, edit, run commands) in a folder. Without a folder
+    it works in the person's home folder, which the page says plainly, and which starts on "Ask first"."""
     sid = uuid.uuid4().hex[:12]
-    chat = not str(cwd or "").strip()
-    if chat:
-        cwd = os.path.join(store.data_dir(), "cowork", "scratch", sid)
-        os.makedirs(cwd, exist_ok=True)
-    cwd = os.path.realpath(os.path.expanduser(str(cwd)))
+    home = not str(cwd or "").strip()
+    cwd = home_dir() if home else os.path.realpath(os.path.expanduser(str(cwd)))
     if not os.path.isdir(cwd):
         raise ValueError("That folder doesn't exist.")
     if mode not in MODES:
-        mode = (folderstore.get(cwd)["mode"] if not chat else "") or "ask"
-    task = {"id": sid, "kind": "chat", "title": "New chat", "cwd": cwd, "chat": chat, "mode": mode, "model": model,
-            "folders": [] if chat else _clean_folders(extra_folders, cwd), "created": time.time(), "updated": time.time(),
+        mode = "ask" if home else (folderstore.get(cwd)["mode"] or "ask")
+    task = {"id": sid, "kind": "chat", "title": "New chat", "cwd": cwd, "chat": False, "home": home, "mode": mode, "model": model,
+            "folders": _clean_folders(extra_folders, cwd), "created": time.time(), "updated": time.time(),
             "seen": time.time()}
-    if not chat:
+    if not home:
         folderstore.touch(cwd)
     with _lock:
         _save_index(_load_index() + [task])
@@ -548,9 +550,11 @@ def set_folder(sid, cwd):
     if s and s.running:
         raise ValueError("Wait for it to finish its current answer first.")
     stop(sid)
-    folderstore.touch(cwd)
+    home = cwd == home_dir()
+    if not home:
+        folderstore.touch(cwd)
     extra = [f for f in (t or {}).get("folders", []) if f["path"] != cwd]
-    _update_meta(sid, cwd=cwd, chat=False, folders=extra)
+    _update_meta(sid, cwd=cwd, chat=False, home=home, folders=extra)
 
 
 def set_folders(sid, extra):
@@ -855,8 +859,22 @@ def _phrase(tool, args):
     return "Using " + str(tool)
 
 
+HOME_NOTE = ("Your working folder is the user's home folder, not a project, so it holds everything they own. Look around freely, but "
+             "do not change or delete anything there unless asked, leave hidden files and settings alone, and put anything new you "
+             "create in a sensible subfolder (named for the task) rather than loose in the home folder. You can run shell commands.")
+
+
 def _folders_note(t):
     extra = t.get("folders") or []
+    if t.get("home"):
+        extra_note = _extra_note(extra)
+        return (HOME_NOTE + " " + extra_note).strip()
+    if not extra:
+        return ""
+    return _extra_note(extra)
+
+
+def _extra_note(extra):
     if not extra:
         return ""
     rows = ["%s (%s)" % (f["path"], "look only, do not change anything there" if f["access"] == "read" else "you may change files there")
@@ -920,7 +938,7 @@ def session(sid, start=True):
         s.start()
         s.ready.wait(20)          # the transcript so far goes out before anything new happens
         s.ready_rec = {"type": "zest_ready", "model": task.get("model", ""), "ctx": ctx, "mode": task.get("mode", "ask"),
-                       "cwd": task["cwd"], "chat": bool(task.get("chat")), "models": [m["id"] for m in models],
+                       "cwd": task["cwd"], "chat": bool(task.get("chat")), "home": bool(task.get("home")), "models": [m["id"] for m in models],
                        "kind": task.get("kind", "chat"), "folders": task.get("folders", []), "parent": task.get("parent", "")}
         s.push(s.ready_rec)
         with _lock:
@@ -983,7 +1001,7 @@ def set_mode(sid, mode):
         raise ValueError("unknown mode")
     t = get_task(sid)
     _update_meta(sid, mode=mode)
-    if t and not t.get("chat") and not _is_job(t):
+    if t and not t.get("chat") and not t.get("home") and not _is_job(t):
         folderstore.remember_mode(t["cwd"], mode)
     s = session(sid, start=False)
     if s:
@@ -1058,8 +1076,8 @@ def create_job(parent, spec):
     goal = " ".join(str(spec.get("goal", "")).split()) if "\n" not in str(spec.get("goal", "")) else str(spec.get("goal", "")).strip()
     if not goal:
         raise ValueError("Say what the job should achieve.")
-    if p.get("chat"):
-        raise ValueError("Choose a folder for this chat first. A job needs somewhere to work.")
+    if p.get("chat") or p.get("home"):
+        raise ValueError("Choose a project folder for this chat first. A job needs somewhere to work, and your whole home folder is too much to work on.")
     check = str(spec.get("check", "")).strip()
     kind = spec.get("check_kind") if spec.get("check_kind") in ("command", "words") else ("command" if re.match(r"^[\w./-]+( |$)", check) and check else "words")
     if not check:

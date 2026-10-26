@@ -2,10 +2,10 @@
 
 Zest lets you use AI on your own computer. You talk to it like a chat app, but nothing leaves your machine: the AI, your conversations and your files all stay here. The one exception is web search, which you control: if the model wants to look something up, it asks first and shows the words it will search for.
 
-You can use it in two ways, and switch between them whenever you like:
+Every chat is a working session, and it uses Zest two ways at once:
 
-- **Just chat.** Ask a question, get an answer, think something through, draw a diagram, draft some writing.
-- **Work in a folder.** Pick a folder and the AI can look at the files in it, change them, and run commands, while you watch. It asks your permission before it changes anything, unless you tell it not to.
+- **Talk.** Ask a question, get an answer, think something through, draw a diagram, draft some writing.
+- **Work.** The AI works in a folder: it can look at the files in it, change them, and run commands in a terminal, while you watch. Pick the folder, or leave it and the AI works in your home folder (a note at the top of the chat says so). It asks your permission before it changes anything, unless you tell it not to.
 
 Everything else in Zest (Models, Skills, Advanced) exists to make those two things work well.
 
@@ -45,13 +45,13 @@ Open **Chat** and type. The bar under the title shows which model will answer an
 - Adding a note: if an answer is taking a while, you can type again. Your note is passed along when the AI is ready for it. Press **Stop** to cancel what it is doing.
 - The side panel (top right) has three tabs. **Jobs** shows background jobs, **Changes** shows what a job changed, and **Details** shows the folder, how careful it is, which model is answering, how full its memory is, and which skills are on.
 
-A chat with no folder is a plain conversation. The AI cannot see or change anything on your computer.
+A new chat works in your **home folder** unless you choose another, and says so at the top. Your home folder holds everything you own, so it starts on **Ask first** and a job (which works on a copy of a folder) needs a project folder. For focused work, choose the project's folder with the folder button under the message box.
 
 **Web search.** When a question needs something recent or the AI is unsure, it can search the web. Every search asks first and shows the exact words it wants to search for, so you decide what leaves your computer. Choose **Allow for this session** to stop being asked in that chat. You get only the titles, links and short snippets of the top results. By default it uses DuckDuckGo, which needs no key but has no official search service, so it can refuse. When that happens Zest does not keep retrying: it tells you, and the AI carries on from what it knows. For search that works every time, get a free key from [Brave Search](https://brave.com/search/api/) or [Tavily](https://app.tavily.com/), then open the **Details** panel, find **Web search**, choose the provider, paste the key and press **Test search**. The key is kept on this computer and never shown again. You can also switch web search off there.
 
 ## Working in a folder
 
-Press **Work in a folder…** under the message box and choose a folder. From then on, the AI can:
+Choose a folder with the folder button under the message box (or change it from the chip at the top of the chat). The AI can:
 
 - look at files and search them,
 - write new files and edit existing ones (you see exactly what changes),
@@ -121,7 +121,7 @@ Good to know:
 - **Only add skills from people you trust.** A skill is instructions the AI follows, and some include scripts. While you are on *Ask first*, every command still asks you.
 - Fewer is better for small models. Every skill you switch on adds a line the AI reads before every answer. A handful of well-chosen skills beats a hundred.
 - In a conversation with a folder, type `/` to pick a skill by name and make the AI use it. You can see when it used one: a **Skill** card appears in the conversation.
-- The diagrams and writing skills also work in a plain chat. The others need a folder.
+- Skills work in every chat.
 - Changes apply from your next message.
 
 ## Diagrams and documents
