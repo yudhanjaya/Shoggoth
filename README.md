@@ -322,9 +322,9 @@ This downloads a relocatable Python, Node.js, the Pi agent, Lemonade's official 
 To cut a release: bump `VERSION` in `zest/server.py`, then `git tag vX.Y.Z && git push --tags`.
 
 ## Zest is built on:
-
-- **[Lemonade](https://github.com/lemonade-sdk/lemonade)** (Apache-2.0, © AMD and contributors) is bundled unmodified in the AppImage; its licence is included alongside it.
-- **llama.cpp** (MIT) and the other backends are downloaded by Lemonade when you install them, not bundled.
+- **[Pi](https://github.com/earendil-works/pi)** (MIT) is bundled unmodified in the AppImage; its licence is included alongside it.
+- **[Lemonade](https://github.com/lemonade-sdk/lemonade)** (Apache-2.0) is bundled unmodified in the AppImage; its licence is included alongside it.
+- **[llama.cpp](https://github.com/ggml-org/llama.cpp)** (MIT) and the other backends are downloaded by Lemonade when you install them.
 - **[Python](https://www.python.org)** (PSF licence), via a relocatable build from [python-build-standalone](https://github.com/astral-sh/python-build-standalone), is bundled so the AppImage needs no system Python.
 
 ## License
