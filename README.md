@@ -1,6 +1,6 @@
 # Zest
 
-**Run AI models on your own computer, and put them to work, with one download.** Zest is a friendly interface for [Lemonade](https://lemonade-server.ai), the open-source engine that runs language models locally, and for [Pi](https://pi.dev), a coding-agent harness. The Zest AppImage **includes both**.
+**Run AI models on your own computer, and put them to work, with one download.** Zest is a friendly interface for [Lemonade](https://lemonade-server.ai), the open-source engine that runs language models locally, and for [Pi](https://pi.dev), a coding-agent harness. The Zest AppImage **includes both**. Linux-only for now.
 
 The idea is to provide a user interface that people who aren't necessarily steeped in technical know-how can still navigate to get open-weights models running on their own hardware, and then do real work with them: chat, draw diagrams, write documents, or let a model read and change the files in a folder while they watch. Download Zest, and you're good to go.
 
