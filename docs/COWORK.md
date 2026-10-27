@@ -1,6 +1,6 @@
 # Chat and Cowork
 
-The Chat page is a front end for [Pi](https://pi.dev), the minimal coding-agent harness. One conversation can be plain Q&A or an agent working in a folder; the page, the saved list and the transcript are the same.
+The Chat page is a front end for [Pi](https://pi.dev), the minimal coding-agent harness. One conversation can be plain Q&A or an agent working in a folder.
 
 ## How the pieces fit
 

@@ -1,0 +1,215 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Zest theme boards</title>
+<style>
+*{box-sizing:border-box;margin:0}
+body{background:#d9d6cc;font:14px/1.4 "Nunito Sans",system-ui,sans-serif;color:#1a1a17;padding:28px 20px 60px}
+h1{font:700 22px "Young Serif",Georgia,serif;margin-bottom:4px}
+.intro{color:#58584f;max-width:760px;margin-bottom:26px}
+.app{min-width:940px}
+.cap{display:flex;gap:14px;align-items:baseline;margin-bottom:10px}
+.cap b{font:700 12px "JetBrains Mono",monospace;letter-spacing:.08em;background:#1a1a17;color:#f7d916;padding:3px 8px;border-radius:4px}
+.cap h2{font:700 17px "Young Serif",Georgia,serif}
+.cap p{color:#58584f;font-size:13px}
+.notes{font-size:12.5px;color:#58584f;margin-top:10px;max-width:900px}
+
+/* ---------- the mock: same layout in every board ---------- */
+.app{--bg:#fffdf7;--surf:#fff;--surf2:#f6f4ec;--line:#e4e2d8;--ink:#1a1a17;--muted:#58584f;--lemon:#f7d916;--leaf:#1b7a3a;
+ display:grid;grid-template-columns:150px 170px 1fr 180px;height:540px;background:var(--bg);color:var(--ink);border-radius:14px;overflow:hidden;position:relative;font-size:12px}
+.app>div{min-width:0;position:relative}
+.rail{padding:14px 10px;display:flex;flex-direction:column;gap:4px;border-right:1px solid var(--line)}
+.logo{font:700 22px "Young Serif",Georgia,serif;padding:0 6px 12px;display:flex;gap:6px;align-items:center}
+.logo i{width:20px;height:18px;border-radius:50% 50% 50% 50%/60% 60% 40% 40%;background:var(--lemon);border:2px solid var(--ink);display:inline-block}
+.nav{padding:9px 10px;border-radius:9px;display:flex;gap:8px;align-items:center;color:var(--muted);font-size:13px}
+.nav.on{background:#fdf3c0;color:var(--ink);font-weight:700}
+.nav s{width:11px;height:11px;border:1.6px solid currentColor;border-radius:3px;display:inline-block}
+.foot{margin-top:auto;padding:6px;color:var(--muted);font-size:11px}
+.list{padding:12px;border-right:1px solid var(--line);display:flex;flex-direction:column;gap:10px}
+.newchat{background:var(--lemon);border-radius:9px;padding:11px;text-align:center;font-weight:700;font-size:13px}
+.item{background:var(--surf);border:1px solid var(--line);border-radius:9px;padding:9px 10px}
+.item small{display:block;color:var(--muted);font-size:11px}
+.earlier{color:#174f94;text-decoration:underline;padding:0 4px}
+.main{display:flex;flex-direction:column;border-right:1px solid var(--line)}
+.top{padding:12px 16px;font:700 16px "Young Serif",Georgia,serif;border-bottom:1px solid var(--line)}
+.bar{display:flex;gap:8px;align-items:center;padding:9px 12px;background:var(--surf2);border-bottom:1px solid var(--line);font-size:11.5px}
+.dot{width:9px;height:9px;border-radius:50%;background:var(--leaf)}
+.sel{background:var(--surf);border:1px solid var(--line);border-radius:7px;padding:6px 10px}
+.btn{background:var(--surf);border:1px solid var(--line);border-radius:7px;padding:6px 11px;font-size:12px}
+.chat{flex:1;padding:16px 18px;display:flex;flex-direction:column;gap:14px;overflow:hidden}
+.user{align-self:flex-end;max-width:80%;background:#f1efe8;border-radius:12px;padding:10px 13px}
+.bot{padding-left:34px;position:relative}
+.bot:before{content:"";position:absolute;left:2px;top:2px;width:20px;height:18px;border-radius:50%;background:var(--lemon);border:2px solid var(--ink)}
+.code{background:var(--surf);border:1px solid var(--line);border-radius:10px;padding:10px 12px;font:11px/1.6 "JetBrains Mono",monospace;margin:8px 0}
+.compose{margin:10px 18px 16px;border:1.5px solid var(--lemon);border-radius:14px;background:var(--surf);padding:11px 13px;display:flex;flex-direction:column;gap:14px;color:#66665c}
+.compose div{display:flex;justify-content:space-between;align-items:center}
+.send{background:var(--lemon);color:var(--ink);font-weight:700;border-radius:9px;padding:8px 13px}
+.side{padding:12px 14px;display:flex;flex-direction:column;gap:8px}
+.tabs{display:flex;gap:12px;font-size:12px;color:var(--muted);padding-bottom:8px;border-bottom:1px solid var(--line)}
+.tabs .on{color:var(--ink);border-bottom:2px solid var(--lemon);padding-bottom:6px;margin-bottom:-9px}
+.lab{font-size:10.5px;letter-spacing:.08em;color:var(--muted);text-transform:uppercase;margin-top:6px}
+.meter{height:7px;border-radius:4px;background:#ecebe3;position:relative}
+.meter:after{content:"";position:absolute;left:0;top:0;bottom:0;width:6%;background:var(--lemon);border-radius:4px}
+.side .btn{align-self:flex-start}
+.screw,.grille,.led,.tick{display:none}
+
+/* ================= A · BRAUN T3 — matte warm plastic ================= */
+.A{--bg:#e9e6dc;--surf:#f4f1e8;--surf2:#e2dfd4;--line:#cfcbbd;box-shadow:0 18px 40px rgba(60,50,30,.25),inset 0 1px 0 #fff8}
+.A .rail,.A .list,.A .side{background:linear-gradient(#ece9df,#e4e1d6)}
+.A .nav.on{background:#e0ddd0;box-shadow:inset 0 2px 4px rgba(60,50,30,.28),inset 0 -1px 0 #fff9}
+.A .logo i{background:var(--lemon)}
+.A .newchat{background:linear-gradient(#fbe53a,#eccb0a);box-shadow:0 2px 0 #b99a00,0 4px 8px rgba(80,60,0,.3),inset 0 1px 0 #fff9;border:1px solid #c9ab05}
+.A .item,.A .sel,.A .btn{background:linear-gradient(#f9f7f0,#ebe8dd);border-color:#c4c0b2;box-shadow:0 1px 0 #fff,0 2px 3px rgba(60,50,30,.18)}
+.A .btn{box-shadow:0 2px 0 #bdb9aa,0 3px 5px rgba(60,50,30,.2),inset 0 1px 0 #fff}
+.A .bar{background:#ddd9cc;box-shadow:inset 0 2px 5px rgba(60,50,30,.2)}
+.A .chat{background:#f6f4ec;box-shadow:inset 0 3px 8px rgba(60,50,30,.12)}
+.A .user{background:#ebe8dc;box-shadow:inset 0 1px 3px rgba(60,50,30,.2)}
+.A .code{background:#efede4;box-shadow:inset 0 2px 5px rgba(60,50,30,.22)}
+.A .compose{background:#f2efe6;border-color:#c9ab05;box-shadow:inset 0 3px 6px rgba(60,50,30,.2),0 1px 0 #fff}
+.A .send{background:linear-gradient(#fbe53a,#eccb0a);box-shadow:0 2px 0 #b99a00,0 3px 6px rgba(80,60,0,.3),inset 0 1px 0 #fff9}
+.A .meter{background:#d6d2c5;box-shadow:inset 0 2px 3px rgba(60,50,30,.35)}
+.A .dot{background:radial-gradient(circle at 35% 30%,#7be29a,#1b7a3a 60%);box-shadow:0 0 6px 1px rgba(40,200,90,.55),0 0 0 2px #cfcbbd,inset 0 -1px 1px #0004}
+.A .grille{display:block;margin:0 6px 8px;height:34px;background:radial-gradient(circle,#a9a597 1.3px,transparent 1.6px) 0 0/8px 8px;opacity:.8}
+
+/* ================= B · TE — field-kit, hard shadows, printed labels ================= */
+.B{--bg:#dcdad2;--surf:#f5f3ec;--surf2:#cfd3cf;--line:#1a1a17;--lemon:#ffd400;border:2px solid #1a1a17;box-shadow:8px 8px 0 #1a1a17}
+.B .rail{background:#e9e7df;border-right:2px solid #1a1a17}
+.B .list{background:#dcdad2;border-right:2px solid #1a1a17}
+.B .side{background:#e9e7df}
+.B .main{border-right:2px solid #1a1a17}
+.B .top,.B .bar,.B .tabs{border-bottom:2px solid #1a1a17}
+.B .top{font-family:"JetBrains Mono",monospace;font-size:12px;text-transform:uppercase;letter-spacing:.06em;background:#ff5a1f;color:#1a1a17}
+.B .nav{border:2px solid transparent;font-family:"JetBrains Mono",monospace;font-size:11px;text-transform:uppercase;letter-spacing:.04em}
+.B .nav.on{background:var(--lemon);border-color:#1a1a17;box-shadow:3px 3px 0 #1a1a17;color:#1a1a17}
+.B .newchat,.B .send{border:2px solid #1a1a17;box-shadow:3px 3px 0 #1a1a17;background:var(--lemon);border-radius:7px}
+.B .item,.B .sel,.B .btn{border:2px solid #1a1a17;border-radius:7px;box-shadow:2px 2px 0 #1a1a17;background:#f5f3ec}
+.B .bar{background:#cfd3cf}
+.B .chat{background:#c9d1c3;box-shadow:inset 0 0 0 4px #e9e7df,inset 0 0 0 6px #1a1a17;padding:24px 26px;border-radius:0}
+.B .user{background:#f5f3ec;border:1.5px solid #1a1a17;border-radius:4px}
+.B .code{background:#1a1a17;color:#9be39b;border:0;border-radius:4px;box-shadow:inset 0 0 0 1px #3a3a33}
+.B .compose{border:2px solid #1a1a17;border-radius:8px;box-shadow:4px 4px 0 #1a1a17;background:#f5f3ec}
+.B .meter{height:12px;border:2px solid #1a1a17;border-radius:2px;background:repeating-linear-gradient(90deg,transparent 0 9px,#1a1a1755 9px 10px)}
+.B .meter:after{border-radius:0;background:#ff5a1f;width:8%}
+.B .dot{background:#ff5a1f;border:2px solid #1a1a17;border-radius:50%;width:11px;height:11px;box-shadow:0 0 0 2px #e9e7df}
+.B .lab{font-family:"JetBrains Mono",monospace;color:#1a1a17;font-size:9.5px}
+.B .tick{display:block;position:absolute;top:6px;right:10px;font:9px "JetBrains Mono",monospace;letter-spacing:.1em}
+
+/* ================= C · LIGHT TOUCH — keycaps, wells, one lamp ================= */
+.C{--line:#e0ddd2;box-shadow:0 10px 30px rgba(60,50,30,.15),0 0 0 1px #d8d5c8}
+.C .nav.on{background:#fdf3c0;box-shadow:inset 0 1px 2px rgba(60,50,30,.2)}
+.C .newchat,.C .send{background:linear-gradient(#fadf1c,#f0cf0c);box-shadow:0 1.5px 0 #b99a00,inset 0 1px 0 #fff8;border-radius:10px}
+.C .btn,.C .sel{background:linear-gradient(#fff,#f6f4ec);box-shadow:0 1.5px 0 #d4d0c2,0 1px 2px rgba(60,50,30,.1);border-color:#dcd9cc}
+.C .item{box-shadow:0 1px 2px rgba(60,50,30,.08)}
+.C .compose{box-shadow:inset 0 2px 4px rgba(60,50,30,.12);background:#fbf9f2}
+.C .meter{box-shadow:inset 0 1px 3px rgba(60,50,30,.3)}
+.C .dot{box-shadow:0 0 0 2px #fff,0 0 0 3px #d4d0c2,0 0 7px 1px rgba(40,200,90,.5)}
+
+
+/* ====== P · palette themes: Light Touch treatment, recoloured ====== */
+.P{--lemon:var(--ac);--wash:color-mix(in srgb,var(--ac) 20%,var(--bg));--userbg:var(--surf2);--link:color-mix(in srgb,var(--ac) 65%,var(--ink));--hi:rgba(255,255,255,.07);--sh:rgba(0,0,0,.45);
+ box-shadow:0 10px 30px rgba(0,0,0,.3),0 0 0 1px var(--line)}
+.P .rail,.P .list,.P .main,.P .side,.P .top,.P .bar,.P .tabs{border-color:var(--line)}
+.P .nav.on{background:var(--wash);color:var(--ink);box-shadow:inset 0 1px 3px var(--sh)}
+.P .earlier{color:var(--link)}
+.P .user{background:var(--userbg)}
+.P .logo i,.P .bot:before{border-color:var(--ink)}
+.P .newchat,.P .send{background:linear-gradient(color-mix(in srgb,var(--ac) var(--kp,82%),#fff),var(--ac));color:var(--aci);border-radius:10px;box-shadow:0 2px 0 color-mix(in srgb,var(--ac) 55%,#000),0 3px 6px var(--sh),inset 0 1px 0 rgba(255,255,255,.35)}
+.P .btn,.P .sel{background:linear-gradient(color-mix(in srgb,var(--surf) 94%,#fff),var(--surf));border-color:var(--line);box-shadow:0 2px 0 var(--sh),inset 0 1px 0 var(--hi)}
+.P .item{box-shadow:0 1px 2px var(--sh)}
+.P .compose{border-color:var(--ac);background:color-mix(in srgb,var(--surf) 92%,#000);box-shadow:inset 0 2px 5px var(--sh);color:var(--muted)}
+.P .code{background:color-mix(in srgb,var(--bg) 86%,#000);box-shadow:inset 0 2px 4px var(--sh)}
+.P .meter{background:color-mix(in srgb,var(--bg) 75%,#000);box-shadow:inset 0 1px 3px var(--sh)}
+.P .dot{background:var(--ok);box-shadow:0 0 0 2px var(--bg),0 0 0 3px var(--line),0 0 8px 1px var(--ok)}
+.P .foot,.P .lab,.P .tabs,.P .nav,.P small{color:var(--muted)}
+.P .tabs .on{color:var(--ink)}
+.P .item small,.P .compose div:last-child span:first-child{color:color-mix(in srgb,var(--muted) 35%,var(--ink))}
+
+/* ---- P, full hardware pass ---- */
+.P{--up:color-mix(in srgb,var(--surf2) calc(100% - var(--upw,10%)),#fff);--wk:#000;--dn:color-mix(in srgb,var(--bg) 70%,var(--wk));--edge:color-mix(in srgb,var(--bg) 55%,#000);
+ box-shadow:0 18px 40px rgba(0,0,0,.4),0 0 0 1px var(--edge),inset 0 1px 0 var(--hi),inset 0 0 0 3px var(--surf),inset 0 0 0 4px var(--edge)}
+.P .rail,.P .list,.P .side{background:linear-gradient(color-mix(in srgb,var(--surf2) 55%,var(--bg)),var(--bg))}
+.P .rail,.P .list,.P .main{border-right:0;box-shadow:1px 0 0 var(--edge),2px 0 0 var(--hi)}
+.P .top,.P .bar,.P .tabs{border-bottom:0;box-shadow:0 1px 0 var(--edge),0 2px 0 var(--hi)}
+.P .top{text-shadow:var(--tg,0 1px 0 var(--edge))}
+.P .nav.on{background:color-mix(in srgb,var(--ac) 16%,var(--dn));box-shadow:inset 0 2px 5px var(--sh),0 1px 0 var(--hi)}
+.P .nav.on:after{content:"";margin-left:auto;width:6px;height:6px;border-radius:50%;background:var(--ac);box-shadow:0 0 6px var(--ac)}
+.P .newchat,.P .send{border:1px solid color-mix(in srgb,var(--ac) 60%,#000);box-shadow:0 3px 0 color-mix(in srgb,var(--ac) 50%,#000),0 5px 8px var(--sh),inset 0 1px 0 rgba(255,255,255,.5),inset 0 -2px 3px rgba(0,0,0,.15);text-shadow:0 1px 0 rgba(255,255,255,.25)}
+.P .btn,.P .sel,.P .item{background:linear-gradient(var(--up),var(--surf2));border:1px solid var(--edge);box-shadow:0 2px 0 var(--edge),0 3px 5px var(--sh),inset 0 1px 0 var(--hi)}
+.P .bar{background:var(--dn);box-shadow:inset 0 2px 6px var(--sh),0 1px 0 var(--hi)}
+.P .chat{background:color-mix(in srgb,var(--bg) 88%,var(--wk));box-shadow:inset 0 4px 12px var(--sh),inset 0 0 0 1px var(--edge)}
+.P .user{background:color-mix(in srgb,var(--surf2) 80%,var(--wk));box-shadow:inset 0 2px 5px var(--sh),0 1px 0 var(--hi)}
+.P .code{background:color-mix(in srgb,var(--bg) 70%,var(--wk));border:1px solid var(--edge);box-shadow:inset 0 3px 8px var(--sh)}
+.P .compose{background:color-mix(in srgb,var(--bg) 82%,var(--wk));box-shadow:inset 0 3px 8px var(--sh),0 1px 0 var(--hi),0 0 10px color-mix(in srgb,var(--ac) 25%,transparent)}
+.P .meter{height:10px;border-radius:5px;background:color-mix(in srgb,var(--bg) 68%,var(--wk)) repeating-linear-gradient(90deg,transparent 0 11px,color-mix(in srgb,var(--muted) 45%,transparent) 11px 12px);box-shadow:inset 0 2px 4px var(--sh),0 1px 0 var(--hi)}
+.P .meter:after{background:linear-gradient(color-mix(in srgb,var(--ac) 80%,#fff),var(--ac));box-shadow:0 0 6px var(--ac)}
+.P .dot{width:10px;height:10px;box-shadow:0 0 0 2px var(--dn),0 0 0 3px var(--up),0 0 10px 2px var(--ok),inset 0 -1px 1px rgba(0,0,0,.3),inset 0 1px 1px rgba(255,255,255,.5)}
+.P .grille{display:block;margin:0 6px 8px;height:34px;background:radial-gradient(circle,color-mix(in srgb,var(--bg) 55%,#000) 1.5px,transparent 1.8px) 0 0/8px 8px;filter:drop-shadow(0 1px 0 var(--hi))}
+.P .screw{display:block;position:absolute;width:9px;height:9px;border-radius:50%;background:radial-gradient(circle at 35% 30%,var(--up),var(--surf2) 45%,var(--edge));box-shadow:0 1px 1px var(--sh);z-index:3}
+.P .screw:after{content:"";position:absolute;left:1px;right:1px;top:4px;height:1.2px;background:var(--edge);transform:rotate(35deg)}
+.P .screw.a{left:7px;top:7px}.P .screw.b{right:7px;top:7px}.P .screw.c{left:7px;bottom:7px}.P .screw.d{right:7px;bottom:7px}
+.P .tabs .on{position:relative;border-bottom-color:var(--ac)}
+.P .tabs .on:after{content:"";position:absolute;left:2px;right:2px;bottom:-2px;height:2px;border-radius:2px;box-shadow:0 1px 6px 0 var(--ac);clip-path:inset(50% 0 -8px 0)}
+
+/* ---------- page ---------- */
+.stage{max-width:1000px;margin:0 auto 30px;overflow-x:auto;padding:0 8px 16px 0}
+.stagecap{max-width:1000px;margin:0 auto 10px;display:flex;gap:12px;align-items:baseline}
+.stagecap b{font:700 12px "JetBrains Mono",monospace;background:#1a1a17;color:#f7d916;padding:3px 8px;border-radius:4px}
+.stagecap h2{font:700 18px "Young Serif",Georgia,serif}.stagecap p{color:#58584f;font-size:13px}
+.grid{max-width:1000px;margin:0 auto;display:grid;grid-template-columns:repeat(auto-fill,minmax(392px,1fr));gap:22px 20px}
+.card{min-width:0;cursor:pointer;border-radius:12px;padding:8px;border:2px solid transparent}
+.card:hover{background:#cfccc0}.card.sel{border-color:#1a1a17}
+.card .view{zoom:.4;pointer-events:none;overflow:hidden;border-radius:14px}
+.card h3{font:700 13px "Young Serif",Georgia,serif;margin:8px 2px 0}
+.card h3 small{font:400 11.5px "Nunito Sans",sans-serif;color:#58584f;margin-left:6px}
+.sw{display:flex;gap:3px;margin:6px 2px 0}.sw i{width:16px;height:10px;border-radius:2px;box-shadow:0 0 0 1px #0002}
+.sect{max-width:1000px;margin:26px auto 10px;font:700 11px "JetBrains Mono",monospace;letter-spacing:.1em;color:#58584f;text-transform:uppercase}
+</style></head><body>
+<h1>Zest · theme boards</h1>
+<p class="intro">Same Chat screen, 15 looks. <b>Light Touch</b> is the proposed default; <b>Braun T3</b> and <b>Teenage Engineering</b> are the two full-skeuomorphic themes; the rest are editor palettes now given the full hardware treatment (raised keycaps, recessed chat bay, ticked meter, jewel lamp, speaker grille, corner screws, engraved seams, pilot light on the active tab). Layout is identical everywhere. Click any card to see it full size at the top.</p>
+<div class="stagecap" id="cap"></div><div class="stage" id="stage"></div>
+<div class="sect">Core themes</div><div class="grid" id="g1"></div>
+<div class="sect" style="margin-top:34px">Editor palettes</div><div class="grid" id="g2"></div>
+<script>
+const tpl=(c,st="")=>`<div class="app ${c}" style="${st}">
+<i class="screw a"></i><i class="screw b"></i><i class="screw c"></i><i class="screw d"></i>
+<div class="rail"><div class="logo"><i></i>Zest</div>
+<div class="nav on"><s></s>Chat</div><div class="nav"><s></s>Models</div><div class="nav"><s></s>Skills</div><div class="nav"><s></s>Docs</div><div class="nav"><s></s>Help</div><div class="nav"><s></s>Advanced</div>
+<div class="foot"><div class="grille"></div>Everything runs on this computer.</div></div>
+<div class="list"><div class="newchat">+ New chat</div><div class="item">Write a short Python functio…<small>Chat</small></div><div class="earlier">Earlier chats</div></div>
+<div class="main"><div class="top">Write a short Python functio…</div>
+<div class="bar"><span class="dot"></span><span class="sel">Gemma 4 26B A4B</span><span class="sel">Context 128k · default</span><span>In memory</span><span style="margin-left:auto" class="btn">Unload</span></div>
+<div class="chat"><div class="user">Write a short Python function that checks whether a word is a palindrome, and explain how it works in two sentences.</div>
+<div class="bot"><span style="color:#6f6f64">▸ Thought for 5 s</span><div class="code">def is_palindrome(word):<br>&nbsp;&nbsp;&nbsp;&nbsp;clean_word = word.lower().replace(" ", "")<br>&nbsp;&nbsp;&nbsp;&nbsp;return clean_word == clean_word[::-1]</div>The function converts the string to lowercase and removes spaces so the check is case-insensitive. It then compares the cleaned string to its reverse.</div></div>
+<div class="compose"><div>Reply…</div><div><span>Work in a folder…</span><span class="send">Send</span></div></div></div>
+<div class="side"><div class="tabs"><span>Jobs</span><span>Changes</span><span class="on">Details</span></div>
+<div class="lab">Folder</div><div style="font-family:monospace">None. Just chatting.</div><div class="btn">Work in a folder…</div>
+<div class="lab">Memory used</div><div class="meter"></div><div>3k of 131k tokens (2%)</div><div class="btn">Make room</div>
+<div class="lab">Skills</div><div>8 switched on.</div><div class="btn">Manage skills</div></div>
+</div>`;
+
+const core=[
+ ["lt","Light Touch","default","C",""],
+ ["a","Braun T3","matte plastic, lamp, grille","A",""],
+ ["b","Teenage Engineering","hard shadows, orange, mono labels","B",""]];
+const P=(n,note,bg,surf,s2,line,ink,mu,ac,aci,ok,extra="")=>[n.toLowerCase().replace(/\W+/g,""),n,note,"P",`--bg:${bg};--surf:${surf};--surf2:${s2};--line:${line};--ink:${ink};--muted:color-mix(in srgb,${mu} 55%,${ink});--ac:${ac};--aci:${aci};--ok:${ok};${extra}`];
+const pal=[
+ P("One Dark Pro","dark","#282c34","#21252b","#2c313a","#3e4451","#bcc2cd","#7f848e","#61afef","#14181f","#98c379"),
+ P("Dracula","dark","#282a36","#21222c","#343746","#44475a","#f8f8f2","#8f9bd0","#bd93f9","#1b1530","#50fa7b"),
+ P("Monokai Pro","dark","#2d2a2e","#221f22","#403e41","#5b595c","#fcfcfa","#a09fa0","#ffd866","#2d2a2e","#a9dc76"),
+ P("Night Owl","dark","#011627","#01111d","#0b2942","#1d3b53","#d6deeb","#7791a0","#82aaff","#011627","#addb67"),
+ P("SynthWave '84","dark, neon glow","#262335","#1e1a2c","#34294f","#495495","#ffffff","#a3a9d9","#ff7edb","#241b2f","#72f1b8","--tg:0 0 8px #ff7edb,0 0 2px #fff;"),
+ P("Cobalt2","dark","#193549","#15232d","#1f4662","#0d3a58","#ffffff","#9bb5c8","#ffc600","#193549","#3ad900"),
+ P("Nord","dark","#2e3440","#272c36","#3b4252","#4c566a","#d8dee9","#8f9bb3","#88c0d0","#2e3440","#a3be8c"),
+ P("Gruvbox Dark","dark","#282828","#1d2021","#3c3836","#504945","#ebdbb2","#a89984","#fabd2f","#282828","#b8bb26"),
+ P("GitHub Dark","dark","#0d1117","#010409","#161b22","#30363d","#e6edf3","#8b949e","#1f6feb","#fff","#3fb950","--kp:100%;"),
+ P("GitHub Light","light","#ffffff","#f6f8fa","#eaeef2","#d0d7de","#1f2328","#59636e","#0969da","#fff","#1a7f37","--hi:rgba(255,255,255,.8);--sh:rgba(31,35,40,.2);--upw:60%;--kp:100%;--wk:color-mix(in srgb,#1f2328 35%,#fff);"),
+ P("Catppuccin Mocha","dark","#1e1e2e","#181825","#313244","#45475a","#cdd6f4","#a6adc8","#cba6f7","#1e1e2e","#a6e3a1"),
+ P("Catppuccin Latte","light","#eff1f5","#e6e9ef","#dce0e8","#ccd0da","#4c4f69","#5c5f77","#8839ef","#fff","#40a02b","--hi:rgba(255,255,255,.8);--sh:rgba(76,79,105,.25);--upw:60%;--kp:100%;--wk:color-mix(in srgb,#4c4f69 35%,#fff);")];
+const all=[...core,...pal];
+const card=(t,i)=>{let sw="";if(t[3]==="P"){const m=k=>(t[4].match(new RegExp("--"+k+":([^;]+)"))||[])[1];sw="<div class=sw>"+["bg","surf","surf2","ink","ac","ok"].map(k=>`<i style="background:${m(k)}"></i>`).join("")+"</div>"}
+ return `<div class="card" data-i="${i}"><div class="view">${tpl(t[3],t[4])}</div><h3>${t[1]}<small>${t[2]}</small></h3>${sw}</div>`};
+g1.innerHTML=core.map((t,i)=>card(t,i)).join("");
+g2.innerHTML=pal.map((t,i)=>card(t,i+core.length)).join("");
+function pick(i){const t=all[i];stage.innerHTML=tpl(t[3],t[4]);cap.innerHTML=`<b>${String(i+1).padStart(2,"0")}</b><h2>${t[1]}</h2><p>${t[2]}</p>`;document.querySelectorAll(".card").forEach(c=>c.classList.toggle("sel",+c.dataset.i===i))}
+document.addEventListener("click",e=>{const c=e.target.closest(".card");if(c){pick(+c.dataset.i);scrollTo({top:0,behavior:"smooth"})}});
+pick(0);
+</script></body></html>

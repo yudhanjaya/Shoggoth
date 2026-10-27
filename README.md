@@ -8,7 +8,7 @@ The idea is to provide a user interface that people who aren't necessarily steep
 
 *Chat, working in a folder: it read the code, fixed a bug with a one-line change (shown as a diff) and ran the tests again, step by step.*
 
-**Contents:** [What you can do](#what-you-can-do-with-zest) · [Install and run](#install-and-run) · [Finding your way around](#finding-your-way-around) · [Your first conversation](#your-first-conversation) · [Choosing and managing models](#choosing-and-managing-models) · [Skills](#skills) · [Use your models in other apps](#use-your-models-in-other-apps) · [Keeping everything up to date](#keeping-everything-up-to-date) · [Advanced tools](#advanced-tools) · [Your data and privacy](#your-data-and-privacy) · [Screenshots](#screenshots) · [For developers](#for-developers)
+**Contents:** [What you can do](#what-you-can-do-with-zest) · [Install and run](#install-and-run) · [Finding your way around](#finding-your-way-around) · [Your first conversation](#your-first-conversation) · [Choosing and managing models](#choosing-and-managing-models) · [Skills](#skills) · [Use your models in other apps](#use-your-models-in-other-apps) · [Keeping everything up to date](#keeping-everything-up-to-date) · [Advanced tools](#advanced-tools) · [Themes](#themes) · [Your data and privacy](#your-data-and-privacy) · [For developers](#for-developers)
 
 ## What you can do with Zest
 
@@ -18,6 +18,7 @@ The idea is to provide a user interface that people who aren't necessarily steep
 - **Draw diagrams and write documents.** Ask for a picture or a README and get one, shown right in the chat.
 - **Teach it new tricks with skills.** Short instruction sheets that make small models far more dependable. Add more by pasting a link.
 - **Pick and manage models.** Zest tells you which ones will run comfortably on your computer and downloads them for you.
+- **Make it look the way you like.** Fifteen themes, from soft plastic to Dracula and Nord, under **Advanced > Themes**.
 - **Use your models in other apps.** Zest can share them with tools such as opencode or any app that talks to an OpenAI-style server.
 
 Zest runs on Linux. It needs no technical setup: you download one file and follow a few short steps. The **Docs** tab inside the app explains everything in plain language (its text lives in [zest/docs.md](zest/docs.md)).
@@ -41,7 +42,11 @@ Zest runs on Linux. It needs no technical setup: you download one file and follo
    | **A model** | Suggestions in three tiers. Quick is LFM2.5 8B A1B (fast, to the point, good with tools, happy on almost any computer). Balanced is Qwen3.6 35B A3B MTP or Gemma 4 26B A4B. Thorough is Qwen3.6 27B MTP or Gemma 4 31B MTP. Press Download on one. If a model is too big for your computer, **See every model** has smaller ones. |
    | **Chat** | Press Start chatting. Type a question or a task. The model works in your home folder unless you choose another folder. |
 
-   People who already have models, or run their own Lemonade, can skip to **Advanced > Setup guide**, which keeps the full set of choices: where models are stored, models you already have (LM Studio, Ollama, llama.cpp and others are found for you), and Lemonade updates.
+   ![The last welcome step: Zest is ready and shows which model it will use](docs/screenshots/welcome.png)
+
+*The welcome steps finish with a button that opens the chat.*
+
+People who already have models, or run their own Lemonade, can skip to **Advanced > Setup guide**, which keeps the full set of choices: where models are stored, models you already have (LM Studio, Ollama, llama.cpp and others are found for you), and Lemonade updates.
 
 ### What you need
 
@@ -54,7 +59,7 @@ If your system has no FUSE support, run `./Zest-*-x86_64.AppImage --appimage-ext
 
 ## Finding your way around
 
-The left-hand menu has six places. Everything a newcomer needs is in the first five; everything technical sits behind **Advanced**.
+The left-hand menu has six places. Everything a newcomer needs is in the first five; everything technical sits behind **Advanced**, and so does the choice of theme.
 
 | Menu item | What it is for |
 | --- | --- |
@@ -63,7 +68,11 @@ The left-hand menu has six places. Everything a newcomer needs is in the first f
 | **Skills** | Switch skills on and off, and add more from a GitHub link. |
 | **Docs** | A plain-language guide to all of this, inside the app. |
 | **Help** | Short answers to common questions, and a button to repeat the welcome steps. |
-| **Advanced** | Server, Hardware, Engines, All settings and the Setup guide. You never need these just to chat. |
+| **Advanced** | Server, Hardware, Engines, All settings, the Setup guide and Themes. You never need these just to chat. |
+
+![The Docs page, with the menu on the left](docs/screenshots/docs.png)
+
+*The menu on the left, with the Docs tab open.*
 
 ## Your first conversation
 
@@ -72,6 +81,20 @@ Open **Chat** and type. The bar under the title shows which model will answer an
 **Chat** runs on [Pi](https://pi.dev), a coding-agent harness that ships inside Zest. Every chat is a co-working session: the model reads, searches, edits and runs commands (it has a terminal) in a folder while you watch. Pick the folder, or leave it and it works in your home folder, and says so at the top of the chat; there it starts on **Ask first**, and jobs need a project folder. It answers questions like a normal chat too, and asks before it changes anything (tool cards show each step; edits show a diff). Choose how careful it is per chat (**Ask first**, **Edit freely**, **Do everything**, **Look only**), add more folders it can look at or change, switch models, watch how much of the context window is used, and add notes while it works.
 
 For bigger work, press **Start a job…**. Say what should get done and how Zest can tell it is done, such as a test command that passes. The job runs in the background, round after round, and stops when the check passes, when it hits its round or time limit, or when it stops making progress. By default it works on a copy of your folder; the **Changes** tab shows what it changed and you apply what you want. Jobs are listed under their chat, and you can keep chatting while they work. Chats and jobs are saved and pick up where they left off. See [docs/COWORK.md](docs/COWORK.md).
+
+### Chat
+
+Replies stream in as they are written. The bar under the title shows which model answers, how much context it has (128k by default) and whether it is in memory, with **Load**, **Unload** and **Reload**. A reasoning model's thinking appears live above its answer and folds away when it is done. Markdown and code blocks come with copy buttons, and a small strip shows what the model is doing: 📖 reading, 🤔 thinking, ✍️ writing, 🛠️ working.
+
+![Chat](docs/screenshots/chat.png)
+
+### Working in a folder
+
+Every chat works in a folder (your home folder unless you choose one) and can read, search, edit and run things there. Tool cards show each step, edits show a diff, and in **Ask first** and **Edit freely** modes it stops and asks before it runs a command. Here it was asked to fix a folder whose tests were failing: it read the tests and the code, made a one-line change and ran the tests again to confirm.
+
+![Zest asking before it runs a command](docs/screenshots/work-approve.png)
+
+![Reading the code, a diff of the fix, and the tests run again](docs/screenshots/work-tools.png)
 
 ## Choosing and managing models
 
@@ -94,13 +117,40 @@ Lemonade handles models; Zest gives you the choices.
 - **Load, unload and reload live in the chat.** A bar under the chat's title shows the model, the context size and whether the model is in memory, with **Load**, **Unload** and **Reload** next to them. Pick a different model there, or change the context size (128k by default; the choice is remembered) and a loaded model is reloaded at the new size. Sending a message to a model that isn't in memory loads it for you, at that size. The **Models** page is for downloading models and editing their settings: each downloaded card has **Chat with it** and **Settings**. **Delete from this computer** is under **Details**; it asks first, says how much disk it frees, unloads the model if it is running, and you can download it again later.
 - **Get from Hugging Face** takes a link or `org/name`, lists the GGUF versions in the repository with their sizes and a plain label (for example "A good balance"), marks which ones fit your computer, and hands the download to Lemonade.
 
+### The Models page
+
+The Models page is for downloading models and editing how they run. **My picks** leads with the models I've tested and recommend; **On this computer** lists what you have. The meter on each card shows what will fit in the memory that is free on your graphics cards right now; if another program is using it, Zest warns you and names it.
+
+![Models on this computer](docs/screenshots/models.png)
+
+- **Start here: LFM2.5 8B A1B.** Very fast, runs on almost anything, calls tools well, and keeps answers short.
+- **My general pick: Qwen3.6 35B A3B MTP.** Fast and competent at everyday tasks, research and agent work.
+- **If Qwen 3.6 won't run: GLM 4.7 Flash.** Fast, but it makes things up, so it comes with a warning.
+- **Bigger and slower, dense models: Gemma 4 31B MTP and Qwen3.8 27B.** Good answers, but slow. With a GPU and 64 GB of RAM, try Strata instead.
+- **For advanced users: Strata and Maya,** separate inference engines built for huge models, with a clear warning that they run outside Zest and Lemonade.
+- **Make any model better:** OpenChamber as the app I recommend, and obra/superpowers for skills.
+
+**Get from Hugging Face** is for experts. It lists the GGUF versions in a repository, with a plain label, the size, and whether each fits. When Lemonade or llama.cpp refuses a model (for example because its architecture isn't supported yet, it needs a login, it can't be found, or memory or disk is short), Zest shows a plain-language message with the technical details tucked underneath, and offers to open Engines when an update may help. **How do I choose a model?** explains what to look for and links to benchmark sites and communities.
+
+### Settings for one model
+
+Press **Settings** on any downloaded card. Set the backend and devices, and tune `llama-server` with tick boxes and dropdowns instead of flags. Rows you have changed are highlighted, the exact arguments Zest will pass are shown, and anything your `llama-server` does not understand is flagged. **Save** keeps it; for a model that is in memory, press **Reload** in the chat's model bar to use the new settings.
+
+![Model settings](docs/screenshots/model-options.png)
+
 ## Skills
 
 **Skills** are short instruction sheets the model reads when a job calls for them. Zest comes with Superpowers (a trimmed copy of [obra/superpowers](https://github.com/obra/superpowers): ask what you really want, plan, test first, find a bug's cause before fixing it, prove it works before saying so), a diagrams skill (the model writes Mermaid and Zest draws it in the chat, with Copy and Save as image; if it doesn't draw, one button asks the model to fix it) and a markdown-writing skill. **To add more, open Skills, paste a link to a GitHub repository (or to one folder in it) and press Add skills.** Any repository that follows the [Agent Skills](https://agentskills.io) format works; [Hermes Atlas](https://hermesatlas.com/ecosystem/) lists many. Switch skills on and off one by one, or by set, and type `/` in a folder conversation to pick one. Only add skills from people you trust. See [docs/COWORK.md](docs/COWORK.md).
 
+![The Skills page: Superpowers and the other skills that come with Zest](docs/screenshots/skills.png)
+
 ## Use your models in other apps
 
 **Advanced > Server** gives you an address, a key and copy-paste setup for tools such as [opencode](https://opencode.ai) and Hermes, or any chat app, coding assistant or agent that can talk to an OpenAI-compatible server. Paste the address (`http://127.0.0.1:13308/v1` by default), the key and a model name, and the other app uses the models on your computer.
+
+![Server](docs/screenshots/server.png)
+
+*Address, key and copy-paste setup for opencode, Hermes and any OpenAI-compatible app. The key is hidden until you press **Show**, including in the code samples. While an app is working you see a card with a glass that fills as it writes, a pill timeline of the last minute, and a request list. The Lemonade activity log is at the bottom of the same page.*
 
 The same page shows what those apps are doing:
 
@@ -112,6 +162,10 @@ The same page shows what those apps are doing:
 Other apps never talk to Zest's own page. Zest opens a second, much smaller door on its own port (13308) that serves only the chat-style `/v1` endpoints (models, chat, completions, embeddings, responses, audio, images, reranking, and loading or unloading a model). It **always asks for the key**, and pulling, deleting, installing or changing settings are not reachable through it. It listens on this computer only. **Other devices on my network** turns on listening on your local network; anyone there who has the key can then use your models, and the traffic is not encrypted, so use it on a network you trust. **Make a new key** invalidates the old one at once.
 
 ## Keeping everything up to date
+
+![The Setup guide](docs/screenshots/setup.png)
+
+*Advanced > Setup guide, where Lemonade and Pi are updated, models are brought in and backends are added.*
 
 Updating Zest itself is just downloading a newer AppImage. The two parts inside it, Lemonade and Pi, can be updated from inside Zest without a new download.
 
@@ -137,10 +191,13 @@ Pi is the part that lets a model read files, make edits and run steps. It is upd
 
 Everything under **Advanced** is optional.
 
+![The Advanced menu: Server, Hardware, Engines, All settings, Setup guide and Themes](docs/screenshots/advanced.png)
+
 - **Advanced > Server** lets other apps use your models (see below), with a live picture of what they ask for. The address and key to paste into those apps are at the top, and the Lemonade **activity log** (filter and follow mode) sits at the bottom of the same page.
 - **Advanced > Hardware** shows every device llama.cpp can see as a live VRAM tank with utilisation, temperature, power, a short history, and which processes are holding its memory. Pick which devices to use and put them in order, then apply.
 - **Advanced > Engines** explains what an engine is (the program that runs one kind of model) and what each backend means (CUDA, ROCm, Vulkan, CPU), then lists every Lemonade engine (llama.cpp, Whisper.cpp, StableDiffusion.cpp and more) with the backends each supports (CUDA, Vulkan, ROCm, CPU). Choose one per engine, or install and update missing ones.
 - **Advanced > All settings** edits everything in Lemonade's own configuration, searchable, with a reset-to-default for every value.
+- **Advanced > Themes** changes how Zest looks (see below).
 - **Advanced > Setup guide** is the full version of the welcome steps. That is where you update Lemonade and Pi, add a backend, bring in models you already have, or change where models live. **Help > Run the welcome steps again** repeats the short tour.
 
 ### Using a Lemonade you already run
@@ -149,7 +206,26 @@ Already have Lemonade Server installed (for example as a system service)? On Adv
 
 A few things work differently with a Lemonade you run yourself: Zest can't update it (use your package manager), and if it runs as a system service it may not be allowed to read model files in your home folder.
 
+## Themes
+
+Zest looks the same everywhere you use it, but you can change its finish. Open **Advanced > Themes** and pick one. The choice is remembered on this computer, and nothing moves: only the colours and the surface change, so every button, panel and menu stays where it was.
+
+![The theme picker, with Light Touch in use](docs/screenshots/themes.png)
+
+**Light Touch** is the default: a calm cream page with a little hardware about it (keycap buttons, a pressed-in reply box and a small lamp that shows when a model is loaded). Two themes go further, and the rest dress Zest in colour schemes from popular code editors.
+
+| | |
+| --- | --- |
+| ![Braun T3](docs/screenshots/theme-braun-t3.png) | ![Teenage Engineering](docs/screenshots/theme-teenage-engineering.png) |
+| **Braun T3**: matte warm plastic, a glowing lamp and a speaker grille. | **Teenage Engineering**: hard shadows, thick outlines and an orange bar. |
+| ![Monokai Pro](docs/screenshots/theme-monokai-pro.png) | ![GitHub Light](docs/screenshots/theme-github-light.png) |
+| **Monokai Pro**: dark and warm, with raised keys and a recessed chat. | **GitHub Light**: clean and bright, in GitHub's blue. |
+
+...and more! One Dark Pro, Dracula, Night Owl, SynthWave '84, Cobalt2, Nord, Gruvbox, GitHub Dark and Catppuccin are in the same picker.
+
 ## Your data and privacy
+
+![The Help page, answering "Is my data private?"](docs/screenshots/help.png)
 
 ### Where Zest keeps things
 
@@ -180,50 +256,6 @@ Zest and Lemonade do contact the following services:
 - **api.github.com and github.com**: looking for and downloading Lemonade updates (the automatic check can be switched off), and Lemonade downloading the backends you install.
 - **Hugging Face**: Lemonade downloading the models you choose, and Zest reading a repository's public file list when you use **Get from Hugging Face**. Gated models, which need a login, are not supported yet.
 - **Benchmark and community sites**: the links in **How do I choose a model?** open in your browser only when you click them. Zest never contacts those sites itself.
-
-## Screenshots
-
-### Chat
-Replies stream in as they are written. The bar under the title shows which model answers, how much context it has (128k by default) and whether it is in memory, with **Load**, **Unload** and **Reload**. A reasoning model's thinking appears live above its answer and folds away when it is done. Markdown and code blocks come with copy buttons, and a small strip shows what the model is doing: 📖 reading, 🤔 thinking, ✍️ writing, 🛠️ working.
-
-![Chat](docs/screenshots/chat.png)
-
-### Working in a folder
-Every chat works in a folder (your home folder unless you choose one) and can read, search, edit and run things there. Tool cards show each step, edits show a diff, and in **Ask first** and **Edit freely** modes it stops and asks before it runs a command. Here it was asked to fix a folder whose tests were failing: it read the tests and the code, made a one-line change and ran the tests again to confirm.
-
-![Zest asking before it runs a command](docs/screenshots/work-approve.png)
-
-![Reading the code, a diff of the fix, and the tests run again](docs/screenshots/work-tools.png)
-
-### Models
-The Models page is for downloading models and editing how they run. **My picks** leads with the models I've tested and recommend; **On this computer** lists what you have. The meter on each card shows what will fit in the memory that is free on your graphics cards right now; if another program is using it, Zest warns you and names it.
-
-![Models on this computer](docs/screenshots/models.png)
-
-- **Start here: LFM2.5 8B A1B.** Very fast, runs on almost anything, calls tools well, and keeps answers short.
-- **My general pick: Qwen3.6 35B A3B MTP.** Fast and competent at everyday tasks, research and agent work.
-- **If Qwen 3.6 won't run: GLM 4.7 Flash.** Fast, but it makes things up, so it comes with a warning.
-- **Bigger and slower, dense models: Gemma 4 31B MTP and Qwen3.8 27B.** Good answers, but slow. With a GPU and 64 GB of RAM, try Strata instead.
-- **For advanced users: Strata and Maya,** separate inference engines built for huge models, with a clear warning that they run outside Zest and Lemonade.
-- **Make any model better:** OpenChamber as the app I recommend, and obra/superpowers for skills.
-
-**Get from Hugging Face** is for experts. It lists the GGUF versions in a repository, with a plain label, the size, and whether each fits. When Lemonade or llama.cpp refuses a model (for example because its architecture isn't supported yet, it needs a login, it can't be found, or memory or disk is short), Zest shows a plain-language message with the technical details tucked underneath, and offers to open Engines when an update may help. **How do I choose a model?** explains what to look for and links to benchmark sites and communities.
-
-### Settings for one model
-Press **Settings** on any downloaded card. Set the backend and devices, and tune `llama-server` with tick boxes and dropdowns instead of flags. Rows you have changed are highlighted, the exact arguments Zest will pass are shown, and anything your `llama-server` does not understand is flagged. **Save** keeps it; for a model that is in memory, press **Reload** in the chat's model bar to use the new settings.
-
-![Model settings](docs/screenshots/model-options.png)
-
-### Server: share your models with other apps
-Address, key and copy-paste setup for opencode, Hermes and any OpenAI-compatible app. The key is hidden until you press **Show**, including in the code samples. While an app is working you see a card with a glass that fills as it writes, a pill timeline of the last minute, and a request list. The Lemonade activity log is at the bottom of the same page.
-
-![Server](docs/screenshots/server.png)
-
-### The rest of Advanced
-- **Hardware:** select GPUs and set their order. Each card shows free VRAM, utilisation, temperature, power and which processes hold memory. Nothing changes until you press **Apply**.
-- **Engines:** each engine says in plain words what it does, and a short guide explains which backend to pick. Choose one per engine, or install and update the ones you need.
-- **All settings:** Lemonade's own configuration, searchable and saved as you edit.
-- **Setup guide:** the full set of choices behind the welcome steps: which Lemonade to use, backends, where models live, and updates.
 
 ## For developers
 

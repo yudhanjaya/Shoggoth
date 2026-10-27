@@ -1,0 +1,154 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Zest skeuomorphism boards</title>
+<style>
+*{box-sizing:border-box;margin:0}
+body{background:#d9d6cc;font:14px/1.4 "Nunito Sans",system-ui,sans-serif;color:#1a1a17;padding:28px 20px 60px}
+h1{font:700 22px "Young Serif",Georgia,serif;margin-bottom:4px}
+.intro{color:#58584f;max-width:760px;margin-bottom:26px}
+.board{max-width:1060px;margin:0 auto 44px;overflow-x:auto;padding:0 10px 14px 0}
+.app{min-width:940px}
+.cap{display:flex;gap:14px;align-items:baseline;margin-bottom:10px}
+.cap b{font:700 12px "JetBrains Mono",monospace;letter-spacing:.08em;background:#1a1a17;color:#f7d916;padding:3px 8px;border-radius:4px}
+.cap h2{font:700 17px "Young Serif",Georgia,serif}
+.cap p{color:#58584f;font-size:13px}
+.notes{font-size:12.5px;color:#58584f;margin-top:10px;max-width:900px}
+
+/* ---------- the mock: same layout in every board ---------- */
+.app{--bg:#fffdf7;--surf:#fff;--surf2:#f6f4ec;--line:#e4e2d8;--ink:#1a1a17;--muted:#58584f;--lemon:#f7d916;--leaf:#1b7a3a;
+ display:grid;grid-template-columns:150px 170px 1fr 180px;height:540px;background:var(--bg);color:var(--ink);border-radius:14px;overflow:hidden;position:relative;font-size:12px}
+.app>div{min-width:0;position:relative}
+.rail{padding:14px 10px;display:flex;flex-direction:column;gap:4px;border-right:1px solid var(--line)}
+.logo{font:700 22px "Young Serif",Georgia,serif;padding:0 6px 12px;display:flex;gap:6px;align-items:center}
+.logo i{width:20px;height:18px;border-radius:50% 50% 50% 50%/60% 60% 40% 40%;background:var(--lemon);border:2px solid var(--ink);display:inline-block}
+.nav{padding:9px 10px;border-radius:9px;display:flex;gap:8px;align-items:center;color:var(--muted);font-size:13px}
+.nav.on{background:#fdf3c0;color:var(--ink);font-weight:700}
+.nav s{width:11px;height:11px;border:1.6px solid currentColor;border-radius:3px;display:inline-block}
+.foot{margin-top:auto;padding:6px;color:var(--muted);font-size:11px}
+.list{padding:12px;border-right:1px solid var(--line);display:flex;flex-direction:column;gap:10px}
+.newchat{background:var(--lemon);border-radius:9px;padding:11px;text-align:center;font-weight:700;font-size:13px}
+.item{background:var(--surf);border:1px solid var(--line);border-radius:9px;padding:9px 10px}
+.item small{display:block;color:var(--muted);font-size:11px}
+.earlier{color:#174f94;text-decoration:underline;padding:0 4px}
+.main{display:flex;flex-direction:column;border-right:1px solid var(--line)}
+.top{padding:12px 16px;font:700 16px "Young Serif",Georgia,serif;border-bottom:1px solid var(--line)}
+.bar{display:flex;gap:8px;align-items:center;padding:9px 12px;background:var(--surf2);border-bottom:1px solid var(--line);font-size:11.5px}
+.dot{width:9px;height:9px;border-radius:50%;background:var(--leaf)}
+.sel{background:var(--surf);border:1px solid var(--line);border-radius:7px;padding:6px 10px}
+.btn{background:var(--surf);border:1px solid var(--line);border-radius:7px;padding:6px 11px;font-size:12px}
+.chat{flex:1;padding:16px 18px;display:flex;flex-direction:column;gap:14px;overflow:hidden}
+.user{align-self:flex-end;max-width:80%;background:#f1efe8;border-radius:12px;padding:10px 13px}
+.bot{padding-left:34px;position:relative}
+.bot:before{content:"";position:absolute;left:2px;top:2px;width:20px;height:18px;border-radius:50%;background:var(--lemon);border:2px solid var(--ink)}
+.code{background:var(--surf);border:1px solid var(--line);border-radius:10px;padding:10px 12px;font:11px/1.6 "JetBrains Mono",monospace;margin:8px 0}
+.compose{margin:10px 18px 16px;border:1.5px solid var(--lemon);border-radius:14px;background:var(--surf);padding:11px 13px;display:flex;flex-direction:column;gap:14px;color:#8a8a80}
+.compose div{display:flex;justify-content:space-between;align-items:center}
+.send{background:var(--lemon);color:var(--ink);font-weight:700;border-radius:9px;padding:8px 13px}
+.side{padding:12px 14px;display:flex;flex-direction:column;gap:8px}
+.tabs{display:flex;gap:12px;font-size:12px;color:var(--muted);padding-bottom:8px;border-bottom:1px solid var(--line)}
+.tabs .on{color:var(--ink);border-bottom:2px solid var(--lemon);padding-bottom:6px;margin-bottom:-9px}
+.lab{font-size:10.5px;letter-spacing:.08em;color:var(--muted);text-transform:uppercase;margin-top:6px}
+.meter{height:7px;border-radius:4px;background:#ecebe3;position:relative}
+.meter:after{content:"";position:absolute;left:0;top:0;bottom:0;width:6%;background:var(--lemon);border-radius:4px}
+.side .btn{align-self:flex-start}
+.screw,.grille,.led,.tick{display:none}
+
+/* ================= A · BRAUN T3 — matte warm plastic ================= */
+.A{--bg:#e9e6dc;--surf:#f4f1e8;--surf2:#e2dfd4;--line:#cfcbbd;box-shadow:0 18px 40px rgba(60,50,30,.25),inset 0 1px 0 #fff8}
+.A .rail,.A .list,.A .side{background:linear-gradient(#ece9df,#e4e1d6)}
+.A .nav.on{background:#e0ddd0;box-shadow:inset 0 2px 4px rgba(60,50,30,.28),inset 0 -1px 0 #fff9}
+.A .logo i{background:var(--lemon)}
+.A .newchat{background:linear-gradient(#fbe53a,#eccb0a);box-shadow:0 2px 0 #b99a00,0 4px 8px rgba(80,60,0,.3),inset 0 1px 0 #fff9;border:1px solid #c9ab05}
+.A .item,.A .sel,.A .btn{background:linear-gradient(#f9f7f0,#ebe8dd);border-color:#c4c0b2;box-shadow:0 1px 0 #fff,0 2px 3px rgba(60,50,30,.18)}
+.A .btn{box-shadow:0 2px 0 #bdb9aa,0 3px 5px rgba(60,50,30,.2),inset 0 1px 0 #fff}
+.A .bar{background:#ddd9cc;box-shadow:inset 0 2px 5px rgba(60,50,30,.2)}
+.A .chat{background:#f6f4ec;box-shadow:inset 0 3px 8px rgba(60,50,30,.12)}
+.A .user{background:#ebe8dc;box-shadow:inset 0 1px 3px rgba(60,50,30,.2)}
+.A .code{background:#efede4;box-shadow:inset 0 2px 5px rgba(60,50,30,.22)}
+.A .compose{background:#f2efe6;border-color:#c9ab05;box-shadow:inset 0 3px 6px rgba(60,50,30,.2),0 1px 0 #fff}
+.A .send{background:linear-gradient(#fbe53a,#eccb0a);box-shadow:0 2px 0 #b99a00,0 3px 6px rgba(80,60,0,.3),inset 0 1px 0 #fff9}
+.A .meter{background:#d6d2c5;box-shadow:inset 0 2px 3px rgba(60,50,30,.35)}
+.A .dot{background:radial-gradient(circle at 35% 30%,#7be29a,#1b7a3a 60%);box-shadow:0 0 6px 1px rgba(40,200,90,.55),0 0 0 2px #cfcbbd,inset 0 -1px 1px #0004}
+.A .grille{display:block;margin:0 6px 8px;height:34px;background:radial-gradient(circle,#a9a597 1.3px,transparent 1.6px) 0 0/8px 8px;opacity:.8}
+
+/* ================= B · TE — field-kit, hard shadows, printed labels ================= */
+.B{--bg:#dcdad2;--surf:#f5f3ec;--surf2:#cfd3cf;--line:#1a1a17;--lemon:#ffd400;border:2px solid #1a1a17;box-shadow:8px 8px 0 #1a1a17}
+.B .rail{background:#e9e7df;border-right:2px solid #1a1a17}
+.B .list{background:#dcdad2;border-right:2px solid #1a1a17}
+.B .side{background:#e9e7df}
+.B .main{border-right:2px solid #1a1a17}
+.B .top,.B .bar,.B .tabs{border-bottom:2px solid #1a1a17}
+.B .top{font-family:"JetBrains Mono",monospace;font-size:12px;text-transform:uppercase;letter-spacing:.06em;background:#ff5a1f;color:#1a1a17}
+.B .nav{border:2px solid transparent;font-family:"JetBrains Mono",monospace;font-size:11px;text-transform:uppercase;letter-spacing:.04em}
+.B .nav.on{background:var(--lemon);border-color:#1a1a17;box-shadow:3px 3px 0 #1a1a17;color:#1a1a17}
+.B .newchat,.B .send{border:2px solid #1a1a17;box-shadow:3px 3px 0 #1a1a17;background:var(--lemon);border-radius:7px}
+.B .item,.B .sel,.B .btn{border:2px solid #1a1a17;border-radius:7px;box-shadow:2px 2px 0 #1a1a17;background:#f5f3ec}
+.B .bar{background:#cfd3cf}
+.B .chat{background:#c9d1c3;box-shadow:inset 0 0 0 4px #e9e7df,inset 0 0 0 6px #1a1a17;padding:24px 26px;border-radius:0}
+.B .user{background:#f5f3ec;border:1.5px solid #1a1a17;border-radius:4px}
+.B .code{background:#1a1a17;color:#9be39b;border:0;border-radius:4px;box-shadow:inset 0 0 0 1px #3a3a33}
+.B .compose{border:2px solid #1a1a17;border-radius:8px;box-shadow:4px 4px 0 #1a1a17;background:#f5f3ec}
+.B .meter{height:12px;border:2px solid #1a1a17;border-radius:2px;background:repeating-linear-gradient(90deg,transparent 0 9px,#1a1a1755 9px 10px)}
+.B .meter:after{border-radius:0;background:#ff5a1f;width:8%}
+.B .dot{background:#ff5a1f;border:2px solid #1a1a17;border-radius:50%;width:11px;height:11px;box-shadow:0 0 0 2px #e9e7df}
+.B .lab{font-family:"JetBrains Mono",monospace;color:#1a1a17;font-size:9.5px}
+.B .tick{display:block;position:absolute;top:6px;right:10px;font:9px "JetBrains Mono",monospace;letter-spacing:.1em}
+
+/* ================= C · LIGHT TOUCH — keycaps, wells, one lamp ================= */
+.C{--line:#e0ddd2;box-shadow:0 10px 30px rgba(60,50,30,.15),0 0 0 1px #d8d5c8}
+.C .nav.on{background:#fdf3c0;box-shadow:inset 0 1px 2px rgba(60,50,30,.2)}
+.C .newchat,.C .send{background:linear-gradient(#fadf1c,#f0cf0c);box-shadow:0 1.5px 0 #b99a00,inset 0 1px 0 #fff8;border-radius:10px}
+.C .btn,.C .sel{background:linear-gradient(#fff,#f6f4ec);box-shadow:0 1.5px 0 #d4d0c2,0 1px 2px rgba(60,50,30,.1);border-color:#dcd9cc}
+.C .item{box-shadow:0 1px 2px rgba(60,50,30,.08)}
+.C .compose{box-shadow:inset 0 2px 4px rgba(60,50,30,.12);background:#fbf9f2}
+.C .meter{box-shadow:inset 0 1px 3px rgba(60,50,30,.3)}
+.C .dot{box-shadow:0 0 0 2px #fff,0 0 0 3px #d4d0c2,0 0 7px 1px rgba(40,200,90,.5)}
+
+/* ================= D · RAMS PANEL — screws, etched grooves, scale ================= */
+.D{--bg:#e4e2da;--surf:#efede5;--surf2:#d9d6cb;--line:#bdb9ab;background:linear-gradient(#e8e6de,#dddacf);box-shadow:0 14px 34px rgba(50,45,30,.3),inset 0 0 0 1px #fffa,inset 0 0 0 3px #cfccc0}
+.D .rail,.D .list,.D .main,.D .side{border-right:0;box-shadow:1px 0 0 #fff9,2px 0 0 #b3afa0}
+.D .top,.D .bar,.D .tabs{border-bottom:0;box-shadow:0 1px 0 #b3afa0,0 2px 0 #fff9}
+.D .top{font-size:15px;letter-spacing:.02em;text-shadow:0 1px 0 #fff}
+.D .screw{display:block;position:absolute;width:9px;height:9px;border-radius:50%;background:radial-gradient(circle at 35% 30%,#fff,#aaa69a 70%);box-shadow:0 1px 1px #0005,inset 0 -1px 1px #0003;z-index:3}
+.D .screw:after{content:"";position:absolute;left:1px;right:1px;top:4px;height:1.2px;background:#6b675b;transform:rotate(35deg)}
+.D .screw.a{left:7px;top:7px}.D .screw.b{right:7px;top:7px}.D .screw.c{left:7px;bottom:7px}.D .screw.d{right:7px;bottom:7px}
+.D .nav.on{background:#d7d4c7;box-shadow:inset 0 2px 3px rgba(50,45,30,.35),0 1px 0 #fff}
+.D .nav.on:after{content:"";margin-left:auto;width:6px;height:6px;border-radius:50%;background:#ff5a1f;box-shadow:0 0 5px #ff5a1f}
+.D .newchat{background:linear-gradient(#fbe53a,#e9c90a);border-radius:50px;box-shadow:0 0 0 3px #d9d6cb,0 0 0 4px #b3afa0,inset 0 1px 0 #fff9,0 3px 5px rgba(60,50,0,.3)}
+.D .send{background:radial-gradient(circle at 40% 30%,#fff07a,#f0cf0c 55%,#c9ab05);border-radius:50px;box-shadow:0 0 0 3px #e4e2da,0 0 0 4px #b3afa0,0 3px 6px rgba(60,50,0,.35)}
+.D .item,.D .sel,.D .btn{background:linear-gradient(#f4f2ea,#e6e3d8);border-color:#b8b4a5;box-shadow:inset 0 1px 0 #fff,0 1px 2px rgba(50,45,30,.25)}
+.D .chat{background:#eceadf;box-shadow:inset 0 2px 6px rgba(50,45,30,.22),inset 0 0 0 1px #b3afa0}
+.D .compose{box-shadow:inset 0 2px 5px rgba(50,45,30,.22);background:#f3f1e9}
+.D .code{background:#e2dfd3;box-shadow:inset 0 2px 5px rgba(50,45,30,.25)}
+.D .meter{height:10px;background:#cfccbf repeating-linear-gradient(90deg,transparent 0 11px,#8a867a 11px 12px);box-shadow:inset 0 2px 3px rgba(50,45,30,.4)}
+.D .meter:after{background:linear-gradient(#fbe53a,#e0bf00)}
+.D .dot{box-shadow:0 0 0 2px #e4e2da,0 0 0 3px #aaa69a,0 0 8px 1px rgba(40,200,90,.6)}
+.D .grille{display:block;margin:0 6px 8px;height:30px;background:repeating-linear-gradient(90deg,#b8b4a6 0 2px,#fff8 2px 4px);border-radius:3px;box-shadow:inset 0 1px 2px #0003}
+</style></head><body>
+<h1>Zest · skeuomorphism boards</h1>
+<p class="intro">Four takes on the same Chat screen. Layout, sizes, positions and every element are identical to the live UI; only surface treatment changes (shadows, bevels, wells, lamps, printed detail). Pick one, mix ("A's keys with D's screws"), or say dial it up/down.</p>
+<div id="boards"></div>
+<script>
+const tpl=(c)=>`<div class="app ${c}">
+<i class="screw a"></i><i class="screw b"></i><i class="screw c"></i><i class="screw d"></i>
+<div class="rail"><div class="logo"><i></i>Zest</div>
+<div class="nav on"><s></s>Chat</div><div class="nav"><s></s>Models</div><div class="nav"><s></s>Skills</div><div class="nav"><s></s>Docs</div><div class="nav"><s></s>Help</div><div class="nav"><s></s>Advanced</div>
+<div class="foot"><div class="grille"></div>Everything runs on this computer.</div></div>
+<div class="list"><div class="newchat">+ New chat</div><div class="item">Write a short Python functio…<small>Chat</small></div><div class="earlier">Earlier chats</div></div>
+<div class="main"><div class="top">Write a short Python functio…</div>
+<div class="bar"><span class="dot"></span><span class="sel">Gemma 4 26B A4B</span><span class="sel">Context 128k · default</span><span>In memory</span><span style="margin-left:auto" class="btn">Unload</span></div>
+<div class="chat"><div class="user">Write a short Python function that checks whether a word is a palindrome, and explain how it works in two sentences.</div>
+<div class="bot"><span style="color:#6f6f64">▸ Thought for 5 s</span><div class="code">def is_palindrome(word):<br>&nbsp;&nbsp;&nbsp;&nbsp;clean_word = word.lower().replace(" ", "")<br>&nbsp;&nbsp;&nbsp;&nbsp;return clean_word == clean_word[::-1]</div>The function converts the string to lowercase and removes spaces so the check is case-insensitive. It then compares the cleaned string to its reverse.</div></div>
+<div class="compose"><div>Reply…</div><div><span>Work in a folder…</span><span class="send">Send</span></div></div></div>
+<div class="side"><div class="tabs"><span>Jobs</span><span>Changes</span><span class="on">Details</span></div>
+<div class="lab">Folder</div><div style="font-family:monospace">None. Just chatting.</div><div class="btn">Work in a folder…</div>
+<div class="lab">Memory used</div><div class="meter"></div><div>3k of 131k tokens (2%)</div><div class="btn">Make room</div>
+<div class="lab">Skills</div><div>8 switched on.</div><div class="btn">Manage skills</div></div>
+</div>`;
+const boards=[
+["A","Braun T3","Matte warm plastic: raised keys with a hard under-edge, pressed-in wells for content, a glowing lamp, a speaker grille.","Strongest 'object' feel. Chat area becomes a recessed bay; buttons look pressable."],
+["B","Teenage Engineering","Hard offset shadows, thick outlines, orange accent, mono uppercase labels, a framed 'screen' around the chat, ticked meter.","Loudest and most playful. Adds an orange accent alongside lemon; the title bar goes orange."],
+["C","Light touch","Only keycap buttons, recessed input, one lamp. Everything else stays flat.","Safest: almost no visual noise, reads as the current UI with tactile controls."],
+["D","Dieter Rams panel","Etched grooves instead of lines, corner screws, round lens-style primary buttons, scaled meter, orange pilot light on the active tab.","Most 'instrument panel'. Lines become engraved seams; primary buttons become pill lenses."]];
+document.getElementById("boards").innerHTML=boards.map(b=>`<section class="board"><div class="cap"><b>${b[0]}</b><h2>${b[1]}</h2><p>${b[2]}</p></div>${tpl(b[0])}<p class="notes">${b[3]}</p></section>`).join("");
+</script></body></html>
