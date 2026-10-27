@@ -200,6 +200,10 @@ Everything under **Advanced** is optional.
 - **Advanced > Themes** changes how Zest looks (see below).
 - **Advanced > Setup guide** is the full version of the welcome steps. That is where you update Lemonade and Pi, add a backend, bring in models you already have, or change where models live. **Help > Run the welcome steps again** repeats the short tour.
 
+![Advanced > Hardware: each graphics card as a live VRAM tank, with utilisation, temperature and power](docs/screenshots/hardware.png)
+
+*Advanced > Hardware: a tank for each graphics card, with its memory, load, temperature and power, and the switch and arrows that choose which cards Zest uses and in what order.*
+
 ### Using a Lemonade you already run
 
 Already have Lemonade Server installed (for example as a system service)? On Advanced > Setup guide choose **A Lemonade I already run**, enter its address and, if needed, its API key. Zest will use it instead of starting its own, and won't touch the built-in copy. Switching back later is one click. Starting Zest with `--lemonade HOST:PORT` does the same without saving anything.
