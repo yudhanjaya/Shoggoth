@@ -1401,7 +1401,7 @@ h3.themesec{font:600 12px var(--sans);letter-spacing:.08em;text-transform:upperc
 
     <!-- SETTINGS -->
     <section class="view" id="v-settings"><div class="pad"><div class="wrap">
-      <p class="lede">Every setting Lemonade offers, in one place. Changes are saved straight to Lemonade as you make them. Settings for a single model live on the Models page, under <b>Details</b> on its card (Settings for this model).</p>
+      <p class="lede">Every setting Lemonade, the engine that runs small and medium models, offers, in one place. Changes are saved straight to it as you make them. You rarely need this page. Settings for a single model are in the Library, on its card under <b>Settings</b>.</p>
       <div class="setbar"><input type="search" id="setq" placeholder="Search settings" aria-label="Search settings"><span class="chip" id="setcount"></span></div>
       <div id="settings"></div>
     </div></div></section>
@@ -1656,11 +1656,11 @@ function friendlyProblem(raw, what){
   if(/\b(401|403)\b|gated|authori[sz]ation|access token|log ?in|accept.*(terms|license)/.test(t))
     return {title: "This model needs a login", body: "The owner of this model asks for you to sign in or accept terms on Hugging Face first. Zest can't download models that need a login yet.", hint: "Pick a model that doesn't need one. Many popular models are also published, without a login, by other uploaders."};
   if(/\b404\b|not found|no such (repo|model)|repository/.test(t))
-    return {title: "Couldn't find that model", body: "Hugging Face (or Lemonade) says that model or file doesn't exist.", hint: "Check the link or name, and that the repository holds GGUF files."};
+    return {title: "Couldn't find that model", body: "Hugging Face says that model or file doesn't exist.", hint: "Check the link or name, and that the repository holds GGUF files."};
   if(/out of memory|cudamalloc|oom|failed to allocate|insufficient memory|not enough memory|vram/.test(t))
     return {title: "Not enough memory", body: `${what || "This model"} needs more graphics (or system) memory than is free right now.`, hint: "Close other programs that use the graphics card, unload other models, choose a smaller version, or shorten its context window under Settings for this model."};
   if(/no space|disk full|enospc|not enough (disk|space)/.test(t))
-    return {title: "Not enough disk space", body: "There isn't enough free space to store this model.", hint: "Free some space, or delete a model you no longer use from the Models page."};
+    return {title: "Not enough disk space", body: "There isn't enough free space to store this model.", hint: "Free some space, or delete a model you no longer use from the Library."};
   if(/timed? ?out|timeout|connection|network|unreachable|resolve/.test(t))
     return {title: "Couldn't reach the internet", body: "The download couldn't connect.", hint: "Check your connection and try again."};
   return {title: "Something went wrong", body: "That didn't work, and there isn't a simpler explanation for it.", hint: "Details are below. If it keeps happening, the Activity log (Advanced > Server) may say more."};
@@ -2248,7 +2248,7 @@ function renderModels(){
   if(!LIB_TABS.some(t => t[0] === LIB.tab)) LIB.tab = "installed";
   libFilters();
   const noBackend = S.bk && S.bk.length && !backendsInstalled().length;
-  $("#modelsbanner").innerHTML = noBackend ? `<div class="note-warn" style="margin-bottom:12px">Zest still needs one small piece before models can run. <a href="#backends" data-go="backends">Open Engines to finish it</a>.</div>` : "";
+  $("#modelsbanner").innerHTML = noBackend ? `<div class="note-warn" style="margin-bottom:12px">Zest still needs one small piece before models can run. <a href="#welcome" data-go="welcome">Finish getting ready</a>.</div>` : "";
   $("#libwhere").innerHTML = libWhereHTML();
   $("#libdl").innerHTML = libDlHTML();
   const open = new Set($$("#grid details.more[open]").map(d => d.closest(".card")?.dataset.id));
@@ -3228,7 +3228,7 @@ function strPaint(){
     + (ins.state === "installing" ? `<div class="line"><span class="stat-dot busy"></span><span class="grow">Installing Strata… ${esc((ins.log || []).slice(-1)[0] || "")}</span></div>` : `<div class="line"><button class="btn" data-str="install">Install Strata</button></div>`)
     + (ins.state === "error" ? `<div class="note-bad">${esc(ins.error)}</div>` : ""));
   parts.push(`<details><summary class="help" style="cursor:pointer">Connect to a Strata on another computer</summary><form class="line" id="strform" style="margin-top:8px"><input id="strurl" type="text" inputmode="url" placeholder="http://192.168.1.20:8080" autocomplete="off" spellcheck="false" aria-label="Strata address"><input id="strk" type="password" placeholder="API key (if it has one)" autocomplete="off" aria-label="Strata API key"><button class="btn" type="submit">Connect</button></form></details>`);
-  box.innerHTML = `<section class="panel" style="margin-bottom:16px"><div class="skhead"><h3>Bigger models with Strata</h3><span class="chip">Experimental</span></div>${parts.join("")}${STR.msg ? `<div class="note-bad">${esc(STR.msg)}</div>` : ""}</section>`;
+  box.innerHTML = `<section class="panel" style="margin-bottom:16px"><div class="skhead"><h3>Strata: large models</h3><span class="chip">Experimental</span></div>${parts.join("")}${STR.msg ? `<div class="note-bad">${esc(STR.msg)}</div>` : ""}</section>`;
   if(wasOpen) box.querySelector("details").open = true;
 }
 $("#stratabox").addEventListener("click", async e => {
@@ -3316,13 +3316,13 @@ document.addEventListener("click", e => { if(e.target.closest("[data-pick]")){ e
 /* ======================= help + advanced hub ======================= */
 const FAQ = [
   ["What is a model?", "A model is the AI that answers you. It is a big file, usually a few gigabytes, that lives on this computer. Bigger models tend to write better but need a stronger computer and answer more slowly. Zest marks each one as comfortable, snug or too big for your machine."],
-  ["Is my data private?", "Yes. Zest and the models run on this computer. Your conversations are saved on this computer, in Zest's own folder, and are never sent anywhere. Zest only goes online to download a model you ask for, check for Lemonade updates, fetch skills when you paste a link, or search the web when you allow the model to (it asks first, every time, and you can switch it off in the chat's Details panel). The <a href=\"#docs\" data-go=\"docs\">Docs</a> page explains where everything is kept."],
+  ["Is my data private?", "Yes. Zest and the models run on this computer. Your conversations are saved on this computer, in Zest's own folder, and are never sent anywhere. Zest only goes online to download a model you ask for, check for updates, fetch skills when you paste a link, or search the web when you allow the model to (it asks first, every time, and you can switch it off in the chat's Details panel). The <a href=\"#docs\" data-go=\"docs\">Docs</a> page explains where everything is kept."],
   ["Why is the first answer slow?", "The model has to be loaded into your computer's memory before it can answer. That takes a few seconds to a minute, depending on its size. After that, answers start right away."],
-  ["How do I know which model to use?", "It depends on your computer and what you want to do. Start with <b>Recommended for this computer</b> in the Library, where I explain each recommendation. <b>More models</b> shows the rest, hiding anything that won't run well. <p><button class=\"btn\" type=\"button\" data-pick>Show me how to compare models</button></p>"],
+  ["How do I know which model to use?", "It depends on your computer and what you want to do. Start with <b>Recommended for this computer</b> in the Library, where I explain each recommendation. <b>Everything</b> shows the rest, with a note on whether each one will fit. <p><button class=\"btn\" type=\"button\" data-pick>Show me how to compare models</button></p>"],
   ["What is the context window?", "It is how much of the conversation a model can see at once. Zest uses <b>128k</b> tokens (about 100,000 words) by default, which is a good threshold for usefulness in long chats and agentic work. You can change it for one model under <b>Details</b>, then <b>Settings for this model</b>. A bigger window needs more graphics memory."],
-  ["How do I get more models?", "Open <b>Models</b> and press <b>Get it</b> on any model. To use one that isn't listed, press <b>Get from Hugging Face</b> and paste a link to a GGUF model."],
+  ["How do I get more models?", "Open the <b>Library</b> and press <b>Get it</b> on any model. Models you already have somewhere else, or ones from Hugging Face, come in with <b>Add models</b>. Large models work the same way: Zest sets up whatever they need and starts them when you pick one."],
   ["Can other apps use my models?", "Yes. Open <b>Advanced</b>, then <b>Server</b>. Zest gives you an address and a key that you can paste into opencode, Hermes, or any chat app or coding assistant that works with an OpenAI-style server."],
-  ["Answers are slow or the model won't start", "Close other programs that use your graphics card, such as games or video editors, and try again. If it still struggles, choose a smaller model on the Models page. Models marked “Probably too big” often fail on this computer."]
+  ["Answers are slow or the model won't start", "Close other programs that use your graphics card, such as games or video editors, and try again. If it still struggles, choose a smaller model in the Library. Models marked “Probably too big” often fail on this computer. Large models take a couple of minutes to start; the bar at the top of the chat shows how far along they are."]
 ];
 let DOCS = null;
 async function renderDocs(){
@@ -3403,7 +3403,7 @@ function tnPaint(){
       ${t.tuned.can_undo ? `<button class="btn ghost" data-tn="undo" data-engine="${t.engine}" data-id="${esc(t.id)}" ${running ? "disabled" : ""}>${t.engine === "strata" ? "Switch off" : "Undo"}</button>` : ""}</div>`).join("")}</section>`;
   };
   host.innerHTML = `<p class="lede">Tuning finds the settings that make a model answer faster on this computer. Zest measures the model as it is, tries changes one at a time, and keeps only the ones that clearly help. Answers stay the same: nothing here changes how a model is compressed. A tune takes the graphics cards for a while, so it never starts without your say-so.</p>
-    ${jobBox}${planBox}${group("strata", "Strata models")}${group("lemonade", "Lemonade models")}
+    ${jobBox}${planBox}${group("strata", `Large models <span class="faint">· Strata</span>`)}${group("lemonade", `Small and medium models <span class="faint">· Lemonade</span>`)}
     ${!d.targets.length ? '<p class="help">Nothing to tune yet. Download a model first.</p>' : ""}${TN.msg ? `<div class="note-bad">${esc(TN.msg)}</div>` : ""}`;
 }
 $("#tuning").addEventListener("change", e => { if(e.target.id === "tnmode") TN.opts.mode = e.target.value; if(e.target.id === "tngoal") TN.opts.goal = e.target.value; if(e.target.id === "tnuse") TN.opts.use = e.target.value; if(e.target.id === "tnmode" && TN.sel) tnPlan(TN.sel); });
@@ -4091,7 +4091,7 @@ function cwRenderHero(){
     <div class="recent">${recent.map(p => `<button type="button" data-folder="${esc(p)}" title="${esc(p)}">${esc(cwDir(p))}</button>`).join("")}</div>
     <p class="cwnote" style="margin-top:18px">Skills teach it new ways of working. Add a set by pasting a GitHub link under <a href="#skills" data-go="skills">Skills</a>.</p>
     ${missing ? `<div class="cwbanner"><span><b>The Pi agent isn't installed.</b> The Zest AppImage includes it. Running from source? Install it with <code>npm install -g @earendil-works/pi-coding-agent</code>, or point ZEST_PI at it.</span></div>` : ""}
-    ${S.up === false ? `<div class="cwbanner"><span>Lemonade isn't running yet, so there's no model to work with.</span></div>` : ""}</div>`;
+    ${S.up === false ? `<div class="cwbanner"><span>The part that runs AI isn't running yet, so there's no model to work with. Zest is starting it, or you can look under <a href="#welcome" data-go="welcome">Getting ready</a>.</span></div>` : ""}</div>`;
   cwSetTitle("New chat"); cwFolderBtn(); cwChips();
 }
 /* a chat that works in the home folder says so at the top of the conversation, before anything is asked */

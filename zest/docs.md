@@ -8,7 +8,7 @@ You can ask a question, get an answer, think something through, draw a diagram, 
 
 The AI works in a folder: it can look at the files in it, change them, and run commands in a terminal, while you watch. It asks your permission before it changes anything, unless you tell it not to.
 
-Everything else in Zest (Models, Skills, Advanced) exists to make those two things work well.
+Everything else in Zest (Library, Skills, Settings, Advanced) exists to make those two things work well.
 
 ## The components
 
@@ -18,17 +18,17 @@ Four things work together. You only ever see Zest, but it helps to know who does
 flowchart LR
     you["You"] --> zest["Zest: the window you are looking at"]
     zest --> pi["Pi: the helper that reads files and runs steps"]
-    pi --> lem["Lemonade: runs the model"]
-    zest --> lem
-    lem --> model[("The model: the AI itself")]
+    pi --> eng["An engine: runs the model"]
+    zest --> eng
+    eng --> model[("The model: the AI itself")]
 ```
 
 | Part | What it does |
 | --- | --- |
 | **Zest** | The window you are using. It shows the conversation, asks your permission, and manages everything else. |
 | **Pi** | A helper that lets a model do things: read a file, edit it, run a command, follow a skill. It comes bundled inside Zest. |
-| **Lemonade** | The engine that loads a model into your computer's memory and gets answers out of it. It also comes bundled inside Zest. |
-| **The model** | The AI. A large file, usually a few gigabytes, that you download once and keep. |
+| **An engine** | A program that loads a model into your computer's memory and gets answers out of it. Zest picks the right one for each model, starts it, and frees the memory when you switch, so you never have to. Small and medium models run on one engine and large models on another; **Advanced > Engines** names them if you are curious. |
+| **The model** | The AI. A large file, usually a few gigabytes (a lot more for the Large ones), that you download once and keep. |
 
 ## Your first minutes
 
@@ -150,39 +150,35 @@ Replies can also contain tables, lists, links, quotes and code blocks, shown nea
 Open **Library**. It lists every model on your computer in one place, whichever program runs it, grouped by size: **Small** (under 10 GB of graphics memory, ready in seconds), **Medium** (10 to 24 GB) and **Large** (for big computers; they take a couple of minutes to start).
 
 - **Installed** is what you have. **Recommended for this computer** has the models I have tried and recommend on systems from 10 GB of VRAM to 26 GB of VRAM, and any Large model that will fit yours. **Everything** is the full list, with a filter for pictures, speech and sound.
-- **Get it** downloads a model in the background while you carry on. Downloads from every program show together in one "Getting models" strip.
+- **Get it** downloads a model in the background while you carry on. Every download shows together in one "Getting models" strip, and a model that needs something extra (the first Large model, for example) sets that up for you as part of the same step.
 - **Add models** brings in a model from a Hugging Face link, from a folder you choose, or from the usual places other programs keep them (LM Studio, Ollama and so on). Nothing is copied.
 - **Chat with it** starts a chat with a model, and **Settings** on a model edits how it runs. Choosing a model in the chat gets it ready, and frees the memory of whatever else was running.
-- Zest keeps your models in one folder you choose, with a subfolder for each program, and moves nothing you already have.
+- Zest keeps your models in one folder you choose (change it in **Settings**), with a subfolder for each engine, and moves nothing you already have. The name of the engine that runs a model is shown, small, at the foot of its card.
 
 - Will it fit? Zest compares a model's size with the memory that is free on your graphics card right now, and marks it comfortable, snug or too big.
 - For working in a folder, pick a model that handles tools well. Look for tool-calling in its description. The recommended ones lean that way. Models that are very small can still chat well but often fumble tools.
 - Memory (the context window): this is how much the AI can keep in mind at once. Zest sets a roomy 128k by default. Working in a folder can use a lot of it, because the AI reads files. The Details panel shows how full it is, with a **Make room** button that tidies the older part of the conversation. The context menu in the chat's model bar changes the size.
 - **Settings for one model** (the **Settings** button on its card) let you change which devices it uses, backend options and more. The defaults are fine for nearly everyone. Chat always loads a model with the context size in its model bar.
 
-## Bigger models with Strata (experimental)
+## Large models
 
-Some models are far too big for a graphics card. [Strata](https://github.com/Niko1221/Strata) is a separate free program that runs them anyway, by keeping part of the model in RAM and on the SSD. It is slower than a model that fits, and it needs a lot of RAM and disk.
+Some models are far too big for a graphics card. Zest can still run them, by keeping part of the model in your RAM and on your SSD. They are slower than a model that fits, they need a lot of RAM (the Large group is meant for computers with about 64 GB) and plenty of disk, and they take a couple of minutes to start. They sit in the **Large** group of the Library, and you use them like any other model.
 
-On the **Models** page, the **Bigger models with Strata** box does three things:
+- **Choosing one is the same as choosing any model.** Under **Recommended for this computer**, Zest looks at your RAM, graphics memory and free disk and suggests the best Large model that fits. **Get it** downloads it. The first time, Zest also sets up the program that runs large models for you: it downloads it, checks it against the checksum its authors publish, and fits it to your computer. There is nothing to configure. Choose the model in Chat and a card shows it starting.
+- **Memory is shared.** Only one big model runs at a time. When you pick a Large model, Zest frees whatever else was running first. Before it starts, Zest checks there is enough free memory and, if not, says how much is missing and which programs are using the most (with a **Start anyway** button). Picking a smaller model later frees the big one again, unless it is answering right now.
+- **It frees itself.** A large model Zest started is stopped after 20 idle minutes, and the next chat starts it again. Change this under **Memory** in **Settings**, or set 0 to keep it ready.
+- **Updates come with everything else.** **Check and update everything** in Settings includes the large-model program. If the one Zest started is running, Zest stops it, updates it and starts it again when a chat needs it.
+- **If you already run one yourself.** If you have already installed that program, or already have a big model running (started in a terminal, by its own app, or by hand), Zest finds it and lists those models in the Library with no setup. Zest never stops, restarts or updates one you started yourself, and won't start a second big model beside it. It has a **Stop** button (with a confirmation) only when you ask for one.
 
-- **Zest finds Strata by itself.** If you already have it installed, or already have a model running (started with `strata launch`, by the Strata app, or by hand on a local port), it shows up here and in Chat with no setup. To use a Strata on another computer, open **Connect to a Strata on another computer** and type its address (and key, if it has one).
-- Once Strata is installed, the box looks at your RAM, graphics memory and free disk and suggests the best model that fits, with its download size and the other sizes listed beneath. **Get it** downloads it, saves it as a setup called `Zest <model>` with a 128k context window (DeepSeek V4.1 is fixed at 8K), and starts it. A setup Zest made starts again by itself the next time a chat picks that model, freeing Lemonade's models first.
-- **Memory is shared.** Only one big model runs at a time. Before it starts, Zest checks there is enough free memory and, if not, says how much is missing and which programs are using the most (with a **Start anyway** button). Choosing a Lemonade model stops the Strata Zest started, unless it is answering right now. A Strata Zest started is stopped after 20 idle minutes (you can change that, or set 0 to keep it running); the next chat starts it again. A Strata you started yourself is never stopped or timed out.
-- **Updates.** Strata's engine and Control update from its own signed feed, and Strata test-starts a new engine before switching to it. **Check and update everything** on the Settings page includes Strata, and Advanced > Engines shows an update line when one is waiting. If the Strata Zest started is running, Zest stops it, updates, and it starts again when a chat needs it. If a Strata you started is running, Zest waits: it can't replace an engine that is serving, and it won't stop yours. A bigger jump (a new Control series) is left for you to take with `strata update`.
-- If Strata isn't installed, **Install Strata** downloads its installer, checks it against the checksum Strata publishes, and runs it.
-- Once Strata has a saved setup (made in a terminal with `strata launch`: pick a model, save it as a preset), the box lists your setups with a **Start** button. Starting one frees any model Lemonade has loaded, because they share the same memory.
-- While Strata is running, its model appears in Chat as `strata/<model name>`. **Stop** frees the memory again.
-
-Zest never stops, restarts or updates a Strata you started yourself. It shows it, lets you chat with it, and has a **Stop** button (with a confirmation) only when you ask for one. While one of yours is running, Zest won't start a second big model beside it.
+The program is [Strata](https://github.com/Niko1221/Strata). Its saved setups, a way to connect to one on another computer, and its installer are all under **Advanced > Engines**.
 
 ## Tuning
 
 **Advanced > Tuning** makes a model answer faster on your computer. It measures the model as it is, tries changes one at a time, and keeps only those that clearly help. Answers stay the same: tuning never changes how a model is compressed.
 
-- **Strata models** are tuned by Strata's own tuner (`strata tune auto`), quick (about 20 minutes) or thorough (up to 2 hours), for chat or for coding with long prompts. The result is saved and used every time the model starts. **Switch off** keeps it but goes back to the standard settings.
-- **Lemonade models** that run on llama.cpp are tuned by Zest: batch sizes, flash attention, threads, which backend and which graphics cards. Each is tried by loading the model with it, and a change is kept only if it beats the measuring noise (and at least 3%). **Undo** puts the old settings back.
-- Tuning needs the graphics cards to itself, so Zest shows the plan first (time, and what it will stop) and waits for your go-ahead. It stops the Strata Zest started and unloads Lemonade's models, and waits while a chat is answering. It will not start while a Strata you started yourself is running. You can cancel at any time and nothing is changed.
+- **Large models** are tuned by their own engine's tuner, quick (about 20 minutes) or thorough (up to 2 hours), for chat or for coding with long prompts. The result is saved and used every time the model starts. **Switch off** keeps it but goes back to the standard settings.
+- **Small and medium models** are tuned by Zest: batch sizes, flash attention, threads, which backend and which graphics cards. Each is tried by loading the model with it, and a change is kept only if it beats the measuring noise (and at least 3%). **Undo** puts the old settings back.
+- Tuning needs the graphics cards to itself, so Zest shows the plan first (time, and what it will stop) and waits for your go-ahead. It stops what Zest started, and waits while a chat is answering. It will not start while a large model you started yourself is running. You can cancel at any time and nothing is changed.
 
 ## Using your models in other apps
 
@@ -193,10 +189,10 @@ Zest never stops, restarts or updates a Strata you started yourself. It shows it
 Everything in **Advanced** is optional.
 
 - **Hardware** shows your graphics cards filling up as models load, and lets you choose which to use.
-- **Engines** has a card for each program Zest uses to run models (Lemonade, Strata, and any you add), with its version, whether it is running, an update check, and a Stop button for ones Zest started. Details specific to an engine, like which hardware each kind of model uses, are inside its card. You can add your own engine by putting a folder with a `provider.yaml` file in the engines folder shown at the bottom of the page.
+- **Engines** has a card for each program Zest uses to run models: [Lemonade](https://lemonade-server.ai) for small and medium models, Strata for Large ones, and any you add. Each card shows its version, whether it is running and who started it, an update check, and a Stop button for ones Zest started. Details specific to an engine are inside its card: which hardware each kind of model uses (CUDA, Vulkan, ROCm or the processor) for Lemonade, and saved setups, a link to a Strata on another computer and its installer for Strata. You can add your own engine by putting a folder with a `provider.yaml` file in the engines folder shown at the bottom of the page, then pressing **Reload**. Zest asks once before an engine you added runs a program.
 - **Engine settings** is every setting Lemonade has, searchable.
 - **Themes** changes how Zest looks. **Light Touch** is the default; **Braun T3** and **Teenage Engineering** are softer and bolder takes on the same idea, and the rest borrow colour schemes from popular code editors (Dracula, Nord, Monokai Pro, GitHub Light and more). Nothing moves when you switch, and your choice is remembered on this computer.
-- **Settings** (in the main menu, not under Advanced) is where you choose where your models live, how long large models stay in memory, and how much a chat remembers, and where **Check and update everything** is. Its **My own server** section checks Lemonade's version or connects Zest to a Lemonade you run yourself. **Engines** has the agent helper (Pi) and the large-model program.
+- **Settings** (in the main menu, not under Advanced) is where you choose where your models live, how long large models stay in memory, and how much a chat remembers, and where **Check and update everything** is. Its **My own server** section is for the rare case where you run Lemonade yourself, for example as a system service: connect Zest to it there instead of using the one Zest starts.
 
 ## Where things live, and privacy
 
@@ -205,14 +201,14 @@ Everything stays on your computer.
 - **Conversations and what the AI did** are saved in Zest's own folder (`~/.local/share/zest/cowork/`). That includes the copies that jobs work on until you apply or throw them away.
 - **Skills you added** are in `~/.local/share/zest/skills/`.
 - **Newer versions of Pi** that you download are in `~/.local/share/zest/pi/`.
-- **Models** are in the Hugging Face cache (`~/.cache/huggingface/hub`), or the folder you chose.
+- **Models** are in the folder you chose (the **Models** folder, with a subfolder for each engine), or in the Hugging Face cache (`~/.cache/huggingface/hub`) if you kept that. Models you added from elsewhere stay where they are.
 - **Settings and keys** are in `~/.config/zest/`.
 
-Zest goes online only to: download models you ask for, check for Lemonade and Pi updates (you can turn that off), and fetch skills when you paste a link. Pi runs offline and sends nothing anywhere. To start from scratch, delete `~/.config/zest` and `~/.local/share/zest`.
+Zest goes online only to: download models you ask for, check for Zest, engine and Pi updates (you can turn that off), and fetch skills when you paste a link. Pi runs offline and sends nothing anywhere. To start from scratch, delete `~/.config/zest` and `~/.local/share/zest`.
 
 ## When something goes wrong
 
-**The answer never starts, or it is very slow.** The model may still be loading, or it may be too big for your graphics card. Close games and other heavy programs, or pick a smaller model under **Models**.
+**The answer never starts, or it is very slow.** The model may still be loading, or it may be too big for your graphics card. Close games and other heavy programs, or pick a smaller model in the **Library**.
 
 **The model seems to have very little memory.** Look at the bar under the chat's title: it shows how much context the model has. Pick 128k from the context menu there and Zest reloads the model, which takes a moment.
 
@@ -224,18 +220,20 @@ Zest goes online only to: download models you ask for, check for Lemonade and Pi
 
 **"The Pi agent isn't installed."** This only happens when running Zest from source rather than the AppImage. The README explains how to add it.
 
-**Something else is off.** **Advanced**, then **Server**, shows the activity log at the bottom. **Help**, then **Restart the helper** restarts Lemonade.
+**Something else is off.** **Advanced**, then **Server**, shows the activity log at the bottom. **Help**, then **Restart the helper** restarts the engine Zest started.
 
 ## Terms used
 
 - **Model**: the AI itself, a big file on your computer.
-- **Lemonade**: the engine that runs the model.
+- **Engine**: a program that runs the model. Zest picks and starts the right one for each model. (Lemonade runs small and medium models; Strata runs Large ones.)
+- **Small, Medium, Large**: how Zest groups models by what they need. Small fits under 10 GB of graphics memory, Medium 10 to 24 GB, and Large is for big computers with lots of RAM.
+- **Library**: the list of every model on your computer, and where you get new ones.
 - **Pi**: the helper that lets a model read files, make edits and run steps.
 - **Agent**: an AI that can take steps on its own (look, edit, run) instead of only talking.
 - **Skill**: a short instruction sheet the AI follows for a particular kind of job.
 - **Token**: a small piece of a word. About 4 tokens make 3 words. Speed and memory are measured in them.
 - **Context window**: how many tokens the AI can keep in mind at once. Its working memory.
 - **Tool**: something the AI can use, such as reading a file or running a command.
-- **Backend (or engine)**: the program that runs a model on your hardware (CUDA, Vulkan, ROCm, processor).
+- **Backend**: the part of an engine that runs a model on your hardware (CUDA, Vulkan, ROCm, processor).
 - **Folder (task)**: a conversation where the AI works in a folder you chose.
 - **Job**: a goal the AI works on in the background, round after round, until a check you chose passes.
