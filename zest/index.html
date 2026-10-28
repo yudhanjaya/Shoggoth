@@ -801,6 +801,37 @@ h4.sub{margin:10px 0 0;font:600 13px var(--sans);color:var(--muted);text-transfo
 .mpick select:disabled{cursor:default;color:var(--faint)}
 .mpick:has(select:focus-visible){outline:2.5px solid var(--lemon-text);outline-offset:2px}
 .mstate{font-size:13px;color:var(--muted);flex:1 1 0;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.mpicker{position:relative;max-width:100%}
+.mpbtn{display:inline-flex;align-items:center;gap:8px;min-height:34px;padding:0 10px 0 12px;border-radius:9px;border:1px solid var(--line);background:var(--surface);color:var(--text);font:inherit;font-size:13px;cursor:pointer;max-width:100%}
+.mpbtn:disabled{cursor:default;color:var(--faint)}
+.mpbtn:focus-visible{outline:2.5px solid var(--lemon-text);outline-offset:2px}
+.mpbtn .mpname{font-weight:600;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:30ch}
+.mpbtn .mptier{font-size:11.5px;color:var(--faint);white-space:nowrap}
+.mpbtn .i{width:14px;height:14px;flex:none;color:var(--muted)}
+.mpop{position:absolute;z-index:30;left:0;top:calc(100% + 6px);width:min(560px,92vw);max-height:min(70vh,560px);overflow:auto;background:var(--surface);border:1px solid var(--line);border-radius:14px;box-shadow:0 14px 40px rgba(0,0,0,.18);padding:6px}
+.pkhead{display:flex;align-items:baseline;gap:8px;padding:10px 10px 4px;font-size:12px;color:var(--faint);text-transform:none}
+.pkhead b{color:var(--muted);font-size:12.5px}
+.pkrow{display:flex;align-items:center;gap:10px;width:100%;text-align:left;padding:9px 10px;border:0;border-radius:10px;background:none;color:var(--text);font:inherit;cursor:pointer}
+.pkrow:hover,.pkrow:focus-visible,.pkrow.kb{background:var(--surface-2)}
+.pkrow:focus-visible{outline:2.5px solid var(--lemon-text);outline-offset:-2px}
+.pkrow[aria-selected=true]{background:color-mix(in srgb,var(--lemon) 22%,transparent)}
+.pkrow[aria-disabled=true]{cursor:default;opacity:.6}
+.pkdot{width:8px;height:8px;border-radius:50%;background:var(--line);flex:none}
+.pkdot.on{background:var(--leaf)}
+.pkmain{flex:1;min-width:0;display:grid;gap:2px}
+.pkmain b{font-size:13.5px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.pkmeta{font-size:12px;color:var(--muted)}
+.pkmeta .tight{color:var(--warn)}
+.pkeng{font-size:11px;color:var(--faint);flex:none}
+.pkfoot{display:flex;gap:8px;justify-content:flex-end;padding:6px 6px 2px;border-top:1px solid var(--line-soft);margin-top:6px}
+.mcard{display:grid;gap:8px;padding:12px 20px;border-bottom:1px solid var(--line-soft);background:var(--surface-2)}
+.mcard[hidden]{display:none}
+.mcard b{font-size:14px}
+.mcard ol{margin:0;padding:0;list-style:none;display:grid;gap:3px;font-size:13px;color:var(--muted)}
+.mcard li.now{color:var(--text)}
+.mcard li::before{content:"✓ ";color:var(--leaf)}
+.mcard li.now::before{content:"… ";color:var(--lemon-text)}
+.mcard .mt{font-size:12.5px;color:var(--faint)}
 .mbar .btn{min-height:34px;padding:0 14px}
 @media (max-width:900px){.mbar{padding:6px 14px}.mbar .mpick select{max-width:22ch}.mbar .grow{display:none}.mbar .mstate{flex:1 0 100%;order:9;white-space:normal}}
 @media (max-width:1180px){
@@ -1218,13 +1249,16 @@ h3.themesec{font:600 12px var(--sans);letter-spacing:.08em;text-transform:upperc
         </div>
         <div class="mbar" id="cwmbar" aria-label="Model">
           <span class="mdot" id="mbdot" aria-hidden="true"></span>
-          <label class="mpick"><span class="sr">Model</span><select id="mbmodel"></select></label>
-          <label class="mpick"><span class="mlab">Context</span><select id="mbctx" title="How much conversation the model can keep in mind. 128k is the default."></select></label>
+          <div class="mpicker">
+            <button class="mpbtn" id="mbpick" type="button" aria-haspopup="listbox" aria-expanded="false" aria-controls="mbpop"><span class="mpname" id="mbname">Choose a model</span><span class="mptier" id="mbtier"></span><svg class="i" viewBox="0 0 24 24" aria-hidden="true"><path d="M6 9l6 6 6-6"/></svg></button>
+            <div class="mpop" id="mbpop" role="listbox" aria-label="Models" hidden></div>
+          </div>
+          <label class="mpick"><span class="mlab">Remembers</span><select id="mbctx" title="How much of the conversation the model can keep in mind. 128k is the default."></select></label>
           <span class="mstate" id="mbstate" role="status"></span>
           <span class="grow"></span>
-          <button class="btn ghost" id="mbreload" type="button" hidden title="Load it again, so settings you saved for this model take effect">Reload</button>
-          <button class="btn" id="mbbtn" type="button">Load</button>
+          <button class="btn ghost" id="mbfree" type="button" hidden title="Free the memory the model is using">Free memory</button>
         </div>
+        <div class="mcard" id="mbcard" hidden role="status" aria-live="polite"></div>
         <div class="jobstrip" id="cwjobstrip" hidden></div>
         <div class="thread" id="cwthread" aria-live="polite"><div class="col" id="cwmsgs"></div></div>
         <div class="composer-wrap">
@@ -2360,18 +2394,18 @@ async function saveOptions(){
 /* Load `id` into memory at the chat context size (or `ctx`, which becomes the new chat setting). `force` loads it afresh. */
 async function loadModelNow(id, ctx, force){
   if(S.loadingModel || !id) return;
-  S.loadingModel = id; S.loadingCtx = ctx || null; renderStatus(); toast((force || S.loaded === id ? "Reloading " : "Loading ") + friendly(id) + "…");
+  S.loadingModel = id; S.loadingCtx = ctx || null; renderStatus(); loadWatch(true); cwModelBar(); toast((force || S.loaded === id ? "Reloading " : "Loading ") + friendly(id) + "…");
   try{
     const r = await api("/ui/model/load", {method:"POST", headers:{"Content-Type":"application/json"}, body:JSON.stringify({model:id, ctx: ctx || undefined, force: !!force})});
     S.model = id; store.set("zest.model", id); toast(friendly(id) + " is ready" + (r.ctx ? " · " + fmtTok(r.ctx) + " context" : ""));
   }catch(err){ toast("Couldn't load " + friendly(id)); showProblem(err.message, friendly(id)); }
-  S.loadingModel = null; S.loadingCtx = null; await Promise.all([loadModels(), pollServer()]); renderStatus(); if(S.view === "models") renderModels();
+  S.loadingModel = null; S.loadingCtx = null; loadWatch(false); await Promise.all([loadModels(), pollServer(), pkLoad(true)]); renderStatus(); if(S.view === "models") renderModels();
 }
 $("#odcancel").addEventListener("click", () => { $("#optdlg").close(); });
 $("#optdlg").addEventListener("close", () => { OD = null; AE = null; });
 $("#odsave").addEventListener("click", async () => {
   const was = OD.m.id;
-  try{ await saveOptions(); $("#optdlg").close(); toast(S.loaded === was ? "Saved. Press Reload in the chat's model bar to use it." : "Saved. It applies the next time the model loads."); await loadModels(); if(S.view === "models") renderModels(); }
+  try{ await saveOptions(); $("#optdlg").close(); toast(S.loaded === was ? "Saved. Open the model list and choose “Load it again” to use it now." : "Saved. It applies the next time the model loads."); await loadModels(); if(S.view === "models") renderModels(); }
   catch(e){ showOptErr(e.message); }
 });
 
@@ -3859,65 +3893,136 @@ function cwConnect(){
   };
 }
 
-/* ---- the model bar: which model, how much context, in memory or not */
+/* ---- the model bar: which model, how much it remembers, ready or not. One list, from every engine. */
 const BAR_CTX = [8192, 16384, 32768, 65536, 131072, 262144];
+S.pk = {models: [], t: 0, busy: false}; S.loadSteps = []; S.loadStart = 0; S.loadPoll = null;
+async function pkLoad(fresh){
+  if(S.pk.busy) return; S.pk.busy = true;
+  try{ const d = await api("/ui/picker" + (fresh ? "?fresh=1" : "")); S.pk.models = d.models || []; S.pk.t = Date.now(); }catch{}
+  S.pk.busy = false; cwModelBar();
+}
+const pkModels = () => S.pk.models.length ? S.pk.models : chatModels().map(m => ({id: m.id, title: friendly(m), tier: "", tier_label: "Other", fit: "fits", live: S.loaded === m.id, start: "", engine_name: "", ctx: 0, ctx_fixed: false, size_gb: 0}));
+const pkFind = id => pkModels().find(m => m.id === id);
 /* the model this chat uses, or would use if it started now */
 function cwBarModel(){
-  const t = cwChat(), ids = chatModels().map(m => m.id);
-  const pick = [t && t.model, S.model, S.loaded].find(id => id && ids.includes(id));
+  const t = cwChat(), ids = pkModels().map(m => m.id);
+  const pick = [t && t.model, S.model, (S.ms || {}).loaded, S.loaded].find(id => id && ids.includes(id));
   return pick || ids[0] || "";
+}
+const PK_TIER = {small: ["Small models", "Under 10 GB of graphics memory"], medium: ["Medium models", "10 to 24 GB of graphics memory"], large: ["Large models", "For big computers. They take a couple of minutes to start."], "": ["Other models", ""]};
+function pkNote(m){
+  const bits = [];
+  if(m.tier === "large" && m.need_gb) bits.push("Needs about " + Math.round(m.need_gb) + " GB of memory");
+  else if(m.size_gb) bits.push(m.size_gb + " GB");
+  if(m.fit === "no") bits.push(esc(m.why || "Won't fit on this computer"));
+  else{ bits.push(m.fit === "tight" ? '<span class="tight">Tight: close other big programs first</span>' : "Fits this computer"); bits.push(m.live ? "Ready now" : esc(m.start || "")); }
+  return bits.filter(Boolean).join(" · ");
+}
+function pkRender(){
+  const pop = $("#mbpop"), cur = cwBarModel(), ms = S.ms || {};
+  const by = {}; pkModels().forEach(m => (by[m.tier || ""] = by[m.tier || ""] || []).push(m));
+  let html = "";
+  for(const t of ["small", "medium", "large", ""]){
+    if(!by[t]) continue;
+    html += `<div class="pkhead" role="presentation"><b>${PK_TIER[t][0]}</b><span>${PK_TIER[t][1]}</span></div>` + by[t].map(m => {
+      const pi = (typeof PICKS !== "undefined" ? PICKS.flatMap(g => g.items).find(i => i.id === m.id) : null), no = m.fit === "no";
+      return `<button type="button" class="pkrow" role="option" data-id="${esc(m.id)}" aria-selected="${m.id === cur}" ${no ? 'aria-disabled="true"' : ""}><span class="pkdot ${m.live ? "on" : ""}" aria-hidden="true"></span><span class="pkmain"><b>${esc(m.title)}${pi ? ` <span class="chip">${esc(pi.label)}</span>` : ""}</b><span class="pkmeta">${pkNote(m)}</span></span><span class="pkeng">${esc(m.engine_name)}</span></button>`;
+    }).join("");
+  }
+  if(!html) html = '<div class="pkhead"><span>No model downloaded yet. Open the Models page to get one.</span></div>';
+  const foot = [ms.loaded ? '<button type="button" class="btn ghost" data-pk="free">Free memory</button>' : "", ms.loaded && ms.loaded === cur ? '<button type="button" class="btn ghost" data-pk="again" title="Load it again, so settings you saved for this model take effect">Load it again</button>' : ""].join("");
+  pop.innerHTML = html + (foot ? `<div class="pkfoot">${foot}</div>` : "");
+}
+function pkOpen(open){
+  const pop = $("#mbpop"), btn = $("#mbpick");
+  if(open === undefined) open = pop.hidden;
+  if(open && btn.disabled) return;
+  pop.hidden = !open; btn.setAttribute("aria-expanded", String(open));
+  if(open){ pkRender(); pkLoad(true).then(() => { if(!pop.hidden) pkRender(); }); const sel = pop.querySelector('[aria-selected="true"]') || pop.querySelector(".pkrow:not([aria-disabled])"); if(sel) sel.focus(); }
+  else btn.focus({preventScroll: true});
+}
+function pkNoteStep(){
+  const st = S.ms && S.ms.step; if(st && S.loadSteps[S.loadSteps.length - 1] !== st) S.loadSteps.push(st);
+}
+function loadWatch(on){
+  if(on && !S.loadPoll){
+    S.loadSteps = []; S.loadStart = Date.now();
+    S.loadPoll = setInterval(async () => { try{ S.ms = await api("/ui/model"); }catch{} pkNoteStep(); cwModelBar(); }, 1200);
+  }else if(!on && S.loadPoll){ clearInterval(S.loadPoll); S.loadPoll = null; S.loadSteps = []; }
 }
 function cwModelBar(){
   const bar = cwEl("cwmbar"); if(!bar) return;
-  const models = chatModels(), cur = cwBarModel(), ms = S.ms || {}, cfg = ms.chat_ctx || 131072;
+  if(!S.pk.busy && Date.now() - S.pk.t > 10000) pkLoad();
+  const models = pkModels(), cur = cwBarModel(), m = pkFind(cur), ms = S.ms || {}, cfg = ms.chat_ctx || 131072;
   const isJob = (cwFind(CW.id) || {}).isJob;
-  const sig = JSON.stringify([models.map(m => m.id), cfg]);
-  const selM = cwEl("mbmodel"), selC = cwEl("mbctx");
+  const selC = cwEl("mbctx");
+  const sig = JSON.stringify([cfg, m && m.ctx_fixed, m && m.ctx]);
   if(bar._sig !== sig){
     bar._sig = sig;
-    selM.innerHTML = models.length ? models.map(m => `<option value="${esc(m.id)}">${esc(friendly(m))}</option>`).join("") : '<option value="">No model downloaded yet</option>';
-    const opts = BAR_CTX.includes(cfg) ? BAR_CTX : BAR_CTX.concat([cfg]).sort((a, b) => a - b);
-    selC.innerHTML = opts.map(n => `<option value="${n}">${fmtTok(n)}${n === (ms.default_ctx || 131072) ? " · default" : ""}</option>`).join("");
+    if(m && m.ctx_fixed) selC.innerHTML = `<option value="fixed">${fmtTok(m.ctx)} · set by this model</option>`;
+    else{ const opts = BAR_CTX.includes(cfg) ? BAR_CTX : BAR_CTX.concat([cfg]).sort((a, b) => a - b); selC.innerHTML = opts.map(n => `<option value="${n}">${fmtTok(n)}${n === (ms.default_ctx || 131072) ? " · default" : ""}</option>`).join(""); }
   }
-  if(document.activeElement !== selM) selM.value = cur;
-  if(document.activeElement !== selC) selC.value = String(cfg);
-  const loading = S.loadingModel || (ms.loading && ms.loading.model), here = !!cur && ms.loaded === cur;
-  const busy = !!CW.running || !!loading || !cur;
+  if(document.activeElement !== selC) selC.value = m && m.ctx_fixed ? "fixed" : String(cfg);
+  const loadingId = S.loadingModel || (ms.loading && ms.loading.model), loading = !!loadingId, here = !!cur && ms.loaded === cur;
+  const busy = !!CW.running || loading || !cur;
   $("#mbdot").className = "mdot " + (loading ? "busy" : here ? "on" : "");
-  selM.disabled = busy || !!isJob || !models.length; selC.disabled = busy;
-  selM.title = isJob ? "A job keeps the model it started with." : CW.running ? "Wait until it has finished answering." : "";
+  $("#mbname").textContent = m ? m.title : "Choose a model";
+  $("#mbtier").textContent = m && m.tier ? (PK_TIER[m.tier][0].replace(" models", "")) : "";
+  const pb = $("#mbpick"); pb.disabled = !models.length || !!isJob || CW.running || loading;
+  pb.title = isJob ? "A job keeps the model it started with." : CW.running ? "Wait until it has finished answering." : loading ? "Getting a model ready…" : "Choose a model";
+  selC.disabled = busy || !!(m && m.ctx_fixed);
+  selC.title = m && m.ctx_fixed ? "This model decides how much it can remember." : "How much of the conversation the model can keep in mind. 128k is the default.";
   const st = $("#mbstate");
-  if(loading) st.textContent = `Loading ${friendly(loading)} (${fmtTok(S.loadingCtx || (ms.loading && ms.loading.ctx) || cfg)} context). This can take a minute…`;
+  if(loading) st.textContent = (S.loadSteps[S.loadSteps.length - 1]) || "Getting ready…";
   else if(!models.length) st.textContent = "Download a model on the Models page to start.";
-  else if(here) st.textContent = ms.ctx ? `In memory · ${fmtTok(ms.ctx)} context${ms.ctx < cfg ? `. The setting is ${fmtTok(cfg)}; it is raised when you next send.` : ""}` : "In memory";
-  else if(ms.loaded) st.textContent = `Not loaded. ${friendly(ms.loaded)} is in memory instead; loading this one replaces it.`;
-  else st.textContent = "Not loaded. It loads when you send a message, or press Load.";
+  else if(CW.running) st.textContent = "Answering…";
+  else if(here) st.textContent = ms.ctx ? `Ready · remembers up to ${fmtTok(ms.ctx)}${!(m && m.ctx_fixed) && ms.ctx < cfg ? `. The setting is ${fmtTok(cfg)}; it is raised when you next send.` : ""}` : "Ready";
+  else if(ms.loaded) st.textContent = "Another model is in memory. Choosing this one frees it first.";
+  else st.textContent = "Starts when you send a message" + (m && m.start && !m.live && m.start_s >= 45 ? ` · ${m.start.toLowerCase()}` : "");
   st.title = st.textContent;
-  const btn = $("#mbbtn"); btn.textContent = loading ? "Loading…" : here ? "Unload" : "Load";
-  btn.disabled = busy; btn.dataset.act = here ? "unload" : "load"; btn.title = CW.running ? "Wait until it has finished answering." : "";
-  $("#mbreload").hidden = !here || !!loading; $("#mbreload").disabled = busy;
+  const fr = $("#mbfree"); fr.hidden = !ms.loaded || loading; fr.disabled = !!CW.running;
+  // the progress card: what Zest is doing while it gets a model ready
+  const card = $("#mbcard");
+  if(loading){
+    const lm = pkFind(loadingId) || {}, secs = Math.max(0, Math.round((Date.now() - (S.loadStart || Date.now())) / 1000)), steps = S.loadSteps.length ? S.loadSteps : ["Getting ready…"];
+    card.innerHTML = `<b>Getting ${esc(lm.title || friendly(loadingId))} ready</b><ol>${steps.map((x, i) => `<li class="${i === steps.length - 1 ? "now" : ""}">${esc(x)}</li>`).join("")}</ol><div class="prog ind"><i></i></div><span class="mt">${lm.start && !lm.live ? esc(lm.start) + " · " : ""}${Math.floor(secs / 60)}:${String(secs % 60).padStart(2, "0")} so far</span>`;
+    card.hidden = false;
+  }else card.hidden = true;
 }
 async function cwModelAct(fn){
   try{ await fn(); }catch(err){ toast(err.message); }
-  await Promise.all([loadModels(), pollServer()]); renderStatus(); cwModelBar(); if(S.view === "models") renderModels();
+  await Promise.all([loadModels(), pollServer(), pkLoad(true)]); renderStatus(); cwModelBar(); if(S.view === "models") renderModels();
 }
-cwEl("mbmodel").addEventListener("change", e => cwModelAct(async () => {
-  const id = e.target.value; if(!id) return;
+async function pkChoose(id){
+  const m = pkFind(id); if(!m || m.fit === "no") return;
+  pkOpen(false);
   S.model = id; store.set("zest.model", id);
-  if(CW.id && !(cwFind(CW.id) || {}).isJob){ const cid = CW.id; await api("/ui/cowork/model", {method: "POST", body: JSON.stringify({id: cid, model: id})}); await cwLoad(); cwOpen(cid); }
-}));
+  await cwModelAct(async () => {
+    if(CW.id && !(cwFind(CW.id) || {}).isJob){ const cid = CW.id; await api("/ui/cowork/model", {method: "POST", body: JSON.stringify({id: cid, model: id})}); await cwLoad(); cwOpen(cid); }
+    if(!((S.ms || {}).loaded === id)) await loadModelNow(id);              // choosing a model gets it ready now, not on the first message
+  });
+}
+cwEl("mbpick").addEventListener("click", () => pkOpen());
+$("#mbpop").addEventListener("click", e => {
+  const f = e.target.closest("[data-pk]"), r = e.target.closest(".pkrow");
+  if(f){ pkOpen(false); const m = (S.ms || {}).loaded; if(f.dataset.pk === "free") cwModelAct(async () => { await api("/ui/model/unload", {method: "POST", body: JSON.stringify({model: m})}); toast("The model's memory is free again."); }); else loadModelNow(cwBarModel(), null, true); }
+  else if(r) pkChoose(r.dataset.id);
+});
+$("#mbpop").addEventListener("keydown", e => {
+  const rows = [...$("#mbpop").querySelectorAll(".pkrow:not([aria-disabled])")], i = rows.indexOf(document.activeElement);
+  if(e.key === "ArrowDown"){ e.preventDefault(); (rows[i + 1] || rows[0])?.focus(); }
+  else if(e.key === "ArrowUp"){ e.preventDefault(); (rows[i - 1] || rows[rows.length - 1])?.focus(); }
+  else if(e.key === "Escape"){ e.preventDefault(); pkOpen(false); }
+});
+document.addEventListener("click", e => { if(!$("#mbpop").hidden && !e.target.closest(".mpicker")) pkOpen(false); });
 cwEl("mbctx").addEventListener("change", e => cwModelAct(async () => {
   const n = Number(e.target.value), m = cwBarModel();
+  if(!n) return;
   if(m && (S.ms || {}).loaded === m) await loadModelNow(m, n);
   else { await api("/ui/model/ctx", {method: "POST", body: JSON.stringify({ctx: n})}); toast(`Chats will use ${fmtTok(n)} of context.`); }
   if(CW.id){ const id = CW.id; await cwLoad(); cwOpen(id); }       // the chat's agent restarts, so it learns the new size
 }));
-cwEl("mbbtn").addEventListener("click", () => {
-  const m = cwBarModel(); if(!m) return;
-  if(cwEl("mbbtn").dataset.act === "unload") cwModelAct(async () => { await api("/ui/model/unload", {method: "POST", body: JSON.stringify({model: m})}); toast("Unloaded. The model's memory is free again."); });
-  else loadModelNow(m);
-});
-cwEl("mbreload").addEventListener("click", () => loadModelNow(cwBarModel(), null, true));
+cwEl("mbfree").addEventListener("click", () => cwModelAct(async () => { await api("/ui/model/unload", {method: "POST", body: JSON.stringify({model: (S.ms || {}).loaded})}); toast("The model's memory is free again."); }));
 
 /* ---- sending */
 const cwSend = (cmd) => api("/ui/cowork/cmd", {method: "POST", body: JSON.stringify({id: CW.id, cmd})});
@@ -3985,9 +4090,10 @@ function cwEvent(r){
       break;
     }
     case "zest_ready": CW.ready = r; CW.mode = r.mode; cwRenderSide(); cwModelBar(); cwSend({type: "get_state"}).catch(() => {}); break;
-    case "zest_loading": cwPhase("load", `Loading ${friendly(r.model)} into memory (${fmtTok(r.ctx)} context). This can take a minute…`); pollServer().then(() => { renderStatus(); cwModelBar(); }); break;
-    case "zest_loaded": cwPhase("read", "Reading your message…"); pollServer().then(() => { renderStatus(); cwModelBar(); }); break;
-    case "zest_load_failed": cwSetRunning(false); cwNote("Couldn't load the model: " + r.message, true); showProblem(r.message, friendly(r.model || cwBarModel())); pollServer().then(() => { renderStatus(); cwModelBar(); }); break;
+    case "zest_loading": cwPhase("load", `Getting ${(pkFind(r.model) || {}).title || friendly(r.model)} ready. This can take a minute…`); loadWatch(true); pollServer().then(() => { renderStatus(); cwModelBar(); }); break;
+    case "zest_loading_step": cwPhase("load", r.text); break;
+    case "zest_loaded": cwPhase("read", "Reading your message…"); loadWatch(false); pollServer().then(() => { renderStatus(); cwModelBar(); pkLoad(true); }); break;
+    case "zest_load_failed": loadWatch(false); cwSetRunning(false); cwNote("Couldn't load the model: " + r.message, true); showProblem(r.message, friendly(r.model || cwBarModel())); pollServer().then(() => { renderStatus(); cwModelBar(); }); break;
     case "agent_start": m.querySelector(".cwnote")?.remove(); m.querySelector(".cwplan")?.remove(); cwSetRunning(true); cwPhase("read", "Reading your message…"); break;
     case "agent_settled": cwSetRunning(false); cwPlanBar(); cwSend({type: "get_session_stats"}).catch(() => {}); cwLoad(); break;
     case "message_start": if(r.message.role === "assistant") cwStartAssistant(); break;

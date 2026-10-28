@@ -242,10 +242,16 @@ def ensure_loaded(model, s=None):
         if s:
             s.push({"type": "zest_loading_step", "model": model, "text": text})
     with _load_lock:
+        with _lock:
+            _loading.update(model=model, ctx=want, since=time.time())
+        touch()
         try:
             ep = router.activate(model, progress=step, opts={"ctx": want})
         except provbase.ProviderError as e:
             raise ValueError(str(e))
+        finally:
+            with _lock:
+                _loading.update(model=None, ctx=0, since=0)
     touch()
     if s:
         s.push({"type": "zest_loaded", "model": model, "ctx": (ep.get("ctx") or want) if router.fixed_ctx(model) else want})

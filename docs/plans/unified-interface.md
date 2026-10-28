@@ -396,7 +396,7 @@ early spikes in section 4 ("verify"). Exit: one catalog lists every model both e
 onto them. Exit: asking for any model by name, from chat or another app, starts the right thing and frees the rest.
 
 **D. The interface, in steps (L, shippable as it goes).**
-1. The model picker and the one-line status chip (chat bar), with progress cards.
+1. The model picker and the one-line status chip (chat bar), with progress cards. **Built on `strata-support`:** `/ui/picker` (every engine's models with tier, fit, size or memory need, start-time hint and a discreet engine name); a grouped list (Small, Medium, Large) with keyboard support; choosing a model gets it ready straight away; one status line (Ready, Getting ready…, Answering…, Starts when you send); a progress card with the steps Zest takes (freeing memory, starting, loading) and the time so far; "Free memory" and "Load it again" tucked away. Large models start from any saved Strata setup, not only ones Zest made. Checked in the browser with Lemonade models; the Large-tier start is untested live because it would have started your real Strata.
 2. Library page replacing Models; unified downloads.
 3. First run: "Zest is getting ready"; Setup guide retired.
 4. Settings: library folder, memory, conversation memory, speed (tuning), updates.

@@ -246,6 +246,8 @@ class Handler(BaseHTTPRequestHandler):
             self.send_json(agent.state())
         elif p == "/ui/pi":
             self.send_json(piup.summary())
+        elif p == "/ui/picker":
+            self.send_json(library.picker(0 if parse_qs(u.query).get("fresh") else 8))
         elif p == "/ui/library":
             self.send_json(self.library_summary())
         elif p == "/ui/library/places":

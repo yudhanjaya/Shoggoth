@@ -218,15 +218,28 @@ def models():
     have = {m["id"] for m in out}
     ports = {r["port"] for r in running() if r["state"] in ("ready", "loading")}
     if binary():
-        mine = {p["name"]: p for p in _presets_cached()}
-        for name, k in _settings()["known"].items():
-            p = mine.get(name)
-            if not p or not name.startswith(ZEST_PRESET) or PREFIX + k["id"] in have or int(p.get("port") or 0) in ports:
+        mine = _presets_cached()
+        for im in installed_models():
+            if im["status"] != "present":
                 continue
+            p = _preset_for(im, mine)
+            if not p or not p.get("port") or PREFIX + im["name"] in have or int(p["port"]) in ports:
+                continue
+            k = _settings()["known"].get(p["name"]) or {}
             url = "http://127.0.0.1:%d" % int(p["port"])
-            out.append({"id": PREFIX + k["id"], "tools": True, "reasoning": True, "vision": bool(k.get("vision")), "ctx": int(k.get("ctx") or 131072),
-                        "provider": _provider(url), "url": url, "key": "", "bare": k["id"], "dormant": True, "preset": name})
+            out.append({"id": PREFIX + im["name"], "tools": True, "reasoning": True, "vision": bool(k.get("vision", p.get("vision") not in (None, "off"))),
+                        "ctx": int(k.get("ctx") or p.get("context") or 131072), "provider": _provider(url), "url": url, "key": "", "bare": im["name"],
+                        "dormant": True, "preset": p["name"]})
     return out
+
+
+def _preset_for(installed, presets):
+    """The saved setup that starts an installed model: a preset whose model is that model (a Zest-made one first, then the most recently used)."""
+    mid = str(installed.get("id") or "").lower()
+    ok = [p for p in presets if p.get("model") and (mid == str(p["model"]).lower() or mid.endswith(str(p["model"]).lower()))]
+    ok.sort(key=lambda p: str(p.get("last_used") or ""), reverse=True)            # most recently used first...
+    ok.sort(key=lambda p: not p["name"].startswith(ZEST_PRESET))                  # ...then Zest-made ones ahead (the sort is stable)
+    return ok[0] if ok else None
 
 
 def find_model(name):

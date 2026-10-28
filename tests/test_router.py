@@ -17,6 +17,7 @@ HERE = os.path.dirname(os.path.abspath(__file__))
 sys.path.insert(0, os.path.join(HERE, "..", "zest"))
 
 import gateway  # noqa: E402
+import library  # noqa: E402
 import lem  # noqa: E402
 import provbase  # noqa: E402
 import registry  # noqa: E402
@@ -224,6 +225,29 @@ class Idle(Env):
     def test_nothing_of_yours_is_ever_idle_stopped(self):
         self.start_stray(18991)
         self.assertEqual(router.idle_tick(time.time() + 9999), {})
+
+
+class Picker(Env):
+    def test_picker_lists_what_is_running_with_what_helps_choose(self):
+        self.fast.ensure("m1", lambda t: None)
+        library._pk["v"] = None
+        d = library.picker(max_age=0)
+        m = next(m for m in d["models"] if m["engine"] == "fast")
+        self.assertEqual((m["id"], m["title"], m["live"], m["start"], m["engine_name"], m["fit"]), ("fast/m1", "m1", True, "Ready now", "Fast", "fits"))
+        self.assertFalse(m["ctx_fixed"])
+        self.assertEqual([t["id"] for t in d["tiers"]], ["small", "medium", "large"])
+        self.assertIn("ram_gb", d["machine"])
+
+    def test_start_time_hints_are_plain(self):
+        self.assertEqual(library._start_hint(0), "Ready now")
+        self.assertEqual(library._start_hint(20), "Ready in seconds")
+        self.assertEqual(library._start_hint(60), "About 1 minute to start")
+        self.assertEqual(library._start_hint(120), "About 2 minutes to start")
+
+    def test_the_answer_is_kept_briefly(self):
+        library._pk["v"] = None
+        a = library.picker(max_age=0)
+        self.assertIs(library.picker(max_age=60), a)
 
 
 class GatewayRouting(Env):
