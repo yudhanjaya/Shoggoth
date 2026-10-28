@@ -63,6 +63,8 @@ find "$APPDIR" -name __pycache__ -prune -exec rm -rf {} +
 cp zest/*.py zest/index.html zest/docs.md "$APPDIR/usr/share/zest/"
 cp zest/pi/* "$APPDIR/usr/share/zest/pi/"
 cp -r zest/skills zest/vendor zest/_vendor zest/providers "$APPDIR/usr/share/zest/"
+# the sandboxed catalog test runs as another user: everything we ship must be world-readable
+chmod -R a+rX "$APPDIR/usr/share/zest"
 
 # Node (just the binary) and Pi (its self-contained bundle, plus jiti, which it loads extensions with).
 tar -xJf "$CACHE/node.tar.xz" -C "$APPDIR/usr/node" --strip-components=1 "node-v${NODE_VER}-linux-x64/bin/node" "node-v${NODE_VER}-linux-x64/LICENSE"
