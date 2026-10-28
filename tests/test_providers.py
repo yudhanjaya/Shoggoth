@@ -2,6 +2,8 @@
 
 Run from the repository root:  python3 -m unittest discover tests
 """
+import contextlib
+import io
 import os
 import shutil
 import sys
@@ -15,11 +17,12 @@ sys.path.insert(0, os.path.join(HERE, "..", "zest"))
 
 import engine  # noqa: E402
 import provbase  # noqa: E402
+import provcheck  # noqa: E402
 import registry  # noqa: E402
 import strata  # noqa: E402
 
 FIXTURE = os.path.join(HERE, "fixtures", "openai_server.py")
-GOOD = {"id": "demo", "name": "Demo", "api_version": 1, "run": {"mode": "managed", "start": ["{bin}", "--port", "{port}"]},
+GOOD = {"id": "demo", "name": "Demo", "api_version": 1, "run": {"mode": "managed", "start": ["{bin}", "--port", "{port}"], "ready": {"path": "/health"}},
         "endpoint": {"base_url": "http://127.0.0.1:{port}/v1"}}
 
 
@@ -73,7 +76,7 @@ class Validation(unittest.TestCase):
 
     def test_problems_say_where(self):
         cases = {
-            "run.start": dict(GOOD, run={"mode": "managed", "start": "my-engine --port 1"}),          # a shell string
+            "run.start": dict(GOOD, run={"mode": "managed", "start": "my-engine --port 1", "ready": {"path": "/health"}}),          # a shell string
             "id": dict(GOOD, id="Bad Id"),
             "api_version": dict(GOOD, api_version=7),
             "run.mode": dict(GOOD, run={"mode": "magic"}),
@@ -288,7 +291,7 @@ class EnginesPage(Env):
                 name: Demo
                 api_version: 1
                 detect: {binaries: [%s]}
-                run: {mode: managed, start: ["{bin}", serve, "--port", "{port}"], port_range: 18970-18971}
+                run: {mode: managed, start: ["{bin}", serve, "--port", "{port}"], ready: {path: /health}, port_range: 18970-18971}
                 endpoint: {base_url: "http://127.0.0.1:{port}/v1"}
                 """ % sys.executable))
         r = self.real()
@@ -296,6 +299,104 @@ class EnginesPage(Env):
         self.assertEqual(c["will"], ["start a program on your computer (%s)" % os.path.basename(sys.executable)])
         self.assertEqual(c["commands"][0]["command"][0], sys.executable)        # the template word {bin} is replaced for the person
         self.assertIn("{port}", c["commands"][0]["command"])                    # values only known at start stay as they are
+
+
+class Sdk(Env):
+    """What someone writing an engine uses: the checker, the template and the llama-server example."""
+    GOOD_YAML = """
+        id: mine
+        name: Mine
+        tier: small-medium
+        api_version: 1
+        detect: {binaries: [%s], ports: 18980-18981, health: {path: /health}}
+        run: {mode: managed, start: ["{bin}", serve, "--port", "{port}"], ready: {path: /health}, port_range: 18980-18981}
+        endpoint: {base_url: "http://127.0.0.1:{port}/v1"}
+        models: {formats: [gguf]}
+        memory: {group: gpu, exclusive: true}
+        """ % sys.executable
+
+    def levels(self, rep):
+        return [(i["level"], i["text"]) for i in rep["items"]]
+
+    def test_a_good_folder_loads_and_says_what_zest_will_ask(self):
+        rep = provcheck.check(self.add("mine", self.GOOD_YAML))
+        self.assertTrue(rep["ok"], self.levels(rep))
+        self.assertEqual((rep["id"], rep["name"]), ("mine", "Mine"))
+        self.assertTrue(any("start a program" in t for _, t in self.levels(rep)))
+        self.assertIn("Zest will load this engine", provcheck.render(rep))
+
+    def test_a_typo_is_pointed_out_with_the_right_word(self):
+        rep = provcheck.check(self.add("mine", self.GOOD_YAML.replace("port_range: 18980-18981}", "port_rnge: 18980-18981}")))
+        text = " ".join(t for lv, t in self.levels(rep) if lv == "warn")
+        self.assertIn("run.port_rnge", text)
+        self.assertIn("did you mean run.port_range", text)
+
+    def test_what_is_wrong_is_an_error_and_exits_nonzero(self):
+        d = self.add("mine", self.GOOD_YAML.replace('start: ["{bin}", serve, "--port", "{port}"]', "start: my-engine --port 1"))
+        rep = provcheck.check(d)
+        self.assertFalse(rep["ok"])
+        self.assertTrue(any(lv == "error" and "run.start" in t for lv, t in self.levels(rep)))
+        with contextlib.redirect_stdout(io.StringIO()):
+            self.assertEqual(provcheck.main(["check", d]), 1)
+
+    def test_odd_shapes_are_reported_not_crashed_on(self):
+        for bad in ("run: hello\n", "models: [gguf]\n", "detect: {binaries: my-engine}\n"):
+            rep = provcheck.check(self.add("odd", "id: odd\nname: Odd\napi_version: 1\n" + bad))
+            self.assertFalse(rep["ok"], bad)
+            self.assertTrue(rep["items"], bad)
+        self.assertFalse(provcheck.check(os.path.join(self.tmp, "nowhere"))["ok"])
+        self.assertFalse(provcheck.check(self.user)["ok"])                          # a folder with no provider.yaml in it
+
+    def test_an_engine_that_cannot_say_when_it_is_ready_is_refused(self):
+        rep = provcheck.check(self.add("mine", self.GOOD_YAML.replace(", ready: {path: /health}", "").replace("health: {path: /health}", "")))
+        self.assertTrue(any("run.ready" in t for lv, t in self.levels(rep) if lv == "error"), self.levels(rep))
+
+    def test_serving_files_needs_the_file_word_in_the_command(self):
+        yml = self.GOOD_YAML.replace("models: {formats: [gguf]}", "models: {formats: [gguf], serve: file}")
+        self.assertTrue(any("model_file" in t for lv, t in self.levels(provcheck.check(self.add("a", yml))) if lv == "error"))
+        yml2 = yml.replace('"--port", "{port}"]', '"--port", "{port}", "-m", "{model_file}"]')
+        self.assertTrue(provcheck.check(self.add("b", yml2))["ok"])
+        self.assertTrue(any("model_file" in t for lv, t in self.levels(provcheck.check(self.add("c", self.GOOD_YAML.replace('"--port", "{port}"]', '"--port", "{port}", "-m", "{model_file}"]')))) if lv == "error"))
+
+    def test_new_makes_a_folder_that_passes_the_check(self):
+        d = provcheck.new("my-thing", where=self.user)
+        rep = provcheck.check(d)
+        self.assertTrue(rep["ok"], self.levels(rep))
+        self.assertEqual(rep["id"], "my-thing")
+        with self.assertRaises(ValueError):
+            provcheck.new("my-thing", where=self.user)                              # never overwrites
+        with self.assertRaises(ValueError):
+            provcheck.new("Bad Id", where=self.user)
+
+    def test_the_bundled_example_is_a_working_engine_file(self):
+        d = provcheck.new("llama-server", where=self.user, example="llama-server")
+        rep = provcheck.check(d)
+        self.assertTrue(rep["ok"], self.levels(rep))
+        self.assertFalse([1 for lv, _ in self.levels(rep) if lv == "warn"], self.levels(rep))        # the example sets an example
+        with self.assertRaises(ValueError):
+            provcheck.new("x-y", where=self.user, example="nothing")
+
+    def test_a_template_is_never_loaded_as_an_engine(self):
+        r = self.registry()
+        self.assertEqual(r.errors, [])
+        self.assertNotIn("my-engine", [p.id for p in r.all()])
+
+    def test_files_are_served_by_name_and_a_missing_one_is_explained(self):
+        yml = self.GOOD_YAML.replace("models: {formats: [gguf]}", "models: {formats: [gguf], serve: file}").replace('"--port", "{port}"]', '"--port", "{port}", "-m", "{model_file}"]')
+        self.add("mine", yml)
+        p = self.registry().get("mine")
+        self.assertIsNone(p.model_id({"stem": "x", "files": [], "complete": True}))
+        self.assertIsNone(p.model_id({"stem": "x", "files": ["/m/x-00001-of-00002.gguf"], "complete": False}))
+        self.assertEqual(p.model_id({"stem": "x", "files": ["/m/x-00001-of-00002.gguf", "/m/x-00002-of-00002.gguf"], "complete": True}), "x")
+        self.assertEqual(p._files["x"], "/m/x-00001-of-00002.gguf")                # a split model starts from its first part
+        self.registry().approve("mine")
+        p2 = self.registry().get("mine")
+        with self.assertRaises(provbase.ProviderError):
+            p2.ensure("unknown", lambda t: None)
+
+    def test_an_engine_that_cannot_report_its_work_says_so(self):
+        p = self.registry().get("mine") or (self.add("mine", self.GOOD_YAML), self.registry().get("mine"))[1]
+        self.assertEqual(p.activity(), (None, None))
 
 
 if __name__ == "__main__":

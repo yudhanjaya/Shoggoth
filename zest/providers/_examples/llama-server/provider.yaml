@@ -1,0 +1,40 @@
+# llama.cpp's own llama-server, exactly as it comes: the proof that an engine can be one YAML file.
+# It serves any GGUF in your library, one model at a time, on a program you installed yourself.
+# To use it: `Zest.AppImage providers new llama-server --from llama-server`, point ZEST_LLAMA_SERVER at the program
+# (or put llama-server on your PATH), then press Reload under Advanced > Engines. Zest asks once before it runs it.
+id: llama-server
+name: llama.cpp server
+summary: Runs any model file with a llama-server you installed yourself, one model at a time.
+tier: small-medium
+api_version: 1
+
+detect:
+  binaries: [$ZEST_LLAMA_SERVER, llama-server, ~/.local/bin/llama-server, ~/llama.cpp/build/bin/llama-server]
+  ports: 8090-8099
+  health: {path: /health}
+
+run:
+  mode: managed
+  start: ["{bin}", --model, "{model_file}", --alias, "{model}", --host, "{host}", --port, "{port}", --ctx-size, "{context}", --jinja, -ngl, "99"]
+  ready: {path: /health, timeout: 300}
+  stop_grace_secs: 10
+  port_range: 8090-8099
+
+endpoint:
+  base_url: "http://127.0.0.1:{port}/v1"
+  models: {path: /v1/models, id: "$.data[*].id"}
+
+models:
+  formats: [gguf]
+  serve: file
+  data_dir: "{library}/llama-server"
+
+memory:
+  group: gpu
+  exclusive: true
+  idle_stop_minutes: 20
+  start_estimate: {seconds: 20}
+
+capabilities:
+  context: per-load
+  activity: {path: /slots, busy: "$[*].is_processing"}

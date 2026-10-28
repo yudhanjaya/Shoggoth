@@ -136,6 +136,23 @@ class Catalog(Env):
         self.assertTrue(flash["complete"])
         self.assertEqual(flash["providers"]["fast"]["ok"], False)         # the fast engine is told it can't run it
 
+    def test_an_engine_can_ask_for_an_architecture(self):
+        self.add("mine", """
+            id: mine
+            name: Mine
+            api_version: 1
+            tier: small-medium
+            run: {mode: external}
+            endpoint: {base_url: "http://127.0.0.1:3/v1"}
+            models: {formats: [gguf], prefer_architectures: [newarch]}
+            """)
+        self.reg = registry.Registry(bundled=os.path.join(self.tmp, "none"), user=self.user).load()
+        write_gguf(os.path.join(self.lib, "lemonade", "a", "A-Q4.gguf"), arch="newarch", size=2 * GB)
+        write_gguf(os.path.join(self.lib, "lemonade", "b", "B-Q4.gguf"), arch="gemma3", size=2 * GB)
+        c = self.by_stem()
+        self.assertEqual(c["A-Q4"]["provider"], "mine")                 # it asked for this kind, so it gets it
+        self.assertEqual(c["B-Q4"]["provider"], "fast")                 # everything else goes where it did before
+
     def test_incomplete_shards_are_flagged(self):
         write_gguf(os.path.join(self.lib, "strata", "Flash-00001-of-00003.gguf"), arch="qwen4exp")
         self.assertFalse(self.by_stem()["Flash"]["complete"])

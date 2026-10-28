@@ -20,6 +20,19 @@ import store  # noqa: E402
 ID_RE = re.compile(r"^[a-z][a-z0-9_-]{1,31}$")
 KNOWN = {"id", "name", "summary", "tier", "api_version", "detect", "install", "update", "run", "endpoint", "models", "memory",
          "capabilities", "options", "docs"}
+# The settings Zest reads inside each group. Anything else is probably a typo, and is pointed out (never silently ignored).
+SECTIONS = {
+    "detect": {"binaries", "ports", "health"},
+    "install": {"method", "url", "checksum", "unsafe_install"},
+    "update": {"check", "apply", "series_guard"},
+    "run": {"mode", "start", "stop", "ready", "stop_grace_secs", "port_range"},
+    "endpoint": {"base_url", "models"},
+    "models": {"formats", "architectures", "excluded_architectures", "prefer_architectures", "data_dir", "download", "setup", "view", "serve"},
+    "memory": {"group", "exclusive", "idle_stop_minutes", "start_estimate", "max_loaded"},
+    "capabilities": {"context", "multi_model", "tuning", "activity"},
+}
+LISTS = {("detect", "binaries"), ("models", "formats"), ("models", "architectures"), ("models", "excluded_architectures"), ("models", "prefer_architectures")}
+MAX_YAML = 200_000
 
 
 def _commands(spec):
@@ -61,6 +74,14 @@ def validate(spec, has_code=False):
     if not isinstance(spec, dict):
         return ["The file must be a list of settings (key: value), not %s." % type(spec).__name__]
     bad = []
+    for sec in list(SECTIONS) + ["options"]:
+        if spec.get(sec) is not None and not isinstance(spec[sec], dict):
+            bad.append("%s: must be a group of settings (key: value lines, indented under %s:)." % (sec, sec))
+    for sec, key in sorted(LISTS):
+        if isinstance((spec.get(sec) or {}).get(key), (str, int)) or isinstance((spec.get(sec) or {}).get(key), dict):
+            bad.append("%s.%s: must be a list, like [a, b]." % (sec, key))
+    if bad:
+        return bad                      # the checks below assume the shape is right
     if not ID_RE.match(str(spec.get("id", ""))):
         bad.append("id: must be 2 to 32 characters, lowercase letters, digits, - or _, starting with a letter.")
     if not spec.get("name"):
@@ -96,6 +117,17 @@ def validate(spec, has_code=False):
             bad.append("%s: %s" % (path, e))
         except (ValueError, IndexError, KeyError):
             bad.append("%s: curly braces must hold a single variable name, like {port}." % path)
+    files = (spec.get("models") or {}).get("serve")
+    if files not in (None, "file"):
+        bad.append("models.serve: the only choice is `file` (each model is started from its file).")
+    uses_file = any("{model_file}" in str(c) for _, c in _commands(spec) for c in [" ".join(map(str, c)) if isinstance(c, list) else ""])
+    if mode == "managed" and not has_code:
+        if not (spec.get("detect") or {}).get("health") and not (run.get("ready") or {}).get("path"):
+            bad.append("run.ready: say how Zest can tell the engine is ready, like {path: /health} (or set detect.health).")
+        if files == "file" and not uses_file:
+            bad.append("models.serve is `file`, but run.start never uses {model_file}, so the engine would not be told which file to load.")
+        if uses_file and files != "file":
+            bad.append("run.start uses {model_file}, which only has a value when models.serve is `file`.")
     unknown = [k for k in spec if k not in KNOWN]
     if unknown:
         bad.append("Unknown top-level setting(s): %s." % ", ".join(sorted(unknown)))
@@ -138,13 +170,19 @@ class Registry:
     def _load_one(self, folder, trusted):
         try:
             with open(os.path.join(folder, "provider.yaml")) as f:
-                spec = yaml.safe_load(f)
-        except (OSError, yaml.YAMLError) as e:
+                text = f.read(MAX_YAML + 1)
+            if len(text) > MAX_YAML:
+                raise ValueError("it is far larger than any engine file should be")
+            spec = yaml.safe_load(text)
+        except (OSError, ValueError, yaml.YAMLError) as e:
             line = getattr(getattr(e, "problem_mark", None), "line", None)
             self.errors.append({"folder": folder, "error": "The file couldn't be read%s: %s" % (" (line %d)" % (line + 1) if line is not None else "", getattr(e, "problem", None) or e)})
             return
         code = os.path.join(folder, "provider.py")
-        problems = validate(spec, has_code=os.path.isfile(code))
+        try:
+            problems = validate(spec, has_code=os.path.isfile(code))
+        except Exception as e:  # noqa: BLE001
+            problems = ["Couldn't check the file (%s). It probably has a setting of the wrong kind." % e]
         if problems:
             self.errors.append({"folder": folder, "error": " ".join(problems)})
             return
@@ -158,7 +196,11 @@ class Registry:
             except Exception as e:  # noqa: BLE001
                 self.errors.append({"folder": folder, "error": "provider.py couldn't be loaded: %s" % e})
                 return
-        p = cls(spec, folder, self.context())
+        try:
+            p = cls(spec, folder, self.context())
+        except Exception as e:  # noqa: BLE001
+            self.errors.append({"folder": folder, "error": "The engine couldn't be set up: %s" % e})
+            return
         p.trusted = trusted
         p.approved = trusted or self.is_approved(p)
         self.providers[p.id] = p

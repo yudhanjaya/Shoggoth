@@ -20,7 +20,7 @@ import urllib.request
 
 API_VERSION = 1
 # The only names a command or URL in a provider.yaml may use. Anything else is a mistake, not a feature.
-VARIABLES = {"bin", "host", "port", "model", "preset", "family", "name", "context", "library", "data", "profile", "key"}
+VARIABLES = {"bin", "host", "port", "model", "model_file", "preset", "family", "name", "context", "library", "data", "profile", "key"}
 RUN_MODES = ("managed", "service", "external")
 
 
@@ -135,6 +135,10 @@ class Base:
         if f["architectures"] and arch and arch not in f["architectures"]:
             return False, "%s doesn't support the %s architecture." % (self.name, arch)
         return True, ""
+
+    def prefers(self, model):
+        """Should this provider be the one that gets the model, even when another could run it too? (`models.prefer_architectures`)"""
+        return bool(model.get("architecture")) and model["architecture"] in ((self.spec.get("models") or {}).get("prefer_architectures") or [])
 
     # -- what the router asks: is it running anything, what is loaded, is it busy, what may be stopped when idle
     def ref(self, model_id):
@@ -266,6 +270,7 @@ class GenericProvider(Base):
         self._lock = threading.RLock()
         self._port = None
         self._owned = False             # did Zest start the process now serving?
+        self._files = {}                # model name -> its file, learned as the library asks for names (models.serve: file)
 
     # -- helpers
     def _vals(self, **extra):
@@ -342,102 +347,21 @@ class GenericProvider(Base):
                 out.append({"id": mid, "ctx": int(ctxs[i]) if i < len(ctxs) and ctxs[i] else 0, "port": r["port"], "owner": r["owner"]})
         return out
 
-    def endpoint(self, model_id=None):
-        raise NotImplementedError
-
-    # -- making it faster
-    def tune_plan(self, model_id, opts):
-        raise NotImplementedError
-
-    def tune_run(self, model_id, opts, job):
-        raise NotImplementedError
-
-
-# ---------------------------------------------------------------- the provider that is only a YAML file
-class GenericProvider(Base):
-    """Implements the interface from `provider.yaml`: find it, start and stop a process, wait until it answers, list its models."""
-
-    def __init__(self, spec, folder, ctx):
-        super().__init__(spec, folder, ctx)
-        self._proc = None
-        self._lock = threading.RLock()
-        self._port = None
-        self._owned = False             # did Zest start the process now serving?
-
-    # -- helpers
-    def _vals(self, **extra):
-        v = {"bin": self.binary() or "", "host": "127.0.0.1", "port": self._port, "library": self.ctx.library, "data": self.ctx.data}
-        v.update(extra)
-        return v
-
-    def binary(self):
-        for cand in (self.spec.get("detect") or {}).get("binaries") or []:
-            cand = os.path.expanduser(os.path.expandvars(str(cand)))
-            if cand.startswith("$"):
-                continue                # an unset environment variable
-            found = cand if os.path.isabs(cand) and os.access(cand, os.X_OK) else shutil.which(cand)
-            if found:
-                return found
-        return None
-
-    def _base(self, port=None):
-        ep = self.spec.get("endpoint") or {}
-        return fill(ep.get("base_url", ""), **self._vals(port=port or self._port)).rstrip("/")
-
-    def _key(self):
-        return self.ctx.settings(self.id).get("key", "")
-
-    def _root(self, port):
-        """scheme://host:port of the server. Paths in `detect.health`, `run.ready` and `endpoint.models` are relative to this."""
-        u = urllib.parse.urlparse(self._base(port))
-        return "%s://%s" % (u.scheme, u.netloc)
-
-    def _health(self, port):
-        h = (self.spec.get("detect") or {}).get("health") or (self.spec.get("run") or {}).get("ready") or {}
-        path = h.get("path")
-        if not path:
+    def model_id(self, entry):
+        """With `models.serve: file` every library model this engine can run is served from its file: its name is the file's stem."""
+        if (self.spec.get("models") or {}).get("serve") != "file" or not entry.get("files") or entry.get("complete") is False:
             return None
-        status, d = http_json(self._root(port) + path, self._key(), timeout=1.5)
-        if status != 200:
-            return None
-        for k, want in (h.get("expect") or {}).items():
-            if d.get(k) != want:
-                return None
-        return d
+        self._files[entry["stem"]] = entry["files"][0]            # a split model starts from its first part
+        return entry["stem"]
 
-    # -- finding it
-    def detect(self):
-        """What is already there: {found, bin, running:[{port}], owner}. Never starts anything."""
-        d = self.spec.get("detect") or {}
-        running = []
-        for port in port_range(d.get("ports") or ((self.spec.get("run") or {}).get("port_range") or [])):
-            if port_open(port) and self._health(port) is not None:
-                running.append({"port": port, "owner": "zest" if (self._owned and port == self._port) else "yours"})
-        mode = (self.spec.get("run") or {}).get("mode", "managed")
-        if mode == "external":
-            url = (self.ctx.settings(self.id) or {}).get("url") or (self.spec.get("endpoint") or {}).get("base_url", "")
-            return {"found": bool(url), "bin": None, "running": [], "external": url}
-        return {"found": bool(self.binary()) or bool(running), "bin": self.binary(), "running": running}
-
-    def status(self):
-        det = self.detect()
-        return dict(self.summary(), installed=bool(det.get("bin")) or mode_ok(self), running=det.get("running", []), bin=det.get("bin"),
-                    problems=[])
-
-    # -- models
-    def models(self):
-        ep = self.spec.get("endpoint") or {}
-        spec = ep.get("models") or {}
-        out = []
-        for r in self.detect().get("running", []):
-            status, d = http_json(self._base(r["port"]) + spec.get("path", "/models").replace("/v1", "", 1) if self._base(r["port"]).endswith("/v1") and spec.get("path", "").startswith("/v1") else self._base(r["port"]) + spec.get("path", "/models"), self._key())
-            if status != 200:
-                continue
-            ids = jpath(d, spec.get("id", "$.data[*].id"))
-            ctxs = jpath(d, spec["context"]) if spec.get("context") else []
-            for i, mid in enumerate(ids):
-                out.append({"id": mid, "ctx": int(ctxs[i]) if i < len(ctxs) and ctxs[i] else 0, "port": r["port"], "owner": r["owner"]})
-        return out
+    def activity(self):
+        a = (self.spec.get("capabilities") or {}).get("activity") or {}
+        if a.get("path") and self._port:
+            status, d = http_json(self._root(self._port) + a["path"], self._key())
+            if status == 200:
+                flags = jpath(d, a.get("busy", "")) if a.get("busy") else []
+                return any(bool(f) for f in flags), (sum(x for x in jpath(d, a["tokens"]) if isinstance(x, (int, float))) if a.get("tokens") else None)
+        return None, None                # it can't say, so the clock never stops it (declare capabilities.activity to allow that)
 
     def endpoint(self, model_id=None):
         for m in self.models():
@@ -458,13 +382,19 @@ class GenericProvider(Base):
             raise ProviderError("%s hasn't been approved to run yet." % self.name)
         if not self.binary():
             raise ProviderError("%s isn't installed." % self.name)
+        files = (self.spec.get("models") or {}).get("serve") == "file"
+        if files and not self._files.get(model_id):
+            raise ProviderError("%s doesn't know where the file for %s is. Open the Library and try again." % (self.name, model_id))
         with self._lock:
+            if self.owned_instance() and not (self.spec.get("capabilities") or {}).get("multi_model"):
+                self.stop()                                          # one model at a time: make room for this one
             used = {p for p in port_range(run.get("port_range") or [])}
             free = next((p for p in sorted(used) if not port_open(p)), None)
             if free is None:
                 raise ProviderError("No free port for %s." % self.name)
             self._port = free
-            cmd = fill(run["start"], **self._vals(model=model_id, port=free))
+            ctx = int((opts or {}).get("ctx") or self.ctx.settings(self.id).get("context") or 131072)
+            cmd = fill(run["start"], **self._vals(model=model_id, model_file=self._files.get(model_id, ""), port=free, context=ctx))
             progress("Starting %s…" % self.name)
             self._proc = subprocess.Popen(cmd, stdin=subprocess.DEVNULL, stdout=subprocess.DEVNULL, stderr=subprocess.STDOUT, start_new_session=True)
             self._owned = True

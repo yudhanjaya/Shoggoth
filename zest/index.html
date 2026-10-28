@@ -3051,6 +3051,7 @@ function renderEngines(){
   document.querySelectorAll("#engcards details.engmore").forEach(x => { if(open.has(x.dataset.part)) x.open = true; });
   $("#engadd").innerHTML = `<section class="panel engine"><div class="ehead"><h3>Add an engine</h3></div>
     <p class="help" style="margin:0">An engine is a folder with a <span class="mono">provider.yaml</span> file in it that says how to start the program, where to reach it and which models it can run. Put the folder in <span class="mono" style="overflow-wrap:anywhere">${esc(d.user_folder || "")}</span>, then press Reload. Zest asks before it lets an added engine run a program.</p>
+    <p class="help" style="margin:0">In a terminal, <span class="mono">Zest-*.AppImage providers new my-engine</span> makes a starting folder, and <span class="mono">providers check &lt;folder&gt;</span> tells you what to fix before you press Reload. The guide is <span class="mono">docs/ENGINES.md</span> in the Zest repository.</p>
     <div class="erow"><button class="btn" data-eng="reload">Reload engines</button></div>
     ${(d.errors || []).length ? `<div class="engerr"><b>Engines Zest couldn't load</b>${d.errors.map(e => `<div class="note-bad"><code>${esc(e.folder)}</code><br>${esc(e.error)}</div>`).join("")}</div>` : ""}
     ${ENG.msg ? `<div class="note-bad">${esc(ENG.msg)}</div>` : ""}</section>`;

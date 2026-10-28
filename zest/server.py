@@ -927,6 +927,10 @@ def watchdog(srv, grace):
 
 
 def main():
+    args = [a for a in sys.argv[1:] if a != "--app"]            # the AppImage adds --app; `Zest.AppImage providers check <folder>` is the tool for engine authors
+    if args[:1] == ["providers"]:
+        import provcheck
+        sys.exit(provcheck.main(args[1:]))
     ap = argparse.ArgumentParser(description="Zest: a console for Lemonade Server")
     ap.add_argument("--host", default=os.environ.get("ZEST_HOST", "127.0.0.1"), help="address to listen on (default 127.0.0.1)")
     ap.add_argument("--port", type=int, default=int(os.environ.get("ZEST_PORT", "13306")), help="port to listen on (default 13306)")

@@ -251,7 +251,8 @@ def catalog(reg=None, machine=None, refresh=False):
         only_large = all(p in big for p in runnable)
         tier = _tier(e["size_bytes"] / 1e9, only_large)
         # a Large model goes to the big-model engine when one can run it; everything else goes to the fast engine
-        chosen = next((p for p in big if cap[p.id][0]), None) if tier == "large" else None
+        chosen = next((p for p in runnable if p.prefers(e)), None)          # an engine that asked for this kind of model gets it
+        chosen = chosen or (next((p for p in big if cap[p.id][0]), None) if tier == "large" else None)
         chosen = chosen or next((p for p in rest if cap[p.id][0]), None) or runnable[0]
         fit, why = chosen.fit(e, machine)
         ids = dict(e["ids"]) if e.get("listed_by") else {p.id: p.model_id(e) for p in runnable}
