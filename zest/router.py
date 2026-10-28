@@ -173,7 +173,12 @@ def activate(ref, progress=None, opts=None):
         with _slock:
             STATE["step"] = text
         progress(text)
-    with _lock:
+    if not _lock.acquire(blocking=False):                       # another model is still starting: say so rather than sit silent
+        with _slock:
+            other = STATE.get("ref")
+        progress("Waiting for %s to finish starting…" % (friendly_name(other) if other else "another model"))      # (not STATE: that shows the one that is starting)
+        _lock.acquire()
+    try:
         with _slock:
             STATE.update(ref=str(ref), provider=p.id, step="Getting ready…", since=time.time())
         try:
@@ -186,8 +191,30 @@ def activate(ref, progress=None, opts=None):
         finally:
             with _slock:
                 STATE.update(ref=None, provider=None, step="", since=0)
+    finally:
+        _lock.release()
     invalidate()
     return dict(ep or {}, provider=p.id, model=mid)
+
+
+def friendly_name(ref):
+    """A model's name as a person would say it, from its chat-list entry when there is one."""
+    ref = str(ref or "")
+    return ref.split("/", 1)[-1].replace("-GGUF", "").replace("-", " ") if ref else ""
+
+
+def stop_started():
+    """Stop everything Zest itself started, when Zest quits. Nothing that was started by anyone else is touched. Returns the engines stopped."""
+    done = []
+    for p in providers():
+        try:
+            if p.owned_instance() is not None:
+                p.stop()
+                done.append(p.id)
+        except Exception:  # noqa: BLE001
+            continue
+    invalidate()
+    return done
 
 
 def deactivate(ref=None):

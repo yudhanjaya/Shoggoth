@@ -1008,3 +1008,61 @@ def _installed_models():
         out.append({"id": m.get("id"), "name": m.get("name"), "config": m.get("source_config"), "status": m.get("component_status"),
                     "files": sorted(set(files)), "data_root": os.path.dirname(os.path.dirname(pack)) if pack else ""})
     return out
+
+
+# ---------------------------------------------------------------- does Strata still answer the way Zest reads it?
+def _lacks(d, *paths):
+    """The dotted paths that are missing from a parsed answer."""
+    out = []
+    for path in paths:
+        cur = d
+        for part in path.split("."):
+            if isinstance(cur, dict) and part in cur:
+                cur = cur[part]
+            else:
+                out.append(path)
+                break
+    return out
+
+
+def _each(items, *keys):
+    """Keys that some item lacks (an empty list has nothing to check)."""
+    return sorted({k for it in items if isinstance(it, dict) for k in keys if k not in it})
+
+
+# (what Zest reads, the call, a check on its parsed answer that returns the problems). These are the only places Zest depends on the shape
+# of Strata's output, so a change upstream shows up here first. The tests run the checks on captured real answers (tests/fixtures/real).
+CONTRACTS = [
+    ("what is running", ["launch", "--status", "--output", "json"],
+     lambda d: _lacks(d, "running") + (["running (not a list)"] if not isinstance(d.get("running", []), list) else [])
+     + ["running[].%s" % k for k in _each(d.get("running") or [], "url", "name", "profile", "port", "state")]),
+    ("saved setups", ["launch", "--list-presets", "--output", "json"],
+     lambda d: _lacks(d, "presets") + ["presets[].%s" % k for k in _each(d.get("presets") or [], "name", "family", "model", "context", "port")]),
+    ("installed models", ["models", "list", "--installed", "--output", "json"],
+     lambda d: _lacks(d, "models") + ["models[].%s" % k for k in _each(d.get("models") or [], "id", "name", "source_config", "component_status")]),
+    ("the update check", ["update", "--check", "--output", "json"],
+     lambda d: _lacks(d, "ok", "engine.status", "engine.installed.version", "control.status", "control.installed") + (["serving (not a list)"] if not isinstance(d.get("serving", []), list) else [])),
+    ("a download plan", ["launch", "--plan", "--family", "qwen", "--model", "IQ3_S", "--context", "131072", "--output", "json"],
+     lambda d: _lacks(d, "plan.download", "plan.warnings", "plan.profile") + (["plan.download.gb (not a number)"] if not isinstance((((d.get("plan") or {}).get("download") or {}).get("gb")), (int, float)) else [])),
+]
+
+
+def selftest():
+    """Ask the installed Strata the questions Zest asks and check the answers still have the fields Zest reads. Starts nothing, changes nothing.
+    [{name, ok, detail}]; empty when Strata isn't installed."""
+    if not binary():
+        return []
+    out = []
+    v = version()
+    out.append({"name": "its version", "ok": bool(v), "detail": ("Strata %s" % v) if v else "`strata --version` didn't answer as expected."})
+    for name, args, check in CONTRACTS:
+        try:
+            code, text = _run(args, 60)
+            d = json.JSONDecoder().raw_decode(text.lstrip())[0]
+            problems = check(d)
+        except ValueError:
+            problems = ["the answer isn't JSON any more"]
+        except Exception as e:  # noqa: BLE001
+            problems = [str(e)]
+        out.append({"name": name, "ok": not problems, "detail": "" if not problems else "missing or changed: " + ", ".join(problems[:6])})
+    return out

@@ -100,4 +100,4 @@ A step an engine can't do raises `NotImplementedError` and Zest shows it as unav
 
 `providers check` covers the file. To test the behaviour, copy the approach in `tests/test_providers.py`: a YAML-only fake engine that starts `tests/fixtures/openai_server.py` (a small OpenAI-style server), `registry.approve(id)`, then `ensure`, `models`, `stop`. Run all tests with `python3 -m unittest discover tests`.
 
-`providers list` shows every engine Zest has loaded and every folder it could not.
+`providers list` shows every engine Zest has loaded and every folder it could not. `providers doctor` asks the engines that are installed and running the questions Zest asks and checks the answers still have the fields Zest reads. An engine written in Python can answer it by defining `selftest()`.

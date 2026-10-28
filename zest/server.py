@@ -281,6 +281,8 @@ class Handler(BaseHTTPRequestHandler):
             self.send_json(library.picker(0 if parse_qs(u.query).get("fresh") else 8))
         elif p == "/ui/library":
             self.send_json(self.library_summary())
+        elif p == "/ui/disk":
+            self.send_json(library.models_disk())
         elif p == "/ui/library/places":
             self.send_json({"places": library.places(), "root": library.root()})
         elif p == "/ui/router":
@@ -1068,6 +1070,7 @@ def main():
     finally:
         agent.stop_all()
         gateway.GATEWAY.stop()
+        router.stop_started()     # what Zest started goes with it; nothing keeps holding memory with no one left to stop it
         srv.server_close()        # free the port first; stopping Lemonade can take a few seconds
         engine.stop()
 

@@ -119,6 +119,24 @@ class Headers(Env):
         self.assertEqual(gguf.role_of(""), "unknown")
 
 
+class Folder(Env):
+    def test_the_disk_a_download_goes_to_is_the_library_folder(self):
+        d = library.models_disk()
+        self.assertEqual(d["where"], self.lib)
+        self.assertGreater(d["free_gb"], 0)
+        self.assertFalse(d["missing"])
+
+    def test_a_library_folder_that_has_gone_is_said_so_and_lemonade_is_left_alone(self):
+        shutil.rmtree(self.lib)                                   # its disk was unplugged
+        d = library.models_disk()
+        self.assertTrue(d["missing"])
+        self.assertGreater(d["free_gb"], 0)                       # measured on the nearest folder that exists, not an error
+        self.assertTrue(library.summary()["missing"])
+        ok, msg = library.apply_to_lemonade()
+        self.assertFalse(ok)
+        self.assertIn("can't be found", msg)
+
+
 class MemoryForContext(Env):
     """What a long conversation costs in memory is part of whether a model fits."""
     LLAMA_8B = {"block_count": 32, "embedding_length": 4096, "attention.head_count": 32, "attention.head_count_kv": 8}

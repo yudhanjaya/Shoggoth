@@ -165,7 +165,7 @@ def new(pid, where=None, example=None):
 
 def main(argv):
     """`providers check <folder> [--json]`, `providers new <id>`, `providers list`. Returns the exit code."""
-    usage = "usage: providers check <folder> [--json] | providers new <id> [--from <example>] | providers list"
+    usage = "usage: providers check <folder> [--json] | providers new <id> [--from <example>] | providers list | providers doctor"
     if not argv:
         print(usage)
         return 2
@@ -182,6 +182,20 @@ def main(argv):
             return 1
         print("Made %s\nEdit provider.yaml, run `providers check %s`, then open Advanced > Engines in Zest and press Reload." % (os.path.join(d, "provider.yaml"), d))
         return 0
+    if cmd == "doctor":
+        bad = 0
+        r = registry.Registry().load()
+        for p in r.all():
+            try:
+                res = p.selftest()
+            except Exception as e:  # noqa: BLE001
+                res = [{"name": "asking it", "ok": False, "detail": str(e)}]
+            print("%s%s" % (p.name, "" if res else "  (not installed or not running: nothing to ask)"))
+            for x in res:
+                print("  %s %s%s" % (MARK["ok"] if x["ok"] else MARK["error"], x["name"], (": " + x["detail"]) if x["detail"] else ""))
+                bad += 0 if x["ok"] else 1
+        print("Everything answers the way Zest reads it." if not bad else "%d thing%s no longer answer%s the way Zest reads %s." % (bad, "" if bad == 1 else "s", "s" if bad == 1 else "", "it" if bad == 1 else "them"))
+        return 1 if bad else 0
     if cmd == "list":
         r = registry.Registry().load()
         for p in r.all():

@@ -141,6 +141,39 @@ class Progress(Env):
         self.assertEqual(router.state()["step"], "")
 
 
+    def test_a_second_start_says_what_it_is_waiting_for_and_does_not_hide_the_first(self):
+        import threading
+        release, said = threading.Event(), []
+        real = self.big.ensure
+
+        def slow(model_id, progress, opts=None):
+            progress("Loading the model…")
+            release.wait(10)
+            return real(model_id, progress, opts)
+        self.big.ensure = slow
+        first = threading.Thread(target=lambda: router.activate("big/m1", lambda x: None), daemon=True)
+        first.start()
+        time.sleep(0.4)
+        second = threading.Thread(target=lambda: router.activate("fast/m2", said.append), daemon=True)
+        second.start()
+        time.sleep(0.4)
+        self.assertTrue(any("Waiting for" in t and "m1" in t for t in said), said)
+        self.assertEqual(router.state()["step"], "Loading the model…")             # the card still shows the one that is loading
+        release.set()
+        first.join(30)
+        second.join(30)
+        self.assertEqual(router.state()["step"], "")
+
+    def test_what_zest_started_goes_when_zest_quits_and_what_you_started_stays(self):
+        self.start_stray(18984)                                                   # yours, on the fast engine's ports
+        router.activate("fast/m2", lambda x: None)                                # a name the stray doesn't serve, so Zest starts its own
+        self.assertTrue(provbase.port_open(18980))                                # Zest's own, on the first free port
+        stopped = router.stop_started()
+        self.assertEqual(stopped, ["fast"])
+        self.assertFalse(provbase.port_open(18980))
+        self.assertTrue(provbase.port_open(18984))                                # what you started is still there
+
+
 class Arbiter(Env):
     def test_a_big_model_frees_the_fast_engine_and_back(self):
         log = []

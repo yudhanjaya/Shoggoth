@@ -336,7 +336,7 @@ Zest is a small Python program with no dependencies (`zest/server.py` plus a few
 
 ### Adding an engine
 
-An engine is one folder with one `provider.yaml` (plus a `provider.py` only when YAML can't say it). `zest/providers/_template/` is the annotated starting point, `zest/providers/_examples/llama-server/` is a complete YAML-only engine around a plain `llama-server` (tested end to end with a real one), and [docs/ENGINES.md](docs/ENGINES.md) explains every setting. `python3 zest/server.py providers check <folder>` validates a folder the way Zest itself will read it, and `providers new <id> [--from llama-server]` and `providers list` do what they say. Nothing in Zest's own code needs to change to add one.
+An engine is one folder with one `provider.yaml` (plus a `provider.py` only when YAML can't say it). `zest/providers/_template/` is the annotated starting point, `zest/providers/_examples/llama-server/` is a complete YAML-only engine around a plain `llama-server` (tested end to end with a real one), and [docs/ENGINES.md](docs/ENGINES.md) explains every setting. `python3 zest/server.py providers check <folder>` validates a folder the way Zest itself will read it, `providers new <id> [--from llama-server]` and `providers list` do what they say, and `providers doctor` asks the installed Lemonade and Strata the questions Zest asks and says if their answers have changed (run it before a release). Nothing in Zest's own code needs to change to add one.
 
 ### Building the AppImage
 

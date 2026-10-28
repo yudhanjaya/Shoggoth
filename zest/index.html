@@ -1670,7 +1670,12 @@ function friendlyProblem(raw, what){
 function showProblem(raw, what){
   const p = friendlyProblem(raw, what);
   $("#pbtitle").textContent = p.title; $("#pbbody").textContent = p.body; $("#pbhint").textContent = p.hint;
-  $("#pbraw").textContent = String(raw || "(no details)"); $("#pbtech").open = false; $("#pbengines").hidden = !p.engines;
+  $("#pbraw").textContent = String(raw || "(no details)"); $("#pbtech").open = false; $("#pbtech").hidden = false; $("#pbengines").hidden = !p.engines;
+  if(!$("#problemdlg").open) $("#problemdlg").showModal();
+}
+function showPlain(title, body, hint){          // a problem Zest already worded itself: no guessing from the text
+  $("#pbtitle").textContent = title; $("#pbbody").textContent = body; $("#pbhint").textContent = hint || "";
+  $("#pbraw").textContent = body; $("#pbtech").open = false; $("#pbtech").hidden = true; $("#pbengines").hidden = true;
   if(!$("#problemdlg").open) $("#problemdlg").showModal();
 }
 $("#problemdlg form").addEventListener("submit", e => { if(e.submitter?.value === "engines"){ show("backends"); } });
@@ -1705,7 +1710,19 @@ function renderDlPill(){
   pill.innerHTML = `Downloading ${esc(nm.length > 22 ? nm.slice(0, 21) + "…" : nm)} <span class="prog"><i style="width:${pct}%"></i></span> ${pct}%${js.length > 1 ? ` +${js.length - 1}` : ""}`;
 }
 $("#dlpill").addEventListener("click", () => show("models"));
+/* Will `gb` fit where the next download goes? A plain sentence when it will not, else "". */
+async function diskProblem(gb){
+  if(!gb) return "";
+  try{
+    const d = await api("/ui/disk");
+    if(d.missing) return `The models folder ${d.where} can't be found. Connect its disk, or choose another folder in Settings.`;
+    if(d.free_gb < gb + 5) return `This is about ${gb.toFixed(gb < 10 ? 1 : 0)} GB, and the disk it goes on has ${d.free_gb} GB free (${d.where}). Free some space or choose another folder in Settings, then try again.`;
+  }catch{}
+  return "";
+}
 async function startDownload(id){
+  const room = await diskProblem(((S.models || []).find(m => m.id === id) || {}).size);
+  if(room){ SU.msg.dl = room; toast("Not enough room for that download"); showPlain("Not enough room", room, ""); if(inSetup()) renderSetup(true); return; }
   try{
     await api("/api/v1/pull", {method:"POST", headers:{"Content-Type":"application/json"}, body:JSON.stringify({model_name:id, stream:true, subscribe:false})});
     SU.msg.dl = ""; await pollDownloads(); if(S.view === "models") renderModels(); if(inSetup()) renderSetup(true);
@@ -2147,6 +2164,7 @@ function libFilters(){
 /* where models live: the one folder the person chose, or the one question that picks it */
 function libWhereHTML(){
   const d = LIB.d; if(!d) return "";
+  if(d.chosen && d.missing) return `<div class="note-warn libwhere" role="alert">The models folder <b>${esc(d.root)}</b> can't be found. If it is on a disk that isn't connected, connect it and reload. Otherwise <button class="linkbtn" type="button" data-lib="where">choose another folder</button>.</div>`;
   if(d.chosen) return `<div class="libwhere">Your models live in <b>${esc(d.root)}</b>${d.disk ? `<span>${d.disk.free_gb} GB free</span>` : ""}<button class="linkbtn" type="button" data-lib="where">Change</button></div>`;
   if(LIB.notNow) return `<div class="libwhere">Models are kept wherever each program puts them. <button class="linkbtn" type="button" data-lib="again">Choose one folder for all of them</button></div>`;
   const ps = d.places || [], pick = LIB.picked || ((ps.find(p => p.suggested) || ps[0] || {}).folder || "");
@@ -2406,6 +2424,8 @@ async function hfDownload(){
   const id = "user." + d.name.replace(/[^A-Za-z0-9._-]/g, "-") + "-" + v.quant;
   const body = {model_name: id, checkpoint: `${d.repo}:${v.quant}`, recipe: "llamacpp", stream: true, subscribe: false};
   if(d.mmproj) body.mmproj = d.mmproj;
+  const room = await diskProblem(v.gb);
+  if(room){ HF.err = room; renderHF(); return; }
   $("#hfdo").disabled = true;
   try{
     await api("/api/v1/pull", {method:"POST", headers:{"Content-Type":"application/json"}, body:JSON.stringify(body)});
@@ -4575,6 +4595,7 @@ function cwUiRequest(r){
   d.innerHTML = `<div class="ahead"><span class="em" aria-hidden="true">🙋</span> ${info ? `Zest wants to <b>${esc(verb)}</b>` : esc(r.title)}</div>
     ${info ? `<pre class="awhat">${esc(info.what)}</pre>` : ""}
     ${info && info.outside ? `<div class="warn">This is outside the task folder (${esc(info.folder)}).</div>` : ""}
+    ${info && info.risks && info.risks.length ? `<div class="warn">This command ${info.risks.map(esc).join(", and ")}. Read it before you allow it.</div>` : ""}
     <div class="abtns">${(r.options || []).map((o, i) => `<button type="button" class="btn ${i === 0 ? "primary" : /n't|no/i.test(o) ? "danger" : /^Always/.test(o) ? "alw" : ""}" data-ans="${esc(o)}">${esc(o)}</button>`).join("")}</div>
     ${info && info.key ? `<div class="key">“Always allow ${esc(info.key)}” remembers it for this folder. Anything else still asks.</div>` : ""}`;
   const w = cwEl("cwmsgs").querySelector(".cwwork"); cwEl("cwmsgs").insertBefore(d, w); cwScroll();

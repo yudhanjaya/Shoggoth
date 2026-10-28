@@ -316,11 +316,34 @@ def lemonade_config():
     return {"models_dir": os.path.join(r, "lemonade"), "extra_models_dir": os.path.join(views_base(), "lemonade")} if r else {}
 
 
+def _nearest_existing(path):
+    p = os.path.abspath(path or "/")
+    while p != "/" and not os.path.isdir(p):
+        p = os.path.dirname(p)
+    return p
+
+
+def models_disk():
+    """Where the next download goes and how much room is there: {where, free_gb, missing}. `missing` is true when a library folder was chosen
+    but can't be found now (a disk that isn't connected)."""
+    r = root()
+    if r:
+        where = r
+    else:
+        import lem
+        md = lem.flat_config().get("models_dir") if lem.healthy() else None
+        where = md if md and md != "auto" else modelscan.hf_cache_dir()
+    here = _nearest_existing(where)
+    return {"where": where, "free_gb": round(shutil.disk_usage(here).free / 1e9, 1), "missing": bool(r) and not os.path.isdir(r)}
+
+
 def apply_to_lemonade():
     """Point a Lemonade Zest runs itself at the library: downloads go to <root>/lemonade, and every other file it can run is shown to it
     through its view of links. Returns (ok, message). Does nothing (ok) until a library folder is chosen."""
     if not root():
         return True, ""
+    if not os.path.isdir(root()):
+        return False, "The models folder %s can't be found (is its disk connected?), so Lemonade was left as it was." % root()
     import lem
     cfg = lemonade_config()
     ok, msg = lem.set_config({"models_dir": cfg["models_dir"]})        # first, so what it kept before (the Hugging Face cache) is no longer "its own"
@@ -338,7 +361,8 @@ def summary():
     return {"root": r, "chosen": bool(r), "places": places(), "machine": hardware.machine(),
             "tiers": [{"id": t, "label": TIER_LABEL[t]} for t in TIERS], "models": cat,
             "bytes": sum(m["size_bytes"] for m in cat),
-            "disk": {"free_gb": round(shutil.disk_usage(r).free / 1e9, 1)} if r and os.path.isdir(r) else None}
+            "disk": {"free_gb": round(shutil.disk_usage(r).free / 1e9, 1)} if r and os.path.isdir(r) else None,
+            "missing": bool(r) and not os.path.isdir(r)}
 
 
 # ---------------------------------------------------------------- what the model picker shows

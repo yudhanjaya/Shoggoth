@@ -271,6 +271,11 @@ class Base:
     def endpoint(self, model_id=None):
         raise NotImplementedError
 
+    def selftest(self):
+        """Ask the real engine the questions Zest asks and say whether the answers still look as Zest expects: [{name, ok, detail}].
+        Starts nothing. Empty when there is nothing to ask (not installed, not running)."""
+        return []
+
     # -- making it faster
     def tune_plan(self, model_id, opts):
         raise NotImplementedError
@@ -388,6 +393,8 @@ class GenericProvider(Base):
         """With `models.serve: file` every library model this engine can run is served from its file: its name is the file's stem."""
         if (self.spec.get("models") or {}).get("serve") != "file" or not entry.get("files") or entry.get("complete") is False:
             return None
+        if entry["stem"].startswith("-"):
+            return None                                           # a program could take the name for an option; such a file is not offered
         self._files[entry["stem"]] = entry["files"][0]            # a split model starts from its first part
         return entry["stem"]
 
@@ -419,6 +426,8 @@ class GenericProvider(Base):
             raise ProviderError("%s hasn't been approved to run yet." % self.name)
         if not self.binary():
             raise ProviderError("%s isn't installed." % self.name)
+        if str(model_id).startswith("-"):
+            raise ProviderError("The name of that model starts with a dash, which %s could mistake for an option. Rename the file." % self.name)
         files = (self.spec.get("models") or {}).get("serve") == "file"
         if files and not self._files.get(model_id):
             raise ProviderError("%s doesn't know where the file for %s is. Open the Library and try again." % (self.name, model_id))
@@ -449,6 +458,14 @@ class GenericProvider(Base):
                 time.sleep(0.5)
             self.stop()
             raise ProviderError("%s didn't become ready in time." % self.name)
+
+    def selftest(self):
+        out = []
+        for m in self.detect().get("running", []):
+            status, d = http_json(self._root(m["port"]) + ((self.spec.get("endpoint") or {}).get("models") or {}).get("path", "/v1/models"), self._key())
+            out.append({"name": "its model list (port %s)" % m["port"], "ok": status == 200,
+                        "detail": "" if status == 200 else "answered %s instead of 200" % status})
+        return out
 
     def owned_instance(self):
         self._adopt_own()

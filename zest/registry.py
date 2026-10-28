@@ -134,14 +134,32 @@ def validate(spec, has_code=False):
     return bad
 
 
-def fingerprint(folder):
+def fingerprint(folder, program=""):
+    """What an approval is for: every file in the engine's folder (so a helper script can't change after you said yes) and the program it
+    would run. A different file, or a different program at that name, asks again."""
     h = hashlib.sha256()
-    for n in ("provider.yaml", "provider.py"):
-        p = os.path.join(folder, n)
-        if os.path.isfile(p):
-            with open(p, "rb") as f:
-                h.update(n.encode() + f.read())
+    n = 0
+    for root, dirs, files in os.walk(folder):
+        dirs[:] = sorted(d for d in dirs if d != "__pycache__")
+        for name in sorted(files):
+            path = os.path.join(root, name)
+            if os.path.islink(path) or not os.path.isfile(path):
+                continue
+            n += 1
+            if n > 200:
+                break
+            with open(path, "rb") as f:
+                h.update(os.path.relpath(path, folder).encode() + b"\0" + f.read(2_000_000) + b"\0")
+    if program:
+        h.update(b"program\0" + os.path.realpath(program).encode())
     return h.hexdigest()
+
+
+def _program(p):
+    try:
+        return (p.binary() if hasattr(p, "binary") else None) or ""
+    except Exception:  # noqa: BLE001
+        return ""
 
 
 class Registry:
@@ -224,7 +242,7 @@ class Registry:
 
     # -- approval of providers the person added
     def is_approved(self, p):
-        return ((store.load().get("providers") or {}).get(p.id) or {}).get("approved") == fingerprint(p.folder)
+        return ((store.load().get("providers") or {}).get(p.id) or {}).get("approved") == fingerprint(p.folder, _program(p))
 
     def consent(self, p):
         """What a not-yet-approved provider would do, in words, or None when it needs no approval."""
@@ -251,7 +269,7 @@ class Registry:
         if not p:
             raise provbase.ProviderError("No such engine.")
         s = store.load()
-        s.setdefault("providers", {}).setdefault(pid, {})["approved"] = fingerprint(p.folder)
+        s.setdefault("providers", {}).setdefault(pid, {})["approved"] = fingerprint(p.folder, _program(p))
         store.save(s)
         p.approved = True
 

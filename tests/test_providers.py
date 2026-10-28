@@ -232,6 +232,47 @@ class YamlOnlyProvider(Env):
         finally:
             p.stop()
 
+    def test_approval_covers_every_file_in_the_folder_and_the_program(self):
+        d = self.add_demo()
+        with open(os.path.join(d, "helper.sh"), "w") as f:
+            f.write("echo hi\n")
+        r = self.registry()
+        r.approve("demo-openai")
+        self.assertTrue(self.registry().get("demo-openai").approved)
+        with open(os.path.join(d, "helper.sh"), "a") as f:
+            f.write("echo changed\n")                                  # a file the YAML may call, changed after you said yes
+        self.assertFalse(self.registry().get("demo-openai").approved)
+        self.registry().approve("demo-openai")
+        self.assertTrue(self.registry().get("demo-openai").approved)
+        with open(os.path.join(d, "provider.yaml")) as f:
+            text = f.read()
+        other = os.path.join(self.tmp, "other-python")                  # the same engine file, pointing at a different program
+        os.symlink("/bin/true", other)
+        with open(os.path.join(d, "provider.yaml"), "w") as f:
+            f.write(text.replace(sys.executable, other))
+        self.assertFalse(self.registry().get("demo-openai").approved)
+
+    def test_a_model_name_that_looks_like_an_option_is_never_handed_to_a_program(self):
+        yml = """
+            id: files
+            name: Files
+            api_version: 1
+            detect: {binaries: [%s], ports: 18975-18976, health: {path: /health}}
+            run: {mode: managed, start: ["{bin}", "%s", "{port}", "{model_file}"], ready: {path: /health}, port_range: 18975-18976}
+            endpoint: {base_url: "http://127.0.0.1:{port}/v1"}
+            models: {formats: [gguf], serve: file}
+            """ % (sys.executable, FIXTURE)
+        self.add("files", yml)
+        r = self.registry()
+        r.approve("files")
+        p = r.get("files")
+        self.assertIsNone(p.model_id({"stem": "--evil", "files": ["/m/--evil.gguf"], "complete": True}))
+        self.assertEqual(p.model_id({"stem": "fine", "files": ["/m/fine.gguf"], "complete": True}), "fine")
+        with self.assertRaises(provbase.ProviderError) as cm:
+            p.ensure("--evil", lambda t: None)
+        self.assertIn("dash", str(cm.exception))
+        self.assertFalse(provbase.port_open(18975))                      # nothing was started
+
     def test_approval_is_tied_to_the_files(self):
         d = self.add_demo()
         r = self.registry()

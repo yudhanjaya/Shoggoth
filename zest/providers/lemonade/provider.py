@@ -124,6 +124,19 @@ class Provider(provbase.GenericProvider):
     def update(self, progress):
         return engine.start_update()
 
+    def selftest(self):
+        if not lem.healthy():
+            return []
+        out = [{"name": "its health", "ok": True, "detail": ""}]
+        data = lem.get("/v1/models").get("data")
+        bad = sorted({k for m in (data or []) if isinstance(m, dict) for k in ("id", "recipe", "labels", "checkpoint") if k not in m})
+        out.append({"name": "its model list", "ok": isinstance(data, list) and not bad,
+                    "detail": "" if isinstance(data, list) and not bad else ("not a list" if not isinstance(data, list) else "models lack: " + ", ".join(bad))})
+        cfg = lem.flat_config()
+        lack = [k for k in ("models_dir", "extra_models_dir") if k not in cfg]
+        out.append({"name": "its settings", "ok": not lack, "detail": "" if not lack else "no longer has: " + ", ".join(lack)})
+        return out
+
     def model_folders(self):
         import modelscan
         out = [(modelscan.hf_cache_dir(), "Lemonade")]            # "auto" means the Hugging Face cache
