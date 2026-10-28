@@ -361,7 +361,9 @@ Ordinary people never add providers, so the rule is: **nothing to decide unless 
 
 Each phase leaves Zest working. Estimates: S under a week, M one to two, L two to four.
 
-**A. The seam (M).** Define `Provider`/`GenericProvider`, the registry and the YAML schema. Wrap today's Lemonade and
+**A. The seam (M). First slice built on `strata-support`:** the provider interface (`provbase.py`), the registry and YAML validation (`registry.py`), the YAML-only `GenericProvider`, Lemonade and Strata as bundled providers (YAML plus a thin `provider.py` that delegates to the existing code), a read-only `/ui/providers` page of data, and 15 tests including an engine added with nothing but a YAML file. Not yet: nothing outside the new API calls the providers (agent, gateway, updater and tuning still call Lemonade and Strata directly), and the adapters are only checked against the real machine, not by contract tests against the old behaviour. Moving callers over is Phase C.
+
+**A, as planned.** Define `Provider`/`GenericProvider`, the registry and the YAML schema. Wrap today's Lemonade and
 Strata code as the first two providers *without changing behaviour or UI*. Contract tests (the recorded-JSON and fake-engine
 harnesses already used for Strata) run against both. Exit: every existing flow works through `providers.*`.
 

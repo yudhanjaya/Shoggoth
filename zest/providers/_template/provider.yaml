@@ -1,0 +1,36 @@
+# Copy this folder to  ~/.local/share/zest/providers/<your-engine>/  and edit it.
+# An engine that only needs a program started and an address to talk to needs nothing else.
+# (Folders whose name starts with _ are ignored, so this template is never loaded.)
+id: my-engine                    # lowercase letters, digits, - or _
+name: My engine                  # shown under Advanced > Engines
+summary: One line about what it is good for.
+api_version: 1
+
+detect:
+  binaries: [my-engine-server]   # looked for on PATH; ~ and $VARS work
+  ports: 9000-9009               # where an already-running copy might be listening
+  health: {path: /health}        # relative to the server root; Zest only sees engines that answer it
+
+run:
+  mode: managed                  # managed: Zest starts it | service: already running | external: a remote address
+  start: ["{bin}", --port, "{port}", --model, "{model}"]      # a list of words, never one shell string
+  ready: {path: /health, timeout: 120}
+  stop_grace_secs: 20
+  port_range: 9000-9009
+
+endpoint:
+  base_url: "http://127.0.0.1:{port}/v1"      # what OpenAI-style programs use
+  models: {path: /v1/models, id: "$.data[*].id"}
+
+models:
+  formats: [gguf]                # what it can run: gguf, safetensors
+  # architectures: [llama, qwen3]   # leave out to mean "any"
+
+memory:
+  group: gpu                     # engines in the same group don't run together if exclusive
+  exclusive: true
+  idle_stop_minutes: 20
+  start_estimate: {seconds: 30}
+
+# Variables you may use in commands and addresses:
+#   {bin} {host} {port} {model} {preset} {family} {name} {context} {library} {data} {profile} {key}
