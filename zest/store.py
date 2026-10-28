@@ -3,6 +3,7 @@ import copy
 import json
 import os
 import secrets
+import tempfile
 import threading
 
 DEFAULTS = {
@@ -24,12 +25,26 @@ def _xdg(var, fallback):
     return os.path.join(os.environ.get(var) or os.path.expanduser(fallback), "zest")
 
 
+def _usable(path, kind):
+    """The folder if it can be written to; otherwise a private one in the temp folder, so a read-only or missing home
+    (a sandbox, a kiosk) leaves Zest running with settings that last until it quits, instead of crashing."""
+    try:
+        os.makedirs(path, exist_ok=True)
+        if os.access(path, os.W_OK):
+            return path
+    except OSError:
+        pass
+    alt = os.path.join(tempfile.gettempdir(), "zest-%d" % os.getuid(), kind)
+    os.makedirs(alt, mode=0o700, exist_ok=True)
+    return alt
+
+
 def config_dir():
-    return _xdg("XDG_CONFIG_HOME", "~/.config")
+    return _usable(_xdg("XDG_CONFIG_HOME", "~/.config"), "config")
 
 
 def data_dir():
-    return _xdg("XDG_DATA_HOME", "~/.local/share")
+    return _usable(_xdg("XDG_DATA_HOME", "~/.local/share"), "data")
 
 
 def _path():
