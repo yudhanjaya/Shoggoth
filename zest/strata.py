@@ -6,6 +6,7 @@ Strata's files: `strata launch --status/--list-presets --output json` say what i
 on localhost, so Pi talks to it directly. Zest never passes --restart: a Strata the person started themselves keeps
 running. Standard library only.
 """
+import concurrent.futures
 import hashlib
 import json
 import os
@@ -511,16 +512,22 @@ def _plan(entry, ctx):
     return {"download_gb": (p.get("download") or {}).get("gb"), "warnings": p.get("warnings") or []}
 
 
-def recommend(ctx=131072):
+_rc = {"t": 0, "v": None}
+
+
+def recommend(ctx=131072, max_age=300):
     """The catalog with a fit for each entry on this computer, and which one to suggest.
 
     fit: "fits" (room to spare), "tight" (should run; close other big programs), "no" (won't). The suggestion is the best
-    quality that fits; when nothing does there is none, and the reason says why."""
+    quality that fits; when nothing does there is none, and the reason says why. The plans are asked for in parallel
+    (each is a slow call while a model is running) and the answer is kept for `max_age` seconds."""
+    if max_age and _rc["v"] is not None and time.time() - _rc["t"] < max_age:
+        return _rc["v"]
     m = machine()
     budget = m["ram_gb"] + m["vram_gb"]
     # An install that already holds models keeps them wherever its owner chose, which Strata doesn't report; don't judge its disk.
-    adopted = bool(binary() and _json(["models", "list", "--installed", "--output", "json"], 15).get("models"))
-    out = []
+    adopted = bool(binary() and _json(["models", "list", "--installed", "--output", "json"], 30).get("models"))
+    fits = []
     for e in CATALOG:
         why = ""
         if not m["gpus"]:
@@ -532,13 +539,26 @@ def recommend(ctx=131072):
             fit = "fits" if e["need_gb"] <= roomy else "tight" if e["need_gb"] <= tight else "no"
             if fit == "no":
                 why = "Needs about %d GB of RAM plus graphics memory; this computer has %d GB." % (e["need_gb"], budget)
-        plan = _plan(e, e["ctx"]) if fit != "no" else {}
+        fits.append((fit, why))
+    plans = {}
+    with concurrent.futures.ThreadPoolExecutor(max_workers=len(CATALOG)) as pool:
+        futs = {e["model"]: pool.submit(_plan, e, e["ctx"]) for e, (fit, _) in zip(CATALOG, fits) if fit != "no"}
+        for k, f in futs.items():
+            try:
+                plans[k] = f.result(timeout=90)
+            except Exception:  # noqa: BLE001
+                plans[k] = {}
+    out = []
+    for e, (fit, why) in zip(CATALOG, fits):
+        plan = plans.get(e["model"], {})
         dl = plan.get("download_gb")
         if fit != "no" and not adopted and dl is not None and dl + 10 > m["free_disk_gb"]:
             fit, why = "no", "Needs about %d GB of free disk for the download; %d GB is free." % (dl, m["free_disk_gb"])
         out.append(dict(e, fit=fit, why=why, download_gb=dl, warnings=plan.get("warnings", [])))
     pick = next((o for o in out if o["fit"] == "fits" and o["family"] == "qwen"), None) or next((o for o in out if o["fit"] == "tight" and o["family"] == "qwen"), None)
-    return {"machine": m, "adopted": adopted, "options": out, "pick": pick["model"] if pick else None}
+    res = {"machine": m, "adopted": adopted, "options": out, "pick": pick["model"] if pick else None}
+    _rc.update(t=time.time(), v=res)
+    return res
 
 
 # ---------------------------------------------------------------- one step: install, download, save, start

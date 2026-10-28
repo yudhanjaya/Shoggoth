@@ -2558,9 +2558,9 @@ function updatePanel(){
   const u = SU.up || {state: "idle", items: {}}, working = u.state === "working", names = {zest: "Zest", lemonade: "Lemonade", pi: "Pi", strata: "Strata"};
   const dot = {current: "ok", updated: "ok", working: "busy", checking: "busy", error: "bad", manual: "busy", skipped: "ok"};
   const rows = ["zest", "lemonade", "pi", "strata"].filter(k => u.items[k]).map(k => { const it = u.items[k];
-    return `<div class="line"><span class="stat-dot ${dot[it.state] || "busy"}"></span><span class="grow"><b>${names[k]}</b> ${esc(it.text)}${it.page ? ` <a href="${esc(it.page)}" target="_blank" rel="noopener noreferrer">Releases</a>` : ""}</span></div>`; }).join("");
+    return `<div class="line"><span class="stat-dot ${dot[it.state] || "busy"}"></span><span class="grow"><b>${names[k]}:</b> ${esc(it.text)}${it.page ? ` <a href="${esc(it.page)}" target="_blank" rel="noopener noreferrer">Releases</a>` : ""}</span></div>`; }).join("");
   return `<section class="step" id="step-upd"><header><span class="num">↻</span><h3>Update everything</h3></header><div class="sbody">
-    <p class="lead">One button looks for newer versions of Zest, Lemonade and Pi, checks each download, and installs what it finds. Nothing is replaced until the download has been verified.</p>
+    <p class="lead">One button looks for newer versions of Zest, Lemonade, Pi and Strata (if you use it), checks each download, and installs what it finds. Nothing is replaced until the download has been verified.</p>
     <div class="panel2"><div class="line"><button class="btn primary" data-act="update-all" ${working ? "disabled" : ""}>${working ? "Updating…" : "Check and update everything"}</button>
       ${u.restart ? '<button class="btn" data-act="update-restart">Restart Zest to finish</button>' : ""}</div>${rows}${u.error ? `<div class="note-bad">${esc(u.error)}</div>` : ""}</div></div></section>`;
 }
@@ -2932,6 +2932,7 @@ function strPaint(){
   else if(d.installed && !up){
     const ps = d.presets || [];
     parts.push(ps.length ? `<p class="help" style="margin:0">Strata ${esc(d.version)} found on this computer. Your saved setups. ${loaded ? `Starting one frees <b>${esc(S.ms.loaded)}</b> from memory first.` : ""}</p>` + ps.map(p => `<div class="line"><span class="grow"><b>${esc(p.name)}</b> <span class="faint">${esc([p.model, p.context ? fmtTok(p.context) + " context" : ""].filter(Boolean).join(" · "))}</span></span><button class="btn primary" data-str="start" data-preset="${esc(p.name)}">Start</button></div>`).join("")
+      : STR.rec ? `<p class="help" style="margin:0">Strata ${esc(d.version)} found on this computer.</p>`
       : `<p class="help" style="margin:0">Strata ${esc(d.version)} found on this computer, but it has no saved setup yet. In a terminal run <code>strata launch</code>, choose a model and save it as a preset. It will show up here.</p>`);
   }else if(d.installed && up && (d.presets || []).length && !servers.some(r => r.owner === "zest")) parts.push(`<p class="help" style="margin:0">Strata ${esc(d.version)} found on this computer.</p>`);
   if(d.installed && !up && !busy && STR.rec){
@@ -3112,10 +3113,10 @@ function tnPaint(){
   let jobBox = "";
   if(running){
     const pct = j.progress != null ? Math.round(j.progress * 100) : 0, mins = Math.floor((j.elapsed || (Date.now()/1000 - j.started)) / 60);
-    jobBox = `<section class="panel"><h3>Tuning ${esc(j.title)}</h3><div class="line"><span class="stat-dot busy"></span><span class="grow">${esc(j.text || "Working…")}</span><span class="mono faint">${Math.max(0, Math.floor((Date.now()/1000 - j.started) / 60))} min</span><button class="btn" data-tn="cancel">Cancel</button></div><div class="prog ${j.progress != null ? "" : "ind"}" style="margin-top:8px"><i style="width:${pct}%"></i></div><p class="help" style="margin:0">Chats and other models wait until this finishes. It is safe to leave this page.</p></section>`;
+    jobBox = `<section class="panel"><h3>Tuning ${esc(j.title)}</h3><div class="line"><span class="stat-dot busy"></span><span class="grow">${esc(j.text || "Working…")}</span><span class="mono faint" style="margin:0 12px;white-space:nowrap">${Math.max(0, Math.floor((Date.now()/1000 - j.started) / 60))} min</span><button class="btn" data-tn="cancel">Cancel</button></div><div class="prog ${j.progress != null ? "" : "ind"}" style="margin-top:8px"><i style="width:${pct}%"></i></div><p class="help" style="margin:0">Chats and other models wait until this finishes. It is safe to leave this page.</p></section>`;
   }else if(j.state === "done" && j.result){
     const r = j.result, g = r.gain_pct, same = r.outcome === "default_confirmed" || !g;
-    jobBox = `<section class="panel"><h3>Finished: ${esc(j.title)}</h3>${same ? `<div class="note-ok">The default settings were already the fastest. Nothing was changed.</div>` : `<div class="note-ok"><b>${g > 0 ? "+" : ""}${Number(g).toFixed(1)}% faster.</b> ${r.change ? esc(r.change) + ". " : ""}${r.baseline_tok_s ? Number(r.baseline_tok_s).toFixed(1) + " → " + Number(r.decode_tok_s).toFixed(1) + " tokens/s. " : ""}It is used from now on. You can switch it off below.</div>`}</section>`;
+    jobBox = `<section class="panel"><h3>Finished: ${esc(j.title)}</h3>${same ? `<div class="note-ok">The default settings were already the fastest. Nothing was changed.</div>` : `<div class="note-ok"><b>${g > 0 ? "+" : ""}${Number(g).toFixed(1)}% faster.</b> ${r.change ? esc(r.change) + ". " : ""}${r.baseline_tok_s ? Number(r.baseline_tok_s).toFixed(1) + " → " + Number(r.decode_tok_s).toFixed(1) + " tokens/s. " : ""}It is used from now on. You can undo or switch it off below.</div>`}</section>`;
   }else if(j.state === "error") jobBox = `<section class="panel"><div class="note-bad">${esc(j.error)}</div></section>`;
   else if(j.state === "cancelled") jobBox = `<section class="panel"><div class="note-warn">${esc(j.text)}</div></section>`;
   const planBox = TN.plan && TN.sel ? `<section class="panel"><h3>Make ${esc(TN.sel.title)} faster</h3>
