@@ -167,7 +167,7 @@ Other apps never talk to Zest's own page. Zest opens a second, much smaller door
 
 *Advanced > Setup guide, where Lemonade and Pi are updated, models are brought in and backends are added.*
 
-Updating Zest itself is just downloading a newer AppImage. The two parts inside it, Lemonade and Pi, can be updated from inside Zest without a new download.
+**Check and update everything** at the top of the Setup guide looks for newer versions of Zest, Lemonade and Pi in one go, verifies each download against its published checksum and installs what it finds. A new Zest is saved as a new AppImage next to the current one (which is kept), and **Restart Zest to finish** switches over to it. The sections below cover Lemonade and Pi on their own.
 
 ### Lemonade
 

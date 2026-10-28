@@ -137,6 +137,14 @@ def _seed_config(directory):
         if cfg.get("ctx_size", -1) == -1:
             cfg["ctx_size"] = 131072
         open(marker, "w").close()
+    # Lemonade gives up on a request to the model after `global_timeout` seconds (default 600, curl's total time, not
+    # idle time). A long chat on a big context, or a slow answer from a large model, outlasts that and fails with a
+    # curl timeout. Raise it to a day, once.
+    marker = os.path.join(directory, ".zest-timeout-default")
+    if not os.path.exists(marker):
+        if cfg.get("global_timeout", 600) <= 600:
+            cfg["global_timeout"] = 86400
+        open(marker, "w").close()
     with open(path, "w") as f:
         json.dump(cfg, f, indent=2)
 

@@ -2548,6 +2548,17 @@ async function doPiCheck(silent){
   catch(e){ SU.pi.check = null; SU.pi.err = silent ? "" : e.message; }
   SU.busy.pcheck = false; updateNavDot(); if(inSetup()) renderSetup(true); if(S.view === "cowork") cwRenderSide();
 }
+function updatePanel(){
+  const u = SU.up || {state: "idle", items: {}}, working = u.state === "working", names = {zest: "Zest", lemonade: "Lemonade", pi: "Pi"};
+  const dot = {current: "ok", updated: "ok", working: "busy", checking: "busy", error: "bad", manual: "busy", skipped: "ok"};
+  const rows = ["zest", "lemonade", "pi"].filter(k => u.items[k]).map(k => { const it = u.items[k];
+    return `<div class="line"><span class="stat-dot ${dot[it.state] || "busy"}"></span><span class="grow"><b>${names[k]}</b> ${esc(it.text)}${it.page ? ` <a href="${esc(it.page)}" target="_blank" rel="noopener noreferrer">Releases</a>` : ""}</span></div>`; }).join("");
+  return `<section class="step" id="step-upd"><header><span class="num">↻</span><h3>Update everything</h3></header><div class="sbody">
+    <p class="lead">One button looks for newer versions of Zest, Lemonade and Pi, checks each download, and installs what it finds. Nothing is replaced until the download has been verified.</p>
+    <div class="panel2"><div class="line"><button class="btn primary" data-act="update-all" ${working ? "disabled" : ""}>${working ? "Updating…" : "Check and update everything"}</button>
+      ${u.restart ? '<button class="btn" data-act="update-restart">Restart Zest to finish</button>' : ""}</div>${rows}${u.error ? `<div class="note-bad">${esc(u.error)}</div>` : ""}</div></div></section>`;
+}
+async function refreshUpdate(){ try{ SU.up = await api("/ui/update"); }catch{} renderSetup(); }
 function piPanel(){
   const i = SU.pi.info, c = SU.pi.check, b = SU.busy; if(!i) return "";
   const u = i.update, act = i.active, hasBundled = i.programs.some(p => p.source === "bundled");
@@ -2786,7 +2797,7 @@ function chatStep(){
 function renderSetup(force){
   if(S.view === "welcome") return renderWelcome(force);
   const host = $("#setup"); if(!SU.st){ host.innerHTML = `<div class="empty-note">Loading…</div>`; return; }
-  const sig = JSON.stringify([SU.st, S.bk && S.bk.length, S.models.filter(m => m.downloaded).length, S.downloads, SU.busy, SU.msg, SU.sources, [...SU.sel], SU.check, SU.checkErr, S.loaded, autoCheckOn(), SU.pi.info, SU.pi.check, SU.pi.err]);
+  const sig = JSON.stringify([SU.st, S.bk && S.bk.length, S.models.filter(m => m.downloaded).length, S.downloads, SU.busy, SU.msg, SU.sources, [...SU.sel], SU.check, SU.checkErr, S.loaded, autoCheckOn(), SU.pi.info, SU.pi.check, SU.pi.err, SU.up]);
   const typing = host.contains(document.activeElement) && /^(INPUT|TEXTAREA|SELECT)$/.test(document.activeElement.tagName);
   if(!force && (sig === SU.sig || typing)) return;
   SU.sig = sig;
@@ -2795,7 +2806,7 @@ function renderSetup(force){
   host.innerHTML = `<div class="hero"><h2>${st.setup_done ? "Setup <em>guide</em>" : "Welcome to <em>Zest</em>"}</h2>
       <p>${st.setup_done ? "Everything you need to get models running, in one place. You can come back here any time to update Lemonade, add a backend, or change where models live." : "Zest is a friendly front door to Lemonade, the engine that runs AI models on your own computer. Four short steps get you chatting, and nothing ever leaves your machine."}</p>
       <ol class="flow">${steps.map((s, i) => `<li class="${s.done ? "done" : i === now ? "now" : ""}"><b>${s.t}</b><span>${s.d}</span></li>`).join("")}</ol></div>
-    ${engineStep()}${backendStep()}${modelStep()}${chatStep()}${st.setup_done ? piPanel() : ""}
+    ${engineStep()}${backendStep()}${modelStep()}${chatStep()}${st.setup_done ? updatePanel() + piPanel() : ""}
     <div class="setfoot">${st.setup_done ? "" : `<button class="btn ghost" data-act="finish">Skip, take me to Zest</button>`}<button class="btn ${steps.every(s => s.done) && !st.setup_done ? "primary" : ""}" data-act="finish">${st.setup_done ? "Back to Zest" : "Finish setup"}</button></div>`;
   if(sc != null) $(".view.active").scrollTop = sc;
   updateNavDot();
@@ -2818,6 +2829,8 @@ const setupClick = async e => {
   if(a === "engine-check") return doCheck(false);
   if(a === "engine-update") return suBusy("update", async () => { await suPost("/ui/engine/update"); SU.check = null; });
   if(a === "engine-restart") return suBusy("restart", async () => { await suPost("/ui/engine/restart"); await waitLemonade(); });
+  if(a === "update-all"){ SU.up = await suPost("/ui/update/all"); renderSetup(true); return; }
+  if(a === "update-restart") return suBusy("restart", async () => { await suPost("/ui/update/restart"); toast("Restarting Zest… this page reloads in a few seconds."); setTimeout(() => location.reload(), 8000); });
   if(a === "pi-check") return doPiCheck(false);
   if(a === "pi-update") return suBusy("pupdate", async () => { SU.pi.check = null; await suPost("/ui/pi/update"); });
   if(a === "pi-use-bundled") return suBusy("pi", async () => { await suPost("/ui/pi/use", {version: "bundled"}); toast("Using the Pi that came with Zest."); });
@@ -2871,6 +2884,7 @@ async function waitLemonade(){
   for(let i = 0; i < 60; i++){ await refreshSetup(true); if(SU.st.lemonade.reachable && (SU.st.mode !== "builtin" || SU.st.engine.running)) break; if(SU.st.engine.state === "error") break; await new Promise(r => setTimeout(r, 1000)); }
   await pollServer(); await loadModels(); try{ S.bk = (await api("/ui/backends")).recipes; }catch{} renderStatus();
 }
+setInterval(() => { if(!document.hidden && SU.up && SU.up.state === "working") refreshUpdate(); }, 1500);
 setInterval(() => { if(!document.hidden && (inSetup() || (SU.st && ["downloading","verifying","installing"].includes(SU.st.engine.update.state)) || (SU.pi.info && ["downloading","installing"].includes(SU.pi.info.update.state)))) refreshSetup(); }, 1500);
 
 /* ---- folder browser */
@@ -4513,7 +4527,7 @@ function paintSkills(){
     </section>
     ${SK.sets.map(set => `<section class="panel skset" data-set="${esc(set.id)}">
       <div class="skhead"><h3>${esc(set.name)}</h3>${set.bundled ? '<span class="chip lem">Comes with Zest</span>' : '<span class="chip">Added by you</span>'}${set.license ? `<span class="chip">${esc(set.license)}</span>` : ""}<span class="grow"></span>
-        <button class="btn ghost" type="button" data-skall="1">All on</button><button class="btn ghost" type="button" data-skall="0">All off</button>${set.bundled ? "" : '<button class="btn ghost danger" type="button" data-skrm="1">Remove</button>'}</div>
+        <button class="btn ghost" type="button" data-skall="1">All on</button><button class="btn ghost" type="button" data-skall="0">All off</button>${set.bundled || set.mine ? "" : '<button class="btn ghost danger" type="button" data-skrm="1">Remove</button>'}</div>
       ${set.blurb ? `<p class="help" style="margin:0">${esc(set.blurb)}</p>` : ""}
       ${set.source ? `<p class="help" style="margin:0"><a href="${esc(set.source)}" target="_blank" rel="noopener noreferrer">${esc(set.source.replace("https://", ""))}</a>${set.author ? " by " + esc(set.author) : ""}</p>` : ""}
       ${set.note ? `<p class="help" style="margin:0">${esc(set.note)}</p>` : ""}

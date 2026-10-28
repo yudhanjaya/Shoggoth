@@ -39,9 +39,10 @@ import skills      # noqa: E402
 import store       # noqa: E402
 import util        # noqa: E402
 import websearch   # noqa: E402
+import zestup      # noqa: E402
 from util import cached, invalidate, run   # noqa: E402
 
-VERSION = "3.4.1"
+VERSION = "3.5.0"
 _last_ping = {"t": None}
 FORCED = {"addr": None}           # set by --lemonade: use exactly that server and skip the setup screen
 LOOPBACK_ONLY = {"on": True}
@@ -240,6 +241,8 @@ class Handler(BaseHTTPRequestHandler):
             self.send_json(agent.state())
         elif p == "/ui/pi":
             self.send_json(piup.summary())
+        elif p == "/ui/update":
+            self.send_json(zestup.status())
         elif p == "/ui/skills":
             self.send_json({"sets": skills.scan()})
         elif p == "/ui/search":
@@ -295,7 +298,7 @@ class Handler(BaseHTTPRequestHandler):
             "/ui/cowork/job/apply": self.post_job_apply, "/ui/cowork/job/discard": self.post_job_discard,
             "/ui/cowork/folders": self.post_cowork_folders, "/ui/cowork/seen": self.post_cowork_seen,
             "/ui/cowork/allow/remove": self.post_allow_remove, "/ui/cowork/folder": self.post_cowork_folder, "/ui/skills/install": self.post_skills_install, "/ui/pi/check": self.post_pi_check,
-            "/ui/pi/update": self.post_pi_update, "/ui/pi/use": self.post_pi_use,
+            "/ui/pi/update": self.post_pi_update, "/ui/update/all": self.post_update_all, "/ui/update/restart": self.post_update_restart, "/ui/pi/use": self.post_pi_use,
             "/ui/skills/remove": self.post_skills_remove, "/ui/skills/toggle": self.post_skills_toggle,
             "/ui/models/storage": self.post_storage, "/ui/models/imports": self.post_imports,
         }.get(p)
@@ -592,6 +595,14 @@ class Handler(BaseHTTPRequestHandler):
 
     def post_pi_update(self, body):
         self.send_json({"started": piup.start_update(), "update": dict(piup.UPD)})
+
+    def post_update_all(self, body):
+        self.send_json({"started": zestup.start_all(VERSION, current_mode()), **zestup.status()})
+
+    def post_update_restart(self, body):
+        zestup.restart(zestup.UPD.get("path"))
+        self.send_json({"ok": True})
+        threading.Timer(0.5, os.kill, args=(os.getpid(), signal.SIGTERM)).start()
 
     def post_pi_use(self, body):
         piup.use(str(body.get("version", "")))

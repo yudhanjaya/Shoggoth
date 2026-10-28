@@ -102,6 +102,34 @@ def _du(path):
     return total
 
 
+MINE = "mine"
+
+
+def mine_dir():
+    """Skills you wrote or copied in yourself: any folder holding a SKILL.md, no set.json needed."""
+    return os.path.join(root(), MINE)
+
+
+def _adopt_strays():
+    """A skill dropped straight into the folder Pi reads from (skills-live) used to be deleted on the next task.
+    Move it into My skills instead, where it is kept, listed and can be switched off."""
+    live = os.path.join(store.data_dir(), "cowork", "skills-live")
+    if not os.path.isdir(live):
+        return
+    for entry in os.listdir(live):
+        src = os.path.join(live, entry)
+        if os.path.islink(src) or not os.path.isfile(os.path.join(src, "SKILL.md")):
+            continue
+        dst = os.path.join(mine_dir(), entry)
+        if os.path.exists(dst):
+            continue
+        try:
+            os.makedirs(mine_dir(), exist_ok=True)
+            shutil.move(src, dst)
+        except OSError:
+            pass
+
+
 def _set_dirs():
     """[(set id, folder, bundled?)]"""
     out = []
@@ -109,7 +137,9 @@ def _set_dirs():
         out += [(d, os.path.join(BUNDLED, d), True) for d in sorted(os.listdir(BUNDLED)) if os.path.isdir(os.path.join(BUNDLED, d))]
     inst = os.path.join(root(), "sets")
     if os.path.isdir(inst):
-        out += [(d, os.path.join(inst, d), False) for d in sorted(os.listdir(inst)) if os.path.isdir(os.path.join(inst, d))]
+        out += [(d, os.path.join(inst, d), False) for d in sorted(os.listdir(inst)) if d != MINE and os.path.isdir(os.path.join(inst, d))]
+    os.makedirs(mine_dir(), exist_ok=True)
+    out.append((MINE, mine_dir(), False))
     return out
 
 
@@ -126,8 +156,11 @@ def scan():
     st = _state()
     off = set(st["disabled"])
     sets = []
+    _adopt_strays()
     for sid, folder, bundled in _set_dirs():
         meta = _meta(folder) if bundled else dict(st["sets"].get(sid, {}))
+        if sid == MINE:
+            meta = {"name": "My skills", "blurb": "Skills you made or copied in yourself. Put a folder with a SKILL.md file in %s and it appears here." % folder}
         skills = []
         for name, path in _skills_in(folder):
             fm = frontmatter(os.path.join(path, "SKILL.md"))
@@ -137,7 +170,7 @@ def scan():
                            "auto": "disable-model-invocation" not in fm or str(fm.get("disable-model-invocation")).lower() != "true"})
         sets.append({"id": sid, "name": meta.get("name") or sid, "blurb": meta.get("blurb", ""), "source": meta.get("source", ""),
                      "license": meta.get("license", ""), "author": meta.get("author", ""), "note": meta.get("note", ""),
-                     "bundled": bundled, "skills": skills})
+                     "bundled": bundled, "mine": sid == MINE, "skills": skills})
     return sets
 
 
@@ -165,6 +198,7 @@ def live_dir():
     skills from this folder while a new task starts."""
     d = os.path.join(store.data_dir(), "cowork", "skills-live")
     os.makedirs(d, exist_ok=True)
+    _adopt_strays()
     off = set(_state()["disabled"])
     want = {}
     for sid, folder, _ in _set_dirs():
@@ -173,9 +207,11 @@ def live_dir():
                 want["%s__%s" % (sid, name)] = path
     for entry in os.listdir(d):
         link = os.path.join(d, entry)
+        if os.path.isdir(link) and not os.path.islink(link):
+            continue                                      # never delete a real folder; strays holding a skill were adopted above
         if entry not in want or not os.path.islink(link) or os.readlink(link) != want[entry]:
             try:
-                os.remove(link) if os.path.islink(link) or os.path.isfile(link) else shutil.rmtree(link)
+                os.remove(link)
             except OSError:
                 pass
     for entry, path in want.items():
@@ -313,6 +349,8 @@ def install(link):
 
 
 def remove(sid):
+    if sid == MINE:
+        raise ValueError("That is your own skills folder. Delete the skill folders you don't want from it.")
     folder = os.path.join(root(), "sets", sid)
     if not re.fullmatch(r"[\w.-]+", sid) or not os.path.isdir(folder):
         raise ValueError("That set isn't installed.")

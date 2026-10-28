@@ -127,6 +127,8 @@ Open **Skills** to switch any of them on or off, one at a time or a whole set at
 
 **To add more skills, paste a link.** On the Skills page, paste the web address of a GitHub page that has skills in it, for example `https://github.com/owner/repository`, and press **Add skills**. You can also link to one folder inside a repository: open the folder on GitHub and copy the address. Zest finds every skill in it and adds them. A skill is just a folder with a file called `SKILL.md`. [Hermes Atlas](https://hermesatlas.com/ecosystem/) lists many. 
 
+**Skills you made yourself** go in a folder called `mine` inside Zest's data folder (`~/.local/share/zest/skills/mine`). Put a folder with a `SKILL.md` file in it and it shows up on the Skills page as **My skills**, switched on, from the next message. No other files are needed.
+
 Good to know:
 
 - **Only add skills from people you trust.** A skill is instructions the AI follows, and some include scripts. While you are on *Ask first*, every command still asks you.
