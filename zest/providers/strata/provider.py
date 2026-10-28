@@ -35,11 +35,43 @@ class Provider(provbase.GenericProvider):
             raise provbase.ProviderError(str(e))
         return self.endpoint(model_id)
 
-    def stop(self):
+    def stop(self, model_id=None):
         r = strata.zest_server()
         if not r:
             return False, "Zest didn't start Strata, so it leaves it running."
         return strata.stop(r["url"])
+
+    def is_running(self):
+        return any(r["state"] in ("ready", "loading") for r in strata.running())
+
+    def loaded(self, model_id):
+        return (True, strata.find_model(strata.PREFIX + model_id)["ctx"]) if strata.is_live(strata.PREFIX + model_id) else (False, 0)
+
+    def max_ctx(self, model_id):
+        return self.loaded(model_id)[1] or (strata.find_model(strata.PREFIX + model_id) or {}).get("ctx", 0)
+
+    def chat_models(self):
+        """Every Strata model that is running now, and the setups Zest made that aren't (they start when a chat needs them)."""
+        return [{"id": m["bare"], "tools": True, "reasoning": True, "vision": m["vision"], "ctx": m["ctx"], "live": not m.get("dormant"),
+                 "pi_provider": m["provider"], "pi_url": m["url"].rstrip("/") + "/v1", "pi_key": m.get("key") or ""} for m in strata.models()]
+
+    def busy(self):
+        r = strata.zest_server()
+        return bool(r and strata.activity(r["url"])[0])
+
+    def activity(self):
+        r = strata.zest_server()
+        return strata.activity(r["url"]) if r else (None, None)
+
+    def owned_instance(self):
+        r = strata.zest_server()
+        return r["url"] if r and r["state"] == "ready" else None
+
+    def idle_minutes(self):
+        return int(strata._settings().get("idle_minutes") or 0)
+
+    def pi_endpoint(self, zest_port):
+        return None                                        # each Strata is its own server; models carry their own address
 
     def memory(self):
         d = super().memory()

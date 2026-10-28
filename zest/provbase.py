@@ -136,6 +136,49 @@ class Base:
             return False, "%s doesn't support the %s architecture." % (self.name, arch)
         return True, ""
 
+    # -- what the router asks: is it running anything, what is loaded, is it busy, what may be stopped when idle
+    def ref(self, model_id):
+        """The name Zest's chat and apps use for one of this provider's models. Default: `<provider id>/<model id>`."""
+        return "%s/%s" % (self.id, model_id)
+
+    def chat_models(self):
+        """Models to offer in chat: [{id (the provider's own name), tools, reasoning, vision, ctx, live, ...}]. Default: what is running."""
+        return [{"id": m["id"], "tools": True, "reasoning": False, "vision": False, "ctx": m.get("ctx") or 0, "live": True} for m in self.models()]
+
+    def is_running(self):
+        """Is anything of this provider's holding memory right now?"""
+        return bool(self.models())
+
+    def loaded(self, model_id):
+        """(in memory?, its context window in tokens or 0 when unknown)."""
+        m = next((m for m in self.models() if m["id"] == model_id), None)
+        return (True, m.get("ctx") or 0) if m else (False, 0)
+
+    def max_ctx(self, model_id):
+        """The longest context the model supports, 0 when unknown."""
+        return self.loaded(model_id)[1]
+
+    def busy(self):
+        """Is it answering a request right now?"""
+        return False
+
+    def activity(self):
+        """(busy?, a counter that moves when it produces output) for idle detection, or (None, None) when it can't tell."""
+        return None, None
+
+    def owned_instance(self):
+        """An identifier of the running thing Zest itself started (so it may stop it when idle), or None."""
+        return None
+
+    def idle_minutes(self):
+        """Stop what Zest started after this many idle minutes; 0 never. Default from the YAML."""
+        return int((self.spec.get("memory") or {}).get("idle_stop_minutes") or 0)
+
+    def pi_endpoint(self, zest_port):
+        """Where Pi should send requests for this provider: {base_url, key}. Default: the provider's own endpoint."""
+        ep = self.endpoint()
+        return {"base_url": ep["base_url"], "key": ep.get("key") or self.id} if ep else None
+
     # -- its models: where they live, what it calls them, how much room they need
     def model_folders(self):
         """[(path, label)] this provider keeps or finds model files in, for the library to read. Default: `models.data_dir`."""
@@ -195,7 +238,7 @@ class Base:
     def ensure(self, model_id, progress, opts=None):
         raise NotImplementedError
 
-    def stop(self):
+    def stop(self, model_id=None):
         raise NotImplementedError
 
     def endpoint(self, model_id=None):
@@ -434,7 +477,10 @@ class GenericProvider(Base):
             self.stop()
             raise ProviderError("%s didn't become ready in time." % self.name)
 
-    def stop(self):
+    def owned_instance(self):
+        return self._port if (self._owned and self._proc is not None and self._proc.poll() is None) else None
+
+    def stop(self, model_id=None):
         """Stop what Zest started. Returns (ok, message). Never stops an engine somebody else started."""
         with self._lock:
             if not self._owned or self._proc is None:

@@ -37,6 +37,7 @@ import llamaargs   # noqa: E402
 import modelscan   # noqa: E402
 import piup        # noqa: E402
 import registry    # noqa: E402
+import router      # noqa: E402
 import skills      # noqa: E402
 import store       # noqa: E402
 import strata      # noqa: E402
@@ -249,6 +250,8 @@ class Handler(BaseHTTPRequestHandler):
             self.send_json(self.library_summary())
         elif p == "/ui/library/places":
             self.send_json({"places": library.places(), "root": library.root()})
+        elif p == "/ui/router":
+            self.send_json({"state": router.state(), "models": router.chat_models()})
         elif p == "/ui/providers":
             self.send_json(registry.default().summary())
         elif p == "/ui/tuning":
@@ -909,7 +912,7 @@ def main():
     strata.on_change.append(agent.restart_idle)
     strata.before_launch.append(lambda: lem.healthy() and lem.request("POST", "/v1/unload", {}, timeout=60))
     threading.Thread(target=agent.reaper, daemon=True).start()
-    threading.Thread(target=strata.watch, daemon=True).start()
+    threading.Thread(target=router.watch, daemon=True).start()
     s = store.load()
     if a.lemonade:
         h, _, p = a.lemonade.rpartition(":")

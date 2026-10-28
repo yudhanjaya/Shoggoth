@@ -390,7 +390,9 @@ harnesses already used for Strata) run against both. Exit: every existing flow w
 **B, as planned.** GGUF header reader, the catalog, `.views`, the library root, adoption of existing folders, the
 early spikes in section 4 ("verify"). Exit: one catalog lists every model both engines can see, with correct "who can run it".
 
-**C. One router and one endpoint (L).** `route`/`activate` and the generalised arbiter; Pi's config and the gateway move
+**C. One router and one endpoint (L). Built on `strata-support`:** `router.py` (resolve a model name to an engine, `activate` with the memory arbiter, `deactivate`, a generic idle watcher, `chat_models`), provider hooks (`ref`, `chat_models`, `loaded`, `max_ctx`, `is_running`, `busy`, `activity`, `owned_instance`, `idle_minutes`, `pi_endpoint`), the Lemonade context-window logic moved into its provider, `agent.py` no longer mentions Strata (chat list, loading, Pi's config and `--provider` all come from the router), the gateway and Zest's own `/api/v1` proxy route by the model name in the request (starting and freeing as needed, rewriting the name to the engine's own), and `GET /v1/models` for other apps lists every engine's models. 16 new tests (48 in all). Verified live: Lemonade load, auto-load through the proxy, unload. Not verified live: Strata through the router (it wasn't running), the arbiter with two real engines, and the idle watcher with a real provider. Still to do: the memory-need check is only Strata's own (not yet generic), and `strata.before_launch` still exists for the Models-page Start button, which bypasses the router.
+
+**C, as planned.** `route`/`activate` and the generalised arbiter; Pi's config and the gateway move
 onto them. Exit: asking for any model by name, from chat or another app, starts the right thing and frees the rest.
 
 **D. The interface, in steps (L, shippable as it goes).**

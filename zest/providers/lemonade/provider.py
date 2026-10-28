@@ -32,22 +32,83 @@ class Provider(provbase.GenericProvider):
         return {"base_url": "http://%s:%d/api/v1" % (host, port), "key": lem.key(), "model": model_id, "ctx": 0}
 
     def ensure(self, model_id, progress, opts=None):
+        """Have `model_id` in memory. opts: ctx (the context window wanted), exact (reload unless it is exactly that size, as an explicit
+        Load does), force (reload regardless). Without exact, a model already loaded with at least `ctx` is left alone."""
+        opts = opts or {}
+        ctx = int(opts.get("ctx") or 0)
         if not lem.healthy():
             progress("Starting Lemonade…")
             if not engine.start(store.load()):
                 raise provbase.ProviderError("Lemonade didn't start.")
+        isl, cur = self.loaded(model_id)
+        if isl and not opts.get("force") and (not ctx or (cur == ctx if opts.get("exact") else (not cur or cur >= ctx))):
+            return self.endpoint(model_id)
         body = {"model_name": model_id}
-        if opts and opts.get("ctx"):
-            body["ctx_size"] = int(opts["ctx"])
+        if ctx:
+            body["ctx_size"] = ctx
         progress("Loading %s…" % model_id)
+        if isl:
+            lem.request("POST", "/v1/unload", {"model_name": model_id}, timeout=60)
         status, payload = lem.request("POST", "/v1/load", body, timeout=900)
         if status != 200:
             raise provbase.ProviderError(lem.error_text(payload, "Lemonade couldn't load the model."))
         return self.endpoint(model_id)
 
-    def stop(self):
-        status, payload = lem.request("POST", "/v1/unload", {}, timeout=60)
+    def stop(self, model_id=None):
+        """Free one model's memory, or every model's when none is named. Lemonade's models are loaded by Zest on request, so Zest frees them."""
+        status, payload = lem.request("POST", "/v1/unload", {"model_name": model_id} if model_id else {}, timeout=60)
         return status == 200, "" if status == 200 else lem.error_text(payload, "Lemonade couldn't free the model.")
+
+    def ref(self, model_id):
+        return model_id                                  # Lemonade's names are the ones chats have always used
+
+    def is_running(self):
+        return bool(lem.get("/v1/health").get("all_models_loaded"))
+
+    def loaded(self, model_id):
+        """(in memory?, its context window in tokens or 0 when Lemonade doesn't say)."""
+        for m in lem.get("/v1/health").get("all_models_loaded", []):
+            if m.get("model_name") != model_id:
+                continue
+            cmd = m.get("launch_command") or []
+            if isinstance(cmd, str):
+                cmd = cmd.split()
+            if "--ctx-size" in cmd:
+                try:
+                    return True, int(cmd[cmd.index("--ctx-size") + 1])
+                except (ValueError, IndexError):
+                    pass
+            return True, 0
+        return False, 0
+
+    def max_ctx(self, model_id):
+        """The longest context the model was trained for, when Lemonade knows it (0 when it doesn't)."""
+        for m in lem.get("/v1/models").get("data", []):
+            if m.get("id") == model_id:
+                try:
+                    n = int(m.get("context_length") or 0)
+                except (TypeError, ValueError):
+                    return 0
+                return n if n >= 2048 else 0
+        return 0
+
+    def chat_models(self):
+        """Downloaded models that can drive an agent: chat models, preferring ones Lemonade says can call tools."""
+        not_chat = ("sd-cpp", "whispercpp", "kokoro", "moonshine", "acestep", "thinksound", "trellis", "openmoss")
+        out = []
+        in_memory = {m.get("model_name") for m in lem.get("/v1/health").get("all_models_loaded", [])}
+        for m in lem.get("/v1/models").get("data", []):
+            labels = m.get("labels") or []
+            if not m.get("downloaded") or m.get("recipe") in not_chat or "embeddings" in labels or "chat" not in labels and "tool-calling" not in labels:
+                continue
+            out.append({"id": m["id"], "tools": "tool-calling" in labels, "reasoning": "reasoning" in labels, "vision": "vision" in labels,
+                        "ctx": int(m.get("context_length") or 131072), "live": m["id"] in in_memory})
+        out.sort(key=lambda m: (not m["tools"], m["id"].lower()))
+        return out
+
+    def pi_endpoint(self, zest_port):
+        # through Zest, so the request shows on the Server page
+        return {"base_url": "http://127.0.0.1:%d/api/v1" % zest_port, "key": "zest"}
 
     def update_check(self):
         try:
