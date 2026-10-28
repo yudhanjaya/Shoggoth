@@ -54,7 +54,8 @@ Strata directly; this plan generalises them).
 | Backend: Vulkan / CUDA / ROCm | "Graphics card: NVIDIA RTX 3080" |
 | Quantization, IQ3_S, Q2_0 | "Quality: Best / Great / Balanced / Fastest", the code in small print |
 
-Engine names stay available in: Advanced > Engines, a model's "Under the hood" disclosure, logs, error details, docs.
+Engine names are shown **discreetly** (decision 4): a small muted line such as "Runs on Lemonade" at the foot of a model's
+details and card, never in a heading, button, or step. They also stay in Advanced > Engines, logs, error details and docs.
 
 ## 3. The new interface
 
@@ -69,19 +70,27 @@ Engine names stay available in: Advanced > Engines, a model's "Under the hood" d
 
 ### First run: "Zest is getting ready"
 
-One screen, no choices to make. Zest scans the hardware, decides which providers it needs (always the fast one; the
+One screen with one question, and everything else automatic. The question is **where models should live** (decision 1):
+the drive with the most free space is pre-selected, each option shows its free space, "Choose another folder" is one
+click away, and Continue accepts the default, so the common path is a single click. Models are big, and the person knows
+which disk has room. The rest needs no choices. Zest scans the hardware, decides which providers it needs (always the fast one; the
 big-model one when the computer can use it), installs and checks them with plain progress, then shows the recommended
 model per tier and a **Start chatting** button. "Use models I already have" and "Use my own engine" are links, not steps.
 Existing installs of either engine are adopted silently ("Found models you already have").
 
 ### The model picker (the centre of the product)
 
-One list, in the chat bar and in Library, grouped by what the person wants rather than by engine:
+One list, in the chat bar and in Library, grouped by size of computer rather than by engine (decision 3):
 
-- **Quick**: answers fast, runs anywhere (small models).
-- **Balanced**: the everyday pick.
-- **Thorough**: slower, smarter (large models).
-- **Very large**: needs a big computer; starts slowly (the Strata class).
+- **Small models**: under 10 GB of graphics memory. Run almost anywhere.
+- **Medium models**: 10 to 24 GB of graphics memory.
+- **Large models**: need a big computer (16 GB or more of graphics memory *and* about 64 GB of RAM). These are the ones
+  the big-model provider runs; they start slowly.
+
+A model's tier is set by what it needs, not by who serves it. A tier the computer can't run stays visible but greyed, with
+the reason ("Needs about 64 GB of RAM; this computer has 16 GB"), so people can see what a better machine would add.
+(The RAM figure is a fit check, not a literal 64: this computer reports 62.7 GB and runs the Large models fine, so the
+check is "memory the model needs fits", using the same rule as the recommendation today.)
 
 Each row: name, one line of opinion (the existing `take` copy), size, a **fit** chip (Fits / Tight / Won't fit here, with
 the reason), and a **start time** hint ("Ready in seconds" / "About 2 minutes to start"). Selecting a model that isn't
@@ -125,7 +134,7 @@ Advanced.
 ### Shape
 
 ```
-<library root>/                 chosen once (default: today's location; the Settings screen moves it)
+<library root>/                 chosen by the person (decision 1); Settings can move it later
   hub/                          Hugging Face layout; Lemonade's models_dir
   strata/                       Strata's data dir: models/, mtp/, packs/ (strata launch --data-dir)
   .views/<provider>/            symlinks Zest maintains: only the files that provider can run
@@ -145,8 +154,10 @@ Each provider declares which `formats` and `architectures` it can run (section 5
 | Standard GGUF (Gemma, Qwen3.6, LFM, GLM…) | yes | where the family is supported |
 | `qwen4exp`, `deepseek41` GGUF (Strata's own) | no | yes |
 
-A model with more than one capable provider is routed by policy (5.4): fits graphics memory comfortably, take the fast
-provider; otherwise the big-model provider. The person can override per model in "Under the hood", rarely needed.
+Routing is simple (decision 2): **a Large-tier model that Strata supports goes to Strata; everything else goes to
+Lemonade.** The tier comes from what the model needs (above), so a model Strata *can* run but that fits a graphics card
+outright (Qwen3.6 35B-A3B, the current "all-rounder" pick, is Medium) stays on Lemonade, which starts in seconds. If that
+is not what is wanted, the rule changes in one place: the tier cut-offs in the catalog.
 
 ### Making both read "the same folder"
 
@@ -162,7 +173,8 @@ provider; otherwise the big-model provider. The person can override per model in
 
 Providers declare how they download. Lemonade pulls by name; Strata downloads and prepares inside `strata launch` (not
 separable). Zest shows both in one queue; for Strata it measures progress by the growth of `<root>/strata` against the plan's
-`download.gb`. A later option is a Zest-side Hugging Face downloader for plain GGUF, so one resumable downloader serves all.
+`download.gb`. Plain GGUF downloads go through Lemonade (decision 5): Zest asks Lemonade to pull, so there is no second downloader to
+build or maintain. Strata's own models download inside `strata launch`.
 
 ### Migration
 
@@ -288,8 +300,8 @@ those modules' internals.
 
 - Loads and validates provider folders (JSON Schema for the YAML, readable errors), exposes the provider list.
 - `catalog()`: the unified model list with fit and start-time hints.
-- `route(model)`: chooses the provider. Order: the person's override → the only provider that can run the file → fits
-  graphics memory comfortably → fast provider, otherwise big-model provider → refuse with a reason.
+- `route(model)`: chooses the provider: Large tier and supported by the big-model provider → that provider; otherwise
+  Lemonade; if no provider can run the file, refuse with a reason.
 - `activate(model)`: the **memory arbiter** (5.6) stops what must stop, starts the provider, waits for ready, reports
   progress to the interface, and returns the endpoint to use.
 - `endpoints()`: what Pi and the gateway should talk to for a given model.
@@ -328,12 +340,22 @@ This replaces `strata.before_launch`, `free_for_lemonade`, the tuning "stops" li
 - **Tuning** is a provider capability (`measure` built in, or a command). The Speed screen is the same for every provider.
 - **Settings and secrets** live under `providers.<id>` in Zest's settings; keys are read from the command or typed once.
 
-### 5.8 Trust
+### 5.8 Trust, with the least friction (decision 6)
 
-Bundled providers are trusted. A provider from the user folder shows a consent card the first time ("This engine will run
-`<command>` and download from `<host>`"), commands run without a shell, templating is limited to a fixed set of variables,
-installs need a checksum unless the author marks `unsafe_install: true`, which shows a warning. Providers cannot read other
-providers' keys.
+Ordinary people never add providers, so the rule is: **nothing to decide unless something risky is happening.**
+
+- **Bundled providers** (Lemonade, Strata): trusted, no prompts, ever.
+- **Adding a provider is an Advanced action** ("Advanced > Engines > Add an engine": drop a folder in, or paste a folder
+  link). It is never part of setup or the picker, so most people never meet it.
+- **An engine that only points at an address that is already running** (`run.mode: external`, no commands, no downloads):
+  no prompt. It can only talk to where it was pointed.
+- **An engine that runs a program or downloads one**: one plain confirmation the first time, saying what it will do in
+  words ("This engine will start a program on your computer called `llama-server` and download it from github.com. Add it?"),
+  with the exact commands under "Details". One click, remembered.
+- Commands run without a shell and the YAML can only use a fixed set of variables, so a provider cannot do more than start
+  the program it names; installs still need a checksum unless the author marks them `unsafe_install`, which adds a warning
+  to the confirmation. No signing or allow-lists: they add friction without protecting anyone who is already choosing to
+  add the folder.
 
 ## 6. Build order
 
@@ -380,13 +402,15 @@ browser, performance of the catalog scan on big libraries.
 - **Naming and credit.** Hiding engine names from flows must not hide credit: Advanced > Engines, Docs and the README keep
   "Powered by" with links and licences.
 
-## 8. Decisions needed
+## 8. Decisions (answered)
 
-1. **Library root default.** Keep today's location (Hugging Face cache) as the default root, or ask once during
-   "getting ready" where big models should live (they are hundreds of GB)?
-2. **Routing policy for models both engines can run.** Prefer the fast provider when it fits (suggested), or always prefer
-   the person's last choice?
-3. **Tier names.** Quick / Balanced / Thorough / Very large (suggested), or other words?
-4. **How much "Under the hood".** Show engine names in a model's details (suggested), or only under Advanced > Engines?
-5. **Own downloader.** Build a Zest-side resumable Hugging Face downloader for plain GGUF in Phase B, or keep each engine's?
-6. **Provider trust for user-added folders.** Consent card on first use (suggested), or require a signed/known-good list?
+1. **Library root:** the person chooses, once, at first run (best-free-space default, one click), movable later.
+2. **Routing:** Large-tier models Strata supports go to Strata; everything else to Lemonade.
+3. **Tiers:** Small (under 10 GB of graphics memory), Medium (10 to 24 GB), Large (16 GB and about 64 GB of RAM, the Strata tier).
+4. **Engine names:** shown discreetly, as a small muted line in details and at the foot of cards.
+5. **Downloads:** plain GGUF through Lemonade.
+6. **Provider trust:** bundled is trusted; adding is an Advanced action; no prompt for address-only engines; one plain
+   confirmation for engines that run or download a program.
+
+Consequences to watch: the Large tier's "16 GB and 64 GB" overlaps Medium's 10 to 24 GB range, so tiers are by what a model
+needs, not by the machine; and models both engines could run follow the tier rule, so Qwen3.6 35B-A3B (Medium) stays on Lemonade.
