@@ -81,7 +81,9 @@ earlier Zest is reused rather than duplicated. Strata gets the same three cases.
 - Tested version range, like Pi: newer-than-tested is shown, and a major jump is not taken automatically.
 - After an update, `presets status` / `recheck`; offer a re-tune if the tuning went stale. (Moved to Phase 4, which owns tuning.)
 
-## Phase 4: tuning for both engines
+## Phase 4 (built on `strata-support`; tested with fakes; no real tune has run): tuning for both engines
+
+Built: the Tuning page under Advanced, a shared job coordinator (`tuning.py`), the Strata wrapper and the Lemonade tuner (`lemtune.py`). Not built yet: the per-model "Make it faster" button on the Models page, "tune while I'm away", and the Lemonade spike's real answer (do the knobs matter on real models?). Strata's progress file format is undocumented, so progress is read defensively.
 
 One flow, "Make it faster" per model plus Advanced > Tuning. Each engine implements `plan()`, `run()`, `apply()`, `rollback()`.
 

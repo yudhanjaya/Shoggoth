@@ -38,6 +38,7 @@ import piup        # noqa: E402
 import skills      # noqa: E402
 import store       # noqa: E402
 import strata      # noqa: E402
+import tuning      # noqa: E402
 import util        # noqa: E402
 import websearch   # noqa: E402
 import zestup      # noqa: E402
@@ -242,6 +243,10 @@ class Handler(BaseHTTPRequestHandler):
             self.send_json(agent.state())
         elif p == "/ui/pi":
             self.send_json(piup.summary())
+        elif p == "/ui/tuning":
+            self.send_json({"targets": tuning.targets(), "job": tuning.status()})
+        elif p == "/ui/tuning/job":
+            self.send_json(tuning.status())
         elif p == "/ui/strata/update":
             self.get_strata_update(parse_qs(u.query))
         elif p == "/ui/strata/recommend":
@@ -305,7 +310,7 @@ class Handler(BaseHTTPRequestHandler):
             "/ui/cowork/job/apply": self.post_job_apply, "/ui/cowork/job/discard": self.post_job_discard,
             "/ui/cowork/folders": self.post_cowork_folders, "/ui/cowork/seen": self.post_cowork_seen,
             "/ui/cowork/allow/remove": self.post_allow_remove, "/ui/cowork/folder": self.post_cowork_folder, "/ui/skills/install": self.post_skills_install, "/ui/pi/check": self.post_pi_check,
-            "/ui/pi/update": self.post_pi_update, "/ui/strata/start": self.post_strata_start, "/ui/strata/stop": self.post_strata_stop, "/ui/strata/setup": self.post_strata_setup, "/ui/strata/update": self.post_strata_update, "/ui/strata/idle": self.post_strata_idle, "/ui/strata/connect": self.post_strata_connect, "/ui/strata/forget": self.post_strata_forget, "/ui/strata/key": self.post_strata_key, "/ui/strata/install": self.post_strata_install, "/ui/update/all": self.post_update_all, "/ui/update/restart": self.post_update_restart, "/ui/pi/use": self.post_pi_use,
+            "/ui/pi/update": self.post_pi_update, "/ui/strata/start": self.post_strata_start, "/ui/strata/stop": self.post_strata_stop, "/ui/tuning/plan": self.post_tuning_plan, "/ui/tuning/run": self.post_tuning_run, "/ui/tuning/cancel": self.post_tuning_cancel, "/ui/tuning/action": self.post_tuning_action, "/ui/strata/setup": self.post_strata_setup, "/ui/strata/update": self.post_strata_update, "/ui/strata/idle": self.post_strata_idle, "/ui/strata/connect": self.post_strata_connect, "/ui/strata/forget": self.post_strata_forget, "/ui/strata/key": self.post_strata_key, "/ui/strata/install": self.post_strata_install, "/ui/update/all": self.post_update_all, "/ui/update/restart": self.post_update_restart, "/ui/pi/use": self.post_pi_use,
             "/ui/skills/remove": self.post_skills_remove, "/ui/skills/toggle": self.post_skills_toggle,
             "/ui/models/storage": self.post_storage, "/ui/models/imports": self.post_imports,
         }.get(p)
@@ -608,6 +613,28 @@ class Handler(BaseHTTPRequestHandler):
         when the page says so (`free_lemonade`)."""
         preset = str(body.get("preset", "")).strip()
         self.send_json({"started": strata.start(preset, bool(body.get("force"))), **strata.summary()})
+
+    @staticmethod
+    def _tune_args(body):
+        engine, target = str(body.get("engine", "")), str(body.get("target", ""))
+        if engine not in ("strata", "lemonade") or not target:
+            raise ValueError("Choose something to tune.")
+        return engine, target, {k: body.get(k) for k in ("mode", "use", "goal")}
+
+    def post_tuning_plan(self, body):
+        self.send_json(tuning.plan(*self._tune_args(body)))
+
+    def post_tuning_run(self, body):
+        tuning.start(*self._tune_args(body))
+        self.send_json({"ok": True, "job": tuning.status()})
+
+    def post_tuning_cancel(self, body):
+        self.send_json({"ok": tuning.cancel()})
+
+    def post_tuning_action(self, body):
+        engine, target, _ = self._tune_args(body)
+        ok, msg = tuning.action(engine, target, str(body.get("act", "")))
+        self.send_json({"ok": ok, "error": msg, "targets": tuning.targets()}, 200 if ok else 409)
 
     def get_strata_update(self, q):
         """The last look at Strata's feed (kept six hours; ?fresh=1 looks again), and where an update stands."""

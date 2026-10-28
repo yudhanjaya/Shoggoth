@@ -11,6 +11,7 @@ import json
 import os
 import re
 import shutil
+import signal
 import socket
 import subprocess
 import threading
@@ -804,3 +805,114 @@ def _do_update(c):
         _changed()
     except Exception as e:  # noqa: BLE001
         SUPD.update(state="error", error=str(e) or e.__class__.__name__)
+
+
+# ---------------------------------------------------------------- tuning (strata tune auto / strata presets)
+def profile_of(preset):
+    """`strata launch` keeps a preset's run configuration under the profile `launch-<name, lowercased, with runs of other characters as "-">`."""
+    return "launch-" + re.sub(r"[^a-z0-9_]+", "-", str(preset).lower()).strip("-")
+
+
+def tuning_status(preset):
+    """Boiled down `strata presets status`: {has, state (fresh/stale/none), reasons, name, id, gain_pct, decode_tok_s, baseline_tok_s, mode, outcome, seconds, when, presets}."""
+    d = _json(["presets", "status", profile_of(preset), "--output", "json"], 20)
+    a = d.get("active") or {}
+    t = a.get("tuner") or {}
+    return {"has": bool(a), "state": d.get("state") or ("none" if not a else "fresh"), "reasons": d.get("reasons") or [],
+            "name": a.get("name"), "id": a.get("id"), "gain_pct": a.get("gain_pct"), "decode_tok_s": a.get("decode_tok_s"),
+            "baseline_tok_s": a.get("baseline_decode_tok_s"), "mode": t.get("mode"), "outcome": t.get("outcome"),
+            "seconds": t.get("seconds"), "when": a.get("created"),
+            "presets": [{"id": p.get("id"), "name": p.get("name"), "active": bool(p.get("active"))} for p in d.get("presets") or []]}
+
+
+def tune_minutes(mode):
+    return 20 if mode == "quick" else 120
+
+
+def _read_status_file(path):
+    """Progress Strata writes at every step. The format isn't documented, so take the common spellings of a phase, a message and a
+    fraction when they are there and show nothing otherwise."""
+    try:
+        with open(path) as f:
+            d = json.load(f)
+    except (OSError, ValueError):
+        return {}
+    out = {}
+    for k in ("phase", "stage", "step", "message", "detail", "text", "status"):
+        if isinstance(d.get(k), str) and d[k]:
+            out["text"] = d[k]
+            break
+    for k in ("progress", "fraction", "percent"):
+        v = d.get(k)
+        if isinstance(v, (int, float)):
+            out["progress"] = v / 100 if v > 1 else v
+            break
+    if "progress" not in out and isinstance(d.get("done"), (int, float)) and d.get("total"):
+        out["progress"] = d["done"] / d["total"]
+    return out
+
+
+def tune_run(preset, opts, job):
+    """Run `strata tune auto` on a saved preset (the server must not be serving: Strata needs the GPU to itself) and wait for it.
+    `job` has update(**kw) and cancelled(). Returns a dict of what to show; raises RuntimeError with a plain message on failure."""
+    mode = "thorough" if opts.get("mode") == "thorough" else "quick"
+    args = [binary(), "tune", "auto", profile_of(preset), "--mode", mode, "--use", "coding" if opts.get("use") == "coding" else "chat",
+            "--goal", "room" if opts.get("goal") == "room" else "speed", "--output", "json"]
+    sf = os.path.join(store.data_dir(), "strata-tune-status.json")
+    os.makedirs(os.path.dirname(sf), exist_ok=True)
+    try:
+        os.remove(sf)
+    except OSError:
+        pass
+    args += ["--status-file", sf]
+    before = tuning_status(preset)
+    p = subprocess.Popen(args, stdin=subprocess.DEVNULL, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, text=True, start_new_session=True)
+    out = []
+    threading.Thread(target=lambda: [out.append(l) for l in p.stdout], daemon=True).start()
+    t0, last = time.time(), 0.0
+    while p.poll() is None:
+        if job.cancelled():
+            try:
+                os.killpg(p.pid, signal.SIGTERM)
+            except OSError:
+                pass
+            p.wait(timeout=60)
+            raise Cancelled()
+        if time.time() - last >= 2:                       # cancel is checked every half second, progress read every two
+            prog = _read_status_file(sf)
+            job.update(text=prog.get("text") or "Strata is measuring settings…", progress=prog.get("progress"), elapsed=int(time.time() - t0))
+            last = time.time()
+        time.sleep(0.5)
+    text = "".join(out)
+    try:
+        res = json.JSONDecoder().raw_decode(text.lstrip())[0]
+    except ValueError:
+        res = {}
+    if p.returncode != 0 or res.get("ok") is False:
+        err = res.get("error")
+        msg = (err.get("message") if isinstance(err, dict) else err) or " ".join([l.strip() for l in text.splitlines() if l.strip()][-2:]) or "Strata's tuning stopped."
+        raise RuntimeError(msg)
+    after = tuning_status(preset)
+    _pc["t"] = 0
+    return {"before": before, "after": after, "gain_pct": after.get("gain_pct"), "decode_tok_s": after.get("decode_tok_s"),
+            "baseline_tok_s": after.get("baseline_tok_s"), "outcome": after.get("outcome")}
+
+
+class Cancelled(Exception):
+    pass
+
+
+def tune_action(preset, act):
+    """off (switch tuning off, it is kept), on (switch the active saved tuning back on) or undo (back to the one before). Returns (ok, message)."""
+    st = tuning_status(preset)
+    prof = profile_of(preset)
+    if act == "off":
+        code, out = _run(["presets", "off", prof, "--output", "json"], 30)
+    elif act in ("on", "undo") and st.get("id"):
+        args = ["presets", "apply", st["id"]] if act == "on" else ["presets", "undo", st["id"], "--config", prof]
+        code, out = _run(args + ["--output", "json"], 30)
+    else:
+        return False, "Strata has no saved tuning for that setup."
+    ok = code == 0
+    _pc["t"] = 0
+    return ok, "" if ok else (out.strip().splitlines() or ["Strata couldn't do that."])[-1]

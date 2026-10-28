@@ -174,6 +174,14 @@ On the **Models** page, the **Bigger models with Strata** box does three things:
 
 Zest never stops, restarts or updates a Strata you started yourself. It shows it, lets you chat with it, and has a **Stop** button (with a confirmation) only when you ask for one. While one of yours is running, Zest won't start a second big model beside it.
 
+## Tuning
+
+**Advanced > Tuning** makes a model answer faster on your computer. It measures the model as it is, tries changes one at a time, and keeps only those that clearly help. Answers stay the same: tuning never changes how a model is compressed.
+
+- **Strata models** are tuned by Strata's own tuner (`strata tune auto`), quick (about 20 minutes) or thorough (up to 2 hours), for chat or for coding with long prompts. The result is saved and used every time the model starts. **Switch off** keeps it but goes back to the standard settings.
+- **Lemonade models** that run on llama.cpp are tuned by Zest: batch sizes, flash attention, threads, which backend and which graphics cards. Each is tried by loading the model with it, and a change is kept only if it beats the measuring noise (and at least 3%). **Undo** puts the old settings back.
+- Tuning needs the graphics cards to itself, so Zest shows the plan first (time, and what it will stop) and waits for your go-ahead. It stops the Strata Zest started and unloads Lemonade's models, and waits while a chat is answering. It will not start while a Strata you started yourself is running. You can cancel at any time and nothing is changed.
+
 ## Using your models in other apps
 
 **Advanced**, then **Server**, gives you an address and a key to paste into other tools (coding assistants, chat apps, anything that talks to an OpenAI-style server). The same page shows live what those apps are asking for. It only listens on this computer unless you turn on sharing.

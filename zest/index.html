@@ -442,6 +442,7 @@ details.aegrp>summary small{margin-left:auto;font:11.5px var(--mono);color:var(-
 .tail{margin:0;font:12px/1.5 var(--mono);background:var(--surface);border:1px solid var(--line);border-radius:9px;padding:10px 12px;overflow:auto;max-height:150px;white-space:pre-wrap;color:var(--muted)}
 .note-warn{border:1px solid color-mix(in srgb,var(--warn) 45%,transparent);color:var(--warn);border-radius:10px;padding:10px 13px;font-size:13.5px}
 .note-bad{border:1px solid color-mix(in srgb,var(--bad) 45%,transparent);color:var(--bad);border-radius:10px;padding:10px 13px;font-size:13.5px}
+.note-ok{border:1px solid color-mix(in srgb,var(--leaf) 45%,transparent);color:var(--leaf);border-radius:10px;padding:10px 13px;font-size:13.5px}
 .srclist{display:grid;gap:8px}
 .src{display:grid;grid-template-columns:auto 1fr auto;gap:12px;align-items:center;border:1px solid var(--line);border-radius:11px;padding:11px 14px;background:var(--bg)}
 .src input{width:18px;height:18px;accent-color:var(--lemon)}
@@ -1145,6 +1146,7 @@ h3.themesec{font:600 12px var(--sans);letter-spacing:.08em;text-transform:upperc
         <button data-view="backends"><span>Engines</span></button>
         <button data-view="settings"><span>All settings</span></button>
         <button data-view="setup"><span>Setup guide</span></button>
+        <button data-view="tuning"><span>Tuning</span></button>
         <button data-view="themes"><span>Themes</span></button>
       </div>
     </div>
@@ -1294,6 +1296,7 @@ h3.themesec{font:600 12px var(--sans);letter-spacing:.08em;text-transform:upperc
     <section class="view" id="v-help"><div class="pad"><div class="wrap" id="help"></div></div></section>
 
     <!-- ADVANCED -->
+    <section class="view" id="v-tuning"><div class="pad"><div class="wrap" id="tuning"></div></div></section>
     <section class="view" id="v-themes"><div class="pad"><div class="wrap" id="themes"></div></div></section>
     <section class="view" id="v-advanced"><div class="pad"><div class="wrap" id="advhub"></div></div></section>
 
@@ -1428,8 +1431,8 @@ async function api(path, opts={}){
 }
 
 /* ======================= navigation ======================= */
-const TITLES = {welcome:"Welcome", cowork:"Chat", chat:"Earlier chats", skills:"Skills", docs:"Docs", models:"Models", help:"Help", advanced:"Advanced", server:"Server", hardware:"Hardware", backends:"Engines", settings:"All settings", setup:"Setup guide", themes:"Themes"};
-const ADV = ["advanced","server","hardware","backends","settings","setup","themes"];
+const TITLES = {welcome:"Welcome", cowork:"Chat", chat:"Earlier chats", skills:"Skills", docs:"Docs", models:"Models", help:"Help", advanced:"Advanced", server:"Server", hardware:"Hardware", backends:"Engines", settings:"All settings", setup:"Setup guide", tuning:"Tuning", themes:"Themes"};
+const ADV = ["advanced","server","hardware","backends","settings","setup","tuning","themes"];
 function show(v){
   S.view = v;
   $$(".view").forEach(el => el.classList.toggle("active", el.id === "v-"+v));
@@ -1452,6 +1455,7 @@ function show(v){
   if(v === "backends") loadBackends();
   if(v === "settings") loadSettings();
   if(v === "setup" || v === "welcome") refreshSetup(true);
+  if(v === "tuning") tnShow();
   $(".app").classList.toggle("focus", v === "welcome");
   if(v === "server") srvShow();
   if(v === "server" && pendingLogScroll){ pendingLogScroll = false; setTimeout(() => $("#srvlog").scrollIntoView({block:"start"}), 1200); }
@@ -3082,6 +3086,7 @@ const ADV_CARDS = [
   ["backends", "Engines", "Pick how models run on your computer, or install a faster option."],
   ["settings", "All settings", "Every setting Lemonade offers, searchable. Changes save as you make them."],
   ["setup", "Setup guide", "Update the helper, bring in models you already have, or connect to your own Lemonade."],
+  ["tuning", "Tuning", "Make a model run faster on this computer. Zest measures the settings and keeps only what clearly helps."],
   ["themes", "Themes", "Change how Zest looks. Light Touch is the default; there are fifteen to try."]
 ];
 function renderAdvanced(){
@@ -3089,6 +3094,70 @@ function renderAdvanced(){
     <div class="advgrid">${ADV_CARDS.map(([k, t, d]) => `<button type="button" class="advcard" data-view2="${k}"><b>${t}</b><span>${d}</span></button>`).join("")}</div>`;
 }
 $("#advhub").addEventListener("click", e => { const c = e.target.closest("[data-view2]"); if(c) show(c.dataset.view2); });
+
+/* ======================= tuning ======================= */
+const TN = {d: null, plan: null, sel: null, opts: {mode: "quick", use: "chat", goal: "speed"}, msg: "", timer: null};
+async function tnShow(){ await tnLoad(); clearInterval(TN.timer); TN.timer = setInterval(() => { if(S.view !== "tuning"){ clearInterval(TN.timer); return; } if(!document.hidden) tnLoad(); }, 2000); }
+async function tnLoad(){
+  try{ TN.d = await api("/ui/tuning"); }catch(e){ TN.d = null; TN.msg = e.message; }
+  tnPaint();
+}
+const tnGain = t => !t.has ? '<span class="chip">Not tuned</span>' : t.stale ? '<span class="chip">Out of date: tune again</span>'
+  : (t.outcome === "default_confirmed" || !t.gain_pct) ? '<span class="chip ok">Already the fastest settings</span>' : `<span class="chip lem">Tuned: ${t.gain_pct > 0 ? "+" : ""}${Number(t.gain_pct).toFixed(1)}%${t.baseline && t.decode ? " (" + Number(t.baseline).toFixed(1) + " → " + Number(t.decode).toFixed(1) + " tokens/s)" : ""}</span>`;
+function tnPaint(){
+  const host = $("#tuning"); if(!host) return;
+  if(host.contains(document.activeElement) && /^(SELECT|INPUT)$/.test(document.activeElement.tagName)) return;
+  const d = TN.d; if(!d){ host.innerHTML = `<p class="lede">Zest couldn't read the tuning status. ${esc(TN.msg)}</p>`; return; }
+  const j = d.job, running = j.state === "running";
+  let jobBox = "";
+  if(running){
+    const pct = j.progress != null ? Math.round(j.progress * 100) : 0, mins = Math.floor((j.elapsed || (Date.now()/1000 - j.started)) / 60);
+    jobBox = `<section class="panel"><h3>Tuning ${esc(j.title)}</h3><div class="line"><span class="stat-dot busy"></span><span class="grow">${esc(j.text || "Working…")}</span><span class="mono faint">${Math.max(0, Math.floor((Date.now()/1000 - j.started) / 60))} min</span><button class="btn" data-tn="cancel">Cancel</button></div><div class="prog ${j.progress != null ? "" : "ind"}" style="margin-top:8px"><i style="width:${pct}%"></i></div><p class="help" style="margin:0">Chats and other models wait until this finishes. It is safe to leave this page.</p></section>`;
+  }else if(j.state === "done" && j.result){
+    const r = j.result, g = r.gain_pct, same = r.outcome === "default_confirmed" || !g;
+    jobBox = `<section class="panel"><h3>Finished: ${esc(j.title)}</h3>${same ? `<div class="note-ok">The default settings were already the fastest. Nothing was changed.</div>` : `<div class="note-ok"><b>${g > 0 ? "+" : ""}${Number(g).toFixed(1)}% faster.</b> ${r.change ? esc(r.change) + ". " : ""}${r.baseline_tok_s ? Number(r.baseline_tok_s).toFixed(1) + " → " + Number(r.decode_tok_s).toFixed(1) + " tokens/s. " : ""}It is used from now on. You can switch it off below.</div>`}</section>`;
+  }else if(j.state === "error") jobBox = `<section class="panel"><div class="note-bad">${esc(j.error)}</div></section>`;
+  else if(j.state === "cancelled") jobBox = `<section class="panel"><div class="note-warn">${esc(j.text)}</div></section>`;
+  const planBox = TN.plan && TN.sel ? `<section class="panel"><h3>Make ${esc(TN.sel.title)} faster</h3>
+    ${TN.plan.blockers && TN.plan.blockers.length ? `<div class="note-warn">${TN.plan.blockers.map(esc).join("<br>")}</div>` : ""}
+    <p class="help" style="margin:0">${esc(TN.plan.note || "")}</p>
+    ${TN.plan.minutes ? `<p class="help" style="margin:0"><b>About ${TN.plan.minutes} minutes</b>${TN.sel.engine === "strata" && TN.opts.mode === "thorough" ? " (up to)" : ""}. The graphics cards are busy the whole time.${TN.plan.stops && TN.plan.stops.length ? ` Zest stops ${TN.plan.stops.map(esc).join(" and ")} first; ${TN.plan.stops.length > 1 ? "they start" : "it starts"} again when a chat needs ${TN.plan.stops.length > 1 ? "them" : "it"}.` : ""}</p>` : ""}
+    <div class="line">${TN.sel.engine === "strata" ? `<label class="help" style="margin:0">How long <select id="tnmode"><option value="quick" ${TN.opts.mode === "quick" ? "selected" : ""}>Quick (about 20 minutes)</option><option value="thorough" ${TN.opts.mode === "thorough" ? "selected" : ""}>Thorough (up to 2 hours)</option></select></label>
+      <label class="help" style="margin:0">Best for <select id="tngoal"><option value="speed" ${TN.opts.goal === "speed" ? "selected" : ""}>Speed</option><option value="room" ${TN.opts.goal === "room" ? "selected" : ""}>Leaving memory free</option></select></label>` : ""}
+      <label class="help" style="margin:0">Used for <select id="tnuse"><option value="chat" ${TN.opts.use === "chat" ? "selected" : ""}>Chat</option><option value="coding" ${TN.opts.use === "coding" ? "selected" : ""}>Coding (long prompts)</option></select></label></div>
+    <div class="line"><button class="btn primary" data-tn="go" ${TN.plan.ok ? "" : "disabled"}>Start tuning</button><button class="btn ghost" data-tn="close">Not now</button></div></section>` : "";
+  const group = (engine, title) => {
+    const rows = d.targets.filter(t => t.engine === engine);
+    if(!rows.length) return "";
+    return `<section class="panel"><h3>${title}</h3>${rows.map(t => `<div class="line"><span class="grow"><b>${esc(t.title)}</b> <span class="faint">${esc(t.detail || "")}</span><br>${tnGain(t.tuned)}${t.tuned.reasons && t.tuned.reasons.length ? ` <span class="faint">${esc(t.tuned.reasons[0])}</span>` : ""}</span>
+      <button class="btn ${t.tuned.has && !t.tuned.stale ? "" : "primary"}" data-tn="plan" data-engine="${t.engine}" data-id="${esc(t.id)}" ${running ? "disabled" : ""}>${t.tuned.has ? "Tune again" : "Make it faster"}</button>
+      ${t.tuned.can_undo ? `<button class="btn ghost" data-tn="undo" data-engine="${t.engine}" data-id="${esc(t.id)}" ${running ? "disabled" : ""}>${t.engine === "strata" ? "Switch off" : "Undo"}</button>` : ""}</div>`).join("")}</section>`;
+  };
+  host.innerHTML = `<p class="lede">Tuning finds the settings that make a model answer faster on this computer. Zest measures the model as it is, tries changes one at a time, and keeps only the ones that clearly help. Answers stay the same: nothing here changes how a model is compressed. A tune takes the graphics cards for a while, so it never starts without your say-so.</p>
+    ${jobBox}${planBox}${group("strata", "Strata models")}${group("lemonade", "Lemonade models")}
+    ${!d.targets.length ? '<p class="help">Nothing to tune yet. Download a model first.</p>' : ""}${TN.msg ? `<div class="note-bad">${esc(TN.msg)}</div>` : ""}`;
+}
+$("#tuning").addEventListener("change", e => { if(e.target.id === "tnmode") TN.opts.mode = e.target.value; if(e.target.id === "tngoal") TN.opts.goal = e.target.value; if(e.target.id === "tnuse") TN.opts.use = e.target.value; if(e.target.id === "tnmode" && TN.sel) tnPlan(TN.sel); });
+async function tnPlan(t){
+  TN.sel = t; TN.msg = "";
+  try{ TN.plan = await api("/ui/tuning/plan", {method: "POST", body: JSON.stringify(Object.assign({engine: t.engine, target: t.id}, TN.opts))}); }catch(e){ TN.plan = null; TN.msg = e.message; }
+  tnPaint();
+}
+$("#tuning").addEventListener("click", async e => {
+  const b = e.target.closest("[data-tn]"); if(!b) return; const a = b.dataset.tn; TN.msg = "";
+  try{
+    if(a === "plan") await tnPlan((TN.d.targets.find(t => t.engine === b.dataset.engine && t.id === b.dataset.id)));
+    else if(a === "close"){ TN.plan = null; TN.sel = null; }
+    else if(a === "go"){ if(!confirm("Start tuning " + TN.sel.title + "? It uses the graphics cards for about " + TN.plan.minutes + " minutes.")) return; await api("/ui/tuning/run", {method: "POST", body: JSON.stringify(Object.assign({engine: TN.sel.engine, target: TN.sel.id}, TN.opts))}); TN.plan = null; TN.sel = null; await tnLoad(); }
+    else if(a === "cancel"){ await api("/ui/tuning/cancel", {method: "POST", body: "{}"}); }
+    else if(a === "undo"){
+      const t = TN.d.targets.find(t => t.engine === b.dataset.engine && t.id === b.dataset.id);
+      if(!confirm(t.engine === "strata" ? "Switch tuning off for " + t.title + "? It is kept, so you can bring it back." : "Put " + t.title + "'s settings back as they were?")) return;
+      await api("/ui/tuning/action", {method: "POST", body: JSON.stringify({engine: t.engine, target: t.id, act: t.engine === "strata" ? "off" : "undo"})}); await tnLoad();
+    }
+  }catch(err){ TN.msg = err.message; }
+  tnPaint();
+});
 
 /* ======================= themes ======================= */
 const THEMES = [["light-touch","Light Touch","Default. Keycap buttons, a pressed-in reply box, one lamp.","core",["#fffdf7","#ffffff","#f6f4ec","#1a1a17","#f7d916","#1b7a3a"]],["braun-t3","Braun T3","Matte warm plastic, a glowing lamp and a speaker grille.","core",["#e9e6dc","#f4f1e8","#e2dfd4","#1a1a17","#f7d916","#1b7a3a"]],["teenage-engineering","Teenage Engineering","Hard shadows, thick outlines and printed labels.","core",["#e9e7df","#f5f3ec","#cfd3cf","#1a1a17","#ffd400","#ff5a1f"]],["one-dark-pro","One Dark Pro","Dark","palette",["#282c34","#21252b","#2c313a","#bcc2cd","#61afef","#98c379"]],["dracula","Dracula","Dark","palette",["#282a36","#21222c","#343746","#f8f8f2","#bd93f9","#50fa7b"]],["monokai-pro","Monokai Pro","Dark","palette",["#2d2a2e","#221f22","#403e41","#fcfcfa","#ffd866","#a9dc76"]],["night-owl","Night Owl","Dark","palette",["#011627","#01111d","#0b2942","#d6deeb","#82aaff","#addb67"]],["synthwave-84","SynthWave '84","Dark","palette",["#262335","#1e1a2c","#34294f","#ffffff","#ff7edb","#72f1b8"]],["cobalt2","Cobalt2","Dark","palette",["#193549","#15232d","#1f4662","#ffffff","#ffc600","#3ad900"]],["nord","Nord","Dark","palette",["#2e3440","#272c36","#3b4252","#d8dee9","#88c0d0","#a3be8c"]],["gruvbox-dark","Gruvbox Dark","Dark","palette",["#282828","#1d2021","#3c3836","#ebdbb2","#fabd2f","#b8bb26"]],["github-dark","GitHub Dark","Dark","palette",["#0d1117","#010409","#161b22","#e6edf3","#1f6feb","#3fb950"]],["github-light","GitHub Light","Light","palette",["#ffffff","#f6f8fa","#eaeef2","#1f2328","#0969da","#1a7f37"]],["catppuccin-mocha","Catppuccin Mocha","Dark","palette",["#1e1e2e","#181825","#313244","#cdd6f4","#cba6f7","#a6e3a1"]],["catppuccin-latte","Catppuccin Latte","Light","palette",["#eff1f5","#e6e9ef","#dce0e8","#4c4f69","#8839ef","#40a02b"]]];
