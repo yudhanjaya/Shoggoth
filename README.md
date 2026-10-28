@@ -2,7 +2,6 @@
 
 [![Release](https://img.shields.io/github/v/release/yudhanjaya/Zest)](https://github.com/yudhanjaya/Zest/releases)
 [![Downloads](https://img.shields.io/github/downloads/yudhanjaya/Zest/total.svg)](https://github.com/yudhanjaya/Zest/releases)
-[![Release workflow](https://github.com/yudhanjaya/Zest/actions/workflows/release.yml/badge.svg)](https://github.com/yudhanjaya/Zest/actions/workflows/release.yml)
 [![License: MIT](https://img.shields.io/github/license/yudhanjaya/Zest)](LICENSE)
 ![Platform](https://img.shields.io/badge/platform-Linux%20x86__64-blue)
 ![Code size](https://img.shields.io/github/languages/code-size/yudhanjaya/Zest)
