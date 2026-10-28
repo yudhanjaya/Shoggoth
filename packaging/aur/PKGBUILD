@@ -1,0 +1,33 @@
+# Maintainer: Yudhanjaya Wijeratne <yudhanjaya@gmail.com>
+pkgname=zest-appimage
+_name=Zest
+pkgver=3.4.2
+pkgrel=1
+pkgdesc="Friendly interface for running open-weights models locally, with Lemonade and the Pi agent included"
+arch=('x86_64')
+url="https://github.com/yudhanjaya/Zest"
+license=('MIT')
+depends=('zlib' 'fuse2' 'openssl' 'zstd' 'libdrm')
+options=('!strip' '!debug')
+provides=('zest')
+conflicts=('zest')
+source=("$_name-$pkgver-x86_64.AppImage::$url/releases/download/v$pkgver/$_name-$pkgver-x86_64.AppImage"
+        "$url/raw/v$pkgver/LICENSE")
+noextract=("$_name-$pkgver-x86_64.AppImage")
+sha256sums=('7e12d382bbd4f19c3d47b4bbe903e65175eaaec95bff3b954bf641f32eaa9497'
+            'SKIP')
+
+prepare() {
+  chmod +x "$_name-$pkgver-x86_64.AppImage"
+  ./"$_name-$pkgver-x86_64.AppImage" --appimage-extract zest.desktop >/dev/null
+  ./"$_name-$pkgver-x86_64.AppImage" --appimage-extract zest.png >/dev/null
+}
+
+package() {
+  install -Dm755 "$_name-$pkgver-x86_64.AppImage" "$pkgdir/opt/$pkgname/$_name.AppImage"
+  install -d "$pkgdir/usr/bin"
+  ln -s "/opt/$pkgname/$_name.AppImage" "$pkgdir/usr/bin/zest"
+  install -Dm644 squashfs-root/zest.desktop "$pkgdir/usr/share/applications/zest.desktop"
+  install -Dm644 squashfs-root/zest.png "$pkgdir/usr/share/pixmaps/zest.png"
+  install -Dm644 LICENSE "$pkgdir/usr/share/licenses/$pkgname/LICENSE"
+}
