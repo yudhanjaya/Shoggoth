@@ -22,7 +22,7 @@ import registry  # noqa: E402
 GB = 10 ** 9
 
 
-def write_gguf(path, arch="gemma3", name="Test Model", file_type=15, ctx=8192, size=None, kind="model", tokens=2000):
+def write_gguf(path, arch="gemma3", name="Test Model", file_type=15, ctx=8192, size=None, kind="model", tokens=2000, shape=None):
     """A minimal real GGUF header: general keys, the context length, a tokenizer array, and file_type AFTER the tokenizer, as Strata's files do."""
     def s(x):
         b = x.encode()
@@ -32,11 +32,12 @@ def write_gguf(path, arch="gemma3", name="Test Model", file_type=15, ctx=8192, s
         return s(key) + struct.pack("<I", t) + val
     body = (kv("general.architecture", 8, s(arch)) + kv("general.type", 8, s(kind)) + kv("general.name", 8, s(name)) +
             kv("%s.context_length" % arch, 4, struct.pack("<I", ctx)) +
+            b"".join(kv("%s.%s" % (arch, k), 4, struct.pack("<I", v)) for k, v in (shape or {}).items()) +
             kv("tokenizer.ggml.tokens", 9, struct.pack("<I", 8) + struct.pack("<Q", tokens) + b"".join(s("tok%d" % i) for i in range(tokens))) +
             kv("general.file_type", 4, struct.pack("<I", file_type)))
     os.makedirs(os.path.dirname(path), exist_ok=True)
     with open(path, "wb") as f:
-        f.write(b"GGUF" + struct.pack("<IQQ", 3, 0, 6) + body)
+        f.write(b"GGUF" + struct.pack("<IQQ", 3, 0, 6 + len(shape or {})) + body)
         if size:
             f.truncate(size)                                   # a sparse file: the size without the disk space
 
@@ -116,6 +117,49 @@ class Headers(Env):
         self.assertEqual(gguf.role_of("gemma3"), "chat")
         self.assertEqual(gguf.role_of("deepseek41", "x", "/m/deepseek-flash-shared"), "support")
         self.assertEqual(gguf.role_of(""), "unknown")
+
+
+class MemoryForContext(Env):
+    """What a long conversation costs in memory is part of whether a model fits."""
+    LLAMA_8B = {"block_count": 32, "embedding_length": 4096, "attention.head_count": 32, "attention.head_count_kv": 8}
+
+    def test_the_cache_is_worked_out_from_the_models_own_shape(self):
+        write_gguf(os.path.join(self.lib, "lemonade", "a", "Llama-Q4.gguf"), arch="llama", ctx=131072, size=5 * GB, shape=self.LLAMA_8B)
+        e = self.by_stem()["Llama-Q4"]
+        self.assertEqual(e["attn"]["layers"], 32)
+        self.assertEqual((e["attn"]["kv_heads"], e["attn"]["dk"]), (8, 128))                  # head size follows from the embedding width
+        self.assertEqual(e["kv_ctx"], 131072)
+        self.assertAlmostEqual(e["kv_gb"], 17.18, places=1)                                  # 32 layers x 8 heads x 256 x 2 bytes x 128k tokens
+        self.assertGreater(e["need_gb"], 22)                                                  # the file alone would say 5.5
+
+    def test_a_model_that_fits_as_a_file_may_not_fit_with_a_long_conversation(self):
+        write_gguf(os.path.join(self.lib, "lemonade", "a", "Llama-Q4.gguf"), arch="llama", ctx=131072, size=5 * GB, shape=self.LLAMA_8B)
+        e = self.by_stem()["Llama-Q4"]
+        self.assertNotEqual(e["fit"], "fits")                                                 # 24 GB card, 22+ GB needed with a 90% rule
+        self.assertIn("conversation", e["why"])
+
+    def test_a_shorter_chat_window_costs_less(self):
+        write_gguf(os.path.join(self.lib, "lemonade", "a", "Llama-Q4.gguf"), arch="llama", ctx=131072, size=5 * GB, shape=self.LLAMA_8B)
+        s = library.store.load()
+        s["chat"]["ctx"] = 16384
+        library.store.save(s)
+        e = self.by_stem()["Llama-Q4"]
+        self.assertEqual(e["kv_ctx"], 16384)
+        self.assertEqual(e["fit"], "fits")
+
+    def test_the_model_cannot_use_more_than_it_was_trained_for(self):
+        write_gguf(os.path.join(self.lib, "lemonade", "a", "Llama-Q4.gguf"), arch="llama", ctx=8192, size=5 * GB, shape=self.LLAMA_8B)
+        self.assertEqual(self.by_stem()["Llama-Q4"]["kv_ctx"], 8192)
+
+    def test_the_estimate_for_other_shapes(self):
+        base = {"layers": 48, "kv_heads": 2, "dk": 256, "dv": 256}
+        full = gguf.kv_cache_gb(base, 131072)
+        self.assertAlmostEqual(gguf.kv_cache_gb(dict(base, full_every=4), 131072), full / 4, places=1)      # hybrids cache every 4th layer
+        win = gguf.kv_cache_gb(dict(base, window=1024, arch="gemma3"), 131072)
+        self.assertLess(win, full / 4)                                                                   # most layers only keep their window
+        self.assertGreater(win, 0)
+        self.assertLess(gguf.kv_cache_gb({"layers": 60, "kv_heads": 1, "dk": 1, "dv": 1, "latent": 576}, 131072), 10)    # latent attention is small
+        self.assertEqual(gguf.kv_cache_gb({}, 131072), 0.0)                                              # unknown shape: no guess
 
 
 class Catalog(Env):

@@ -2911,8 +2911,9 @@ function wModelCards(){
   const active = libDlItems().length, cards = wFirstModels().map(o => {
     const m = o.m, j = m && dlJob(m.id), have = m && m.downloaded, name = m ? friendly(m) : o.big.title, size = m ? m.size.toFixed(m.size < 10 ? 1 : 0) + " GB" : (o.big.download_gb ? Math.round(o.big.download_gb) + " GB to download" : "");
     const btn = m ? (j ? `<button class="btn" data-act="cancel-dl" data-model="${esc(m.id)}">Cancel</button>` : have ? `<button class="btn" disabled>Got it</button>` : `<button class="btn ${o.rec ? "primary" : ""}" data-act="dl" data-model="${esc(m.id)}" ${active ? "disabled" : ""}>Get it</button>`)
+      : o.big.download_gb === 0 ? `<button class="btn" disabled>Got it</button>`
       : `<button class="btn ${o.rec ? "primary" : ""}" data-act="sget" data-family="${esc(o.big.family)}" data-model="${esc(o.big.model)}" ${active ? "disabled" : ""}>Get it</button>`;
-    return `<div class="tier"><div><b>${o.tier}${o.rec ? ' <span class="chip lem">Recommended</span>' : ""}</b><span class="tn">${esc(name)} · ${size}</span><p>${esc(o.blurb)} <span class="faint">${esc(o.start)}.</span></p>${j ? `<div class="prog"><i style="width:${j.percent}%"></i></div><small class="wsmall">${j.percent}%</small>` : ""}</div>${btn}</div>`;
+    return `<div class="tier"><div><b>${o.tier}${o.rec ? ' <span class="chip lem">Recommended</span>' : ""}</b><span class="tn">${esc(name)}${size ? " · " + size : ""}</span><p>${esc(o.blurb)} <span class="faint">${esc(o.start)}.</span></p>${j ? `<div class="prog"><i style="width:${j.percent}%"></i></div><small class="wsmall">${j.percent}%</small>` : ""}</div>${btn}</div>`;
   }).join("");
   return `<h3 class="wh3">Choose your first model</h3><p class="wl">A model is the AI that answers you. It downloads once, then lives on this computer. You can add more any time.</p>
     <div class="tiers">${cards || '<p class="wsmall">Zest is still looking at your computer…</p>'}</div>${libDlHTML()}

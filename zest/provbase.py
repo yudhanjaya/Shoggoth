@@ -9,6 +9,7 @@ import json
 import os
 import re
 import shutil
+import signal
 import socket
 import string
 import subprocess
@@ -92,12 +93,27 @@ def port_range(spec):
 
 class Context:
     """What a provider may ask Zest for: where things live. Providers never reach into Zest's modules."""
-    def __init__(self, library="", data="", settings=None):
+    def __init__(self, library="", data="", settings=None, save=None):
         self.library, self.data = library, data
         self._settings = settings or (lambda pid: {})
+        self._save = save or (lambda pid, **kv: None)
 
     def settings(self, pid):
         return self._settings(pid)
+
+    def remember(self, pid, **kv):
+        """Keep a few facts about a provider across restarts of Zest (None removes one)."""
+        self._save(pid, **kv)
+
+
+def _start_time(pid):
+    """When process `pid` began (clock ticks since boot, from /proc), or None when there is no such process. Tells a process from a later one
+    that was given the same number."""
+    try:
+        with open("/proc/%d/stat" % pid) as f:
+            return int(f.read().rsplit(")", 1)[1].split()[19])
+    except (OSError, ValueError, IndexError):
+        return None
 
 
 # ---------------------------------------------------------------- the interface
@@ -202,19 +218,22 @@ class Base:
         return []
 
     def need_gb(self, entry):
-        """Memory (graphics, plus RAM for the part that spills over) the entry needs to run on this provider, in GB."""
-        return round(entry.get("size_bytes", 0) / 1e9 * 1.1, 1)
+        """Memory (graphics, plus RAM for the part that spills over) the entry needs to run on this provider, in GB: the model, a little
+        working space, and what the context window costs (entry["kv_gb"], worked out from the model's own shape)."""
+        return round(entry.get("size_bytes", 0) / 1e9 * 1.1 + (entry.get("kv_gb") or 0), 1)
 
     def fit(self, entry, machine):
         """("fits" | "tight" | "no", reason) for this entry on this computer."""
         need = self.need_gb(entry)
         gpu, vram, ram = machine.get("best_gpu_gb", 0), machine.get("vram_gb", 0), machine.get("ram_gb", 0)
         room = vram * 0.88 if len(machine.get("gpus") or []) > 1 else gpu * 0.9          # layers spread over several cards
+        kv = entry.get("kv_gb") or 0
+        part = " (%d GB of that is the memory for a %dk conversation)" % (round(kv), (entry.get("kv_ctx") or 0) // 1024) if kv >= 1.5 else ""
         if gpu and need <= room:
             return "fits", ""
         if need <= vram * 0.9 + ram * 0.5:
-            return "tight", "Needs about %d GB; it will run partly on the processor, so it will be slower." % need
-        return "no", "Needs about %d GB; this computer has %d GB of graphics memory and %d GB of RAM." % (need, vram, ram)
+            return "tight", "Needs about %d GB%s; it will run partly on the processor, so it will be slower." % (need, part)
+        return "no", "Needs about %d GB%s; this computer has %d GB of graphics memory and %d GB of RAM." % (need, part, vram, ram)
 
     def tier_hint(self):
         return str(self.spec.get("tier", ""))
@@ -270,9 +289,26 @@ class GenericProvider(Base):
         self._lock = threading.RLock()
         self._port = None
         self._owned = False             # did Zest start the process now serving?
+        self._pid = None                # its process number (kept across restarts of Zest, so what Zest started is still Zest's)
         self._files = {}                # model name -> its file, learned as the library asks for names (models.serve: file)
 
     # -- helpers
+    def _adopt_own(self):
+        """After a restart of Zest (or a reload of the engines) find the process Zest started last time, if it is still there."""
+        if self._owned:
+            return
+        rec = self.ctx.settings(self.id).get("started") or {}
+        pid, port = rec.get("pid"), rec.get("port")
+        if pid and port and _start_time(int(pid)) == rec.get("t") and port_open(int(port)):
+            self._pid, self._port, self._owned = int(pid), int(port), True
+        elif rec:
+            self.ctx.remember(self.id, started=None)             # it has gone
+
+    def _alive(self):
+        if self._proc is not None:
+            return self._proc.poll() is None
+        return bool(self._pid) and _start_time(self._pid) is not None
+
     def _vals(self, **extra):
         v = {"bin": self.binary() or "", "host": "127.0.0.1", "port": self._port, "library": self.ctx.library, "data": self.ctx.data}
         v.update(extra)
@@ -318,6 +354,7 @@ class GenericProvider(Base):
         """What is already there: {found, bin, running:[{port}], owner}. Never starts anything."""
         d = self.spec.get("detect") or {}
         running = []
+        self._adopt_own()
         for port in port_range(d.get("ports") or ((self.spec.get("run") or {}).get("port_range") or [])):
             if port_open(port) and self._health(port) is not None:
                 running.append({"port": port, "owner": "zest" if (self._owned and port == self._port) else "yours"})
@@ -397,11 +434,13 @@ class GenericProvider(Base):
             cmd = fill(run["start"], **self._vals(model=model_id, model_file=self._files.get(model_id, ""), port=free, context=ctx))
             progress("Starting %s…" % self.name)
             self._proc = subprocess.Popen(cmd, stdin=subprocess.DEVNULL, stdout=subprocess.DEVNULL, stderr=subprocess.STDOUT, start_new_session=True)
-            self._owned = True
+            self._owned, self._pid = True, self._proc.pid
+            self.ctx.remember(self.id, started={"pid": self._pid, "port": free, "t": _start_time(self._pid)})
             deadline = time.time() + float((run.get("ready") or {}).get("timeout", 120))
             while time.time() < deadline:
                 if self._proc.poll() is not None:
-                    self._owned = False
+                    self._owned, self._pid = False, None
+                    self.ctx.remember(self.id, started=None)
                     raise ProviderError("%s stopped right after starting." % self.name)
                 if self._health(free) is not None:
                     ep = self.endpoint(model_id) or self.endpoint(None)
@@ -412,25 +451,50 @@ class GenericProvider(Base):
             raise ProviderError("%s didn't become ready in time." % self.name)
 
     def owned_instance(self):
-        return self._port if (self._owned and self._proc is not None and self._proc.poll() is None) else None
+        self._adopt_own()
+        return self._port if (self._owned and self._alive()) else None
 
     def stop(self, model_id=None):
         """Stop what Zest started. Returns (ok, message). Never stops an engine somebody else started."""
         with self._lock:
-            if not self._owned or self._proc is None:
+            self._adopt_own()
+            if not self._owned or not self._pid:
                 return False, "Zest didn't start %s, so it leaves it running." % self.name
             run = self.spec.get("run") or {}
+            grace = float(run.get("stop_grace_secs", 20))
             try:
                 if run.get("stop"):
                     subprocess.run(fill(run["stop"], **self._vals()), capture_output=True, timeout=60, stdin=subprocess.DEVNULL)
-                self._proc.terminate()
-                self._proc.wait(timeout=float(run.get("stop_grace_secs", 20)))
-            except subprocess.TimeoutExpired:
-                self._proc.kill()
+                self._end(signal.SIGTERM)
+                if not self._wait_gone(grace):
+                    self._end(signal.SIGKILL)
+                    self._wait_gone(5)
+            except (OSError, subprocess.SubprocessError):
+                pass
+            self._proc, self._owned, self._pid = None, False, None
+            self.ctx.remember(self.id, started=None)
+            return True, ""
+
+    def _end(self, sig):
+        """Signal what Zest started, and what that started (it was made the leader of its own group)."""
+        try:
+            os.killpg(self._pid, sig)
+        except (OSError, ProcessLookupError):
+            try:
+                os.kill(self._pid, sig)
             except OSError:
                 pass
-            self._proc, self._owned = None, False
-            return True, ""
+
+    def _wait_gone(self, secs):
+        end = time.time() + secs
+        while time.time() < end:
+            if self._proc is not None:
+                if self._proc.poll() is not None:
+                    return True
+            elif _start_time(self._pid) is None:
+                return True
+            time.sleep(0.1)
+        return False
 
     # -- updates (by command; the engine's own tool does the real work)
     def update_check(self):

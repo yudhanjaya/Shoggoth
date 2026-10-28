@@ -153,8 +153,14 @@ class Registry:
     # -- what providers are told about Zest
     def context(self):
         s = store.load()
+        def remember(pid, **kv):
+            def put(st):
+                mine = st.setdefault("providers", {}).setdefault(pid, {})
+                for k, v in kv.items():
+                    mine.pop(k, None) if v is None else mine.__setitem__(k, v)
+            store.update(put)
         return provbase.Context(library=(s.get("library") or {}).get("root", ""), data=store.data_dir(),
-                                settings=lambda pid: (store.load().get("providers") or {}).get(pid, {}))
+                                settings=lambda pid: (store.load().get("providers") or {}).get(pid, {}), save=remember)
 
     def load(self):
         self.providers, self.errors = {}, []

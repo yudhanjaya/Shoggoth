@@ -96,6 +96,9 @@ def set_root(path):
 
 
 # ---------------------------------------------------------------- reading files
+INDEX_VERSION = 2          # 2: headers also carry the model's attention shape (for the memory the context costs)
+
+
 def _index_path():
     return os.path.join(store.data_dir(), "library-index.json")
 
@@ -115,10 +118,10 @@ def _header(path):
     except OSError:
         return None
     hit = _index["d"].get(rp)
-    if hit and hit.get("size") == st.st_size and hit.get("mtime") == int(st.st_mtime):
+    if hit and hit.get("size") == st.st_size and hit.get("mtime") == int(st.st_mtime) and hit.get("v") == INDEX_VERSION:
         return hit.get("h")
     h = gguf.read_header(rp)
-    _index["d"][rp] = {"size": st.st_size, "mtime": int(st.st_mtime), "h": h}
+    _index["d"][rp] = {"size": st.st_size, "mtime": int(st.st_mtime), "h": h, "v": INDEX_VERSION}
     return h
 
 
@@ -168,7 +171,8 @@ def _entries_in(folder, label, owner):
         out.append({"stem": stem, "files": [p for p, _ in shards], "size_bytes": sum(s for _, s in shards), "complete": len(shards) == g["n"],
                     "format": "gguf", "architecture": h.get("architecture", ""), "quant": h.get("quant", ""), "context": h.get("context", 0),
                     "size_label": h.get("size_label", ""), "title": _pretty(stem, h), "vision": bool(near), "mmproj": near[0] if near else "",
-                    "mtp": "mtp" in stem.lower(), "folder": d, "source": label, "owner": owner})
+                    "mtp": "mtp" in stem.lower(), "folder": d, "source": label, "owner": owner,
+                    "attn": dict(h.get("attn") or {}, arch=h.get("architecture", ""))})
     return out
 
 
@@ -259,6 +263,9 @@ def catalog(reg=None, machine=None, refresh=False):
         chosen = next((p for p in runnable if p.prefers(e)), None)          # an engine that asked for this kind of model gets it
         chosen = chosen or (next((p for p in big if cap[p.id][0]), None) if tier == "large" else None)
         chosen = chosen or next((p for p in rest if cap[p.id][0]), None) or runnable[0]
+        want = int((store.load().get("chat") or {}).get("ctx") or 131072)            # the context window chats ask for
+        used = min(want, e.get("context") or want)
+        e = dict(e, kv_ctx=used, kv_gb=gguf.kv_cache_gb(e.get("attn"), used))        # what remembering that much conversation costs in memory
         fit, why = chosen.fit(e, machine)
         ids = dict(e["ids"]) if e.get("listed_by") else {p.id: p.model_id(e) for p in runnable}
         out.append(dict(e, id=key, tier=tier, provider=chosen.id, need_gb=chosen.need_gb(e), fit=fit, why=why,

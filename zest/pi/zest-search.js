@@ -24,7 +24,7 @@ export default function (pi) {
     async execute(_id, params, signal) {
       const q = String((params && params.query) || "").trim();
       if (!q) throw new Error("Give web_search a query.");
-      const res = await fetch(`${url}?q=${encodeURIComponent(q)}&n=${Number(params.max_results) || 6}`, { signal });
+      const res = await fetch(`${url}?q=${encodeURIComponent(q)}&n=${Number(params.max_results) || 6}`, { signal, headers: { Authorization: "Bearer " + (process.env.ZEST_SEARCH_KEY || "") } });
       const data = await res.json().catch(() => ({}));
       if (!res.ok || data.error) throw new Error(data.error || "The search failed.");
       const text = data.results.map((r, i) => `${i + 1}. ${r.title}\n   ${r.url}\n   ${r.snippet}`).join("\n\n");

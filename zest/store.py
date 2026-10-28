@@ -21,7 +21,13 @@ DEFAULTS = {
     # The door for other apps: its own port, always needs the key, this computer only unless `lan` is on.
     "gateway": {"enabled": True, "port": 13308, "api_key": "", "lan": False, "capture": False},
 }
-_lock = threading.Lock()
+_lock = threading.RLock()
+
+
+class Settings(dict):
+    """What `load()` returns: a plain dict that also remembers what the file held when it was read, so `save()` can write only what the
+    caller changed on top of whatever is on disk now (two threads changing different settings no longer undo each other)."""
+    _base = None
 
 
 def _xdg(var, fallback):
@@ -49,7 +55,7 @@ def _merge(base, extra):
     return base
 
 
-def load():
+def _read():
     s = copy.deepcopy(DEFAULTS)
     try:
         with open(_path()) as f:
@@ -59,14 +65,52 @@ def load():
     return s
 
 
+def load():
+    s = Settings(_read())
+    s._base = copy.deepcopy(dict(s))
+    return s
+
+
+_GONE = object()
+
+
+def _apply(cur, base, new):
+    """Put what changed between `base` and `new` onto `cur`. Dicts are followed key by key; anything else (lists, values) is replaced whole."""
+    for k in set(base) | set(new):
+        b, n = base.get(k, _GONE), new.get(k, _GONE)
+        if b == n:
+            continue
+        if n is _GONE:
+            cur.pop(k, None)
+        elif isinstance(n, dict) and isinstance(b, dict) and isinstance(cur.get(k), dict):
+            _apply(cur[k], b, n)
+        else:
+            cur[k] = copy.deepcopy(n)
+
+
 def save(s):
     with _lock:
-        os.makedirs(config_dir(), exist_ok=True)
+        if isinstance(s, Settings) and s._base is not None:
+            cur = _read()
+            _apply(cur, s._base, s)
+            s.clear()
+            s.update(cur)                                  # the caller carries on with the merged settings
+            s._base = copy.deepcopy(cur)
+        os.makedirs(config_dir(), mode=0o700, exist_ok=True)
         tmp = _path() + ".tmp"
         fd = os.open(tmp, os.O_WRONLY | os.O_CREAT | os.O_TRUNC, 0o600)   # it holds an API key
         with os.fdopen(fd, "w") as f:
             json.dump(s, f, indent=2)
         os.replace(tmp, _path())
+
+
+def update(fn):
+    """Change settings in one step: `fn(settings)` runs on the current file and the result is saved, with no other writer in between."""
+    with _lock:
+        s = load()
+        fn(s)
+        save(s)
+        return s
 
 
 def new_key():

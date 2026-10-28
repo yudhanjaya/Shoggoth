@@ -198,6 +198,40 @@ class YamlOnlyProvider(Env):
         self.assertTrue(ok, msg)
         self.assertEqual(p.models(), [])
 
+    def test_what_zest_started_is_still_zests_after_a_restart_or_reload(self):
+        self.add_demo()
+        r = self.registry()
+        r.approve("demo-openai")
+        p = r.get("demo-openai")
+        p.ensure("m1", lambda t: None)
+        try:
+            again = self.registry().get("demo-openai")                  # a fresh start of Zest: new objects, nothing remembered in memory
+            self.assertTrue(again.approved)
+            self.assertEqual([m["owner"] for m in again.models()], ["zest"])
+            self.assertIsNotNone(again.owned_instance())                # so the idle clock can stop it
+            ok, msg = again.stop()                                      # and Zest can stop what the earlier Zest started
+            self.assertTrue(ok, msg)
+            self.assertEqual(again.models(), [])
+            self.assertFalse(provbase.port_open(int(self.PORTS.split("-")[0])))
+        finally:
+            p.stop()
+
+    def test_a_process_that_only_has_the_same_number_is_not_adopted(self):
+        self.add_demo()
+        r = self.registry()
+        r.approve("demo-openai")
+        p = r.get("demo-openai")
+        p.ensure("m1", lambda t: None)                                  # running, on a port the record below also names
+        try:
+            rec = r.context().settings("demo-openai")["started"]
+            r.context().remember("demo-openai", started=dict(rec, t=(rec["t"] or 0) + 1))      # same number and port, but a different process start
+            other = self.registry().get("demo-openai")
+            self.assertEqual([m["owner"] for m in other.models()], ["yours"])                   # found running, but not Zest's
+            self.assertFalse(other.stop()[0])
+            self.assertTrue(provbase.port_open(rec["port"]))                                    # and left alone
+        finally:
+            p.stop()
+
     def test_approval_is_tied_to_the_files(self):
         d = self.add_demo()
         r = self.registry()
@@ -236,6 +270,16 @@ class YamlOnlyProvider(Env):
             """)
         r = self.registry()
         self.assertIsNone(r.consent(r.get("remote")))
+
+
+class LemonadeNames(Env):
+    def test_a_file_is_never_given_the_name_of_another_quant_of_the_same_repo(self):
+        p = self.registry().get("lemonade")
+        p._downloaded = lambda: [{"id": "gemma270m-q4", "checkpoint": "unsloth/gemma-3-270m-it-GGUF:Q4_K_M"}]
+        hub = "/h/hub/models--unsloth--gemma-3-270m-it-GGUF/snapshots/abc/"
+        self.assertEqual(p.model_id({"files": [hub + "gemma-3-270m-it-Q4_K_M.gguf"], "quant": "Q4_K_M"}), "gemma270m-q4")
+        self.assertIsNone(p.model_id({"files": [hub + "gemma-3-270m-it-UD-IQ2_M.gguf"], "quant": "IQ2_M"}))      # that one is not registered
+        self.assertEqual(p.model_id({"files": [hub + "gemma-3-270m-it-weird.gguf"], "quant": ""}), "gemma270m-q4")      # no quant to go by
 
 
 class EnginesPage(Env):

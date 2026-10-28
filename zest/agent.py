@@ -24,6 +24,7 @@ import provbase
 import router
 import skills
 import store
+import uiauth
 import workcopy
 
 HERE = os.path.dirname(os.path.abspath(__file__))
@@ -293,7 +294,7 @@ def write_config(models, default, ctx=0):
 
 def _write(path, obj):
     tmp = "%s.%d.%d.tmp" % (path, os.getpid(), threading.get_ident())
-    with open(tmp, "w") as f:
+    with os.fdopen(os.open(tmp, os.O_WRONLY | os.O_CREAT | os.O_TRUNC, 0o600), "w") as f:      # it can hold the key to Zest's own address
         json.dump(obj, f, indent=2)
     os.replace(tmp, path)
 
@@ -337,7 +338,8 @@ def _env(mode="ask", inject=(), extra_folders=(), allow=()):
     e.update(PI_CODING_AGENT_DIR=agent_dir(), PI_OFFLINE="1", PI_TELEMETRY="0", PI_SKIP_VERSION_CHECK="1",
              ZEST_APPROVAL=mode, ZEST_INJECT=json.dumps(list(inject)), NO_COLOR="1",
              ZEST_FOLDERS=json.dumps(list(extra_folders)), ZEST_ALLOW=json.dumps(list(allow)),
-             ZEST_SEARCH="1" if search_enabled() else "0", ZEST_SEARCH_URL="http://127.0.0.1:%d/ui/search" % _zest_port["v"])
+             ZEST_SEARCH="1" if search_enabled() else "0", ZEST_SEARCH_URL="http://127.0.0.1:%d/ui/search" % _zest_port["v"],
+             ZEST_SEARCH_KEY=uiauth.token())
     return e
 
 

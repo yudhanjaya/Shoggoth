@@ -43,6 +43,7 @@ import skills      # noqa: E402
 import store       # noqa: E402
 import strata      # noqa: E402
 import tuning      # noqa: E402
+import uiauth      # noqa: E402
 import util        # noqa: E402
 import websearch   # noqa: E402
 import zestup      # noqa: E402
@@ -181,6 +182,29 @@ class Handler(BaseHTTPRequestHandler):
         host = (self.headers.get("Host") or "").rsplit(":", 1)[0].strip("[]").lower()
         return host in ("localhost", "127.0.0.1", "::1")
 
+    def authed(self):
+        return uiauth.allowed(self.server.server_address[1], self.headers.get("Cookie"), self.headers.get("Authorization"))
+
+    def _refuse(self, page=False):
+        if page:
+            self.send_response(401)
+            self.send_header("Content-Type", "text/html; charset=utf-8")
+            self.send_header("Content-Length", str(len(uiauth.LOCKED_PAGE)))
+            self.send_header("Cache-Control", "no-store")
+            self.end_headers()
+            self.wfile.write(uiauth.LOCKED_PAGE)
+        else:
+            self.send_json({"error": "not signed in: open Zest from its own window"}, 401)
+
+    def _let_in(self):
+        """The window Zest opened came with a one-time code: swap it for the cookie and show the page on a clean address."""
+        self.send_response(302)
+        self.send_header("Set-Cookie", uiauth.set_cookie(self.server.server_address[1]))
+        self.send_header("Location", "/")
+        self.send_header("Cache-Control", "no-store")
+        self.send_header("Content-Length", "0")
+        self.end_headers()
+
     def _info(self):
         return cached("info", 4, get_info)
 
@@ -190,6 +214,12 @@ class Handler(BaseHTTPRequestHandler):
             return self.send_json({"error": "unexpected Host header"}, 403)
         u = urlparse(self.path)
         p = u.path
+        if p == "/ui/ping":                                       # the version only: how a second launch finds this Zest
+            return self.send_json({"zest": VERSION})
+        if p == "/" and uiauth.enabled() and uiauth.redeem(parse_qs(u.query).get("c", [""])[0]):
+            return self._let_in()
+        if not self.authed():
+            return self._refuse(page=p in ("/", "/index.html"))
         if p in ("/", "/index.html"):
             with open(os.path.join(HERE, "index.html"), "rb") as f:
                 body = f.read()
@@ -301,9 +331,13 @@ class Handler(BaseHTTPRequestHandler):
         if not self.host_ok():
             return self.send_json({"error": "unexpected Host header"}, 403)
         p = urlparse(self.path).path
-        if p == "/ui/ping":
+        if not self.authed():
+            return self._refuse()
+        if p == "/ui/ping":                                       # only the real page keeps Zest open
             _last_ping["t"] = time.time()
             return self.send_json({"zest": VERSION})
+        if p == "/ui/code":                                       # a second launch asks the running Zest for a way in (it holds the secret)
+            return self.send_json({"code": uiauth.new_code()})
         if not self.same_origin():
             return self.send_json({"error": "cross-origin request refused"}, 403)
         if p.startswith("/api/"):
@@ -920,6 +954,21 @@ class Handler(BaseHTTPRequestHandler):
             s.last = time.time()
 
 
+def open_window(host, port):
+    """Open a browser on a Zest that is already running, with a one-time way in. Returns the address that was opened."""
+    url = "http://%s:%d/" % (host, port)
+    try:
+        c = http.client.HTTPConnection(host, port, timeout=3)
+        c.request("POST", "/ui/code", body="{}", headers={"Authorization": "Bearer " + uiauth.token(), "Content-Type": "application/json"})
+        code = json.loads(c.getresponse().read()).get("code")
+        if code:
+            url += "?c=" + code
+    except (OSError, ValueError, AttributeError):
+        pass                                                      # it will show the "start Zest again" page, which says what to do
+    webbrowser.open(url)
+    return url
+
+
 def zest_running(host, port):
     """The version of the Zest answering on this port, or None when it isn't Zest (or nothing is there)."""
     try:
@@ -966,7 +1015,7 @@ def main():
     if there == VERSION:  # second launch: just show the existing one
         print(f"Zest is already running at {url}")
         if not a.no_browser:
-            webbrowser.open(url)
+            open_window(shown, a.port)
         return
     if there:
         # An older Zest is still running (its window may be hidden). Showing it would open the old interface, so start
@@ -1001,6 +1050,7 @@ def main():
         apply_mode(s)
     print(f"Zest {VERSION} on {url}  ->  Lemonade {effective_mode(s)} ({'%s:%s' % lem.target()})", flush=True)
 
+    uiauth.token()                       # make the secret now, so a second launch can read it
     gateway.ensure_key(s)
     gateway.GATEWAY.start(s["gateway"])
     if gateway.GATEWAY.error:
@@ -1010,7 +1060,7 @@ def main():
     if a.app:
         threading.Thread(target=watchdog, args=(srv, int(os.environ.get("ZEST_APP_GRACE", "180"))), daemon=True).start()
     if not a.no_browser:
-        threading.Timer(0.6, webbrowser.open, args=(url,)).start()
+        threading.Timer(0.6, webbrowser.open, args=(url + "/?c=" + uiauth.new_code() if uiauth.enabled() else url,)).start()
     try:
         srv.serve_forever()
     except (KeyboardInterrupt, SystemExit):

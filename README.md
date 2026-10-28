@@ -258,6 +258,7 @@ Zest looks the same everywhere you use it, but you can change its finish. Open *
 | What | Where |
 | --- | --- |
 | Zest's settings, including the built-in Lemonade's API key and the key for other apps (file mode `600`) | `~/.config/zest/settings.json` |
+| The secret that lets a browser into Zest's own page (file mode `600`) | `~/.config/zest/ui-token` |
 | Lemonade updates you've downloaded | `~/.local/share/zest/lemonade/<version>/` |
 | The built-in Lemonade's own config and the backends it installs | `~/.local/share/zest/lemonade-data/` |
 | Its log (shown on the Logs page) | `~/.local/share/zest/lemond.log` |
@@ -310,7 +311,7 @@ Then open <http://127.0.0.1:13306> (it opens automatically unless you pass `--no
 | `--app` | | | Quit automatically once the tab is closed (the AppImage does this) |
 | (none) | `ZEST_LEMONADE_DIR` | none | A folder containing a `lemond` to use as the built-in Lemonade |
 
-> **Security.** Zest's own page has no login and can change Lemonade's configuration, so it listens on `127.0.0.1` only by default and refuses requests whose `Host` header isn't this computer (a defence against DNS-rebinding). Its built-in Lemonade is private: its own port, protected by a random API key that only Zest knows. Other apps use the separate key-protected door described above, never the page itself. Only use `--host 0.0.0.0` on a network you trust.
+> **Security.** Zest's own page can change settings, start engines and run commands in a folder, so it is not open to everything that can reach the port. Zest keeps a secret in `~/.config/zest/ui-token` (mode 600). The window Zest opens carries a one-time code (good for two minutes, once) that the server swaps for an HttpOnly, SameSite=Strict cookie; every other request is refused with 401, and a browser that hasn't been let in sees a page saying to start Zest again. A script can send the secret as `Authorization: Bearer <secret>`; `ZEST_AUTH=off` switches this off for a machine only you use. Running Zest a second time asks the running one for a fresh code. It also listens on `127.0.0.1` only by default and refuses requests whose `Host` header isn't this computer (a defence against DNS-rebinding). Its built-in Lemonade is private: its own port, protected by a random API key that only Zest knows. Other apps use the separate key-protected door described above, never the page itself. Only use `--host 0.0.0.0` on a network you trust.
 
 ### How it works
 

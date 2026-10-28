@@ -461,3 +461,12 @@ Found by reading the code, a small undefined-name and duplicate-definition check
 - **Cleanups.** Unused imports; `GenericProvider` duplicate (earlier).
 - **Measured, no change needed:** a 400-model library scans in 3 s the first time and 0.15 s after.
 
+## Phase F, second round: the three weak points (2026-10-28)
+
+- **Settings saves merge.** `store.load()` now remembers what the file held, and `store.save()` writes only what the caller changed on top of the file as it is now (leaves, not whole sections), so two threads changing different settings no longer undo each other. `store.update(fn)` does it in one step. Eight threads changing their own setting lose nothing (tested).
+- **Ownership survives a restart.** A YAML engine Zest starts is recorded (process number, port and the process's start time from `/proc`). After a restart of Zest or a reload of the engines it is still Zest's: it shows as started by Zest, the idle clock can stop it, and Zest can stop it. A process that only has the same number is not adopted. Checked live: restarted Zest, the engine stayed Zest's, and was stopped by the idle clock a minute later.
+- **The cost of the conversation is in "fits".** GGUF headers now also give the model's attention shape; `gguf.kv_cache_gb` works out the 16-bit key/value cache for the chat window (128k by default, never more than the model was trained for), allowing for hybrid models (every Nth layer), sliding windows and latent attention. `need_gb` adds it and the reason says how much of the need is the conversation. A Llama 3 8B file of 5 GB now needs about 22 GB at 128k. Models Lemonade lists without files have no shape yet and are still judged by size. Strata keeps its own figures.
+- **A secret for Zest's own page.** See `zest/uiauth.py` and README Security: one-time code to cookie, bearer token for scripts, `ZEST_AUTH=off`. Pi reaches Zest's proxy and search with the secret, and its config file is now mode 600.
+- **Found by running it:** Lemonade named a file after another quant of the same repo (the wrong model would have loaded); fixed. The welcome screen's Large card showed a stray dot and "Get it" for a model already installed; fixed.
+- **Live, without a Strata install:** fresh Lemonade install with a CUDA backend from nothing (576 MB download, 1.3 GB on disk, about four minutes); a folder chosen, a model downloaded by Lemonade into `<folder>/lemonade`, listed in the library, loaded and answered; a YAML engine started, adopted after a restart and idle-stopped.
+

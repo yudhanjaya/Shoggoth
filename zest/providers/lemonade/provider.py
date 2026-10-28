@@ -3,6 +3,7 @@ import engine
 import lem
 import provbase
 import store
+import uiauth
 
 
 class Provider(provbase.GenericProvider):
@@ -108,7 +109,7 @@ class Provider(provbase.GenericProvider):
 
     def pi_endpoint(self, zest_port):
         # through Zest, so the request shows on the Server page
-        return {"base_url": "http://127.0.0.1:%d/api/v1" % zest_port, "key": "zest"}
+        return {"base_url": "http://127.0.0.1:%d/api/v1" % zest_port, "key": uiauth.token()}      # Zest's own door asks for its secret
 
     def update_check(self):
         if lem.healthy() and not engine.running():
@@ -147,7 +148,7 @@ class Provider(provbase.GenericProvider):
             quant = (entry.get("quant") or "").lower()
             same = [m for m in models if str(m.get("checkpoint", "")).lower().startswith(repo.lower())]
             exact = [m for m in same if quant and quant in str(m.get("checkpoint", "")).lower()]
-            pick = (exact or same or [None])[0]
+            pick = (exact or ([] if quant else same) or [None])[0]       # another quant of the same repo is a different model, never a stand-in
             if pick:
                 return pick["id"]
         stem = re.sub(r"\.gguf$", "", os.path.basename(path), flags=re.I)
