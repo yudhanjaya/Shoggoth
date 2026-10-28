@@ -467,6 +467,17 @@ details.aegrp>summary small{margin-left:auto;font:11.5px var(--mono);color:var(-
 .libplaces label:has(input:checked){border-color:var(--lemon-text);background:color-mix(in srgb,var(--lemon) 16%,transparent)}
 .libplaces small{color:var(--muted);margin-left:auto;white-space:nowrap}
 .libdl{display:grid;gap:8px;margin-bottom:14px}
+.wlist{list-style:none;margin:16px 0;padding:0;display:grid;gap:10px;text-align:left}
+.wrow2{display:flex;gap:12px;align-items:flex-start}
+.wrow2>i{flex:none;width:26px;height:26px;border-radius:50%;display:grid;place-items:center;font-style:normal;font-size:14px;background:var(--surface-2);color:var(--muted);border:1px solid var(--line)}
+.wrow2.done>i{background:var(--leaf);color:#fff;border-color:var(--leaf)}
+.wrow2.working>i{background:var(--lemon);color:var(--text);border-color:var(--lemon)}
+.wrow2.problem>i{background:var(--bad);color:#fff;border-color:var(--bad)}
+.wr{display:grid;gap:3px;flex:1;min-width:0}
+.wr b{font-size:15px}.wr span{color:var(--muted);font-size:13.5px;overflow-wrap:anywhere}
+.wrow2.waiting b{color:var(--faint)}
+.wh3{margin:22px 0 4px;font:400 22px var(--serif);text-align:left}
+.wfoot{display:flex;flex-wrap:wrap;gap:6px 20px;justify-content:center}
 .libdl .line{display:flex;align-items:center;gap:12px}
 .libdl .prog{flex:1;min-width:80px}
 .undereng{color:var(--faint);font-size:12px;margin-top:6px}
@@ -1515,6 +1526,7 @@ function show(v){
   if(v === "backends"){ loadBackends(); strRefresh(); }
   if(v === "settings") loadSettings();
   if(v === "setup" || v === "welcome") refreshSetup(true);
+  if(v === "welcome"){ libLoad(); pkLoad(true); strRefreshWelcome(); }
   if(v === "tuning") tnShow();
   $(".app").classList.toggle("focus", v === "welcome");
   if(v === "server") srvShow();
@@ -2099,8 +2111,10 @@ const isChatModel = m => m.recipe === "llamacpp" && !(m.labels || []).some(l => 
 async function libLoad(fresh){
   if(LIB.busy) return; LIB.busy = true;
   try{ LIB.d = await api("/ui/library"); LIB.t = Date.now(); }catch{}
-  LIB.busy = false; if(S.view === "models") renderModels();
+  LIB.busy = false; if(S.view === "models") renderModels(); if(S.view === "welcome") renderWelcome(true);
 }
+/* while the first-run screen is up, keep the Large-model download state fresh */
+async function strRefreshWelcome(){ if(S.view !== "welcome") return; try{ STR.d = await api("/ui/strata"); }catch{} renderWelcome(); setTimeout(strRefreshWelcome, 3000); }
 function libShow(){ renderModels(); libLoad(); strRefresh(); pkLoad(true); }
 function libFilters(){
   $("#filters").innerHTML = LIB_TABS.map(([k, l]) => `<button type="button" data-tab="${k}" aria-pressed="${LIB.tab === k}">${l}</button>`).join("") +
@@ -2266,14 +2280,7 @@ $("#v-models").addEventListener("click", async e => {
   const t = e.target.closest("button"); if(!t) return;
   if(t.dataset.f2){ LIB.tab = "everything"; store.set("zest.libtab", LIB.tab); window.scrollTo(0, 0); return renderModels(); }
   if(t.hasAttribute("data-hf")) return openHF();
-  if(t.dataset.lib){
-    const a = t.dataset.lib;
-    if(a === "use"){ const v = document.querySelector('input[name="libplace"]:checked'); if(v) return libSetRoot(v.value); }
-    if(a === "pick") return openFs("", p => libSetRoot(p.replace(/\/$/, "") + "/Models"));
-    if(a === "where") return openFs((LIB.d || {}).root || "", p => libSetRoot(p));
-    if(a === "later"){ LIB.notNow = true; return renderModels(); }
-    if(a === "again"){ LIB.notNow = false; return renderModels(); }
-  }
+  if(t.dataset.lib) return wLibAct(t.dataset.lib);
   if(t.dataset.go2) return show(t.dataset.go2);
   if(t.dataset.sget){
     const [family, model] = t.dataset.sget.split("|");
@@ -2814,66 +2821,104 @@ function tierModels(){
   const blurb = {Quick: "Answers fast and keeps it short and to the point. Runs on almost any computer.", Balanced: "My general pick: fast, and good at everyday tasks, research and simple code.", Thorough: "Clear, careful writing, but slower than the others."};
   return tiers.flatMap(([tier, ids]) => ids.map(id => S.models.find(m => m.id === id && m.recipe === "llamacpp" && m.size)).filter(Boolean).map(m => ({m, tier, blurb: blurb[tier]})));
 }
-function welcomeStep(){
-  const st = SU.st; if(!st) return 0;
-  if(!st.lemonade.reachable) return 0;
-  if(!backendsInstalled().length) return 1;
-  if(!downloadedChat().length) return 2;
-  return 3;
+/* ---- the first-run screen: Zest gets itself ready, and asks one question */
+const W = {auto: {}, go: false};
+function wLibAct(a){                     // the folder question's buttons (the Library uses the same ones)
+  if(a === "use"){ const v = document.querySelector('input[name="libplace"]:checked'); if(v) return libSetRoot(v.value); }
+  if(a === "pick") return openFs("", p => libSetRoot(p.replace(/\/$/, "") + "/Models"));
+  if(a === "where") return openFs((LIB.d || {}).root || "", p => libSetRoot(p));
+  if(a === "later"){ LIB.notNow = true; return S.view === "welcome" ? renderWelcome(true) : renderModels(); }
+  if(a === "again"){ LIB.notNow = false; return S.view === "welcome" ? renderWelcome(true) : renderModels(); }
 }
-function wHelper(){
-  const st = SU.st, eng = st.engine, u = eng.update, b = SU.busy;
-  if(st.mode === "builtin" && !eng.available){
+/* may Zest start fetching things? Once the folder question is answered, or when there is nothing to ask because things are already here. */
+const wGo = () => W.go || !!(LIB.d && (LIB.d.chosen || LIB.notNow)) || downloadedChat().length > 0 || (SU.st && SU.st.mode === "existing" && SU.st.lemonade.reachable);
+function wRows(){
+  const st = SU.st, eng = st.engine, u = eng.update, r = llamaRecipe(), go = wGo(), rows = [];
+  // 1. the computer
+  const m = (LIB.d || {}).machine || {}, found = st.gpus_found || [], gpus = (m.gpus && m.gpus.length ? m.gpus.map(shortName) : (found.length ? found : (S.gpus || [])).map(g => shortName(g.name)));
+  rows.push({s: "done", t: "Looked at your computer", x: gpus.length ? `${groupNames(gpus).join(" and ")}${m.ram_gb ? ", " + Math.round(m.ram_gb) + " GB of RAM" : ""}` : "No graphics card found, so Zest will use settings that work on any computer."});
+  // 2. the part that runs AI
+  let h;
+  if(st.mode === "existing") h = st.lemonade.reachable ? {s: "done", t: "Found what runs AI on this computer", x: "Zest will use it."} : {s: "problem", t: "The part that runs AI isn't answering", x: `Zest is set to use one at ${st.existing.host}:${st.existing.port}.`, a: [["Use Zest's own instead", "mode-builtin", true], ["Change the address", "go:setup"]]};
+  else if(!eng.available){
     const dl = ["downloading", "verifying", "installing"].includes(u.state), pct = u.total ? Math.round(100 * u.bytes / u.total) : 0;
-    return `<h2>First, a small <span class="hl">helper</span></h2><p class="wl">Zest runs AI models with a helper program. It's about 7 MB and Zest will keep it up to date for you.</p>
-      ${dl ? `<div class="prog"><i style="width:${pct}%"></i></div><p class="wsmall">Downloading… ${pct}%</p>` : `<button class="btn primary xl" data-act="engine-update">Download the helper</button>`}
-      ${u.state === "error" ? `<p class="errline">${esc(u.error)}</p>` : ""}`;
-  }
-  if(st.mode === "existing") return `<h2>Looking for your <span class="hl">Lemonade</span></h2><p class="wl">Zest is set to use a Lemonade server you run yourself, but nothing is answering at ${esc(st.existing.host)}:${st.existing.port}.</p>
-      <div class="wrow"><button class="btn primary xl" data-act="mode-builtin">Use Zest's own helper instead</button><button class="btn" data-go="setup">Change the address</button></div>`;
-  if(eng.state === "error") return `<h2>The helper <span class="hl">didn't start</span></h2><p class="wl">Something stopped it from starting. Trying again fixes it most of the time.</p>
-      <p class="errline">${esc(eng.error)}</p><div class="wrow"><button class="btn primary xl" data-act="engine-restart" ${b.restart ? "disabled" : ""}>Try again</button><button class="btn" data-go="setup">Show me more</button></div>`;
-  return `<h2>Getting <span class="hl">ready</span>…</h2><p class="wl">Zest is waking up the part that runs AI. This takes a few seconds.</p><div class="prog ind"><i></i></div>`;
+    h = u.state === "error" ? {s: "problem", t: "Couldn't get the part that runs AI", x: u.error, a: [["Try again", "engine-update", true]]}
+      : dl ? {s: "working", t: "Getting the part that runs AI", x: `Downloading… ${pct}%`, pct}
+      : {s: go ? "working" : "waiting", t: "Getting the part that runs AI", x: "A small download, about 7 MB. Zest keeps it up to date."};
+  }else if(eng.state === "error") h = {s: "problem", t: "The part that runs AI didn't start", x: eng.error, a: [["Try again", "engine-restart", true]]};
+  else h = st.lemonade.reachable ? {s: "done", t: "The part that runs AI is ready", x: ""} : {s: "working", t: "Starting the part that runs AI", x: "A few seconds."};
+  rows.push(h);
+  // 3. fitted to the graphics card
+  const todo = r ? r.backends.filter(x => ["installable", "update_required"].includes(x.state)) : [], rec = todo.find(x => x.name === r.default) || todo.find(x => x.name === "vulkan") || todo[0];
+  let f;
+  if(r && backendsInstalled().length) f = {s: "done", t: "Fitted to your graphics card", x: ""};
+  else if(!st.lemonade.reachable) f = {s: "waiting", t: "Fitting it to your graphics card", x: ""};
+  else if(!r) f = {s: "working", t: "Fitting it to your graphics card", x: "Looking at what your computer needs."};
+  else if(!rec) f = {s: "problem", t: "Your computer needs a setting Zest can't choose by itself", x: "Lemonade didn't offer anything Zest can install automatically.", a: [["Look at the options", "go:backends", true]]};
+  else if(SU.msg.backend) f = {s: "problem", t: "Couldn't fit it to your graphics card", x: SU.msg.backend, a: [["Try again", "w-fit", true]]};
+  else f = {s: go ? "working" : "waiting", t: "Fitting it to your graphics card", x: "One download that makes models run well. It takes a minute or two."};
+  rows.push(f);
+  return {rows, rec, go};
 }
-function wComputer(){
-  const r = llamaRecipe(), b = SU.busy; if(!r) return `<h2>Looking at your <span class="hl">computer</span>…</h2><div class="prog ind"><i></i></div>`;
-  const todo = r.backends.filter(x => ["installable", "update_required"].includes(x.state));
-  const rec = todo.find(x => x.name === r.default) || todo.find(x => x.name === "vulkan") || todo[0];
-  // Cards found before any backend exists: nvidia-smi for NVIDIA, otherwise what the system itself reports (AMD, Intel).
-  const found = SU.st?.gpus_found || [], gpus = (found.length ? found : (S.gpus || [])).map(g => shortName(g.name));
-  const busy = rec && b["inst-" + rec.name];
-  const hw = gpus.length ? `Zest found <b>${esc(groupNames(gpus).join(" and "))}</b>. It will use ${gpus.length > 1 ? "them" : "it"} to answer quickly.` : `Zest couldn't identify a graphics card, so it will choose a setting that works on any computer. You can change it later under Advanced > Engines. If you do have a card, answers may come a little slower until then.`;
-  if(!rec) return `<h2>Your computer needs a <span class="hl">setting</span></h2><p class="wl">Lemonade didn't offer anything Zest can install automatically.</p><button class="btn primary xl" data-go="backends">Look at the options</button>`;
-  return `<h2>Let's set up <span class="hl">your computer</span></h2><p class="wl">${hw}</p>
-    <p class="wsmall">One download makes this work well. It takes a minute or two.</p>
-    ${busy ? `<div class="prog ind"><i></i></div><p class="wsmall">Downloading and installing…</p>` : `<button class="btn primary xl" data-act="install" data-backend="${esc(rec.name)}">Set it up</button>`}
-    ${SU.msg.backend ? `<p class="errline">${esc(SU.msg.backend)}</p>` : ""}`;
+function wAuto(rec, go){
+  const st = SU.st, eng = st.engine;
+  if(!go) return;
+  if(st.mode === "builtin" && !eng.available && eng.update.state === "idle" && !W.auto.helper){ W.auto.helper = true; suBusy("update", async () => { await suPost("/ui/engine/update"); }); }
+  if(st.lemonade.reachable && llamaRecipe() && !backendsInstalled().length && rec && !SU.busy["inst-" + rec.name] && !W.auto["fit-" + rec.name] && !SU.msg.backend){ W.auto["fit-" + rec.name] = true; wFit(rec.name); }
+  if(!STR.rec && !W.auto.rec){ W.auto.rec = true; api("/ui/strata/recommend").then(r => { STR.rec = r; if(S.view === "welcome") renderWelcome(true); }).catch(() => {}); }
 }
-function wModel(){
-  const tiers = tierModels(), active = (S.downloads || []).filter(isActiveJob);
-  const cards = tiers.map(({m, tier, blurb}) => { const j = dlJob(m.id);
-    return `<div class="tier"><div><b>${tier}</b><span class="tn">${esc(friendly(m))} · ${m.size.toFixed(1)} GB</span><p>${blurb}</p>${j ? `<div class="prog"><i style="width:${j.percent}%"></i></div><small class="wsmall">${j.percent}%</small>` : ""}</div>
-      ${j ? `<button class="btn" data-act="cancel-dl" data-model="${esc(m.id)}">Cancel</button>` : m.downloaded ? `<button class="btn" disabled>Downloaded</button>` : `<button class="btn primary" data-act="dl" data-model="${esc(m.id)}" ${active.length ? "disabled" : ""}>Download</button>`}</div>`; }).join("");
-  return `<h2>Choose a <span class="hl">model</span></h2><p class="wl">A model is the AI that answers you. It downloads once, then lives on this computer. Pick one to start. You can add more any time.</p>
-    <div class="tiers">${cards || `<p class="wsmall">Zest couldn't find a suggestion yet.</p>`}</div>
-    ${SU.msg.dl ? `<p class="errline">${esc(SU.msg.dl)}</p>` : ""}
-    <div class="wrow"><button class="btn ghost" data-go="models">See every model</button><button class="btn ghost" data-go="setup">I already have models</button></div>`;
+function wFit(name){
+  return suBusy("inst-" + name, async () => {
+    SU.msg.backend = "";
+    try{ const r = await suPost("/ui/backend/install", {recipe: "llamacpp", backend: name}); if(r.switched) toast(`Zest will use the ${r.switched.toUpperCase()} setting for your graphics card.`); }catch(err){ SU.msg.backend = err.message; }
+    S.bk = (await api("/ui/backends")).recipes; S.info = await api("/ui/info").catch(() => S.info);
+  });
 }
-function wChat(){
-  const have = downloadedChat(), pick = have.find(m => m.id === S.model) || have[0];
-  return `<h2>You're <span class="hl">all set</span></h2><p class="wl">${pick ? `Zest will use <b>${esc(friendly(pick))}</b>. ` : ""}Everything runs on this computer, so your chats stay private.</p>
-    <button class="btn primary xl" data-act="w-start">Start chatting</button>`;
+const wIcon = s => ({done: "✓", working: "…", waiting: "·", problem: "!"})[s];
+function wRowHTML(r){
+  const acts = (r.a || []).map(([label, act, primary]) => act.startsWith("go:") ? `<button class="btn ${primary ? "primary" : ""}" data-go="${act.slice(3)}">${esc(label)}</button>` : `<button class="btn ${primary ? "primary" : ""}" data-act="${act}">${esc(label)}</button>`).join("");
+  return `<li class="wrow2 ${r.s}"><i aria-hidden="true">${wIcon(r.s)}</i><div class="wr"><b>${esc(r.t)}</b>${r.x ? `<span>${esc(r.x)}</span>` : ""}${r.s === "working" ? `<div class="prog ${r.pct != null ? "" : "ind"}"><i style="width:${r.pct || 0}%"></i></div>` : ""}${acts ? `<div class="wrow">${acts}</div>` : ""}</div></li>`;
+}
+/* the first model: one suggestion per size, whichever the computer can take */
+function wFirstModels(){
+  const out = [], fits = m => (fitInfo(m) || {}).cls !== "over", pick = ids => ids.map(id => S.models.find(m => m.id === id && m.recipe === "llamacpp" && m.size)).find(m => m && fits(m));
+  const small = pick(["LFM2.5-8B-A1B"]), medium = pick(["Qwen3.6-35B-A3B-MTP-GGUF", "Gemma-4-26B-A4B-it-GGUF", "Gemma-4-31B-it-MTP-GGUF"]);
+  if(small) out.push({tier: "Small", m: small, blurb: "Answers fast and keeps it short. Runs on almost any computer.", start: "Ready in seconds"});
+  if(medium) out.push({tier: "Medium", m: medium, blurb: "My general pick: fast, and good at everyday tasks, research and simple code.", start: "Ready in seconds", rec: true});
+  const big = (((STR.rec || {}).options) || []).find(o => o.model === (STR.rec || {}).pick);
+  if(big) out.push({tier: "Large", big, blurb: "The most capable, for a big computer. It takes a couple of minutes to start.", start: "About 2 minutes to start"});
+  if(!out.some(o => o.rec) && out[0]) out[0].rec = true;
+  return out;
+}
+function wModelCards(){
+  const active = libDlItems().length, cards = wFirstModels().map(o => {
+    const m = o.m, j = m && dlJob(m.id), have = m && m.downloaded, name = m ? friendly(m) : o.big.title, size = m ? m.size.toFixed(m.size < 10 ? 1 : 0) + " GB" : (o.big.download_gb ? Math.round(o.big.download_gb) + " GB to download" : "");
+    const btn = m ? (j ? `<button class="btn" data-act="cancel-dl" data-model="${esc(m.id)}">Cancel</button>` : have ? `<button class="btn" disabled>Got it</button>` : `<button class="btn ${o.rec ? "primary" : ""}" data-act="dl" data-model="${esc(m.id)}" ${active ? "disabled" : ""}>Get it</button>`)
+      : `<button class="btn ${o.rec ? "primary" : ""}" data-act="sget" data-family="${esc(o.big.family)}" data-model="${esc(o.big.model)}" ${active ? "disabled" : ""}>Get it</button>`;
+    return `<div class="tier"><div><b>${o.tier}${o.rec ? ' <span class="chip lem">Recommended</span>' : ""}</b><span class="tn">${esc(name)} · ${size}</span><p>${esc(o.blurb)} <span class="faint">${esc(o.start)}.</span></p>${j ? `<div class="prog"><i style="width:${j.percent}%"></i></div><small class="wsmall">${j.percent}%</small>` : ""}</div>${btn}</div>`;
+  }).join("");
+  return `<h3 class="wh3">Choose your first model</h3><p class="wl">A model is the AI that answers you. It downloads once, then lives on this computer. You can add more any time.</p>
+    <div class="tiers">${cards || '<p class="wsmall">Zest is still looking at your computer…</p>'}</div>${libDlHTML()}
+    <div class="wrow"><button class="linkbtn" data-act="w-add">I already have models</button></div>`;
 }
 function renderWelcome(force){
   const host = $("#welcome"); if(!SU.st){ host.innerHTML = `<div class="wcard"><div class="prog ind"><i></i></div></div>`; return; }
-  const sig = JSON.stringify([SU.st, S.bk && S.bk.length, S.models.filter(m => m.downloaded).length, S.downloads, SU.busy, SU.msg, S.gpus.length]);
+  const sig = JSON.stringify([SU.st, S.bk && S.bk.length, S.models.filter(m => m.downloaded).length, S.downloads, SU.busy, SU.msg, S.gpus.length, LIB.d && [LIB.d.chosen, LIB.d.models.length], LIB.notNow, LIB.picked, LIB.err, STR.rec && STR.rec.pick, STR.d && STR.d.run, S.pk.models.length]);
   if(!force && sig === SU.wsig) return; SU.wsig = sig;
-  const step = welcomeStep(), labels = ["Helper", "Your computer", "A model", "Chat"];
+  const {rows, rec, go} = wRows(), ready = rows.every(r => r.s === "done"), have = downloadedChat().length > 0 || S.pk.models.length > 0;
+  const q = libWhereHTML();
+  const asking = !!q && !go;
+  const mine = downloadedChat(), pick = have ? ((wFirstModels().find(o => o.rec && o.m && o.m.downloaded) || {}).m || mine.find(m => m.id === S.model) || mine[0]) : null;
   host.innerHTML = `<div class="wcard">
-    <div class="brandbig"><svg viewBox="0 0 64 64" aria-hidden="true"><path d="M 12.49 46.19 Q 12.55 44.39 14.99 41.68 C 12.39 30.92 18.75 22.23 22.99 19.58 C 27.23 16.93 37.83 15.03 46.36 22.08 Q 49.86 21.07 51.51 21.81 Q 51.45 23.61 49.01 26.32 C 51.61 37.08 45.25 45.77 41.01 48.42 C 36.77 51.07 26.17 52.97 17.64 45.92 Q 14.14 46.93 12.49 46.19 Z" fill="#f7d916" stroke="#1a1a17" stroke-width="2.4" stroke-linejoin="round"/><path d="M 16.74 34.10 C 17.16 29.12 20.87 25.62 24.26 23.51" fill="none" stroke="#fffdf7" stroke-width="2.6" stroke-linecap="round" opacity=".85"/><path d="M50.5 22C48.5 14 53.5 8 61.5 7C62.5 14.5 58.5 21 50.5 22Z" fill="#2f9e55" stroke="#1a1a17" stroke-width="2" stroke-linejoin="round"/><path d="M52 20.5C55 16.5 58 12 60 8.5" stroke="#1a1a17" stroke-width="1.3" stroke-linecap="round" fill="none" opacity=".6"/></svg><b>Welcome to Zest</b></div>
-    <ol class="dots" aria-label="Progress">${labels.map((l, i) => `<li class="${i < step ? "done" : i === step ? "now" : ""}" ${i === step ? 'aria-current="step"' : ""}><i>${i < step ? "✓" : i + 1}</i><span>${l}</span></li>`).join("")}</ol>
-    <div class="wbody">${[wHelper, wComputer, wModel, wChat][step]()}</div>
-    <div class="wfoot"><button class="linkbtn" data-act="finish">Skip this, I'll set things up myself</button></div></div>`;
+    <div class="brandbig"><svg viewBox="0 0 64 64" aria-hidden="true"><path d="M 12.49 46.19 Q 12.55 44.39 14.99 41.68 C 12.39 30.92 18.75 22.23 22.99 19.58 C 27.23 16.93 37.83 15.03 46.36 22.08 Q 49.86 21.07 51.51 21.81 Q 51.45 23.61 49.01 26.32 C 51.61 37.08 45.25 45.77 41.01 48.42 C 36.77 51.07 26.17 52.97 17.64 45.92 Q 14.14 46.93 12.49 46.19 Z" fill="#f7d916" stroke="#1a1a17" stroke-width="2.4" stroke-linejoin="round"/></svg></div>
+    <div class="wbody"><h2>Getting <span class="hl">ready</span></h2>
+    <p class="wl">Zest sets itself up. It asks one thing, and the rest happens by itself. Everything runs on this computer, so your chats stay private.</p>
+    ${asking ? q : ""}
+    <ol class="wlist" aria-label="Getting ready">${rows.map(wRowHTML).join("")}</ol>
+    ${ready && go ? wModelCards() : ""}
+    ${have && ready ? `<div class="wrow"><button class="btn primary xl" data-act="w-start">Start chatting${pick ? " with " + esc(friendly(pick)) : ""}</button></div>` : ""}</div>
+    <div class="wfoot"><button class="linkbtn" data-go="setup">I run my own server</button><button class="linkbtn" data-act="finish">Skip this, I'll set things up myself</button></div></div>`;
+  wAuto(rec, go);
 }
 
 /* ---- step 1: the engine */
@@ -3027,7 +3072,11 @@ async function suBusy(key, fn){
   finally{ SU.busy[key] = false; await refreshSetup(true); }
 }
 const setupClick = async e => {
-  const el = e.target.closest("[data-act],[data-go]"); if(!el) return;
+  const el = e.target.closest("[data-act],[data-go],[data-lib],[data-canceldl],[data-sanyway]"); if(!el) return;
+  if(el.dataset.lib) return wLibAct(el.dataset.lib);
+  if(el.dataset.canceldl) return cancelDownload(el.dataset.canceldl);
+  if(el.dataset.sanyway){ const rt = ((STR.d || {}).run || {}).retry || {}; if(!confirm("Start anyway? The computer may slow right down or run out of memory.")) return;
+    try{ STR.d = await api(rt.kind === "setup" ? "/ui/strata/setup" : "/ui/strata/start", {method: "POST", body: JSON.stringify(Object.assign({}, rt, {force: true}))}); }catch(err){ toast(err.message); } return renderWelcome(true); }
   if(el.dataset.go) return show(el.dataset.go);
   const a = el.dataset.act;
   if(a === "autocheck") { store.set("zest.autocheck", el.checked); return; }
@@ -3071,12 +3120,19 @@ const setupClick = async e => {
   });
   if(a === "dl") return startDownload(el.dataset.model);
   if(a === "cancel-dl") return cancelDownload(el.dataset.model);
+  if(a === "w-fit") { SU.msg.backend = ""; const r = llamaRecipe(); const rec = r && r.backends.find(x => ["installable", "update_required"].includes(x.state)); if(rec) W.auto["fit-" + rec.name] = false; return renderWelcome(true); }
+  if(a === "w-add"){ show("models"); return libAddOpen(); }
+  if(a === "sget"){
+    if(!confirm("Get this model? It can be tens of gigabytes, and the first start takes a few minutes.")) return;
+    try{ STR.d = await api("/ui/strata/setup", {method: "POST", body: JSON.stringify({family: el.dataset.family, model: el.dataset.model})}); }catch(err){ toast(err.message); }
+    return renderWelcome(true);
+  }
   if(a === "load-chat"){ const id = $("#startmodel").value; S.model = id; store.set("zest.model", id); syncModelSelect();
     if(S.loaded === id){ show("cowork"); return $("#cwinput").focus(); }
     return suBusy("load", async () => { await loadModelNow(id); show("cowork"); }); }
   if(a === "finish"){ await suPost("/ui/setup/done", {done: true}); SU.st.setup_done = true; show("cowork"); }
   if(a === "w-start"){
-    const have = downloadedChat(), pick = have.find(m => m.id === S.model) || have[0];
+    const have = downloadedChat(), pick = ((wFirstModels().find(o => o.rec && o.m && o.m.downloaded) || {}).m) || have.find(m => m.id === S.model) || have[0];
     if(pick){ S.model = pick.id; store.set("zest.model", pick.id); syncModelSelect(); }
     await suPost("/ui/setup/done", {done: true}); SU.st.setup_done = true; renderThread(); show("cowork"); $("#cwinput").focus();
   }

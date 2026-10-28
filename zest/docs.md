@@ -32,11 +32,11 @@ flowchart LR
 
 ## Your first minutes
 
-The first time you open Zest it walks you through four short steps: start the helper, check your graphics card, download a model, start chatting.
+The first time you open Zest it gets itself ready on one screen. It asks where your models should live (one click accepts the disk with the most room), then works through a short checklist by itself: it looks at your computer, gets the part that runs AI, and fits it to your graphics card. If you already have models or a setup, Zest finds them and skips what it doesn't need. Then you choose a first model (one suggestion per size: Small, Medium or Large) and press **Start chatting**.
 
-If you pick the suggested model (Quick, Balanced or Thorough) you will be chatting within minutes, depending on your connection.
+If you pick the recommended model you will be chatting within minutes, depending on your connection.
 
-You can repeat the tour any time: Go to **Help**, then **Run the welcome steps again**.
+You can see the first-run screen again any time: go to **Help**, then **Run the welcome steps again**.
 
 ## Chatting
 

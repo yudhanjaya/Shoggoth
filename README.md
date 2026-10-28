@@ -43,18 +43,16 @@ Zest runs on Linux. It needs no technical setup: you download one file and follo
    ./Zest-*-x86_64.AppImage
    ```
 
-3. **Follow the welcome steps.** Zest opens in your browser and walks you through four short steps in plain language, one screen at a time:
+3. **Let Zest get ready.** Zest opens in your browser on one screen called **Getting ready**. It asks one question and does the rest itself:
 
-   | Step | What happens |
-   | --- | --- |
-   | **Helper** | Zest starts its own private copy of Lemonade. Nothing to choose. |
-   | **Your computer** | Zest looks at your graphics card and downloads the program that suits it (CUDA for NVIDIA, Vulkan for most cards, the processor as a fallback). One button. |
-   | **A model** | Suggestions in three tiers. Quick is LFM2.5 8B A1B (fast, to the point, good with tools, happy on almost any computer). Balanced is Qwen3.6 35B A3B MTP or Gemma 4 26B A4B. Thorough is Qwen3.6 27B MTP or Gemma 4 31B MTP. Press Download on one. If a model is too big for your computer, **See every model** has smaller ones. |
-   | **Chat** | Press Start chatting. Type a question or a task. The model works in your home folder unless you choose another folder. |
+   - **Where should your models live?** Models are big, so Zest lists your disks with their free space, preselects the one with the most room, and one click accepts it. Zest keeps everything in one folder called Models there. If you already have models or a Lemonade running, Zest finds them and skips the question.
+   - **Then it works down a short checklist by itself:** it looks at your computer, gets the part that runs AI (a small download, with progress), and fits it to your graphics card (CUDA for NVIDIA, Vulkan for most cards, the processor as a fallback).
+   - **Choose your first model.** One suggestion per size: **Small** (LFM2.5 8B A1B: fast, to the point, good with tools, happy on almost any computer), **Medium** (Qwen3.6 35B A3B MTP or Gemma 4 26B A4B, the general pick and the recommended one when it fits) and **Large** (for big computers; it takes a couple of minutes to start). Press **Get it** on one; the download shows its progress right there. **I already have models** brings in the ones you have.
+   - **Start chatting.** The button names the model it will use. The model works in your home folder unless you choose another folder.
 
-   ![The last welcome step: Zest is ready and shows which model it will use](docs/screenshots/welcome.png)
+   ![The Getting ready screen: the checklist is done and Zest suggests a first model per size](docs/screenshots/welcome.png)
 
-*The welcome steps finish with a button that opens the chat.*
+*The first-run screen ends with a button that opens the chat.*
 
 People who already have models, or run their own Lemonade, can skip to **Advanced > Setup guide**, which keeps the full set of choices: where models are stored, models you already have (LM Studio, Ollama, llama.cpp and others are found for you), and Lemonade updates.
 
@@ -77,7 +75,7 @@ The left-hand menu has six places. Everything a newcomer needs is in the first f
 | **Models** | See which models will run on your computer, download them, load and unload them. |
 | **Skills** | Switch skills on and off, and add more from a GitHub link. |
 | **Docs** | A plain-language guide to all of this, inside the app. |
-| **Help** | Short answers to common questions, and a button to repeat the welcome steps. |
+| **Help** | Short answers to common questions, and a button to see the first-run screen again. |
 | **Advanced** | Server, Hardware, Engines, All settings, the Setup guide and Themes. You never need these just to chat. |
 
 ![The Docs page, with the menu on the left](docs/screenshots/docs.png)
