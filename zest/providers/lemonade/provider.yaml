@@ -30,6 +30,7 @@ models:
   excluded_architectures: [qwen4exp, deepseek41]
   data_dir: "{library}/hub"
   download: {mode: api}          # plain GGUF downloads go through Lemonade
+  view: true                     # Lemonade lists any GGUF in a folder it is pointed at, so it is only pointed at a view of files it can run
 
 memory:
   group: gpu

@@ -58,3 +58,44 @@ class Provider(provbase.GenericProvider):
 
     def tune_run(self, model_id, opts, job):
         return strata.tune_run(model_id, opts, job)
+
+    def model_folders(self):
+        import os
+        roots = set()
+        for m in strata.installed_models():
+            for f in m["files"]:
+                roots.add(os.path.dirname(os.path.dirname(f)))        # .../models/<name>/file.gguf -> .../models
+            if m.get("data_root"):
+                roots.add(os.path.join(m["data_root"], "models"))
+        return [(r, "Strata") for r in sorted(roots) if os.path.isdir(r)]
+
+    def model_id(self, entry):
+        import os
+        names = {os.path.basename(f) for f in entry.get("files", [])}
+        deep = [m for m in strata.installed_models() if str(m.get("name", "")).startswith("deepseek-v4.1")]
+        if entry.get("architecture") == "deepseek41" and len(deep) == 1:
+            return deep[0]["name"]                       # Strata's DeepSeek run config doesn't list its files; there is one
+        for m in strata.installed_models():
+            if names & {os.path.basename(f) for f in m["files"]} or (entry.get("quant") and entry["quant"].lower() in str(m.get("id", "")).lower() and entry.get("architecture") in ("qwen4exp", "deepseek41")):
+                return m["name"]
+        return None
+
+    def need_gb(self, entry):
+        # Strata splits a model across graphics card, RAM and SSD: its need is the figure for that size, not the file size.
+        n = strata.need_gb(entry.get("quant") or "") if entry.get("architecture") == "qwen4exp" else None
+        if n is None and entry.get("architecture") == "deepseek41":
+            n = 46.0
+        return n if n is not None else round(entry.get("size_bytes", 0) / 1e9 * 0.7, 1)
+
+    def fit(self, entry, machine):
+        need = self.need_gb(entry)
+        if not machine.get("gpus"):
+            return "no", "Strata needs a graphics card."
+        budget = machine.get("ram_gb", 0) + machine.get("vram_gb", 0)
+        if entry.get("architecture") == "deepseek41" and machine.get("best_gpu_gb", 0) < 12:
+            return "no", "Needs a graphics card with 12 GB or more."
+        if need <= budget * 0.85 - 6:
+            return "fits", ""
+        if need <= budget * 0.95 - 2:
+            return "tight", "Close other big programs first."
+        return "no", "Needs about %d GB of RAM plus graphics memory; this computer has %d GB." % (need, budget)

@@ -32,6 +32,7 @@ import gateway     # noqa: E402
 import hardware    # noqa: E402
 import hf          # noqa: E402
 import lem         # noqa: E402
+import library     # noqa: E402
 import llamaargs   # noqa: E402
 import modelscan   # noqa: E402
 import piup        # noqa: E402
@@ -244,6 +245,10 @@ class Handler(BaseHTTPRequestHandler):
             self.send_json(agent.state())
         elif p == "/ui/pi":
             self.send_json(piup.summary())
+        elif p == "/ui/library":
+            self.send_json(self.library_summary())
+        elif p == "/ui/library/places":
+            self.send_json({"places": library.places(), "root": library.root()})
         elif p == "/ui/providers":
             self.send_json(registry.default().summary())
         elif p == "/ui/tuning":
@@ -313,7 +318,7 @@ class Handler(BaseHTTPRequestHandler):
             "/ui/cowork/job/apply": self.post_job_apply, "/ui/cowork/job/discard": self.post_job_discard,
             "/ui/cowork/folders": self.post_cowork_folders, "/ui/cowork/seen": self.post_cowork_seen,
             "/ui/cowork/allow/remove": self.post_allow_remove, "/ui/cowork/folder": self.post_cowork_folder, "/ui/skills/install": self.post_skills_install, "/ui/pi/check": self.post_pi_check,
-            "/ui/pi/update": self.post_pi_update, "/ui/strata/start": self.post_strata_start, "/ui/strata/stop": self.post_strata_stop, "/ui/providers/approve": self.post_provider_approve, "/ui/providers/reload": self.post_provider_reload, "/ui/tuning/plan": self.post_tuning_plan, "/ui/tuning/run": self.post_tuning_run, "/ui/tuning/cancel": self.post_tuning_cancel, "/ui/tuning/action": self.post_tuning_action, "/ui/strata/setup": self.post_strata_setup, "/ui/strata/update": self.post_strata_update, "/ui/strata/idle": self.post_strata_idle, "/ui/strata/connect": self.post_strata_connect, "/ui/strata/forget": self.post_strata_forget, "/ui/strata/key": self.post_strata_key, "/ui/strata/install": self.post_strata_install, "/ui/update/all": self.post_update_all, "/ui/update/restart": self.post_update_restart, "/ui/pi/use": self.post_pi_use,
+            "/ui/pi/update": self.post_pi_update, "/ui/strata/start": self.post_strata_start, "/ui/strata/stop": self.post_strata_stop, "/ui/library/root": self.post_library_root, "/ui/providers/approve": self.post_provider_approve, "/ui/providers/reload": self.post_provider_reload, "/ui/tuning/plan": self.post_tuning_plan, "/ui/tuning/run": self.post_tuning_run, "/ui/tuning/cancel": self.post_tuning_cancel, "/ui/tuning/action": self.post_tuning_action, "/ui/strata/setup": self.post_strata_setup, "/ui/strata/update": self.post_strata_update, "/ui/strata/idle": self.post_strata_idle, "/ui/strata/connect": self.post_strata_connect, "/ui/strata/forget": self.post_strata_forget, "/ui/strata/key": self.post_strata_key, "/ui/strata/install": self.post_strata_install, "/ui/update/all": self.post_update_all, "/ui/update/restart": self.post_update_restart, "/ui/pi/use": self.post_pi_use,
             "/ui/skills/remove": self.post_skills_remove, "/ui/skills/toggle": self.post_skills_toggle,
             "/ui/models/storage": self.post_storage, "/ui/models/imports": self.post_imports,
         }.get(p)
@@ -616,6 +621,16 @@ class Handler(BaseHTTPRequestHandler):
         when the page says so (`free_lemonade`)."""
         preset = str(body.get("preset", "")).strip()
         self.send_json({"started": strata.start(preset, bool(body.get("force"))), **strata.summary()})
+
+    @staticmethod
+    def library_summary():
+        d = library.summary()
+        d["views"] = library.sync_views(d["models"]) if d["chosen"] else {}        # only links are ever written
+        return d
+
+    def post_library_root(self, body):
+        library.set_root(body.get("path", ""))
+        self.send_json(self.library_summary())
 
     def post_provider_approve(self, body):
         registry.default().approve(str(body.get("id", "")))

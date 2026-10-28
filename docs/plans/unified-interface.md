@@ -29,6 +29,21 @@ Strata directly; this plan generalises them).
   placeholders, a ready path, a stop grace, knobs. Zest's provider YAML is the same idea with more to say (models, memory,
   updates, tuning).
 
+### Spike results (Phase B)
+
+- **Lemonade `models_dir`** is accepted, but only models in Lemonade's own registry appear from it. Any other GGUF is picked up only
+  from `extra_models_dir`. **Lemonade does not check architecture:** it lists a `qwen4exp` file as a normal downloaded model, so it must
+  only ever be pointed at a view of files it can run.
+- **Strata refuses ordinary models** ("model type not supported by the Strata engine") and **uses its own files in place** with no
+  copy (`own_files: true`). So Strata needs no view; it reads its folder under the library root.
+- **When Lemonade runs as a system service** (as the `lemonade` user, models under `/var/lib/lemonade`, mode 0750), Zest cannot read
+  its files at all. The library then takes that provider's model list from its API (name, size, labels, quantization) instead of reading
+  headers. Sharing a folder only applies to a Lemonade Zest runs itself.
+- **GGUF headers read fast** once arrays are skipped in blocks (about 0.1 s for a model with a 250k-word tokenizer), and the results are
+  remembered by size and modified time.
+- **Some disks can't hold links** (NTFS, FAT, exFAT). Zest tests this when a root is chosen and keeps the views in its own data folder
+  if the disk can't.
+
 ## 2. Principles
 
 1. **Models, not engines.** The only nouns in the main interface are: model, chat, folder, memory, speed. Engine names
@@ -367,7 +382,9 @@ Each phase leaves Zest working. Estimates: S under a week, M one to two, L two t
 Strata code as the first two providers *without changing behaviour or UI*. Contract tests (the recorded-JSON and fake-engine
 harnesses already used for Strata) run against both. Exit: every existing flow works through `providers.*`.
 
-**B. The library (L).** GGUF header reader, the catalog, `.views`, the library root, adoption of existing folders, the
+**B. The library (L). Built on `strata-support`:** `gguf.py` (header reader, roles), `library.py` (sources, catalog, tiers, routing, fit, per-engine views, root and places, `lemonade_config()`), provider hooks (`model_folders`, `model_id`, `need_gb`, `fit`, `library_models`), `/ui/library`, `/ui/library/places`, `/ui/library/root`, and 17 tests. Verified on this machine: 11 models in three tiers, each routed and mapped to its engine's name for it. Not yet: nothing calls `lemonade_config()` (applying it is only ever for a Lemonade Zest runs), no UI uses the library, and "Move my models" is not built.
+
+**B, as planned.** GGUF header reader, the catalog, `.views`, the library root, adoption of existing folders, the
 early spikes in section 4 ("verify"). Exit: one catalog lists every model both engines can see, with correct "who can run it".
 
 **C. One router and one endpoint (L).** `route`/`activate` and the generalised arbiter; Pi's config and the gateway move

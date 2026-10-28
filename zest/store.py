@@ -15,7 +15,7 @@ DEFAULTS = {
     "pi": {"version": ""},   # which Pi (the agent) to run: "" = newest, "bundled" = the one that came with Zest, or a version number
     # Strata (bigger models): servers typed in by hand, keys, and the one Zest itself started (so a restart of Zest still knows).
     "strata": {"remote": [], "keys": {}, "owned": {"preset": "", "port": 0}, "known": {}, "idle_minutes": 20},
-    "library": {"root": ""},       # where every model lives (the person chooses it once)
+    "library": {"root": "", "links": True},       # where every model lives (the person chooses it once)
     "providers": {},               # per engine: its own settings, and the fingerprint of a user-added one that was approved
     "models": {"storage": "hf", "custom_dir": "", "imports": []},
     # The door for other apps: its own port, always needs the key, this computer only unless `lan` is on.

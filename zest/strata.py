@@ -477,28 +477,8 @@ CATALOG = [
 ]
 
 
-def _ram_gb():
-    try:
-        with open("/proc/meminfo") as f:
-            return int(re.search(r"MemTotal:\s+(\d+)", f.read()).group(1)) / 1048576
-    except (OSError, AttributeError, ValueError):
-        return 0.0
-
-
 def machine():
-    """RAM, graphics memory and free disk, the way the fit rule counts them. Memory the GPU shares with the system counts once."""
-    ram = _ram_gb()
-    gpus = []
-    for g in hardware.all_gpus():
-        gb = (g.get("mem_total_mb") or 0) / 1024
-        if gb:
-            gpus.append({"name": g.get("name"), "gb": gb, "vendor": g.get("vendor")})
-    shared = lambda g: g["vendor"] != "NVIDIA" and g["gb"] >= ram * 0.4          # an APU's "VRAM" is system memory
-    vram = sum(g["gb"] for g in gpus if not shared(g))
-    where = os.path.expanduser("~/.local/share")
-    os.makedirs(where, exist_ok=True)
-    return {"ram_gb": round(ram, 1), "vram_gb": round(vram, 1), "best_gpu_gb": round(max([g["gb"] for g in gpus if not shared(g)] or [0]), 1),
-            "gpus": [g["name"] for g in gpus], "free_disk_gb": round(shutil.disk_usage(where).free / 1e9, 1)}
+    return hardware.machine()
 
 
 def _plan(entry, ctx):
@@ -936,3 +916,35 @@ def tune_action(preset, act):
     ok = code == 0
     _pc["t"] = 0
     return ok, "" if ok else (out.strip().splitlines() or ["Strata couldn't do that."])[-1]
+
+
+# ---------------------------------------------------------------- the model files Strata already has
+_im = {"t": 0, "v": None}
+
+
+def installed_models():
+    """Cached for ten seconds: the library asks once per file."""
+    if _im["v"] is None or time.time() - _im["t"] > 10:
+        _im.update(t=time.time(), v=_installed_models())
+    return _im["v"]
+
+
+def _installed_models():
+    """[{id, name, config, status, files}] for every model Strata has set up, with the GGUF files its run config points at.
+
+    Strata keeps its own files where it was told to (often another disk); this finds them without scanning drives."""
+    out = []
+    for m in _json(["models", "list", "--installed", "--output", "json"], 30).get("models", []):
+        files = []
+        try:
+            with open(m.get("source_config") or "") as f:
+                args = json.load(f).get("args") or []
+        except (OSError, ValueError):
+            args = []
+        for i, a in enumerate(args[:-1]):
+            if a in ("--native", "--ple-gguf", "--gguf") and str(args[i + 1]).lower().endswith(".gguf") and os.path.isfile(args[i + 1]):
+                files.append(args[i + 1])
+        pack = next((args[i + 1] for i, a in enumerate(args[:-1]) if a == "--pack"), "")
+        out.append({"id": m.get("id"), "name": m.get("name"), "config": m.get("source_config"), "status": m.get("component_status"),
+                    "files": sorted(set(files)), "data_root": os.path.dirname(os.path.dirname(pack)) if pack else ""})
+    return out

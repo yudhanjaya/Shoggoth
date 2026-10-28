@@ -136,6 +136,42 @@ class Base:
             return False, "%s doesn't support the %s architecture." % (self.name, arch)
         return True, ""
 
+    # -- its models: where they live, what it calls them, how much room they need
+    def model_folders(self):
+        """[(path, label)] this provider keeps or finds model files in, for the library to read. Default: `models.data_dir`."""
+        d = (self.spec.get("models") or {}).get("data_dir")
+        if not d or not self.ctx.library:
+            return []
+        path = fill(d, **self._vals()) if hasattr(self, "_vals") else d
+        return [(path, self.name)] if os.path.isdir(path) else []
+
+    def model_id(self, entry):
+        """The name this provider knows a library entry by, or None when it hasn't got it set up."""
+        return None
+
+    def library_models(self):
+        """Models this provider keeps where Zest can't read the files (a service running as another user, a remote address), taken
+        from its own list instead: [{stem, title, size_bytes, quant, vision, mtp, ids:{<id>: name}, listed_by: <id>, ...}]. Default: none."""
+        return []
+
+    def need_gb(self, entry):
+        """Memory (graphics, plus RAM for the part that spills over) the entry needs to run on this provider, in GB."""
+        return round(entry.get("size_bytes", 0) / 1e9 * 1.1, 1)
+
+    def fit(self, entry, machine):
+        """("fits" | "tight" | "no", reason) for this entry on this computer."""
+        need = self.need_gb(entry)
+        gpu, vram, ram = machine.get("best_gpu_gb", 0), machine.get("vram_gb", 0), machine.get("ram_gb", 0)
+        room = vram * 0.88 if len(machine.get("gpus") or []) > 1 else gpu * 0.9          # layers spread over several cards
+        if gpu and need <= room:
+            return "fits", ""
+        if need <= vram * 0.9 + ram * 0.5:
+            return "tight", "Needs about %d GB; it will run partly on the processor, so it will be slower." % need
+        return "no", "Needs about %d GB; this computer has %d GB of graphics memory and %d GB of RAM." % (need, vram, ram)
+
+    def tier_hint(self):
+        return str(self.spec.get("tier", ""))
+
     # -- finding and keeping it current
     def detect(self):
         raise NotImplementedError

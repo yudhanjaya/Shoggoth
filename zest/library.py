@@ -1,0 +1,333 @@
+"""The model library: one list of every model on this computer, whichever engine runs it.
+
+Zest reads each model file's own header (gguf.py), asks every provider whether it can run the file and how much room it needs,
+sorts the model into a tier (Small, Medium, Large) and picks the provider that serves it. Where files live is one folder the
+person chooses (the library root); each engine keeps what it downloads under it, and Zest keeps small per-engine "views" (folders of
+links) so an engine is only ever shown files it can run. Nothing is copied or moved. Standard library only.
+"""
+import json
+import os
+import re
+import shutil
+import time
+
+import gguf
+import hardware
+import modelscan
+import registry
+import store
+
+TIERS = ("small", "medium", "large")
+TIER_LABEL = {"small": "Small", "medium": "Medium", "large": "Large"}
+SMALL_GB, MEDIUM_GB = 10, 24             # graphics memory a model needs: under 10 is Small, up to 24 Medium, beyond that Large
+SUBDIRS = ("hub", "strata")
+_index = {"loaded": False, "d": {}}
+
+
+# ---------------------------------------------------------------- where the library lives
+def root():
+    return (store.load().get("library") or {}).get("root", "") or ""
+
+
+def places():
+    """Disks a person could keep models on, most free space first: [{path, free_gb, total_gb, suggested}].
+
+    A place is a real, writable disk or the home folder. The suggestion is the one with the most room."""
+    skip_fs = {"proc", "sysfs", "devtmpfs", "devpts", "tmpfs", "cgroup", "cgroup2", "squashfs", "overlay", "efivarfs", "securityfs", "debugfs",
+               "tracefs", "pstore", "bpf", "configfs", "fusectl", "mqueue", "hugetlbfs", "autofs", "binfmt_misc", "ramfs", "fuse.portal", "nsfs"}
+    skip_prefix = ("/boot", "/snap", "/var/lib", "/sys", "/proc", "/dev", "/run", "/usr", "/etc", "/opt")
+    found = {}
+    try:
+        with open("/proc/mounts") as f:
+            mounts = [l.split() for l in f]
+    except OSError:
+        mounts = []
+    home = os.path.expanduser("~")
+    for m in mounts:
+        if len(m) < 3 or m[2] in skip_fs or m[2].startswith("fuse.gvfs"):
+            continue
+        mp = m[1].replace("\\040", " ")
+        if mp != "/" and mp.startswith(skip_prefix) or not os.path.isdir(mp):
+            continue
+        base = home if mp == "/" else mp                       # the system disk: offer the home folder, not /
+        if not os.access(base, os.W_OK):
+            continue
+        try:
+            u = shutil.disk_usage(mp)
+        except OSError:
+            continue
+        key = os.path.realpath(base)
+        if key not in found or u.free > found[key]["free"]:
+            found[key] = {"path": base, "free": u.free, "total": u.total}
+    rows = sorted(found.values(), key=lambda r: -r["free"])
+    return [{"path": r["path"], "free_gb": round(r["free"] / 1e9, 1), "total_gb": round(r["total"] / 1e9, 1), "suggested": i == 0 and r["free"] > 20e9}
+            for i, r in enumerate(rows)]
+
+
+def _can_symlink(folder):
+    """Can this disk hold links? (Windows-style disks, FAT and exFAT can't.)"""
+    a, b = os.path.join(folder, ".zest-link-a"), os.path.join(folder, ".zest-link-b")
+    try:
+        with open(a, "w") as f:
+            f.write("x")
+        os.symlink(a, b)
+        return os.path.realpath(b) == os.path.realpath(a)
+    except OSError:
+        return False
+    finally:
+        for x in (b, a):
+            try:
+                os.remove(x)
+            except OSError:
+                pass
+
+
+def views_base():
+    """Where per-engine views live: inside the library when its disk can hold links, otherwise in Zest's own data folder."""
+    r = root()
+    if r and (store.load().get("library") or {}).get("links", True):
+        return os.path.join(r, ".views")
+    return os.path.join(store.data_dir(), "views")
+
+
+def set_root(path):
+    """Make `path` the library root: create it (and its engine folders), prove it is writable, remember it."""
+    raw = str(path or "").strip()
+    if not raw:
+        raise ValueError("Choose a folder for your models.")
+    path = os.path.abspath(os.path.expanduser(raw))
+    if path == "/":
+        raise ValueError("Choose a folder for your models, not the whole disk.")
+    try:
+        for sub in SUBDIRS + (".views",):
+            os.makedirs(os.path.join(path, sub), exist_ok=True)
+        probe = os.path.join(path, ".zest-write-test")
+        with open(probe, "w") as f:
+            f.write("ok")
+        os.remove(probe)
+    except OSError as e:
+        raise ValueError("Zest can't write to that folder (%s). Choose another." % (e.strerror or e))
+    s = store.load()
+    s.setdefault("library", {}).update(root=path, links=_can_symlink(path))
+    store.save(s)
+    registry.reload()                                         # providers read the library folder through their context
+    return path
+
+
+# ---------------------------------------------------------------- reading files
+def _index_path():
+    return os.path.join(store.data_dir(), "library-index.json")
+
+
+def _header(path):
+    """The header of one file, remembered by size and modified time so a rescan of a big library is instant."""
+    if not _index["loaded"]:
+        try:
+            with open(_index_path()) as f:
+                _index["d"] = json.load(f)
+        except (OSError, ValueError):
+            _index["d"] = {}
+        _index["loaded"] = True
+    rp = os.path.realpath(path)
+    try:
+        st = os.stat(rp)
+    except OSError:
+        return None
+    hit = _index["d"].get(rp)
+    if hit and hit.get("size") == st.st_size and hit.get("mtime") == int(st.st_mtime):
+        return hit.get("h")
+    h = gguf.read_header(rp)
+    _index["d"][rp] = {"size": st.st_size, "mtime": int(st.st_mtime), "h": h}
+    return h
+
+
+def _save_index():
+    try:
+        os.makedirs(os.path.dirname(_index_path()), exist_ok=True)
+        tmp = _index_path() + ".tmp"
+        with open(tmp, "w") as f:
+            json.dump(_index["d"], f)
+        os.replace(tmp, _index_path())
+    except OSError:
+        pass
+
+
+def _slug(s):
+    return re.sub(r"[^a-z0-9]+", "-", s.lower()).strip("-")
+
+
+def _pretty(stem, header):
+    name = (header or {}).get("name") or ""
+    base = name if name and len(name) > 3 else re.sub(r"[-_]+", " ", stem)
+    return re.sub(r"\s+", " ", base).strip()
+
+
+def _entries_in(folder, label, owner):
+    """Model entries (one per file set) for the GGUF files under `folder`."""
+    files = modelscan._gguf_files(folder)
+    by_dir, projectors = {}, {}
+    for path, size in files:
+        if modelscan._is_projector(path):
+            projectors.setdefault(os.path.dirname(path), []).append(path)
+            continue
+        stem, i, n = gguf.shard_of(path)
+        by_dir.setdefault((os.path.dirname(path), stem), {"n": n, "shards": {}})["shards"][i] = (path, size)
+    out = []
+    # a projector may live in the model's folder or one level up (Strata keeps one beside its model folders)
+    for (d, stem), g in by_dir.items():
+        shards = [g["shards"][i] for i in sorted(g["shards"])]
+        first = shards[0][0]
+        h = _header(first)
+        if h is None:
+            continue
+        near = projectors.get(d) or projectors.get(os.path.dirname(d)) or []
+        role = gguf.role_of(h.get("architecture", ""), stem, d)
+        if role != "chat":
+            continue
+        out.append({"stem": stem, "files": [p for p, _ in shards], "size_bytes": sum(s for _, s in shards), "complete": len(shards) == g["n"],
+                    "format": "gguf", "architecture": h.get("architecture", ""), "quant": h.get("quant", ""), "context": h.get("context", 0),
+                    "size_label": h.get("size_label", ""), "title": _pretty(stem, h), "vision": bool(near), "mmproj": near[0] if near else "",
+                    "mtp": "mtp" in stem.lower(), "folder": d, "source": label, "owner": owner})
+    return out
+
+
+# ---------------------------------------------------------------- the catalog
+def sources(reg=None):
+    """[(folder, label, owner provider id or None)] the catalog reads: each provider's own folders, the library root's, and folders
+    the person has brought in (Settings > models). Nothing else is scanned: Zest does not go through Downloads uninvited."""
+    reg = reg or registry.default()
+    out, seen = [], set()
+
+    def add(path, label, owner):
+        rp = os.path.realpath(path)
+        if os.path.isdir(rp) and rp not in seen:
+            seen.add(rp)
+            out.append((rp, label, owner))
+    for p in reg.all():
+        try:
+            for path, label in p.model_folders():
+                add(path, label, p.id)
+        except Exception:  # noqa: BLE001
+            continue
+    r = root()
+    if r:
+        for sub in SUBDIRS:
+            add(os.path.join(r, sub), "Zest library", None)
+    for imp in (store.load().get("models") or {}).get("imports") or []:
+        if imp.get("kind") == "folder":
+            add(imp.get("path", ""), imp.get("label") or "Your folder", None)
+    return out
+
+
+def _tier(size_gb, only_large):
+    """By the size of the model itself: a 22 GB model is Medium even though it needs a little more than that to run."""
+    if only_large or size_gb > MEDIUM_GB:
+        return "large"
+    return "small" if size_gb < SMALL_GB else "medium"
+
+
+def catalog(reg=None, machine=None, refresh=False):
+    """Every model, with who can run it, what it needs, its tier, the provider chosen to serve it and whether it fits here.
+
+    [{id, title, files, size_bytes, architecture, quant, context, vision, mtp, folder, source, tier, provider, providers, need_gb, fit, why, ids}]"""
+    reg = reg or registry.default()
+    machine = machine or hardware.machine()
+    found, seen_real, errors = {}, set(), []
+    for folder, label, owner in sources(reg):
+        for e in _entries_in(folder, label, owner):
+            key = os.path.realpath(e["files"][0])
+            if key in seen_real:
+                continue
+            seen_real.add(key)
+            base = _slug("%s-%s" % (e["stem"], e["size_bytes"]))
+            found[base] = e
+    _save_index()
+    have_ids = {(pid, mid) for e in found.values() for pid, mid in
+                [(p.id, p.model_id(e)) for p in reg.all() if (p.can_run(e)[0])] if mid}
+    for p in reg.all():
+        try:
+            listed = p.library_models()
+        except Exception:  # noqa: BLE001
+            listed = []
+        for e in listed:
+            if (p.id, e["ids"].get(p.id)) in have_ids:
+                continue                                          # the same model, already read from its files
+            found[_slug("%s-%s-%s" % (p.id, e["stem"], e["size_bytes"]))] = e
+    big = [p for p in reg.all() if "large" in p.tier_hint()]
+    rest = [p for p in reg.all() if "large" not in p.tier_hint()]
+    out = []
+    for key, e in found.items():
+        listed_by = e.get("listed_by")
+        cap = {p.id: ((True, "") if p.id == listed_by else p.can_run(e) if not listed_by else (False, "%s can't use a model it manages itself." % p.name)) for p in reg.all()}
+        runnable = [p for p in reg.all() if cap[p.id][0]]
+        if not runnable:
+            e = dict(e, tier="", provider=None, providers={k: {"ok": ok, "reason": r} for k, (ok, r) in cap.items()}, need_gb=None, fit="no",
+                     why="No engine here can run this kind of model (%s)." % (e["architecture"] or "unknown"), ids={})
+            e["id"] = key
+            out.append(e)
+            continue
+        only_large = all(p in big for p in runnable)
+        tier = _tier(e["size_bytes"] / 1e9, only_large)
+        # a Large model goes to the big-model engine when one can run it; everything else goes to the fast engine
+        chosen = next((p for p in big if cap[p.id][0]), None) if tier == "large" else None
+        chosen = chosen or next((p for p in rest if cap[p.id][0]), None) or runnable[0]
+        fit, why = chosen.fit(e, machine)
+        out.append(dict(e, id=key, tier=tier, provider=chosen.id, need_gb=chosen.need_gb(e), fit=fit, why=why,
+                        providers={k: {"ok": ok, "reason": r} for k, (ok, r) in cap.items()},
+                        ids=dict(e["ids"]) if e.get("listed_by") else {p.id: p.model_id(e) for p in runnable}))
+    order = {t: i for i, t in enumerate(TIERS)}
+    out.sort(key=lambda m: (order.get(m["tier"], 9), (m["need_gb"] or 0), m["title"].lower()))
+    return out
+
+
+# ---------------------------------------------------------------- per-engine views
+def sync_views(entries=None, reg=None):
+    """Keep <root>/.views/<engine>/ holding links to exactly the files that engine should be shown: those routed to it that it doesn't
+    already keep itself. Only links are ever created or removed here, never real files. Returns {engine: view folder}."""
+    r = root()
+    reg = reg or registry.default()
+    if not r:
+        return {}
+    entries = entries if entries is not None else catalog(reg)
+    out = {}
+    for p in reg.all():
+        if not (p.spec.get("models") or {}).get("view"):
+            continue
+        view = os.path.join(views_base(), p.id)
+        os.makedirs(view, exist_ok=True)
+        own = [os.path.realpath(path) for path, _ in p.model_folders()]
+        want = {}
+        for e in entries:
+            if e.get("provider") != p.id or not e.get("complete", True):
+                continue
+            if any(os.path.realpath(f).startswith(o + os.sep) for f in e["files"] for o in own):
+                continue                                       # the engine keeps this one itself
+            for f in e["files"] + ([e["mmproj"]] if e.get("mmproj") else []):
+                want[os.path.basename(f)] = os.path.realpath(f)
+        for name in os.listdir(view):
+            link = os.path.join(view, name)
+            if os.path.islink(link) and (name not in want or os.readlink(link) != want[name]):
+                os.remove(link)
+        for name, target in want.items():
+            link = os.path.join(view, name)
+            if not os.path.lexists(link):
+                os.symlink(target, link)
+        out[p.id] = view
+    return out
+
+
+def lemonade_config():
+    """The folder settings Lemonade should have so it reads the library: its own downloads under hub/, everything else it can run
+    through the view. {} until a root is chosen. Applying this is only ever done to a Lemonade Zest runs itself."""
+    r = root()
+    return {"models_dir": os.path.join(r, "hub"), "extra_models_dir": os.path.join(views_base(), "lemonade")} if r else {}
+
+
+def summary():
+    """What the Library page and the first-run screen need."""
+    r = root()
+    cat = catalog()
+    return {"root": r, "chosen": bool(r), "links": (store.load().get("library") or {}).get("links", True), "places": places(), "machine": hardware.machine(),
+            "tiers": [{"id": t, "label": TIER_LABEL[t]} for t in TIERS], "models": cat,
+            "bytes": sum(m["size_bytes"] for m in cat),
+            "disk": {"free_gb": round(shutil.disk_usage(r).free / 1e9, 1)} if r and os.path.isdir(r) else None}
