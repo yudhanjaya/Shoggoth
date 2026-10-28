@@ -147,14 +147,16 @@ Replies can also contain tables, lists, links, quotes and code blocks, shown nea
 
 ## Choosing and managing models
 
-Open **Models**. **My picks** are the models I have tried and recommend on systems from 10 GB of VRAM to 26 GB of VRAM. I've tried to predict how well a model will fit in your system. 
+Open **Library**. It lists every model on your computer in one place, whichever program runs it, grouped by size: **Small** (under 10 GB of graphics memory, ready in seconds), **Medium** (10 to 24 GB) and **Large** (for big computers; they take a couple of minutes to start).
 
-However, you aren't limited to these models. Lemonade, which we use underneath, exposes a lot of models by default: **More models** shows this set. **Get it** downloads a model in the background while you carry on.
-
-You can also add models from Hugging Face. **Get from Hugging Face** adds a model from a link you provide. **Settings** on a downloaded model edits how it runs, and **Chat with it** starts a chat with it. Loading and unloading happen in the chat.
+- **Installed** is what you have. **Recommended for this computer** has the models I have tried and recommend on systems from 10 GB of VRAM to 26 GB of VRAM, and any Large model that will fit yours. **Everything** is the full list, with a filter for pictures, speech and sound.
+- **Get it** downloads a model in the background while you carry on. Downloads from every program show together in one "Getting models" strip.
+- **Add models** brings in a model from a Hugging Face link, from a folder you choose, or from the usual places other programs keep them (LM Studio, Ollama and so on). Nothing is copied.
+- **Chat with it** starts a chat with a model, and **Settings** on a model edits how it runs. Choosing a model in the chat gets it ready, and frees the memory of whatever else was running.
+- Zest keeps your models in one folder you choose, with a subfolder for each program, and moves nothing you already have.
 
 - Will it fit? Zest compares a model's size with the memory that is free on your graphics card right now, and marks it comfortable, snug or too big.
-- For working in a folder, pick a model that handles tools well. Look for tool-calling in its description. My picks lean that way. Models that are very small can still chat well but often fumble tools.
+- For working in a folder, pick a model that handles tools well. Look for tool-calling in its description. The recommended ones lean that way. Models that are very small can still chat well but often fumble tools.
 - Memory (the context window): this is how much the AI can keep in mind at once. Zest sets a roomy 128k by default. Working in a folder can use a lot of it, because the AI reads files. The Details panel shows how full it is, with a **Make room** button that tidies the older part of the conversation. The context menu in the chat's model bar changes the size.
 - **Settings for one model** (the **Settings** button on its card) let you change which devices it uses, backend options and more. The defaults are fine for nearly everyone. Chat always loads a model with the context size in its model bar.
 

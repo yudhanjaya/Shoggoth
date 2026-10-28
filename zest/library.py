@@ -245,6 +245,7 @@ def catalog(reg=None, machine=None, refresh=False):
             e = dict(e, tier="", provider=None, providers={k: {"ok": ok, "reason": r} for k, (ok, r) in cap.items()}, need_gb=None, fit="no",
                      why="No engine here can run this kind of model (%s)." % (e["architecture"] or "unknown"), ids={})
             e["id"] = key
+            e["ref"], e["engine_name"] = "", ""
             out.append(e)
             continue
         only_large = all(p in big for p in runnable)
@@ -253,9 +254,10 @@ def catalog(reg=None, machine=None, refresh=False):
         chosen = next((p for p in big if cap[p.id][0]), None) if tier == "large" else None
         chosen = chosen or next((p for p in rest if cap[p.id][0]), None) or runnable[0]
         fit, why = chosen.fit(e, machine)
+        ids = dict(e["ids"]) if e.get("listed_by") else {p.id: p.model_id(e) for p in runnable}
         out.append(dict(e, id=key, tier=tier, provider=chosen.id, need_gb=chosen.need_gb(e), fit=fit, why=why,
-                        providers={k: {"ok": ok, "reason": r} for k, (ok, r) in cap.items()},
-                        ids=dict(e["ids"]) if e.get("listed_by") else {p.id: p.model_id(e) for p in runnable}))
+                        providers={k: {"ok": ok, "reason": r} for k, (ok, r) in cap.items()}, ids=ids,
+                        ref=chosen.ref(ids[chosen.id]) if ids.get(chosen.id) else "", engine_name=chosen.name))
     order = {t: i for i, t in enumerate(TIERS)}
     out.sort(key=lambda m: (order.get(m["tier"], 9), (m["need_gb"] or 0), m["title"].lower()))
     return out
@@ -265,10 +267,7 @@ def catalog(reg=None, machine=None, refresh=False):
 def sync_views(entries=None, reg=None):
     """Keep <Zest data folder>/views/<engine>/ holding links to exactly the files that engine should be shown: those routed to it that it doesn't
     already keep itself. Only links are ever created or removed here, never real files. Returns {engine: view folder}."""
-    r = root()
     reg = reg or registry.default()
-    if not r:
-        return {}
     entries = entries if entries is not None else catalog(reg)
     out = {}
     for p in reg.all():
@@ -356,3 +355,12 @@ def picker(max_age=8):
     res = {"models": out, "machine": machine, "tiers": [{"id": t, "label": TIER_LABEL[t]} for t in TIERS]}
     _pk.update(t=time.time(), v=res)
     return res
+
+
+def lemonade_accepts(path):
+    """Can Lemonade run this file? Used so an imported folder never shows it a model it would list but fail to load."""
+    h = gguf.read_header(path)
+    prov = registry.default().get("lemonade")
+    if not h or not prov:
+        return True
+    return prov.can_run({"format": "gguf", "architecture": h.get("architecture", "")})[0]

@@ -323,7 +323,7 @@ class Handler(BaseHTTPRequestHandler):
             "/ui/cowork/job/apply": self.post_job_apply, "/ui/cowork/job/discard": self.post_job_discard,
             "/ui/cowork/folders": self.post_cowork_folders, "/ui/cowork/seen": self.post_cowork_seen,
             "/ui/cowork/allow/remove": self.post_allow_remove, "/ui/cowork/folder": self.post_cowork_folder, "/ui/skills/install": self.post_skills_install, "/ui/pi/check": self.post_pi_check,
-            "/ui/pi/update": self.post_pi_update, "/ui/strata/start": self.post_strata_start, "/ui/strata/stop": self.post_strata_stop, "/ui/library/root": self.post_library_root, "/ui/providers/approve": self.post_provider_approve, "/ui/providers/reload": self.post_provider_reload, "/ui/tuning/plan": self.post_tuning_plan, "/ui/tuning/run": self.post_tuning_run, "/ui/tuning/cancel": self.post_tuning_cancel, "/ui/tuning/action": self.post_tuning_action, "/ui/strata/setup": self.post_strata_setup, "/ui/strata/update": self.post_strata_update, "/ui/strata/idle": self.post_strata_idle, "/ui/strata/connect": self.post_strata_connect, "/ui/strata/forget": self.post_strata_forget, "/ui/strata/key": self.post_strata_key, "/ui/strata/install": self.post_strata_install, "/ui/update/all": self.post_update_all, "/ui/update/restart": self.post_update_restart, "/ui/pi/use": self.post_pi_use,
+            "/ui/pi/update": self.post_pi_update, "/ui/strata/start": self.post_strata_start, "/ui/strata/stop": self.post_strata_stop, "/ui/library/root": self.post_library_root, "/ui/library/folder": self.post_library_folder, "/ui/providers/approve": self.post_provider_approve, "/ui/providers/reload": self.post_provider_reload, "/ui/tuning/plan": self.post_tuning_plan, "/ui/tuning/run": self.post_tuning_run, "/ui/tuning/cancel": self.post_tuning_cancel, "/ui/tuning/action": self.post_tuning_action, "/ui/strata/setup": self.post_strata_setup, "/ui/strata/update": self.post_strata_update, "/ui/strata/idle": self.post_strata_idle, "/ui/strata/connect": self.post_strata_connect, "/ui/strata/forget": self.post_strata_forget, "/ui/strata/key": self.post_strata_key, "/ui/strata/install": self.post_strata_install, "/ui/update/all": self.post_update_all, "/ui/update/restart": self.post_update_restart, "/ui/pi/use": self.post_pi_use,
             "/ui/skills/remove": self.post_skills_remove, "/ui/skills/toggle": self.post_skills_toggle,
             "/ui/models/storage": self.post_storage, "/ui/models/imports": self.post_imports,
         }.get(p)
@@ -483,13 +483,14 @@ class Handler(BaseHTTPRequestHandler):
                 chosen.append(item)
         before = lem.get("/v1/models?show_all=true").get("data", [])
         s["models"]["imports"] = chosen
-        linked = modelscan.sync_farm(chosen)
+        linked = modelscan.sync_farm(chosen, accept=library.lemonade_accepts)       # Lemonade is only shown files it can run
         ok, msg = (lem.set_config({"extra_models_dir": modelscan.farm_dir() if linked else ""})
                    if lem.healthy() else (True, ""))
         store.save(s)
         time.sleep(1.5)                       # let Lemonade rescan
         after = lem.get("/v1/models?show_all=true").get("data", [])
         invalidate()
+        library._pk["v"] = None
         self.send_json({"ok": ok, "error": msg, "linked": linked, "listed_before": len(before), "listed_after": len(after),
                         "models": setup_state()["models"]})
 
@@ -632,6 +633,19 @@ class Handler(BaseHTTPRequestHandler):
         d = library.summary()
         d["views"] = library.sync_views(d["models"]) if d["chosen"] else {}        # only links are ever written
         return d
+
+    def post_library_folder(self, body):
+        """Add (or, with `remove`, drop) one folder the library should read, keeping the others."""
+        cur = [i for i in (store.load().get("models") or {}).get("imports", [])]
+        if body.get("remove"):
+            keep = [i for i in cur if i.get("id") != body["remove"]]
+        elif body.get("kind") == "ollama":
+            path = str(body.get("path", ""))
+            keep = [i for i in cur if i.get("path") != path] + [{"id": modelscan._source_id("ollama", path), "kind": "ollama", "label": "Ollama", "path": path}]
+        else:
+            src = modelscan.source_from_path(str(body.get("path", "")), body.get("label"))
+            keep = [i for i in cur if i.get("id") != src["id"]] + [{k: src[k] for k in ("id", "kind", "label", "path")}]
+        self.post_imports({"sources": keep})
 
     def post_library_root(self, body):
         library.set_root(body.get("path", ""))

@@ -149,8 +149,10 @@ def _slug(text):
     return re.sub(r"[^A-Za-z0-9._-]+", "_", text).strip("_")[:80] or "models"
 
 
-def sync_farm(sources):
-    """Rebuild the folder of symbolic links for the chosen sources. Returns how many models were linked."""
+def sync_farm(sources, accept=None):
+    """Rebuild the folder of symbolic links for the chosen sources. Returns how many models were linked.
+
+    `accept(path)` may refuse a file (one the engine reading this folder can't run), so it is never shown to it."""
     farm = farm_dir()
     shutil.rmtree(farm, ignore_errors=True)           # removes only the links themselves, never their targets
     if not sources:
@@ -182,7 +184,12 @@ def sync_farm(sources):
                 groups.setdefault(os.path.dirname(p), []).append(p)
             for folder, files in groups.items():
                 d = group_dir(f"{src['label']}--{os.path.relpath(folder, path)}")
+                models = [p for p in files if not _is_projector(p)]
+                if accept and models and not any(accept(p) for p in models):
+                    continue                          # nothing in this folder that the engine can run
                 for p in files:                       # projector files travel with their model
+                    if accept and not _is_projector(p) and not accept(p):
+                        continue
                     os.symlink(p, os.path.join(d, os.path.basename(p)))
                     linked += 0 if _is_projector(p) else 1
     return linked

@@ -453,6 +453,23 @@ details.aegrp>summary small{margin-left:auto;font:11.5px var(--mono);color:var(-
 .starter b{font-size:14px}.starter small{display:block;color:var(--muted);font-size:12.5px}
 .starter .prog{margin-top:7px}
 .setfoot{display:flex;gap:12px;justify-content:flex-end;flex-wrap:wrap;margin:22px 0 10px}
+#adddlg{max-width:min(600px,calc(100vw - 32px))}
+#adddlg form{padding:0;display:flex;flex-direction:column;max-height:calc(100dvh - 34px)}
+#adddlg header{padding:22px 24px 6px}#adddlg header p{margin:4px 0 0;color:var(--muted);font-size:13px}
+.addopt{display:grid;grid-template-columns:1fr auto;gap:2px 14px;align-items:center;padding:12px 0;border-bottom:1px solid var(--line-soft)}
+.addopt span{color:var(--muted);font-size:13px;grid-column:1}.addopt .btn{grid-column:2;grid-row:1 / span 2}
+.addfound label{display:flex;gap:10px;align-items:flex-start;padding:7px 0;font-size:13.5px}
+.addfound small{display:block;color:var(--muted)}
+.libwhere{display:flex;flex-wrap:wrap;gap:6px 14px;align-items:center;font-size:13px;color:var(--muted);margin:-4px 0 14px}
+.libwhere b{color:var(--text);font-weight:600;overflow-wrap:anywhere}
+.libplaces{display:grid;gap:6px;margin:10px 0}
+.libplaces label{display:flex;gap:10px;align-items:center;padding:9px 12px;border:1px solid var(--line);border-radius:10px;background:var(--surface);cursor:pointer;font-size:13.5px}
+.libplaces label:has(input:checked){border-color:var(--lemon-text);background:color-mix(in srgb,var(--lemon) 16%,transparent)}
+.libplaces small{color:var(--muted);margin-left:auto;white-space:nowrap}
+.libdl{display:grid;gap:8px;margin-bottom:14px}
+.libdl .line{display:flex;align-items:center;gap:12px}
+.libdl .prog{flex:1;min-width:80px}
+.undereng{color:var(--faint);font-size:12px;margin-top:6px}
 #fsdlg{max-width:min(560px,calc(100vw - 32px))}
 #fsdlg form{padding:0;display:flex;flex-direction:column;max-height:calc(100dvh - 34px)}
 #fsdlg header{padding:22px 24px 6px}#fsdlg header p{margin:4px 0 0;color:var(--muted);font-size:12.5px;overflow-wrap:anywhere}
@@ -1166,7 +1183,7 @@ h3.themesec{font:600 12px var(--sans);letter-spacing:.08em;text-transform:upperc
     <div class="brand"><svg viewBox="0 0 64 64" aria-hidden="true"><path d="M 12.49 46.19 Q 12.55 44.39 14.99 41.68 C 12.39 30.92 18.75 22.23 22.99 19.58 C 27.23 16.93 37.83 15.03 46.36 22.08 Q 49.86 21.07 51.51 21.81 Q 51.45 23.61 49.01 26.32 C 51.61 37.08 45.25 45.77 41.01 48.42 C 36.77 51.07 26.17 52.97 17.64 45.92 Q 14.14 46.93 12.49 46.19 Z" fill="#f7d916" stroke="#1a1a17" stroke-width="2.4" stroke-linejoin="round"/><path d="M 16.74 34.10 C 17.16 29.12 20.87 25.62 24.26 23.51" fill="none" stroke="#fffdf7" stroke-width="2.6" stroke-linecap="round" opacity=".85"/><path d="M50.5 22C48.5 14 53.5 8 61.5 7C62.5 14.5 58.5 21 50.5 22Z" fill="#2f9e55" stroke="#1a1a17" stroke-width="2" stroke-linejoin="round"/><path d="M52 20.5C55 16.5 58 12 60 8.5" stroke="#1a1a17" stroke-width="1.3" stroke-linecap="round" fill="none" opacity=".6"/></svg><span>Zest</span></div>
     <div class="nav">
       <button data-view="cowork" aria-current="page"><svg class="i" viewBox="0 0 24 24"><path d="M21 12a8 8 0 0 1-11.6 7.1L4 20.5l1.5-4.6A8 8 0 1 1 21 12z"/></svg><span>Chat</span></button>
-      <button data-view="models"><svg class="i" viewBox="0 0 24 24"><path d="M12 3l8 4.5v9L12 21l-8-4.5v-9z"/><path d="M12 12l8-4.5M12 12L4 7.5M12 12v9"/></svg><span>Models</span></button>
+      <button data-view="models"><svg class="i" viewBox="0 0 24 24"><path d="M12 3l8 4.5v9L12 21l-8-4.5v-9z"/><path d="M12 12l8-4.5M12 12L4 7.5M12 12v9"/></svg><span>Library</span></button>
       <button data-view="skills"><svg class="i" viewBox="0 0 24 24"><path d="M13 3L5 13.5h6L10 21l8-10.5h-6z"/></svg><span>Skills</span></button>
       <button data-view="docs"><svg class="i" viewBox="0 0 24 24"><path d="M5 4h10a3 3 0 0 1 3 3v13H8a3 3 0 0 1-3-3z"/><path d="M5 17a3 3 0 0 1 3-3h10M9 8h5"/></svg><span>Docs</span></button>
       <button data-view="help"><svg class="i" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M9.5 9.5a2.6 2.6 0 0 1 5 1c0 1.7-2.5 2-2.5 3.6M12 17.2v.1"/></svg><span>Help</span></button>
@@ -1290,12 +1307,13 @@ h3.themesec{font:600 12px var(--sans);letter-spacing:.08em;text-transform:upperc
 
     <!-- MODELS -->
     <section class="view" id="v-models"><div class="pad"><div class="wrap">
-      <div class="pagehead"><p class="lede">Models are the AI brains Zest talks to. Once you download one, it lives on this computer and works without the internet.</p>
+      <div class="pagehead"><p class="lede">Everything your computer can run, in one place. Models you get stay on this computer and work without the internet.</p>
         <div class="pagebtns"><button class="btn ghost" type="button" data-pick>How do I choose a model?</button>
-        <button class="btn" id="hfopen" type="button"><svg class="i" viewBox="0 0 24 24"><path d="M12 4v11M7 11l5 5 5-5M5 20h14"/></svg>Get from Hugging Face</button></div></div>
+        <button class="btn" id="libadd" type="button"><svg class="i" viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></svg>Add models</button></div></div>
+      <div id="libwhere"></div>
       <div id="modelsbanner"></div>
-      <div id="stratabox"></div>
-      <div class="filters" id="filters" role="group" aria-label="Filter models"></div>
+      <div id="libdl"></div>
+      <div class="filters" id="filters" role="group" aria-label="Show"></div>
       <div class="grid" id="grid"></div>
     </div></div></section>
 
@@ -1312,6 +1330,7 @@ h3.themesec{font:600 12px var(--sans);letter-spacing:.08em;text-transform:upperc
 
     <!-- BACKENDS -->
     <section class="view" id="v-backends"><div class="pad"><div class="wrap">
+      <div id="stratabox"></div>
       <p class="lede">An <b>engine</b> is the program that actually runs a model, and each kind of model needs its own: one for chat, one for turning speech into text, one for pictures, and so on. Each engine can run on different hardware, called a <b>backend</b>. Pick the one you want, or install one that's missing. Changes apply the next time a model loads.</p>
       <details class="panel bkhelp" open><summary>Which backend should I pick?</summary>
         <dl class="bkdl">
@@ -1399,6 +1418,13 @@ h3.themesec{font:600 12px var(--sans);letter-spacing:.08em;text-transform:upperc
     <div class="actions"><button class="btn primary" value="close">Done</button></div>
   </form>
 </dialog>
+<dialog id="adddlg">
+  <form method="dialog" id="addform">
+    <header><h3>Add models</h3><p>Bring in models from anywhere. Nothing is copied: Zest reads them where they are.</p></header>
+    <div class="odbody" id="addbody"></div>
+    <div class="actions"><button class="btn primary" value="close">Done</button></div>
+  </form>
+</dialog>
 <dialog id="fsdlg">
   <form id="fsform" onsubmit="return false">
     <header><h3>Choose a folder</h3><p id="fspath" class="mono"></p></header>
@@ -1465,7 +1491,7 @@ async function api(path, opts={}){
 }
 
 /* ======================= navigation ======================= */
-const TITLES = {welcome:"Welcome", cowork:"Chat", chat:"Earlier chats", skills:"Skills", docs:"Docs", models:"Models", help:"Help", advanced:"Advanced", server:"Server", hardware:"Hardware", backends:"Engines", settings:"All settings", setup:"Setup guide", tuning:"Tuning", themes:"Themes"};
+const TITLES = {welcome:"Welcome", cowork:"Chat", chat:"Earlier chats", skills:"Skills", docs:"Docs", models:"Library", help:"Help", advanced:"Advanced", server:"Server", hardware:"Hardware", backends:"Engines", settings:"All settings", setup:"Setup guide", tuning:"Tuning", themes:"Themes"};
 const ADV = ["advanced","server","hardware","backends","settings","setup","tuning","themes"];
 function show(v){
   S.view = v;
@@ -1484,9 +1510,9 @@ function show(v){
   if(v === "cowork" && typeof cwShow === "function") cwShow();
   if(v === "skills") renderSkills();
   if(v === "docs") renderDocs();
-  if(v === "models"){ renderModels(); strRefresh(); }
+  if(v === "models") libShow();
   if(v === "hardware") renderHardware();
-  if(v === "backends") loadBackends();
+  if(v === "backends"){ loadBackends(); strRefresh(); }
   if(v === "settings") loadSettings();
   if(v === "setup" || v === "welcome") refreshSetup(true);
   if(v === "tuning") tnShow();
@@ -1963,27 +1989,14 @@ async function generate(){
 }
 
 /* ======================= models ======================= */
-const CATS = [
-  ["picks","My picks", () => false],
-  ["downloaded","On this computer", m => m.downloaded],
-  ["foryou","More models", m => m.downloaded || (m.recipe === "llamacpp" && (fitInfo(m)?.cls || "ok") !== "over" && !m.labels?.some(l => /embed|rerank/.test(l)))],
-  ["chat","Chat", m => m.recipe==="llamacpp" && !m.labels?.some(l => /embed|rerank/.test(l))],
-  ["vision","Sees pictures", m => m.labels?.includes("vision")],
-  ["image","Makes images", m => m.recipe==="sd-cpp"],
-  ["audio","Speech and sound", m => ["whispercpp","kokoro","moonshine","acestep","thinksound"].includes(m.recipe)],
-  ["all","Everything", () => true]
-];
-function renderFilters(){
-  $("#filters").innerHTML = CATS.map(([k,l,f]) => `<button type="button" data-f="${k}" aria-pressed="${S.filter===k}">${l}</button>`).join("") +
-    `<input type="search" id="mq" placeholder="Search by name" aria-label="Search models" value="${esc(S.q)}">`;
-}
+function renderFilters(){ libFilters(); }
 /* ---- plain-language helpers ---- */
 function friendly(m){
   const id = typeof m === "string" ? m : m.id;
   const t = id.replace(/^user\./, "").replace(/-GGUF$/i, "").replace(/[-_](instruct|it|chat)\b/ig, "").replace(/[-_]+/g, " ").replace(/\s+/g, " ").trim();
   return t || id;
 }
-const sizeWord = gb => !gb ? "" : gb < 2.5 ? "Small" : gb < 6 ? "Medium" : gb < 14 ? "Large" : "Very large";
+const sizeWord = gb => !gb ? "" : {small: "Small", medium: "Medium", large: "Large"}[libTier(gb)];            // the same words as the Library's groups
 function whatFor(m){
   const l = m.labels || [], out = [];
   if(m.recipe === "sd-cpp") return "Draws pictures from a description";
@@ -2063,53 +2076,187 @@ const PICKS = [
     {id: "Qwen3.6-35B-A3B-MTP-GGUF", label: "Best all-rounder", take: "Very fast and competent at everyday tasks. It sometimes mangles complex code, but you can run it again and again until it gets there. It does well at research, tweaking system settings and scripts, and at agent work (better than GLM). A good in-editor helper for small functions. Its writing style is not to everyone's taste."}]},
   {tier: "If Qwen 3.6 won't run", blurb: "A fallback, with a warning.", items: [
     {id: "GLM-4.7-Flash-GGUF", label: "Only if you can't run Qwen 3.6", take: "Fast, but a confident bluffer: it makes things up often, so I would not trust it to write code. It improves a lot when you give it skills in a harness like OpenCode or Hermes, but pick it only if Qwen 3.6 is out of reach."}]},
-  {tier: "Bigger and slower: dense models", blurb: "Good answers, but slower than the models above because every part of them works on every word.", note: "On a computer with a GPU and 64 GB of RAM, I would suggest trying Strata (below) instead of either of these.", items: [
+  {tier: "Bigger and slower: dense models", blurb: "Good answers, but slower than the models above because every part of them works on every word.", note: "On a computer with a big graphics card and plenty of RAM, the Large models are faster than these.", items: [
     {id: "Gemma-4-31B-it-MTP-GGUF", label: "Clear and concise", take: "I like the style: clear, concise and competent. It is simply slow next to the mixture-of-experts models."},
     {id: "Qwen3.8-27B-GGUF", label: "A thinker", take: "Competent, but it ruminates and refines its answers before it replies, and can think for ages unless you tell it to keep its thinking and answers short."}]}
-];
-const PICK_ENGINES = [
-  {name: "Strata", take: "A separate inference engine, not part of Lemonade, built to run very large mixture-of-experts models (such as Qwen3.8 Flash Next) on one NVIDIA GPU plus plenty of system RAM, around 64 GB. It moves the parts of the model that are not in use between GPU memory, RAM and fast storage.", links: [["stratallm.org", "https://stratallm.org/"], ["GitHub", "https://github.com/Niko1221/Strata"]]},
-  {name: "Maya", take: "A related engine that grew out of Strata, aimed at even bigger models (such as GLM-5.3 Flash and DeepSeek-V4.1 Flash), spread across one to sixteen NVIDIA or AMD GPUs, with a server and dashboard of its own.", links: [["GitHub", "https://github.com/mw00/project-maya"]]}
 ];
 function pickCards(it){
   const m = S.models.find(x => x.id === it.id) || (it.alt || []).map(a => S.models.find(x => x.id === a)).find(Boolean);
   if(!m) return "";
   return cardHTML(m, `<p class="pickhead"><span class="chip lem">${esc(it.label)}</span></p><p class="take">${esc(it.take)}</p>`);
 }
-function picksHTML(){
-  const noModels = !S.models.length;
-  const tiers = PICKS.map(t => {
-    const cards = t.items.map(pickCards).join("");
-    if(!cards) return "";
-    return `<section class="picktier"><div class="tierhead"><h3>${esc(t.tier)}</h3><p>${esc(t.blurb)}</p></div>${t.note ? `<p class="ticknote">${esc(t.note)}</p>` : ""}<div class="grid">${cards}</div></section>`;
-  }).join("");
-  const eng = `<section class="picktier"><div class="tierhead"><h3>For advanced users: engines for huge models</h3><p>Not for everyone. Skip this unless you are comfortable on the command line.</p></div>
-    <div class="warnbox"><b>Advanced.</b> These are young projects that run outside Zest and Lemonade. You install and troubleshoot them yourself, and the speeds quoted online are the projects' own claims.</div>
-    <div class="engrid">${PICK_ENGINES.map(e => `<article class="card engcard"><div class="ctop"><h3>${e.name}</h3><span class="chip">Advanced</span></div><p class="take">${esc(e.take)}</p><div class="links">${e.links.map(([n, u]) => `<a href="${u}" target="_blank" rel="noopener noreferrer">${esc(n)}</a>`).join("")}</div></article>`).join("")}</div></section>`;
-  const harness = `<section class="picktier"><div class="tierhead"><h3>Make any model better: a harness and skills</h3><p>A model gets much more useful when it can search the web and follow skills.</p></div>
+/* ======================= the Library: one list, whichever engine runs a model ======================= */
+const LIB = {d: null, t: 0, busy: false, tab: store.get("zest.libtab", "installed"), kind: "all", q: "", notNow: false, picked: ""};
+const LIB_TIERS = [["small", "Small models", "Under 10 GB of graphics memory. They start in seconds."], ["medium", "Medium models", "10 to 24 GB of graphics memory."],
+  ["large", "Large models", "For big computers. They take a couple of minutes to start."], ["other", "Pictures, speech and sound", ""]];
+const LIB_TABS = [["installed", "Installed"], ["recommended", "Recommended for this computer"], ["everything", "Everything"]];
+const LIB_KINDS = [["all", "All kinds"], ["chat", "Chat"], ["vision", "Sees pictures"], ["image", "Makes images"], ["audio", "Speech and sound"]];
+const LIB_TIPS = `<section class="picktier"><div class="tierhead"><h3>Make any model better: a harness and skills</h3><p>A model gets much more useful when it can search the web and follow skills.</p></div>
     <div class="engrid"><article class="card engcard"><div class="ctop"><h3>OpenChamber</h3><span class="chip lem">My pick</span></div><p class="take">The app I recommend for working with your models. Connect it through the Server page. I find Unsloth Desktop laggy at the moment, and Hermes more complex than most people need.</p><div class="links"><a href="https://github.com/openchamber/openchamber" target="_blank" rel="noopener noreferrer">OpenChamber on GitHub</a></div></article>
     <article class="card engcard"><div class="ctop"><h3>obra/superpowers</h3><span class="chip lem">Skills</span></div><p class="take">Give your models a few skills, especially this set, and most of them turn into a very good daily driver. A trimmed copy already comes with Zest: switch it on under <a href="#skills" data-go="skills">Skills</a>.</p><div class="links"><a href="https://github.com/obra/superpowers" target="_blank" rel="noopener noreferrer">obra/superpowers on GitHub</a></div></article></div></section>`;
-  const more = `<section class="picktier more"><p>Want something else? <button class="linkbtn" data-f2="foryou">Browse more models</button> that fit your computer, or <button class="linkbtn" data-hf>add any GGUF model from Hugging Face</button>. If a model's design isn't supported yet, Zest will tell you.</p></section>`;
-  return `<div class="picks">${noModels ? `<p class="help2">Models are loading…</p>` : tiers}${eng}${harness}${more}</div>`;
+const libTier = gb => !gb ? "medium" : gb < 10 ? "small" : gb <= 24 ? "medium" : "large";
+const isChatModel = m => m.recipe === "llamacpp" && !(m.labels || []).some(l => /embed|rerank/.test(l));
+async function libLoad(fresh){
+  if(LIB.busy) return; LIB.busy = true;
+  try{ LIB.d = await api("/ui/library"); LIB.t = Date.now(); }catch{}
+  LIB.busy = false; if(S.view === "models") renderModels();
+}
+function libShow(){ renderModels(); libLoad(); strRefresh(); pkLoad(true); }
+function libFilters(){
+  $("#filters").innerHTML = LIB_TABS.map(([k, l]) => `<button type="button" data-tab="${k}" aria-pressed="${LIB.tab === k}">${l}</button>`).join("") +
+    (LIB.tab === "everything" ? `<select id="libkind" aria-label="Kind of model">${LIB_KINDS.map(([k, l]) => `<option value="${k}" ${LIB.kind === k ? "selected" : ""}>${l}</option>`).join("")}</select>` : "") +
+    `<input type="search" id="mq" placeholder="Search by name" aria-label="Search models" value="${esc(LIB.q)}">`;
+}
+/* where models live: the one folder the person chose, or the one question that picks it */
+function libWhereHTML(){
+  const d = LIB.d; if(!d) return "";
+  if(d.chosen) return `<div class="libwhere">Your models live in <b>${esc(d.root)}</b>${d.disk ? `<span>${d.disk.free_gb} GB free</span>` : ""}<button class="linkbtn" type="button" data-lib="where">Change</button></div>`;
+  if(LIB.notNow) return `<div class="libwhere">Models are kept wherever each program puts them. <button class="linkbtn" type="button" data-lib="again">Choose one folder for all of them</button></div>`;
+  const ps = d.places || [], pick = LIB.picked || ((ps.find(p => p.suggested) || ps[0] || {}).folder || "");
+  return `<section class="panel" style="margin-bottom:14px"><h3>Where should your models live?</h3>
+    <p class="help" style="margin:0">Models are big, so pick a disk with room. Zest keeps everything in one folder called Models there, and moves nothing you already have.</p>
+    <div class="libplaces" role="radiogroup" aria-label="Where models should live">${ps.map(p => `<label><input type="radio" name="libplace" value="${esc(p.folder)}" ${p.folder === pick ? "checked" : ""}><span class="mono">${esc(p.folder)}</span><small>${p.free_gb} GB free${p.suggested ? " · most room" : ""}</small></label>`).join("")}</div>
+    <div class="line"><button class="btn primary" type="button" data-lib="use">Use this folder</button><button class="btn" type="button" data-lib="pick">Choose another folder…</button><button class="linkbtn" type="button" data-lib="later">Not now</button></div>
+    ${LIB.err ? `<p class="errline" role="alert">${esc(LIB.err)}</p>` : ""}</section>`;
+}
+/* downloads, from every engine, in one strip */
+function libDlItems(){
+  const out = [];
+  for(const j of (S.downloads || []).filter(isActiveJob)) out.push({title: friendly(j.model_name), percent: j.percent || 0, text: j.status === "paused" ? "Paused" : "", cancel: j.model_name});
+  const run = (STR.d || {}).run || {}, ins = (STR.d || {}).install || {};
+  if(ins.state === "installing") out.push({title: "Getting ready for large models", percent: null, text: (ins.log || []).filter(Boolean).slice(-1)[0] || "Installing…"});
+  if(run.state === "starting") out.push({title: ((bigOptions().find(o => "Zest " + o.model === run.preset) || {}).title) || (run.preset || "A large model").replace(/^Zest /, ""), percent: null, text: run.phase || (run.log || []).filter(Boolean).slice(-1)[0] || "Getting it ready. The first time can take a long while."});
+  return out;
+}
+function libDlHTML(){
+  const items = libDlItems(), run = (STR.d || {}).run || {};
+  let html = items.map(i => `<div class="line"><b>${esc(i.title)}</b><div class="prog ${i.percent == null ? "ind" : ""}"><i style="width:${i.percent || 0}%"></i></div><span class="mono faint">${i.percent != null ? i.percent + "%" : ""}</span>${i.cancel ? `<button class="btn" data-canceldl="${esc(i.cancel)}">Cancel</button>` : ""}</div>${i.text ? `<p class="help" style="margin:-4px 0 0">${esc(i.text)}</p>` : ""}`).join("");
+  if(run.state === "error" && run.error && !items.length) html += `<div class="note-bad">${esc(run.error)}${run.low_memory && run.retry ? ' <button class="btn" data-sanyway="1">Start anyway</button>' : ""}</div>`;
+  return html ? `<section class="panel libdl"><h3 style="margin:0">Getting models</h3>${html}</section>` : "";
+}
+/* cards */
+const featLine = e => [e.vision ? "Understands pictures" : "", e.reasoning ? "Thinks before it answers" : "", e.tools !== false ? "Can use tools" : ""].filter(Boolean).join(" · ") || "Everyday chat and writing";
+function libFitHTML(e){
+  if(!e.why && e.fit === "fits") return `<div class="fitnote ok" style="margin-top:2px">Fits this computer.</div>`;
+  return `<div class="fitnote ${e.fit === "no" ? "over" : e.fit === "tight" ? "tight" : "ok"}" style="margin-top:2px">${esc(e.why || (e.fit === "tight" ? "A snug fit." : "Fits this computer."))}</div>`;
+}
+function bigCard(e){          // an installed model that a Large-model engine runs (no per-engine settings to edit here)
+  const startable = !!pkFind(e.ref), live = (S.ms || {}).loaded === e.ref;
+  return `<article class="card ${live ? "loaded" : ""}" data-id="${esc(e.ref || e.id)}">
+    <div class="ctop"><h3>${esc(e.title)}</h3>${live ? '<span class="chip ok">Ready</span>' : '<span class="chip">On this computer</span>'}</div>
+    <p class="what">${esc(featLine(e))}</p>
+    <div class="row"><span>Large <span class="mono num">· needs about ${Math.round(e.need_gb || 0)} GB of memory</span></span></div>
+    ${libFitHTML(e)}
+    <div class="act">${startable ? `<button class="btn primary" data-chat="${esc(e.ref)}">Chat with it</button><button class="btn" data-go2="tuning">Make it faster</button>`
+      : `<span class="help" style="margin:0">It needs a saved setup before Zest can start it. Run <span class="mono">strata launch</span> once and save one, or press Get it below.</span>`}</div>
+    <details class="more"><summary>Details</summary><div class="mbody"><div class="tags"><span class="chip">${esc(e.quant || "")}</span><span class="chip">${esc(e.architecture)}</span></div>
+      <div class="mono mid">${esc(e.stem)}</div><div class="mid">${e.files.length} file${e.files.length === 1 ? "" : "s"} · ${(e.size_bytes / 1e9).toFixed(1)} GB on disk</div><div class="mid mono">${esc(e.folder)}</div>
+      ${e.context ? `<div class="mid">Remembers up to ${fmtTok(e.context)} tokens of conversation</div>` : ""}
+      <div class="undereng">Runs on ${esc(e.engine_name)}</div></div></details></article>`;
+}
+function getBigCard(o){        // a Large model that can be set up from here
+  const busy = ((STR.d || {}).run || {}).state === "starting", no = o.fit === "no";
+  return `<article class="card"><div class="ctop"><h3>${esc(o.title)}</h3></div>
+    <p class="what">Needs about ${Math.round(o.need_gb)} GB of memory${o.download_gb ? ` · ${Math.round(o.download_gb)} GB to download` : ""} · remembers up to ${fmtTok(o.ctx)}</p>
+    <div class="fitnote ${no ? "over" : o.fit === "tight" ? "tight" : "ok"}" style="margin-top:2px">${esc(no ? o.why : o.fit === "tight" ? "A snug fit: close other big programs first." : "Fits this computer.")}</div>
+    <div class="act">${no ? "" : `<button class="btn primary" data-sget="${esc(o.family)}|${esc(o.model)}" ${busy ? "disabled" : ""}>Get it${o.download_gb ? " · " + Math.round(o.download_gb) + " GB" : ""}</button>`}</div>
+    <details class="more"><summary>Details</summary><div class="mbody"><div class="mid">Quality: ${esc(o.model)}</div><div class="undereng">Runs on Strata</div></div></details></article>`;
+}
+function libUnder(m){ return `<div class="undereng">Runs on Lemonade</div>`; }
+function libGrid(items){ return items.length ? `<div class="grid">${items.join("")}</div>` : ""; }
+function libSection(t, cards, note){ return cards.length ? `<section class="picktier"><div class="tierhead"><h3>${esc(t[1])}</h3>${t[2] ? `<p>${esc(t[2])}</p>` : ""}</div>${note || ""}<div class="grid">${cards.join("")}</div></section>` : ""; }
+const libMatch = (m, q) => !q || m.id.toLowerCase().includes(q) || friendly(m).toLowerCase().includes(q) || (m.labels || []).some(l => l.includes(q));
+const libKind = (m, k) => k === "all" || (k === "chat" ? isChatModel(m) : k === "vision" ? (m.labels || []).includes("vision") : k === "image" ? m.recipe === "sd-cpp" : ["whispercpp", "kokoro", "moonshine", "acestep", "thinksound"].includes(m.recipe));
+const bigOptions = () => (STR.rec || {}).options || [];
+/* is this Large model already on the computer? (Qwen sizes are told apart by quality; DeepSeek has one set up) */
+const bigHave = o => ((LIB.d || {}).models || []).some(e => e.provider && e.provider !== "lemonade" && (o.family === "deepseek41" ? e.architecture === "deepseek41" : e.architecture === "qwen4exp" && e.quant === o.model));
+function libInstalled(){
+  const q = LIB.q.toLowerCase(), cat = (LIB.d || {}).models || [], by = {tier: {small: [], medium: [], large: [], other: []}};
+  const seen = new Set();
+  for(const e of cat){
+    if(!(!q || e.title.toLowerCase().includes(q) || e.stem.toLowerCase().includes(q))) continue;
+    const lid = (e.ids || {}).lemonade, lm = lid && S.models.find(x => x.id === lid);
+    if(lm){ seen.add(lm.id); by.tier[e.tier || libTier(e.size_bytes / 1e9)].push(cardHTML(lm, "") .replace("</article>", libUnder(lm) + "</article>")); }
+    else if(e.provider && e.provider !== "lemonade" && e.ref !== undefined) by.tier[e.tier || "large"].push(bigCard(e));
+  }
+  for(const m of S.models.filter(m => m.downloaded && !seen.has(m.id) && libMatch(m, q)))
+    by.tier[isChatModel(m) ? libTier(m.size) : "other"].push(cardHTML(m, "").replace("</article>", libUnder(m) + "</article>"));
+  return LIB_TIERS.map(t => libSection(t, by.tier[t[0]])).join("") || `<div class="empty-note">${q ? "Nothing matches." : "You don't have any models yet. Open <b>Recommended for this computer</b> to get one."}</div>`;
+}
+function libRecommended(){
+  const q = LIB.q.toLowerCase(), by = {small: [], medium: [], large: []}, have = new Set(((LIB.d || {}).models || []).map(e => (e.ids || {}).lemonade).filter(Boolean));
+  for(const g of PICKS) for(const it of g.items){
+    const m = S.models.find(x => x.id === it.id) || (it.alt || []).map(a => S.models.find(x => x.id === a)).find(Boolean);
+    if(!m || !libMatch(m, q) || ((fitInfo(m) || {}).cls === "over" && !m.downloaded)) continue;
+    by[libTier(m.size)].push(cardHTML(m, `<p class="pickhead"><span class="chip lem">${esc(it.label)}</span></p><p class="take">${esc(it.take)}</p>`).replace("</article>", libUnder(m) + "</article>"));
+  }
+  for(const o of bigOptions().filter(o => o.fit !== "no" && !bigHave(o))){
+    if(q && !o.title.toLowerCase().includes(q) && !o.model.toLowerCase().includes(q)) continue;
+    by.large.push(getBigCard(o));
+  }
+  const tips = LIB_TIPS;
+  const html = LIB_TIERS.slice(0, 3).map(t => libSection(t, by[t[0]])).join("");
+  return (html || `<div class="empty-note">Zest is still looking at your computer…</div>`) + (q ? "" : tips);
+}
+function libEverything(){
+  const q = LIB.q.toLowerCase(), by = {small: [], medium: [], large: [], other: []};
+  for(const m of S.models.filter(m => libKind(m, LIB.kind) && libMatch(m, q)).sort((a, b) => b.downloaded - a.downloaded || a.id.localeCompare(b.id)))
+    by[isChatModel(m) ? libTier(m.size) : "other"].push(cardHTML(m, "").replace("</article>", libUnder(m) + "</article>"));
+  if(["all", "chat"].includes(LIB.kind)){
+    const mine = new Set(((LIB.d || {}).models || []).filter(e => e.provider && e.provider !== "lemonade").map(e => e.stem));
+    for(const e of ((LIB.d || {}).models || []).filter(e => e.provider && e.provider !== "lemonade" && (!q || e.title.toLowerCase().includes(q)))) by.large.push(bigCard(e));
+    for(const o of bigOptions().filter(o => o.fit !== "no" && !bigHave(o) && (!q || o.title.toLowerCase().includes(q)))) by.large.push(getBigCard(o));
+  }
+  return LIB_TIERS.map(t => libSection(t, by[t[0]])).join("") || `<div class="empty-note">Nothing matches.</div>`;
 }
 function renderModels(){
-  if(!CATS.some(c => c[0] === S.filter)) S.filter = "picks";
-  renderFilters();
-  const none = S.models.length && !S.models.some(m => m.downloaded), noBackend = S.bk && S.bk.length && !backendsInstalled().length;
-  $("#modelsbanner").innerHTML = (noBackend ? `<div class="note-warn" style="margin-bottom:12px">Zest still needs one small piece before models can run. <a href="#setup" data-go="setup">Finish setting up</a>.</div>` : "") +
-    (none ? `<div class="note-warn" style="margin-bottom:12px">You don't have any models yet. Press <b>Get it</b> on one below to download it. It stays on this computer.</div>` : "");
-  const f = CATS.find(c => c[0]===S.filter)[2], q = S.q.toLowerCase();
-  const list = S.models.filter(f).filter(m => !q || m.id.toLowerCase().includes(q) || friendly(m).toLowerCase().includes(q) || (m.labels||[]).some(l=>l.includes(q)))
-    .sort((a,b)=> (b.id===S.loaded)-(a.id===S.loaded) || b.downloaded-a.downloaded || a.id.localeCompare(b.id));
-  const open = new Set($$("#grid details.more[open]").map(d => d.closest(".card").dataset.id));
-  $("#grid").classList.toggle("picksmode", S.filter === "picks");
-  if(S.filter === "picks"){ $("#grid").innerHTML = picksHTML(); $$("#grid .card[data-id]").forEach(c => { if(open.has(c.dataset.id)) c.querySelector("details.more").open = true; }); return; }
-  $("#grid").innerHTML = list.length ? list.map(m => cardHTML(m)).join("") : `<div class="empty-note" style="grid-column:1/-1">Nothing matches. Try “Everything”, or <button class="linkbtn" data-hf>get a model from Hugging Face</button>.</div>`;
-  $$("#grid .card").forEach(c => { if(open.has(c.dataset.id)) c.querySelector("details.more").open = true; });
+  if(!LIB_TABS.some(t => t[0] === LIB.tab)) LIB.tab = "installed";
+  libFilters();
+  const noBackend = S.bk && S.bk.length && !backendsInstalled().length;
+  $("#modelsbanner").innerHTML = noBackend ? `<div class="note-warn" style="margin-bottom:12px">Zest still needs one small piece before models can run. <a href="#setup" data-go="setup">Finish setting up</a>.</div>` : "";
+  $("#libwhere").innerHTML = libWhereHTML();
+  $("#libdl").innerHTML = libDlHTML();
+  const open = new Set($$("#grid details.more[open]").map(d => d.closest(".card")?.dataset.id));
+  $("#grid").classList.add("picksmode");
+  $("#grid").innerHTML = '<div class="picks">' + (LIB.tab === "installed" ? libInstalled() : LIB.tab === "recommended" ? libRecommended() : libEverything()) + "</div>";
+  $$("#grid .card[data-id]").forEach(c => { if(open.has(c.dataset.id)) c.querySelector("details.more")?.setAttribute("open", ""); });
+}
+/* adding models */
+function libAddOpen(){ $("#addbody").innerHTML = `
+  <div class="addopt"><b>From Hugging Face</b><span>Paste a link to a model page.</span><button class="btn" type="button" data-add="hf">Paste a link</button></div>
+  <div class="addopt"><b>From a folder</b><span>Use models you already have in a folder on this computer.</span><button class="btn" type="button" data-add="folder">Choose a folder…</button></div>
+  <div class="addopt"><b>Find models already here</b><span>Zest looks in the usual places, like LM Studio and Ollama.</span><button class="btn" type="button" data-add="scan">Look</button></div>
+  <div id="addres"></div>`; $("#adddlg").showModal(); }
+async function libAddFolder(path, label, kind){
+  const r = await api("/ui/library/folder", {method: "POST", body: JSON.stringify({path, label, kind})});
+  await libLoad(true); await loadModels(); return r;
+}
+$("#adddlg").addEventListener("click", async e => {
+  const b = e.target.closest("[data-add],[data-adduse]"); if(!b) return; const res = $("#addres");
+  if(b.dataset.add === "hf"){ $("#adddlg").close(); return openHF(); }
+  if(b.dataset.add === "folder") return openFs("", async path => { try{ res.textContent = "Adding…"; await libAddFolder(path); res.innerHTML = `<p class="help">Added. Its models are in your Library now.</p>`; }catch(err){ res.innerHTML = `<p class="errline">${esc(err.message)}</p>`; } });
+  if(b.dataset.add === "scan"){
+    res.innerHTML = '<p class="help">Looking…</p>';
+    try{
+      const r = await api("/ui/models/scan"); LIB.found = r.sources;
+      res.innerHTML = r.sources.length ? `<div class="addfound">${r.sources.map((s, i) => `<label><input type="checkbox" data-i="${i}" ${s.label === "Downloads" ? "" : "checked"}><span><b>${esc(s.label)}</b> <small>${s.count} model${s.count === 1 ? "" : "s"} · ${fmtBytes(s.bytes)} · ${esc(s.path)}</small></span></label>`).join("")}</div><div class="line"><button class="btn primary" type="button" data-adduse="1">Use the ticked ones</button></div>` : '<p class="help">Nothing found in the usual places. You can choose a folder instead.</p>';
+    }catch(err){ res.innerHTML = `<p class="errline">${esc(err.message)}</p>`; }
+  }
+  if(b.dataset.adduse){
+    const picks = [...$$("#addres input[data-i]:checked")].map(x => LIB.found[+x.dataset.i]);
+    res.textContent = "Adding…";
+    try{ for(const s of picks) await libAddFolder(s.path, s.label, s.kind); res.innerHTML = `<p class="help">Added ${picks.length} folder${picks.length === 1 ? "" : "s"}. Their models are in your Library now.</p>`; }catch(err){ res.innerHTML = `<p class="errline">${esc(err.message)}</p>`; }
+  }
+});
+$("#libadd").addEventListener("click", libAddOpen);
+async function libSetRoot(path){
+  try{ LIB.err = ""; await api("/ui/library/root", {method: "POST", body: JSON.stringify({path})}); await libLoad(true); toast("Your models will live in " + path); }
+  catch(err){ LIB.err = err.message; renderModels(); }
 }
 function updateModelBadges(){ if(!$("#optdlg").open && !$("#hfdlg").open && !document.activeElement?.closest?.("#grid")) renderModels(); }
-$("#filters").addEventListener("click", e => { const b = e.target.closest("[data-f]"); if(b){ S.filter = b.dataset.f; store.set("zest.filter3", S.filter); renderModels(); } });
-$("#filters").addEventListener("input", e => { if(e.target.id==="mq"){ S.q = e.target.value; const pos = e.target.selectionStart; renderModels(); const n = $("#mq"); n.focus(); n.setSelectionRange(pos,pos); } });
+$("#filters").addEventListener("click", e => { const b = e.target.closest("[data-tab]"); if(b){ LIB.tab = b.dataset.tab; store.set("zest.libtab", LIB.tab); renderModels(); } });
+$("#filters").addEventListener("change", e => { if(e.target.id === "libkind"){ LIB.kind = e.target.value; renderModels(); } });
+$("#filters").addEventListener("input", e => { if(e.target.id==="mq"){ LIB.q = e.target.value; const pos = e.target.selectionStart; renderModels(); const n = $("#mq"); n.focus(); n.setSelectionRange(pos,pos); } });
 /* Start a new chat with this model. Nothing is loaded here: the chat's model bar does that (or sending a message does). */
 function chatWith(id){
   S.model = id; store.set("zest.model", id); syncModelSelect();
@@ -2117,8 +2264,29 @@ function chatWith(id){
 }
 $("#v-models").addEventListener("click", async e => {
   const t = e.target.closest("button"); if(!t) return;
-  if(t.dataset.f2){ S.filter = t.dataset.f2; store.set("zest.filter3", S.filter); window.scrollTo(0, 0); return renderModels(); }
+  if(t.dataset.f2){ LIB.tab = "everything"; store.set("zest.libtab", LIB.tab); window.scrollTo(0, 0); return renderModels(); }
   if(t.hasAttribute("data-hf")) return openHF();
+  if(t.dataset.lib){
+    const a = t.dataset.lib;
+    if(a === "use"){ const v = document.querySelector('input[name="libplace"]:checked'); if(v) return libSetRoot(v.value); }
+    if(a === "pick") return openFs("", p => libSetRoot(p.replace(/\/$/, "") + "/Models"));
+    if(a === "where") return openFs((LIB.d || {}).root || "", p => libSetRoot(p));
+    if(a === "later"){ LIB.notNow = true; return renderModels(); }
+    if(a === "again"){ LIB.notNow = false; return renderModels(); }
+  }
+  if(t.dataset.go2) return show(t.dataset.go2);
+  if(t.dataset.sget){
+    const [family, model] = t.dataset.sget.split("|");
+    if(!confirm("Get this model? It can be tens of gigabytes. Zest frees the memory your other models are using, and the first start can take a few minutes.")) return;
+    try{ STR.d = await api("/ui/strata/setup", {method: "POST", body: JSON.stringify({family, model})}); }catch(err){ toast(err.message); }
+    return renderModels();
+  }
+  if(t.dataset.sanyway){
+    const rt = ((STR.d || {}).run || {}).retry || {};
+    if(!confirm("Start anyway? The computer may slow right down or run out of memory.")) return;
+    try{ STR.d = await api(rt.kind === "setup" ? "/ui/strata/setup" : "/ui/strata/start", {method: "POST", body: JSON.stringify(Object.assign({}, rt, {force: true}))}); }catch(err){ toast(err.message); }
+    return renderModels();
+  }
   if(t.dataset.dl) startDownload(t.dataset.dl);
   else if(t.dataset.canceldl) cancelDownload(t.dataset.canceldl);
   else if(t.dataset.opts) openOptions(t.dataset.opts);
@@ -2222,7 +2390,7 @@ $("#hfbody").addEventListener("click", e => {
 $("#hfbody").addEventListener("keydown", e => { if(e.key === "Enter" && e.target.id === "hfq"){ e.preventDefault(); hfLookup(); } });
 $("#hfdo").addEventListener("click", hfDownload);
 $("#hfcancel").addEventListener("click", () => $("#hfdlg").close());
-$("#hfopen").addEventListener("click", openHF);
+$("#hfopen")?.addEventListener("click", openHF);
 
 /* ======================= per-model options ======================= */
 let OD = null;   // the dialog's state: model, what Lemonade reports, and what the user changed
@@ -2934,11 +3102,12 @@ async function strUpdFetch(fresh){
   updateNavDot(); if(S.view === "models") strPaint();
 }
 async function strRefresh(){
-  if(S.view !== "models") return;
+  if(S.view !== "models" && S.view !== "backends") return;
   try{ STR.d = await api("/ui/strata"); }catch{ STR.d = null; }
   if(STR.d && STR.d.installed && (!SU.strUpd || (SU.strUpd.update || {}).state === "working")) await strUpdFetch();
-  if(STR.d && STR.d.installed && Date.now() - STR.recAt > 60000 && !(STR.d.run || {}).state?.startsWith("start")){ STR.recAt = Date.now(); try{ STR.rec = await api("/ui/strata/recommend"); }catch{} }
+  if(Date.now() - STR.recAt > 60000 && !(STR.d && STR.d.run && String(STR.d.run.state).startsWith("start"))){ STR.recAt = Date.now(); try{ STR.rec = await api("/ui/strata/recommend"); }catch{} }
   strPaint();
+  if(S.view === "models" && !document.activeElement?.closest?.("#grid, #filters, #adddlg")) renderModels();
 }
 function strPaint(){
   const box = $("#stratabox"), d = STR.d; if(!box) return;
@@ -3029,7 +3198,7 @@ $("#stratabox").addEventListener("submit", async e => {
   try{ STR.d = await api("/ui/strata/connect", {method: "POST", body: JSON.stringify({url: $("#strurl").value.trim(), key: $("#strk").value.trim()})}); }catch(err){ STR.msg = err.message; }
   strPaint();
 });
-setInterval(() => { if(S.view === "models" && !document.hidden) strRefresh(); }, 3000);
+setInterval(() => { if((S.view === "models" || S.view === "backends") && !document.hidden) strRefresh(); }, 3000);
 
 /* ---- folder browser */
 const FS = {cb: null, path: ""};
@@ -3066,7 +3235,7 @@ function renderPick(){
   $("#pickbody").innerHTML = `
     <h4>Start with three questions</h4>
     <ol class="picklist">
-      <li><b>Will it fit?</b> Zest's <b>My picks</b> page leads with models I recommend, and <b>More models</b> hides anything that won't run comfortably in your free graphics memory. A model that doesn't fit will be slow or fail to start.</li>
+      <li><b>Will it fit?</b> Zest's Library lists <b>Recommended for this computer</b> first, and hides anything that won't run comfortably in your free graphics memory. A model that doesn't fit will be slow or fail to start.</li>
       <li><b>What is it for?</b> Chat and writing, coding, tool use, or understanding pictures. The labels on each card say what a model is good at.</li>
       <li><b>How much does it need to remember?</b> The context window is how much conversation the model can see. 128k tokens is a good threshold for usefulness in long chats and agentic work, and it is Zest's default.</li>
     </ol>
@@ -3083,7 +3252,7 @@ const FAQ = [
   ["What is a model?", "A model is the AI that answers you. It is a big file, usually a few gigabytes, that lives on this computer. Bigger models tend to write better but need a stronger computer and answer more slowly. Zest marks each one as comfortable, snug or too big for your machine."],
   ["Is my data private?", "Yes. Zest and the models run on this computer. Your conversations are saved on this computer, in Zest's own folder, and are never sent anywhere. Zest only goes online to download a model you ask for, check for Lemonade updates, fetch skills when you paste a link, or search the web when you allow the model to (it asks first, every time, and you can switch it off in the chat's Details panel). The <a href=\"#docs\" data-go=\"docs\">Docs</a> page explains where everything is kept."],
   ["Why is the first answer slow?", "The model has to be loaded into your computer's memory before it can answer. That takes a few seconds to a minute, depending on its size. After that, answers start right away."],
-  ["How do I know which model to use?", "It depends on your computer and what you want to do. Start with <b>My picks</b> on the Models page, where I explain each recommendation. <b>More models</b> shows the rest, hiding anything that won't run well. <p><button class=\"btn\" type=\"button\" data-pick>Show me how to compare models</button></p>"],
+  ["How do I know which model to use?", "It depends on your computer and what you want to do. Start with <b>Recommended for this computer</b> in the Library, where I explain each recommendation. <b>More models</b> shows the rest, hiding anything that won't run well. <p><button class=\"btn\" type=\"button\" data-pick>Show me how to compare models</button></p>"],
   ["What is the context window?", "It is how much of the conversation a model can see at once. Zest uses <b>128k</b> tokens (about 100,000 words) by default, which is a good threshold for usefulness in long chats and agentic work. You can change it for one model under <b>Details</b>, then <b>Settings for this model</b>. A bigger window needs more graphics memory."],
   ["How do I get more models?", "Open <b>Models</b> and press <b>Get it</b> on any model. To use one that isn't listed, press <b>Get from Hugging Face</b> and paste a link to a GGUF model."],
   ["Can other apps use my models?", "Yes. Open <b>Advanced</b>, then <b>Server</b>. Zest gives you an address and a key that you can paste into opencode, Hermes, or any chat app or coding assistant that works with an OpenAI-style server."],
@@ -3449,7 +3618,7 @@ const SET_META = {
   rocm_channel: {l:"ROCm channel"},
   rocm_install_method: {l:"ROCm install method", opts:["auto","pip","tarball"]},
   no_fetch_executables: {l:"Never download backend programs"},
-  "llamacpp.args": {l:"Extra arguments for every model", h:"Added to every llama-server start. Per-model arguments are set from the Models page."},
+  "llamacpp.args": {l:"Extra arguments for every model", h:"Added to every llama-server start. Per-model arguments are set from the Library."},
   "llamacpp.backend": {l:"Backend", kind:"backend"},
   "llamacpp.device": {l:"Devices", h:"Choose and order devices on the Hardware page.", link:"hardware"},
   "llamacpp.prefer_system": {l:"Prefer a llama.cpp installed on this system"}
@@ -3665,7 +3834,7 @@ async function loadBackends(){
 }
 const STATE_LABEL = {installed:"installed", update_required:"update needed", installable:"not installed"};
 const ENGINE_INFO = {
-  llamacpp: "Runs chat and writing models (the GGUF files you download on the Models page). This is the engine Zest's chat uses, so it is the one that matters most.",
+  llamacpp: "Runs chat and writing models (the GGUF files you download from the Library). This is the engine Zest's chat uses, so it is the one that matters most.",
   whispercpp: "Listens to speech and turns it into text, for dictation and transcribing recordings.",
   moonshine: "A small, quick speech-to-text engine that works well on ordinary processors.",
   kokoro: "Reads text aloud with a natural voice (text-to-speech).",
@@ -3929,7 +4098,7 @@ function pkRender(){
       return `<button type="button" class="pkrow" role="option" data-id="${esc(m.id)}" aria-selected="${m.id === cur}" ${no ? 'aria-disabled="true"' : ""}><span class="pkdot ${m.live ? "on" : ""}" aria-hidden="true"></span><span class="pkmain"><b>${esc(m.title)}${pi ? ` <span class="chip">${esc(pi.label)}</span>` : ""}</b><span class="pkmeta">${pkNote(m)}</span></span><span class="pkeng">${esc(m.engine_name)}</span></button>`;
     }).join("");
   }
-  if(!html) html = '<div class="pkhead"><span>No model downloaded yet. Open the Models page to get one.</span></div>';
+  if(!html) html = '<div class="pkhead"><span>No model downloaded yet. Open the Library to get one.</span></div>';
   const foot = [ms.loaded ? '<button type="button" class="btn ghost" data-pk="free">Free memory</button>' : "", ms.loaded && ms.loaded === cur ? '<button type="button" class="btn ghost" data-pk="again" title="Load it again, so settings you saved for this model take effect">Load it again</button>' : ""].join("");
   pop.innerHTML = html + (foot ? `<div class="pkfoot">${foot}</div>` : "");
 }
@@ -3974,7 +4143,7 @@ function cwModelBar(){
   selC.title = m && m.ctx_fixed ? "This model decides how much it can remember." : "How much of the conversation the model can keep in mind. 128k is the default.";
   const st = $("#mbstate");
   if(loading) st.textContent = (S.loadSteps[S.loadSteps.length - 1]) || "Getting ready…";
-  else if(!models.length) st.textContent = "Download a model on the Models page to start.";
+  else if(!models.length) st.textContent = "Download a model from the Library to start.";
   else if(CW.running) st.textContent = "Answering…";
   else if(here) st.textContent = ms.ctx ? `Ready · remembers up to ${fmtTok(ms.ctx)}${!(m && m.ctx_fixed) && ms.ctx < cfg ? `. The setting is ${fmtTok(cfg)}; it is raised when you next send.` : ""}` : "Ready";
   else if(ms.loaded) st.textContent = "Another model is in memory. Choosing this one frees it first.";

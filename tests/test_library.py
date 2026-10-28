@@ -16,6 +16,7 @@ sys.path.insert(0, os.path.join(HERE, "..", "zest"))
 
 import gguf  # noqa: E402
 import library  # noqa: E402
+import modelscan  # noqa: E402
 import registry  # noqa: E402
 
 GB = 10 ** 9
@@ -220,6 +221,34 @@ class Views(Env):
         c = library.lemonade_config()
         self.assertEqual(c["models_dir"], os.path.join(self.lib, "lemonade"))
         self.assertEqual(c["extra_models_dir"], os.path.join(self.tmp, "data", "views", "lemonade"))
+
+
+class Imports(Env):
+    def test_an_imported_folder_never_links_a_file_the_engine_cannot_run(self):
+        src = os.path.join(self.tmp, "other")
+        write_gguf(os.path.join(src, "plain", "Plain-Q4.gguf"), arch="gemma3")
+        write_gguf(os.path.join(src, "strata", "Flash-00001-of-00001.gguf"), arch="qwen4exp")
+        write_gguf(os.path.join(src, "mixed", "Fine-Q4.gguf"), arch="gemma3")
+        write_gguf(os.path.join(src, "mixed", "Odd-Q4.gguf"), arch="qwen4exp")
+        sources = [{"kind": "folder", "path": src, "label": "Other"}]
+
+        def accepts(path):
+            return self.reg.get("fast").can_run({"format": "gguf", "architecture": gguf.read_header(path)["architecture"]})[0]
+        old = modelscan.farm_dir
+        modelscan.farm_dir = lambda: os.path.join(self.tmp, "farm")
+        try:
+            linked = modelscan.sync_farm(sources, accept=accepts)
+            names = sorted(f for _, _, fs in os.walk(os.path.join(self.tmp, "farm")) for f in fs)
+        finally:
+            modelscan.farm_dir = old
+        self.assertEqual(names, ["Fine-Q4.gguf", "Plain-Q4.gguf"])
+        self.assertEqual(linked, 2)
+
+    def test_entries_carry_the_name_chats_use(self):
+        write_gguf(os.path.join(self.lib, "lemonade", "a", "A-Q4.gguf"), size=2 * GB)
+        e = self.by_stem()["A-Q4"]
+        self.assertIn("ref", e)                               # empty here: the test engine has no name for it; a real one does
+        self.assertEqual(e["engine_name"], "Fast engine")
 
 
 class Layout(Env):
