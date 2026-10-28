@@ -2932,10 +2932,11 @@ function strPaint(){
         : `<div class="note-warn">No Strata model fits this computer comfortably. ${esc((rec.options.find(o => o.why) || {}).why || "")}</div>`)
       + `<details><summary class="help" style="cursor:pointer">Other sizes</summary>${rec.options.map(o => `<div class="line"><span class="grow"><b>${esc(o.title)}</b> <span class="faint">${esc(o.model)} · needs about ${Math.round(o.need_gb)} GB${o.download_gb ? " · " + Math.round(o.download_gb) + " GB download" : ""} · ${fitTxt[o.fit]}${o.why ? " (" + esc(o.why) + ")" : ""}</span></span>${o.fit !== "no" ? `<button class="btn" data-str="setup" data-family="${esc(o.family)}" data-model="${esc(o.model)}">Get it</button>` : ""}</div>`).join("")}</details></div>`);
   }
-  if(run.state === "error" && !busy && !up) parts.push(`<div class="note-bad">${esc(run.error)}</div>`);
+  if(run.state === "error" && !busy && !up) parts.push(`<div class="note-bad">${esc(run.error)}${run.low_memory && run.retry ? ` <button class="btn" data-str="anyway">Start anyway</button>` : ""}</div>`);
   if(!d.installed && !servers.length) parts.push(`<p class="help" style="margin:0">Strata runs models that are far too big for your graphics card by keeping part of them in RAM and on the SSD. It is a separate free program (<a href="https://github.com/Niko1221/Strata" target="_blank" rel="noopener noreferrer">Niko1221/Strata</a>). If you already run it, Zest finds it by itself. If not, Zest can install it and check the installer against the checksum Strata publishes. It works best with an NVIDIA RTX 20 series or newer, an AMD Radeon, or an AMD Ryzen AI Max, and a lot of RAM.</p>`
     + (ins.state === "installing" ? `<div class="line"><span class="stat-dot busy"></span><span class="grow">Installing Strata… ${esc((ins.log || []).slice(-1)[0] || "")}</span></div>` : `<div class="line"><button class="btn" data-str="install">Install Strata</button></div>`)
     + (ins.state === "error" ? `<div class="note-bad">${esc(ins.error)}</div>` : ""));
+  if(servers.some(r => r.owner === "zest" && r.source === "launch")) parts.push(`<div class="line"><label class="grow help" style="margin:0">Free the memory when Strata started by Zest has been idle for <input id="stridle" type="number" min="0" max="1440" value="${+d.idle_minutes}" style="width:70px"> minutes (0 keeps it running).</label><button class="btn ghost" data-str="idle">Save</button></div>`);
   parts.push(`<details><summary class="help" style="cursor:pointer">Connect to a Strata on another computer</summary><form class="line" id="strform" style="margin-top:8px"><input id="strurl" type="text" inputmode="url" placeholder="http://192.168.1.20:8080" autocomplete="off" spellcheck="false" aria-label="Strata address"><input id="strk" type="password" placeholder="API key (if it has one)" autocomplete="off" aria-label="Strata API key"><button class="btn" type="submit">Connect</button></form></details>`);
   box.innerHTML = `<section class="panel" style="margin-bottom:16px"><div class="skhead"><h3>Bigger models with Strata</h3><span class="chip">Experimental</span></div>${parts.join("")}${STR.msg ? `<div class="note-bad">${esc(STR.msg)}</div>` : ""}</section>`;
   if(wasOpen) box.querySelector("details").open = true;
@@ -2949,6 +2950,12 @@ $("#stratabox").addEventListener("click", async e => {
     else if(act === "stop"){ if(!confirm("Stop Strata? Anything that is using the model right now, here or in another app, will stop answering.")) return; b.disabled = true; await api("/ui/strata/stop", {method: "POST", body: JSON.stringify({url: u})}); STR.d = await api("/ui/strata"); }
     else if(act === "forget"){ STR.d = await api("/ui/strata/forget", {method: "POST", body: JSON.stringify({url: u})}); }
     else if(act === "key"){ const k = box_key(u); if(!k) return; STR.d = await api("/ui/strata/key", {method: "POST", body: JSON.stringify({url: u, key: k})}); }
+    else if(act === "idle"){ STR.d = await api("/ui/strata/idle", {method: "POST", body: JSON.stringify({minutes: +$("#stridle").value || 0})}); toast("Saved."); }
+    else if(act === "anyway"){
+      const rt = (STR.d.run || {}).retry || {};
+      if(!confirm("Start anyway? The computer may slow right down or run out of memory, and other programs could be closed by the system.")) return;
+      STR.d = await api(rt.kind === "setup" ? "/ui/strata/setup" : "/ui/strata/start", {method: "POST", body: JSON.stringify(Object.assign({}, rt, {force: true}))});
+    }
     else if(act === "setup"){
       if(!confirm("Download and set up this model? It can be tens of gigabytes, and Zest frees the memory your other models are using first.")) return;
       STR.d = await api("/ui/strata/setup", {method: "POST", body: JSON.stringify({family: b.dataset.family, model: b.dataset.model})});

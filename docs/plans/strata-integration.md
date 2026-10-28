@@ -68,7 +68,7 @@ earlier Zest is reused rather than duplicated. Strata gets the same three cases.
 - Download progress parsed from `strata launch` output (verify `--output jsonl`).
 - Picking a Strata model in Chat starts it on demand ("Loading the model"), replacing today's error.
 
-## Phase 2: memory arbitration
+## Phase 2 (built on `strata-support`; tested with fakes): memory arbitration
 
 - Starting Strata unloads Lemonade models first; choosing a Lemonade model while Zest's Strata is up stops it first.
 - Zest-owned Strata stops after N idle minutes (default 20, adjustable). Yours never does.

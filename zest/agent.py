@@ -212,6 +212,9 @@ def load_model(model, ctx=None, force=False):
         isl, cur = loaded_state(model)
         if isl and cur == ctx and not force:
             return True, "", ctx
+        busy = strata.free_for_lemonade()            # the Strata Zest started gives way: shared memory
+        if busy:
+            return False, busy, cur
         if isl and _busy_with(model):
             return False, "It is answering right now. Wait for it to finish, or stop it, then try again.", cur
         with _lock:
@@ -279,6 +282,9 @@ def ensure_loaded(model, s=None):
     isl, cur = loaded_state(model)
     if isl and (not cur or cur >= want):
         return
+    busy = strata.free_for_lemonade()
+    if busy:
+        raise ValueError(busy)
     if s:
         s.push({"type": "zest_loading", "model": model, "ctx": want})
     ok, msg, ctx = load_model(model, want)

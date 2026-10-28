@@ -24,7 +24,7 @@ import store
 REPO = "Niko1221/Strata"
 PREFIX = "strata/"                       # in front of a Strata model's name wherever Zest lists models next to Lemonade's
 UPD = {"state": "idle", "error": None, "log": []}         # installing the Terminal
-RUN = {"state": "idle", "preset": None, "error": None, "log": [], "since": 0}   # starting a preset
+RUN = {"state": "idle", "preset": None, "error": None, "log": [], "since": 0, "low_memory": False, "retry": None}   # starting a preset
 before_launch = []                       # callables run just before Strata starts loading a model (Lemonade's models are freed: shared memory)
 on_change = []                           # callables run after Strata starts or stops (idle chats re-read the model list)
 _lock = threading.Lock()
@@ -98,7 +98,7 @@ ZEST_PRESET = "Zest "                    # presets Zest made are named "Zest <mo
 
 def _settings():
     st = store.load().setdefault("strata", {})
-    for k, v in (("remote", []), ("keys", {}), ("owned", {"preset": "", "port": 0}), ("known", {})):
+    for k, v in (("remote", []), ("keys", {}), ("owned", {"preset": "", "port": 0}), ("known", {}), ("idle_minutes", 20)):
         st.setdefault(k, v)
     return st
 
@@ -106,7 +106,7 @@ def _settings():
 def _save(mutate):
     s = store.load()
     st = s.setdefault("strata", {})
-    for k, v in (("remote", []), ("keys", {}), ("owned", {"preset": "", "port": 0}), ("known", {})):
+    for k, v in (("remote", []), ("keys", {}), ("owned", {"preset": "", "port": 0}), ("known", {}), ("idle_minutes", 20)):
         st.setdefault(k, v)
     mutate(st)
     store.save(s)
@@ -239,7 +239,7 @@ def is_live(name):
 def summary():
     exe = binary()
     s = {"installed": bool(exe), "version": version() if exe else "", "presets": [], "run": dict(RUN), "install": dict(UPD),
-         "command": "strata launch", "servers": [{k: v for k, v in r.items() if k != "key"} for r in running()]}
+         "command": "strata launch", "idle_minutes": _settings()["idle_minutes"], "servers": [{k: v for k, v in r.items() if k != "key"} for r in running()]}
     if exe:
         s["presets"] = presets()
     return s
@@ -280,8 +280,9 @@ def _active(state):
     return state in ("starting",)
 
 
-def start(preset):
-    """Start a saved preset in the background. Returns False when one is already starting. Never restarts a running model."""
+def start(preset, force=False):
+    """Start a saved preset in the background. Returns False when one is already starting. Never restarts a running model.
+    `force` skips the free-memory check (the person pressed Start anyway)."""
     with _lock:
         if _active(RUN["state"]):
             return False
@@ -296,18 +297,82 @@ def start(preset):
         if other:
             RUN.update(state="error", preset=preset, log=[], error="Strata is already running %s on this computer. Zest won't start a second big model beside it: chat with that one, or stop it first." % (other["name"] or "a model"))
             return False
-        RUN.update(state="starting", preset=preset, error=None, log=[], since=time.time())
-    threading.Thread(target=_do_start, args=(preset, mine.get("port")), daemon=True).start()
+        RUN.update(state="starting", preset=preset, error=None, log=[], since=time.time(), low_memory=False, retry={"kind": "start", "preset": preset})
+    threading.Thread(target=_do_start, args=(preset, mine.get("port"), force, mine.get("model")), daemon=True).start()
     return True
 
 
-def _do_start(preset, port):
+# ---------------------------------------------------------------- memory
+LOW_MEMORY = 0.6                        # refuse when free RAM + free graphics memory is under this share of what the model needs
+
+
+def _meminfo_gb(key):
+    try:
+        with open("/proc/meminfo") as f:
+            return int(re.search(key + r":\s+(\d+)", f.read()).group(1)) / 1048576
+    except (OSError, AttributeError, ValueError):
+        return 0.0
+
+
+def _top_memory(n=3):
+    """The programs using the most RAM right now, as "name (N GB)" strings, so a refusal can say what to close."""
+    rows = []
+    for pid in os.listdir("/proc"):
+        if not pid.isdigit():
+            continue
+        try:
+            with open("/proc/%s/status" % pid) as f:
+                t = f.read()
+            kb = int(re.search(r"VmRSS:\s+(\d+)", t).group(1))
+            rows.append((kb, re.search(r"Name:\s+(\S+)", t).group(1)))
+        except (OSError, AttributeError, ValueError):
+            continue
+    best = {}
+    for kb, name in rows:
+        best[name] = best.get(name, 0) + kb
+    return ["%s (%d GB)" % (k, round(v / 1048576)) for k, v in sorted(best.items(), key=lambda kv: -kv[1])[:n] if v > 1048576 * 1.5]
+
+
+def free_memory():
+    """{ram_gb, vram_gb}: what is free right now. MemAvailable counts cache the system can give back."""
+    vram = 0.0
+    for g in hardware.nvidia_gpus():
+        vram += max(0.0, (g.get("mem_total_mb") or 0) - (g.get("mem_used_mb") or 0)) / 1024
+    return {"ram_gb": round(_meminfo_gb("MemAvailable"), 1), "vram_gb": round(vram, 1)}
+
+
+def need_gb(model):
+    """What a catalog model needs in RAM plus graphics memory; None for one Zest has no figure for (a setup of your own)."""
+    return next((e["need_gb"] for e in CATALOG if e["model"].lower() == str(model or "").lower()), None)
+
+
+def check_memory(model):
+    """Raises LowMemory when starting `model` now would more than likely run the computer out of memory."""
+    need = need_gb(model)
+    if need is None:
+        return
+    f = free_memory()
+    have = f["ram_gb"] + f["vram_gb"]
+    if have < need * LOW_MEMORY:
+        top = _top_memory()
+        raise LowMemory("There isn't enough free memory to start %s: it needs about %d GB of RAM plus graphics memory, and %d GB is free (%d GB RAM, %d GB graphics).%s"
+                        % (model, need, have, f["ram_gb"], f["vram_gb"], " Close some of these first: %s." % ", ".join(top) if top else ""))
+
+
+class LowMemory(RuntimeError):
+    pass
+
+
+def _do_start(preset, port, force=False, model=None):
     try:
         _before_launch()
         for r in running():                          # Zest's own earlier one gives way; one big model at a time
             if r["owner"] == "zest" and r["source"] == "launch":
                 RUN["log"] = ["Stopping the Strata Zest started earlier…"]
                 stop(r["url"])
+                time.sleep(3)                        # let the memory come back before measuring it
+        if not force:
+            check_memory(model)
         p = subprocess.Popen([binary(), "launch", "--preset", preset, "--yes", "--no-tui"], stdin=subprocess.DEVNULL,
                              stdout=subprocess.PIPE, stderr=subprocess.STDOUT, text=True, start_new_session=True)
         for line in p.stdout:
@@ -329,6 +394,8 @@ def _do_start(preset, port):
                 _cache["v"] = None
         RUN["state"] = "ready"
         _changed()
+    except LowMemory as e:
+        RUN.update(state="error", error=str(e), low_memory=True)
     except Exception as e:  # noqa: BLE001
         RUN.update(state="error", error=str(e) or e.__class__.__name__)
 
@@ -483,7 +550,7 @@ def _free_port():
     return None
 
 
-def setup(family, model):
+def setup(family, model, force=False):
     """Install Strata if it is missing, then download `model`, save it as the preset "Zest <model>" with the context Zest
     uses (128k where the model allows) and start it. Runs in the background; progress is in RUN. Never touches a running Strata."""
     entry = next((e for e in CATALOG if e["family"] == family and e["model"] == model), None)
@@ -497,12 +564,12 @@ def setup(family, model):
         if other:
             RUN.update(state="error", preset=None, log=[], error="Strata is already running %s on this computer. Zest won't start a second big model beside it: use that one, or stop it first." % (other["name"] or "a model"))
             return False
-        RUN.update(state="starting", preset=ZEST_PRESET + model, error=None, log=[], since=time.time(), phase="")
-    threading.Thread(target=_do_setup, args=(entry,), daemon=True).start()
+        RUN.update(state="starting", preset=ZEST_PRESET + model, error=None, log=[], since=time.time(), phase="", low_memory=False, retry={"kind": "setup", "family": family, "model": model})
+    threading.Thread(target=_do_setup, args=(entry, force), daemon=True).start()
     return True
 
 
-def _do_setup(entry):
+def _do_setup(entry, force=False):
     name = ZEST_PRESET + entry["model"]
     try:
         if not binary():
@@ -516,6 +583,9 @@ def _do_setup(entry):
         if entry["family"] == "qwen":
             args += ["--context", str(entry["ctx"])]
         _before_launch()
+        if not force:
+            time.sleep(2)
+            check_memory(entry["model"])
         RUN["phase"] = "Downloading and starting %s… the first time this can take a long while." % entry["model"]
         p = subprocess.Popen(args, stdin=subprocess.DEVNULL, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, text=True, start_new_session=True)
         for line in p.stdout:
@@ -536,6 +606,8 @@ def _do_setup(entry):
             _cache["v"] = None
         RUN["state"] = "ready"
         _changed()
+    except LowMemory as e:
+        RUN.update(state="error", error=str(e), low_memory=True)
     except Exception as e:  # noqa: BLE001
         RUN.update(state="error", error=str(e) or e.__class__.__name__)
 
@@ -562,3 +634,74 @@ def ensure(model, on_line=None):
         time.sleep(1)
         _cache["v"] = None
     raise ValueError("Strata is taking too long to start. Look at the Models page.")
+
+
+# ---------------------------------------------------------------- idle shutdown, and making room for Lemonade
+def activity(url):
+    """(busy now?, tokens the server has produced so far) from `strata status`, or (None, None) when it can't be read."""
+    code, out = _run(["status", "--url", url, "--output", "json"], 10)
+    try:
+        snap = json.JSONDecoder().raw_decode(out.lstrip())[0].get("snapshot") or {}
+    except ValueError:
+        return None, None
+    work = snap.get("work") or {}
+    return bool((work.get("active") or 0) or (work.get("queued") or 0)), (snap.get("rates") or {}).get("output_tokens_server_counter")
+
+
+def zest_server():
+    """The Strata Zest started and can stop, or None."""
+    return next((r for r in running() if r["owner"] == "zest" and r["source"] == "launch" and r["state"] in ("ready", "loading")), None)
+
+
+def set_idle_minutes(n):
+    n = max(0, min(int(n), 24 * 60))
+    _save(lambda s: s.__setitem__("idle_minutes", n))
+    return n
+
+
+_idle = {"url": None, "since": 0, "tokens": None}
+
+
+def idle_tick(now=None):
+    """One look at the Strata Zest started: restart the idle clock if it is working, stop it once it has been idle for the chosen
+    time. Only Zest's own is ever stopped this way. Returns "stopped", "busy", "idle" or None (nothing to watch)."""
+    now = now or time.time()
+    r = zest_server()
+    minutes = _settings()["idle_minutes"]
+    if not r or r["state"] != "ready" or not minutes:
+        _idle.update(url=None)
+        return None
+    if _idle["url"] != r["url"]:
+        _idle.update(url=r["url"], since=now, tokens=None)       # a new server: its clock starts now
+    busy, tokens = activity(r["url"])
+    if busy is None or busy or tokens != _idle["tokens"]:
+        _idle.update(since=now, tokens=tokens)
+        return "busy"
+    if now - _idle["since"] >= minutes * 60:
+        stop(r["url"])
+        _idle.update(url=None)
+        return "stopped"
+    return "idle"
+
+
+def watch(every=30):
+    """Run idle_tick forever (a daemon thread)."""
+    while True:
+        try:
+            idle_tick()
+        except Exception:  # noqa: BLE001
+            pass
+        time.sleep(every)
+
+
+def free_for_lemonade():
+    """Before a Lemonade model loads: stop the Strata Zest started, so the two don't fight for memory. Returns "" when done or
+    there was nothing to do, otherwise why it didn't (it is answering). A Strata you started is never touched."""
+    r = zest_server()
+    if not r:
+        return ""
+    busy, _ = activity(r["url"])
+    if busy:
+        return "Strata is answering right now. Wait for it to finish, or stop it from the Models page, then try again."
+    stop(r["url"])
+    return ""
