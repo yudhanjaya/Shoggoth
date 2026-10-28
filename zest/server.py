@@ -242,6 +242,8 @@ class Handler(BaseHTTPRequestHandler):
             self.send_json(agent.state())
         elif p == "/ui/pi":
             self.send_json(piup.summary())
+        elif p == "/ui/strata/recommend":
+            self.send_json(strata.recommend())
         elif p == "/ui/strata":
             self.send_json(strata.summary())
         elif p == "/ui/update":
@@ -301,7 +303,7 @@ class Handler(BaseHTTPRequestHandler):
             "/ui/cowork/job/apply": self.post_job_apply, "/ui/cowork/job/discard": self.post_job_discard,
             "/ui/cowork/folders": self.post_cowork_folders, "/ui/cowork/seen": self.post_cowork_seen,
             "/ui/cowork/allow/remove": self.post_allow_remove, "/ui/cowork/folder": self.post_cowork_folder, "/ui/skills/install": self.post_skills_install, "/ui/pi/check": self.post_pi_check,
-            "/ui/pi/update": self.post_pi_update, "/ui/strata/start": self.post_strata_start, "/ui/strata/stop": self.post_strata_stop, "/ui/strata/connect": self.post_strata_connect, "/ui/strata/forget": self.post_strata_forget, "/ui/strata/key": self.post_strata_key, "/ui/strata/install": self.post_strata_install, "/ui/update/all": self.post_update_all, "/ui/update/restart": self.post_update_restart, "/ui/pi/use": self.post_pi_use,
+            "/ui/pi/update": self.post_pi_update, "/ui/strata/start": self.post_strata_start, "/ui/strata/stop": self.post_strata_stop, "/ui/strata/setup": self.post_strata_setup, "/ui/strata/connect": self.post_strata_connect, "/ui/strata/forget": self.post_strata_forget, "/ui/strata/key": self.post_strata_key, "/ui/strata/install": self.post_strata_install, "/ui/update/all": self.post_update_all, "/ui/update/restart": self.post_update_restart, "/ui/pi/use": self.post_pi_use,
             "/ui/skills/remove": self.post_skills_remove, "/ui/skills/toggle": self.post_skills_toggle,
             "/ui/models/storage": self.post_storage, "/ui/models/imports": self.post_imports,
         }.get(p)
@@ -603,9 +605,15 @@ class Handler(BaseHTTPRequestHandler):
         """Start a saved Strata preset. A big model and Lemonade's models compete for memory, so Lemonade's are freed first
         when the page says so (`free_lemonade`)."""
         preset = str(body.get("preset", "")).strip()
-        if body.get("free_lemonade"):
-            agent.unload_model("")
         self.send_json({"started": strata.start(preset), **strata.summary()})
+
+    def post_strata_setup(self, body):
+        """Get a big model in one step: install Strata if needed, download, save as a Zest preset, start. Lemonade's models are
+        freed first because they share the memory."""
+        family, model = str(body.get("family", "")), str(body.get("model", ""))
+        if not any(e["family"] == family and e["model"] == model for e in strata.CATALOG):
+            raise ValueError("Zest doesn't know that model.")
+        self.send_json({"started": strata.setup(family, model), **strata.summary()})
 
     def post_strata_connect(self, body):
         ok, msg = strata.connect(body.get("url", ""), str(body.get("key", "")).strip())
@@ -829,6 +837,7 @@ def main():
     agent.recover()
     piup.on_installed.append(agent.restart_idle)
     strata.on_change.append(agent.restart_idle)
+    strata.before_launch.append(lambda: lem.healthy() and lem.request("POST", "/v1/unload", {}, timeout=60))
     threading.Thread(target=agent.reaper, daemon=True).start()
     s = store.load()
     if a.lemonade:

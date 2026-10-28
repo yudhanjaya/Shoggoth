@@ -11,20 +11,31 @@ import json
 import os
 import re
 import shutil
+import socket
 import subprocess
 import threading
 import time
 import urllib.error
 import urllib.request
 
+import hardware
 import store
 
 REPO = "Niko1221/Strata"
 PREFIX = "strata/"                       # in front of a Strata model's name wherever Zest lists models next to Lemonade's
 UPD = {"state": "idle", "error": None, "log": []}         # installing the Terminal
 RUN = {"state": "idle", "preset": None, "error": None, "log": [], "since": 0}   # starting a preset
+before_launch = []                       # callables run just before Strata starts loading a model (Lemonade's models are freed: shared memory)
 on_change = []                           # callables run after Strata starts or stops (idle chats re-read the model list)
 _lock = threading.Lock()
+
+
+def _before_launch():
+    for f in before_launch:
+        try:
+            f()
+        except Exception:  # noqa: BLE001
+            pass
 
 
 def _changed():
@@ -82,13 +93,21 @@ def version():
 PROBE_PORTS = range(8080, 8090)          # Strata's default is 8080; a second server takes the next free one
 
 
+ZEST_PRESET = "Zest "                    # presets Zest made are named "Zest <model>"; only those start on demand
+
+
 def _settings():
-    return store.load().setdefault("strata", {"remote": [], "keys": {}, "owned": {"preset": "", "port": 0}})
+    st = store.load().setdefault("strata", {})
+    for k, v in (("remote", []), ("keys", {}), ("owned", {"preset": "", "port": 0}), ("known", {})):
+        st.setdefault(k, v)
+    return st
 
 
 def _save(mutate):
     s = store.load()
-    st = s.setdefault("strata", {"remote": [], "keys": {}, "owned": {"preset": "", "port": 0}})
+    st = s.setdefault("strata", {})
+    for k, v in (("remote", []), ("keys", {}), ("owned", {"preset": "", "port": 0}), ("known", {})):
+        st.setdefault(k, v)
     mutate(st)
     store.save(s)
 
@@ -168,19 +187,53 @@ def presets():
             for p in _json(["launch", "--list-presets", "--output", "json"], 15).get("presets", []) if p.get("name")]
 
 
+def _provider(url):
+    """Pi's name for the server at `url`: stable, so a model keeps its provider when other servers come and go."""
+    m = re.search(r"://([^/]+)", url)
+    return "strata-" + re.sub(r"[^\w]+", "-", m.group(1) if m else url)
+
+
+_pc = {"t": 0, "v": []}
+
+
+def _presets_cached():
+    if time.time() - _pc["t"] > 10:
+        _pc.update(t=time.time(), v=presets())
+    return _pc["v"]
+
+
 def models():
-    """Chat models Zest can offer from every ready Strata server: {id, url, key, ctx, vision, provider, ...}, id with Zest's prefix.
-    Pi gets one provider per server (strata, strata2, ...)."""
+    """Chat models Zest can offer: {id, url, key, ctx, vision, provider, ...}, id with Zest's prefix. Pi gets one provider per server.
+
+    Models of every ready Strata server, and `dormant` ones: a setup Zest made earlier that isn't running right now. A
+    dormant model starts when a chat first needs it (see ensure)."""
     out = []
-    for i, r in enumerate([r for r in running() if r["state"] == "ready" and not r["needs_key"]]):
+    live = [r for r in running() if r["state"] == "ready" and not r["needs_key"]]
+    for r in live:
         for m in r["models"]:
             out.append({"id": PREFIX + m["id"], "tools": True, "reasoning": True, "vision": m["vision"], "ctx": m["ctx"] or 32768,
-                        "provider": "strata" if i == 0 else "strata%d" % (i + 1), "url": r["url"], "key": r["key"], "bare": m["id"]})
+                        "provider": _provider(r["url"]), "url": r["url"], "key": r["key"], "bare": m["id"]})
+    have = {m["id"] for m in out}
+    ports = {r["port"] for r in running() if r["state"] in ("ready", "loading")}
+    if binary():
+        mine = {p["name"]: p for p in _presets_cached()}
+        for name, k in _settings()["known"].items():
+            p = mine.get(name)
+            if not p or not name.startswith(ZEST_PRESET) or PREFIX + k["id"] in have or int(p.get("port") or 0) in ports:
+                continue
+            url = "http://127.0.0.1:%d" % int(p["port"])
+            out.append({"id": PREFIX + k["id"], "tools": True, "reasoning": True, "vision": bool(k.get("vision")), "ctx": int(k.get("ctx") or 131072),
+                        "provider": _provider(url), "url": url, "key": "", "bare": k["id"], "dormant": True, "preset": name})
     return out
 
 
 def find_model(name):
     return next((m for m in models() if m["id"] == name), None)
+
+
+def is_live(name):
+    m = find_model(name)
+    return bool(m) and not m.get("dormant")
 
 
 def summary():
@@ -250,6 +303,11 @@ def start(preset):
 
 def _do_start(preset, port):
     try:
+        _before_launch()
+        for r in running():                          # Zest's own earlier one gives way; one big model at a time
+            if r["owner"] == "zest" and r["source"] == "launch":
+                RUN["log"] = ["Stopping the Strata Zest started earlier…"]
+                stop(r["url"])
         p = subprocess.Popen([binary(), "launch", "--preset", preset, "--yes", "--no-tui"], stdin=subprocess.DEVNULL,
                              stdout=subprocess.PIPE, stderr=subprocess.STDOUT, text=True, start_new_session=True)
         for line in p.stdout:
@@ -260,6 +318,15 @@ def _do_start(preset, port):
             raise RuntimeError(" ".join(tail) or "Strata stopped with code %d." % code)
         if port:
             _save(lambda st: st["owned"].update(preset=preset, port=int(port)))
+            _changed()
+            for _ in range(20):                      # the server may need a moment to list its model
+                r = next((r for r in running() if r["port"] == int(port) and r["models"]), None)
+                if r:
+                    m = r["models"][0]
+                    _save(lambda st: st["known"].__setitem__(preset, {"id": m["id"], "ctx": m["ctx"], "vision": m["vision"]}))
+                    break
+                time.sleep(0.5)
+                _cache["v"] = None
         RUN["state"] = "ready"
         _changed()
     except Exception as e:  # noqa: BLE001
@@ -295,7 +362,8 @@ def install():
     return True
 
 
-def _do_install():
+def _install_blocking():
+    """Download Strata's installer, check it against the release's SHA256SUMS.txt, run it. Raises RuntimeError on any problem."""
     base = "https://github.com/%s/releases/latest/download/" % REPO
     try:
         script = _get(base + "install.sh")
@@ -315,8 +383,182 @@ def _do_install():
             raise RuntimeError("Strata's installer failed: " + " ".join([l for l in UPD["log"] if l.strip()][-2:]))
         if not binary():
             raise RuntimeError("Strata installed, but Zest can't find the `strata` command. Open a new terminal, or add ~/.local/bin to your PATH.")
-        UPD["state"] = "done"
     except urllib.error.URLError as e:
-        UPD.update(state="error", error="Couldn't reach GitHub (%s)." % getattr(e, "reason", e))
+        raise RuntimeError("Couldn't reach GitHub (%s)." % getattr(e, "reason", e))
+
+
+def _do_install():
+    try:
+        _install_blocking()
+        UPD["state"] = "done"
     except Exception as e:  # noqa: BLE001
         UPD.update(state="error", error=str(e) or e.__class__.__name__)
+
+
+# ---------------------------------------------------------------- what fits this computer
+# Qwen3.8-Flash-Next from ISTA-DASLab, Strata's recommended provider (docs/MODELS.md "Pick by memory"): the memory the weights
+# need in RAM plus VRAM, best quality first. DeepSeek V4.1 is listed but never recommended: 257 GB of disk and a fixed 8K window.
+CATALOG = [
+    {"family": "qwen", "model": "IQ3_S", "title": "Qwen3.8 Flash-Next, best quality", "need_gb": 54.8, "ctx": 131072},
+    {"family": "qwen", "model": "IQ3_XXS", "title": "Qwen3.8 Flash-Next, great quality", "need_gb": 47.0, "ctx": 131072},
+    {"family": "qwen", "model": "IQ2_XS", "title": "Qwen3.8 Flash-Next, balanced", "need_gb": 39.2, "ctx": 131072},
+    {"family": "qwen", "model": "Q2_0", "title": "Qwen3.8 Flash-Next, fastest", "need_gb": 37.6, "ctx": 131072},
+    {"family": "deepseek41", "model": "IST-DAS-2.00bpw", "title": "DeepSeek V4.1 Flash (very large, 8K window)", "need_gb": 46.0, "ctx": 8192,
+     "min_vram_gb": 12, "disk_gb": 270},
+]
+
+
+def _ram_gb():
+    try:
+        with open("/proc/meminfo") as f:
+            return int(re.search(r"MemTotal:\s+(\d+)", f.read()).group(1)) / 1048576
+    except (OSError, AttributeError, ValueError):
+        return 0.0
+
+
+def machine():
+    """RAM, graphics memory and free disk, the way the fit rule counts them. Memory the GPU shares with the system counts once."""
+    ram = _ram_gb()
+    gpus = []
+    for g in hardware.all_gpus():
+        gb = (g.get("mem_total_mb") or 0) / 1024
+        if gb:
+            gpus.append({"name": g.get("name"), "gb": gb, "vendor": g.get("vendor")})
+    shared = lambda g: g["vendor"] != "NVIDIA" and g["gb"] >= ram * 0.4          # an APU's "VRAM" is system memory
+    vram = sum(g["gb"] for g in gpus if not shared(g))
+    where = os.path.expanduser("~/.local/share")
+    os.makedirs(where, exist_ok=True)
+    return {"ram_gb": round(ram, 1), "vram_gb": round(vram, 1), "best_gpu_gb": round(max([g["gb"] for g in gpus if not shared(g)] or [0]), 1),
+            "gpus": [g["name"] for g in gpus], "free_disk_gb": round(shutil.disk_usage(where).free / 1e9, 1)}
+
+
+def _plan(entry, ctx):
+    """strata launch --plan for one catalog entry: its download size and warnings, or {} before Strata is installed."""
+    if not binary():
+        return {}
+    args = ["launch", "--plan", "--family", entry["family"], "--model", entry["model"], "--output", "json"]
+    if entry["family"] == "qwen":
+        args += ["--context", str(ctx)]
+    p = _json(args, 20).get("plan") or {}
+    return {"download_gb": (p.get("download") or {}).get("gb"), "warnings": p.get("warnings") or []}
+
+
+def recommend(ctx=131072):
+    """The catalog with a fit for each entry on this computer, and which one to suggest.
+
+    fit: "fits" (room to spare), "tight" (should run; close other big programs), "no" (won't). The suggestion is the best
+    quality that fits; when nothing does there is none, and the reason says why."""
+    m = machine()
+    budget = m["ram_gb"] + m["vram_gb"]
+    # An install that already holds models keeps them wherever its owner chose, which Strata doesn't report; don't judge its disk.
+    adopted = bool(binary() and _json(["models", "list", "--installed", "--output", "json"], 15).get("models"))
+    out = []
+    for e in CATALOG:
+        why = ""
+        if not m["gpus"]:
+            fit, why = "no", "Strata needs a graphics card."
+        elif e.get("min_vram_gb") and m["best_gpu_gb"] < e["min_vram_gb"]:
+            fit, why = "no", "Needs a graphics card with %d GB or more." % e["min_vram_gb"]
+        else:
+            roomy, tight = budget * 0.85 - 6, budget * 0.95 - 2
+            fit = "fits" if e["need_gb"] <= roomy else "tight" if e["need_gb"] <= tight else "no"
+            if fit == "no":
+                why = "Needs about %d GB of RAM plus graphics memory; this computer has %d GB." % (e["need_gb"], budget)
+        plan = _plan(e, e["ctx"]) if fit != "no" else {}
+        dl = plan.get("download_gb")
+        if fit != "no" and not adopted and dl is not None and dl + 10 > m["free_disk_gb"]:
+            fit, why = "no", "Needs about %d GB of free disk for the download; %d GB is free." % (dl, m["free_disk_gb"])
+        out.append(dict(e, fit=fit, why=why, download_gb=dl, warnings=plan.get("warnings", [])))
+    pick = next((o for o in out if o["fit"] == "fits" and o["family"] == "qwen"), None) or next((o for o in out if o["fit"] == "tight" and o["family"] == "qwen"), None)
+    return {"machine": m, "adopted": adopted, "options": out, "pick": pick["model"] if pick else None}
+
+
+# ---------------------------------------------------------------- one step: install, download, save, start
+def _free_port():
+    for p in PROBE_PORTS:
+        try:
+            socket.create_connection(("127.0.0.1", p), timeout=0.3).close()
+        except OSError:
+            return p                                                  # nothing there: free, and inside the range Zest looks in
+    return None
+
+
+def setup(family, model):
+    """Install Strata if it is missing, then download `model`, save it as the preset "Zest <model>" with the context Zest
+    uses (128k where the model allows) and start it. Runs in the background; progress is in RUN. Never touches a running Strata."""
+    entry = next((e for e in CATALOG if e["family"] == family and e["model"] == model), None)
+    if not entry:
+        RUN.update(state="error", preset=None, error="Zest doesn't know that model.", log=[])
+        return False
+    with _lock:
+        if _active(RUN["state"]) or UPD["state"] == "installing":
+            return False
+        other = next((r for r in running() if r["state"] in ("ready", "loading") and r["source"] != "saved"), None)
+        if other:
+            RUN.update(state="error", preset=None, log=[], error="Strata is already running %s on this computer. Zest won't start a second big model beside it: use that one, or stop it first." % (other["name"] or "a model"))
+            return False
+        RUN.update(state="starting", preset=ZEST_PRESET + model, error=None, log=[], since=time.time(), phase="")
+    threading.Thread(target=_do_setup, args=(entry,), daemon=True).start()
+    return True
+
+
+def _do_setup(entry):
+    name = ZEST_PRESET + entry["model"]
+    try:
+        if not binary():
+            RUN["phase"] = "Installing Strata…"
+            _install_blocking()
+        port = _free_port()
+        if not port:
+            raise RuntimeError("Ports 8080 to 8089 are all in use, so Zest has nowhere to start Strata.")
+        args = [binary(), "launch", "--family", entry["family"], "--model", entry["model"], "--access", "local", "--port", str(port),
+                "--save-preset", name, "--yes", "--no-tui"]
+        if entry["family"] == "qwen":
+            args += ["--context", str(entry["ctx"])]
+        _before_launch()
+        RUN["phase"] = "Downloading and starting %s… the first time this can take a long while." % entry["model"]
+        p = subprocess.Popen(args, stdin=subprocess.DEVNULL, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, text=True, start_new_session=True)
+        for line in p.stdout:
+            RUN["log"] = (RUN["log"] + [line.rstrip()])[-40:]
+        if p.wait() != 0:
+            tail = [l for l in RUN["log"] if l.strip()][-2:]
+            raise RuntimeError(" ".join(tail) or "Strata stopped with code %d." % p.returncode)
+        _pc["t"] = 0
+        _save(lambda st: st["owned"].update(preset=name, port=port))
+        _changed()
+        for _ in range(40):
+            r = next((r for r in running() if r["port"] == port and r["models"]), None)
+            if r:
+                m = r["models"][0]
+                _save(lambda st: st["known"].__setitem__(name, {"id": m["id"], "ctx": m["ctx"], "vision": m["vision"]}))
+                break
+            time.sleep(0.5)
+            _cache["v"] = None
+        RUN["state"] = "ready"
+        _changed()
+    except Exception as e:  # noqa: BLE001
+        RUN.update(state="error", error=str(e) or e.__class__.__name__)
+
+
+def ensure(model, on_line=None):
+    """Make sure the Strata model `model` is serving, starting the Zest-made setup behind a dormant one. Waits until it
+    answers (the first start loads tens of GB). Raises ValueError with something a person can act on."""
+    m = find_model(model)
+    if m and not m.get("dormant"):
+        return
+    if not m:
+        raise ValueError("Strata isn't running that model. Start it from the Models page.")
+    deadline = time.time() + 1800
+    if not start(m["preset"]):
+        if RUN["state"] == "error":
+            raise ValueError(RUN["error"])
+    while time.time() < deadline:                  # started by us just now, or by another chat a moment ago
+        if is_live(model):
+            return
+        if RUN["state"] == "error":
+            raise ValueError(RUN["error"] or "Strata didn't start.")
+        if on_line and RUN["log"]:
+            on_line(RUN["log"][-1])
+        time.sleep(1)
+        _cache["v"] = None
+    raise ValueError("Strata is taking too long to start. Look at the Models page.")

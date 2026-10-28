@@ -32,7 +32,7 @@ Facts this plan rests on (checked against Strata 0.2.6/0.2.7 and Lemonade 2026.4
 - Handle Strata API keys (`launch --show-key`), port clashes with 8080, GPU roles on multi-GPU machines.
 - Contract tests on recorded JSON; check `schema_version`, degrade gracefully when it changes.
 
-## Phase 0b: detect and adopt an existing Strata (the Lemonade parallel)
+## Phase 0b (built): detect and adopt an existing Strata (the Lemonade parallel)
 
 Zest handles Lemonade as: its own copy by default, or one you already run ("existing" mode), and a left-over copy from an
 earlier Zest is reused rather than duplicated. Strata gets the same three cases.
@@ -58,7 +58,7 @@ earlier Zest is reused rather than duplicated. Strata gets the same three cases.
 - If `strata` is installed but nothing is running, the saved presets are listed with Start.
 - The install step is skipped whenever `strata` is found; the Setup guide says "Strata found (version)".
 
-## Phase 1: install and forget
+## Phase 1: install and forget (built on `strata-support`; real model download and install not yet run)
 
 - Silent install on first need (installer checked against the release's SHA256SUMS), progress as one line.
 - Recommendation from `launch --plan` for a few candidates against the person's RAM, VRAM and free disk: one default

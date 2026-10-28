@@ -165,6 +165,7 @@ Some models are far too big for a graphics card. [Strata](https://github.com/Nik
 On the **Models** page, the **Bigger models with Strata** box does three things:
 
 - **Zest finds Strata by itself.** If you already have it installed, or already have a model running (started with `strata launch`, by the Strata app, or by hand on a local port), it shows up here and in Chat with no setup. To use a Strata on another computer, open **Connect to a Strata on another computer** and type its address (and key, if it has one).
+- Once Strata is installed, the box looks at your RAM, graphics memory and free disk and suggests the best model that fits, with its download size and the other sizes listed beneath. **Get it** downloads it, saves it as a setup called `Zest <model>` with a 128k context window (DeepSeek V4.1 is fixed at 8K), and starts it. A setup Zest made starts again by itself the next time a chat picks that model, freeing Lemonade's models first.
 - If Strata isn't installed, **Install Strata** downloads its installer, checks it against the checksum Strata publishes, and runs it.
 - Once Strata has a saved setup (made in a terminal with `strata launch`: pick a model, save it as a preset), the box lists your setups with a **Start** button. Starting one frees any model Lemonade has loaded, because they share the same memory.
 - While Strata is running, its model appears in Chat as `strata/<model name>`. **Stop** frees the memory again.

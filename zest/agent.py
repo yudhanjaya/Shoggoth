@@ -126,7 +126,7 @@ def loaded_state(model, health=None):
     """(in memory?, its context window in tokens or 0 when Lemonade doesn't say)."""
     if strata.is_model(model):
         m = strata.find_model(model)
-        return (True, m["ctx"]) if m else (False, 0)
+        return (True, m["ctx"]) if m and not m.get("dormant") else (False, 0)
     for m in (health if health is not None else _health()).get("all_models_loaded", []):
         if m.get("model_name") != model:
             continue
@@ -184,9 +184,9 @@ def model_state():
     h = _health()
     name = h.get("model_loaded") or None
     ctx = loaded_state(name, h)[1] if name else 0
-    if not name and strata.models():
-        name = strata.models()[0]["id"]
-        ctx = strata.models()[0]["ctx"]
+    live = [m for m in strata.models() if not m.get("dormant")]
+    if not name and live:
+        name, ctx = live[0]["id"], live[0]["ctx"]
     with _lock:
         loading = dict(_loading) if _loading["model"] else None
     return {"loaded": name, "ctx": ctx, "chat_ctx": chat_ctx(), "loading": loading, "default_ctx": DEFAULT_CTX}
@@ -202,8 +202,11 @@ def load_model(model, ctx=None, force=False):
     if not model:
         return False, "Choose a model first.", 0
     if strata.is_model(model):
-        m = strata.find_model(model)
-        return (True, "", m["ctx"]) if m else (False, "Strata isn't running that model. Start it from the Models page.", 0)
+        try:
+            _start_strata(model)
+        except ValueError as e:
+            return False, str(e), 0
+        return True, "", (strata.find_model(model) or {}).get("ctx", 0)
     with _load_lock:
         ctx = int(ctx) if ctx else want_ctx(model)
         isl, cur = loaded_state(model)
@@ -249,14 +252,28 @@ def set_chat_ctx(tokens):
     return tokens
 
 
+def _start_strata(model):
+    """Bring up the Strata behind `model` (a setup Zest made earlier). Lemonade's models are freed first: they share the memory."""
+    if strata.is_live(model):
+        return
+    with _load_lock:
+        strata.ensure(model)
+    touch()
+
+
 def ensure_loaded(model, s=None):
     """Before a prompt goes to `model`: load it at the chat context size if it isn't in memory, or has less room than that.
     The page is told, so it can say "Loading the model" instead of sitting silent. Raises ValueError when it can't be loaded."""
     if not model:
         return
     if strata.is_model(model):
-        if not strata.find_model(model):
-            raise ValueError("Strata isn't running that model. Start it from the Models page.")
+        if strata.is_live(model):
+            return
+        if s:
+            s.push({"type": "zest_loading", "model": model, "ctx": (strata.find_model(model) or {}).get("ctx", 0)})
+        _start_strata(model)
+        if s:
+            s.push({"type": "zest_loaded", "model": model, "ctx": (strata.find_model(model) or {}).get("ctx", 0)})
         return
     want = want_ctx(model)
     isl, cur = loaded_state(model)
