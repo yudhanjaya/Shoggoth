@@ -505,6 +505,28 @@ def _plan(entry, ctx):
     return {"download_gb": (p.get("download") or {}).get("gb"), "warnings": p.get("warnings") or []}
 
 
+def models_root():
+    """The folder Strata keeps (and will download) its models in, learned from a model it already has, or None when it has none.
+    It is often another disk, so that is the disk a download has to fit on."""
+    for m in installed_models():
+        for cand in [m.get("data_root")] + [f.split("/models/")[0] for f in m.get("files", []) if "/models/" in f]:
+            if cand and os.path.isdir(cand):
+                return cand
+    return None
+
+
+def disk_problem(download_gb, root=None):
+    """A plain sentence when `download_gb` won't fit where Strata keeps models (with 10 GB to spare), else None."""
+    if not download_gb:
+        return None
+    root = root or models_root()
+    where = root or os.path.expanduser("~/.local/share")
+    free = shutil.disk_usage(where).free / 1e9
+    if download_gb + 10 > free:
+        return "Needs about %d GB of free disk for the download; %d GB is free%s." % (download_gb, free, " on " + root if root else "")
+    return None
+
+
 _rc = {"t": 0, "v": None}
 
 
@@ -518,8 +540,9 @@ def recommend(ctx=131072, max_age=300):
         return _rc["v"]
     m = machine()
     budget = m["ram_gb"] + m["vram_gb"]
-    # An install that already holds models keeps them wherever its owner chose, which Strata doesn't report; don't judge its disk.
-    adopted = bool(binary() and _json(["models", "list", "--installed", "--output", "json"], 30).get("models"))
+    # An install that already holds models keeps them wherever its owner chose, and that disk is the one a download must fit on.
+    root = models_root() if binary() else None
+    adopted = bool(binary() and (root or _json(["models", "list", "--installed", "--output", "json"], 30).get("models")))
     fits = []
     for e in CATALOG:
         why = ""
@@ -545,8 +568,9 @@ def recommend(ctx=131072, max_age=300):
     for e, (fit, why) in zip(CATALOG, fits):
         plan = plans.get(e["model"], {})
         dl = plan.get("download_gb")
-        if fit != "no" and not adopted and dl is not None and dl + 10 > m["free_disk_gb"]:
-            fit, why = "no", "Needs about %d GB of free disk for the download; %d GB is free." % (dl, m["free_disk_gb"])
+        bad = disk_problem(dl, root) if fit != "no" and (root or not adopted) else None
+        if bad:
+            fit, why = "no", bad
         out.append(dict(e, fit=fit, why=why, download_gb=dl, warnings=plan.get("warnings", [])))
     pick = next((o for o in out if o["fit"] == "fits" and o["family"] == "qwen"), None) or next((o for o in out if o["fit"] == "tight" and o["family"] == "qwen"), None)
     res = {"machine": m, "adopted": adopted, "options": out, "pick": pick["model"] if pick else None}
@@ -596,6 +620,10 @@ def _do_setup(entry, force=False):
                 "--save-preset", name, "--yes", "--no-tui"]
         if entry["family"] == "qwen":
             args += ["--context", str(entry["ctx"])]
+        if not force:
+            bad = disk_problem(_plan(entry, entry["ctx"]).get("download_gb"))
+            if bad:
+                raise RuntimeError(bad + " Free some space, or move Strata's models to a bigger disk (strata models move).")
         _before_launch()
         if not force:
             time.sleep(2)
@@ -790,6 +818,24 @@ def start_update():
     return True
 
 
+def update_failure(res):
+    """Strata's `update --output json` answers per part ("engine", "control"). In words: what failed and why, what did get updated, and
+    that a part that failed was left as it was. None when the answer has no per-part results."""
+    results = [r for r in (res.get("results") or []) if isinstance(r, dict)]
+    failed = [r for r in results if r.get("status") == "failed"]
+    if not failed:
+        return None
+    names = {"engine": "the engine", "control": "the Strata app"}
+    said = []
+    for r in failed:
+        why = str(r.get("error") or "it didn't work").replace("`strata update --force`", "strata update --force")
+        said.append("Strata couldn't update %s. %s" % (names.get(r.get("component"), r.get("component") or "a part"), why))
+    done = [r for r in results if r.get("changed") and r.get("status") != "failed"]
+    if done:
+        said.append("The rest did update: %s." % ", ".join("%s to %s" % (names.get(r.get("component"), r.get("component")), r.get("installed_after") or "the new version") for r in done))
+    return " ".join(said)
+
+
 def _do_update(c):
     try:
         r = zest_server()
@@ -810,7 +856,8 @@ def _do_update(c):
             res = {}
         if code != 0 or res.get("ok") is False:
             err = res.get("error")
-            msg = (err.get("message") if isinstance(err, dict) else err) or " ".join([l for l in SUPD["log"] if l.strip()][-2:]) or "Strata's update failed."
+            msg = update_failure(res) or (err.get("message") if isinstance(err, dict) else err) or " ".join([l for l in SUPD["log"] if l.strip()][-2:]) or "Strata's update failed."
+            _uc["v"] = None
             raise RuntimeError(msg)
         _uc["v"] = None
         n = update_check()

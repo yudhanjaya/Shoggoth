@@ -438,3 +438,13 @@ browser, performance of the catalog scan on big libraries.
 
 Consequences to watch: the Large tier's "16 GB and 64 GB" overlaps Medium's 10 to 24 GB range, so tiers are by what a model
 needs, not by the machine; and models both engines could run follow the tier rule, so Qwen3.6 35B-A3B (Medium) stays on Lemonade.
+
+## Live checks on a real install (2026-10-28)
+
+Run against a real Strata 0.2.6 with two models on a second disk, two graphics cards (10 GB and 16 GB) and 62 GB of RAM.
+
+- **Adopted install, Large model through the router: works.** Picking the Large model from the picker started the user's saved setup in about 110 s (ready, owner `zest`, 128k context, a real answer). Picking a small model then stopped it (RAM 58 GB used to 10 GB) and loaded the small one on the user's own Lemonade in 35 s.
+- **Disk guard: was wrong, fixed.** Zest judged free disk on the home disk and skipped it for an install that already holds models, so it offered 66 to 76 GB downloads with 29 GB free on the disk Strata really uses. Now `strata.models_root()` finds that folder from an installed model's files, `recommend` and the start of a Get it both judge the download against it, and the message names the disk. Checked live: a Get it for a 75 GB model is refused before anything starts or is freed.
+- **A real update: engine failed safe, message was raw JSON, fixed.** Strata updated its app 0.1.51 to 0.1.53 but its new engine (0.1.52) failed its own test start on this computer and was not installed; the engine stayed on 0.1.50. Zest showed Strata's JSON. `strata.update_failure()` now says what failed, that nothing was broken, and what did update.
+- **Not exercised:** a real first-time Get it of a model that fits (no model here fits the free disk), a fresh Strata install, and the idle release (20 minutes).
+
