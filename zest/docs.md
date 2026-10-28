@@ -193,7 +193,7 @@ Zest never stops, restarts or updates a Strata you started yourself. It shows it
 Everything in **Advanced** is optional.
 
 - **Hardware** shows your graphics cards filling up as models load, and lets you choose which to use.
-- **Engines** shows the programs that run models, and which one each uses (CUDA, Vulkan, ROCm or the processor).
+- **Engines** has a card for each program Zest uses to run models (Lemonade, Strata, and any you add), with its version, whether it is running, an update check, and a Stop button for ones Zest started. Details specific to an engine, like which hardware each kind of model uses, are inside its card. You can add your own engine by putting a folder with a `provider.yaml` file in the engines folder shown at the bottom of the page.
 - **Engine settings** is every setting Lemonade has, searchable.
 - **Themes** changes how Zest looks. **Light Touch** is the default; **Braun T3** and **Teenage Engineering** are softer and bolder takes on the same idea, and the rest borrow colour schemes from popular code editors (Dracula, Nord, Monokai Pro, GitHub Light and more). Nothing moves when you switch, and your choice is remembered on this computer.
 - **Settings** (in the main menu, not under Advanced) is where you choose where your models live, how long large models stay in memory, and how much a chat remembers, and where **Check and update everything** is. Its **My own server** section checks Lemonade's version or connects Zest to a Lemonade you run yourself. **Engines** has the agent helper (Pi) and the large-model program.

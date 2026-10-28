@@ -131,3 +131,7 @@ class Provider(provbase.GenericProvider):
         if need <= budget * 0.95 - 2:
             return "tight", "Close other big programs first."
         return "no", "Needs about %d GB of RAM plus graphics memory; this computer has %d GB." % (need, budget)
+
+    def update_status(self):
+        u = dict(strata.SUPD)
+        return {"state": u.get("state") or "idle", "text": u.get("text") or "", "error": u.get("error")}

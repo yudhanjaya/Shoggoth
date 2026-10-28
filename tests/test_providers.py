@@ -13,8 +13,10 @@ import unittest
 HERE = os.path.dirname(os.path.abspath(__file__))
 sys.path.insert(0, os.path.join(HERE, "..", "zest"))
 
+import engine  # noqa: E402
 import provbase  # noqa: E402
 import registry  # noqa: E402
+import strata  # noqa: E402
 
 FIXTURE = os.path.join(HERE, "fixtures", "openai_server.py")
 GOOD = {"id": "demo", "name": "Demo", "api_version": 1, "run": {"mode": "managed", "start": ["{bin}", "--port", "{port}"]},
@@ -231,6 +233,69 @@ class YamlOnlyProvider(Env):
             """)
         r = self.registry()
         self.assertIsNone(r.consent(r.get("remote")))
+
+
+class EnginesPage(Env):
+    """What the Advanced > Engines page is built from."""
+    def real(self):
+        return registry.Registry(bundled=os.path.join(HERE, "..", "zest", "providers"), user=self.user).load()
+
+    def test_summary_carries_what_each_card_shows(self):
+        d = self.real().summary()
+        self.assertEqual(d["user_folder"], self.user)
+        by = {p["id"]: p for p in d["providers"]}
+        self.assertEqual(sorted(by), ["lemonade", "strata"])
+        for p in by.values():
+            self.assertTrue({"state", "text", "error"} <= set(p["update"]))
+            self.assertIn(p["update"]["state"], ("idle", "working", "done", "error", "deferred"))
+            self.assertTrue(p["trusted"] and p["consent"] is None)           # the built-in ones never ask
+
+    def test_default_update_status_is_idle(self):
+        gp = provbase.GenericProvider({"id": "x", "name": "X", "api_version": 1}, self.tmp, provbase.Context())
+        self.assertEqual(gp.update_status(), {"state": "idle", "text": "", "error": None})
+
+    def test_lemonade_reports_its_download_in_the_common_shape(self):
+        old = dict(engine.UPD)
+        try:
+            engine.UPD.update(state="downloading", version="9.9", bytes=3, total=10, error=None)
+            u = self.real().get("lemonade").update_status()
+            self.assertEqual((u["state"], u["total"]), ("working", 10))
+            self.assertIn("9.9", u["text"])
+            engine.UPD.update(state="error", error="no network")
+            self.assertEqual(self.real().get("lemonade").update_status()["state"], "error")
+            engine.UPD.update(state="done", version="9.9", error=None)
+            self.assertEqual(self.real().get("lemonade").update_status()["state"], "done")
+        finally:
+            engine.UPD.clear()
+            engine.UPD.update(old)
+
+    def test_strata_reports_its_update_in_the_common_shape(self):
+        old = dict(strata.SUPD)
+        try:
+            strata.SUPD.update(state="deferred", text="Update after you stop it.", error=None)
+            u = self.real().get("strata").update_status()
+            self.assertEqual((u["state"], u["text"]), ("deferred", "Update after you stop it."))
+        finally:
+            strata.SUPD.clear()
+            strata.SUPD.update(old)
+
+    def test_consent_names_the_program_and_shows_the_real_command(self):
+        d = os.path.join(self.user, "demo")
+        os.makedirs(d)
+        with open(os.path.join(d, "provider.yaml"), "w") as f:
+            f.write(textwrap.dedent("""
+                id: demo
+                name: Demo
+                api_version: 1
+                detect: {binaries: [%s]}
+                run: {mode: managed, start: ["{bin}", serve, "--port", "{port}"], port_range: 18970-18971}
+                endpoint: {base_url: "http://127.0.0.1:{port}/v1"}
+                """ % sys.executable))
+        r = self.real()
+        c = r.consent(r.get("demo"))
+        self.assertEqual(c["will"], ["start a program on your computer (%s)" % os.path.basename(sys.executable)])
+        self.assertEqual(c["commands"][0]["command"][0], sys.executable)        # the template word {bin} is replaced for the person
+        self.assertIn("{port}", c["commands"][0]["command"])                    # values only known at start stay as they are
 
 
 if __name__ == "__main__":

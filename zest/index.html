@@ -467,6 +467,17 @@ details.aegrp>summary small{margin-left:auto;font:11.5px var(--mono);color:var(-
 .libplaces label:has(input:checked){border-color:var(--lemon-text);background:color-mix(in srgb,var(--lemon) 16%,transparent)}
 .libplaces small{color:var(--muted);margin-left:auto;white-space:nowrap}
 .libdl{display:grid;gap:8px;margin-bottom:14px}
+.engine{margin-bottom:14px}
+.engine .ehead{display:flex;flex-wrap:wrap;align-items:center;gap:8px 10px}
+.engine .ehead h3{margin:0}
+.engine .estat{display:grid;gap:4px;font-size:13.5px;color:var(--muted)}
+.engine .estat b{color:var(--text)}
+.engine .erow{display:flex;flex-wrap:wrap;align-items:center;gap:10px}
+.engine details.engmore{border-top:1px solid var(--line-soft);padding-top:8px}
+.engine details.engmore>summary{cursor:pointer;font-size:13.5px;color:var(--muted)}
+.engine details.engmore[open]>summary{margin-bottom:10px}
+.engerr{display:grid;gap:4px;font-size:13px}
+.engerr code{overflow-wrap:anywhere}
 .wlist{list-style:none;margin:16px 0;padding:0;display:grid;gap:10px;text-align:left}
 .wrow2{display:flex;gap:12px;align-items:flex-start}
 .wrow2>i{flex:none;width:26px;height:26px;border-radius:50%;display:grid;place-items:center;font-style:normal;font-size:14px;background:var(--surface-2);color:var(--muted);border:1px solid var(--line)}
@@ -1341,10 +1352,15 @@ h3.themesec{font:600 12px var(--sans);letter-spacing:.08em;text-transform:upperc
 
     <!-- BACKENDS -->
     <section class="view" id="v-backends"><div class="pad"><div class="wrap">
-      <div id="stratabox"></div>
+      <p class="lede">An <b>engine</b> is a program Zest uses to run models. Zest picks the right one for each model, starts it, and frees the memory when you switch, so you never need this page just to chat. It is here for when you want to look under the bonnet.</p>
+      <div id="engcards"></div>
       <div id="pibox"></div>
-      <p class="lede">An <b>engine</b> is the program that actually runs a model, and each kind of model needs its own: one for chat, one for turning speech into text, one for pictures, and so on. Each engine can run on different hardware, called a <b>backend</b>. Pick the one you want, or install one that's missing. Changes apply the next time a model loads.</p>
-      <details class="panel bkhelp" open><summary>Which backend should I pick?</summary>
+      <div id="engadd"></div>
+      <div id="engparts" hidden>
+        <div id="stratabox"></div>
+        <div id="bkpart">
+          <p class="help" style="margin:0 0 10px">Lemonade runs several kinds of model (chat, speech, pictures and more), and each kind can run on different hardware, called a <b>backend</b>. Pick the one you want, or install one that's missing. Changes apply the next time a model loads.</p>
+          <details class="panel bkhelp"><summary>Which backend should I pick?</summary>
         <dl class="bkdl">
           <dt>Auto</dt><dd>Let Lemonade choose the best one for your computer. This is the right answer for almost everyone.</dd>
           <dt>CUDA</dt><dd>For NVIDIA graphics cards. The fastest option if you have one.</dd>
@@ -1354,7 +1370,9 @@ h3.themesec{font:600 12px var(--sans);letter-spacing:.08em;text-transform:upperc
         </dl>
         <p class="note">A green dot means installed. “Update needed” means Lemonade has a newer build for that backend.</p>
       </details>
-      <div id="bk"></div>
+          <div id="bk"></div>
+        </div>
+      </div>
     </div></div></section>
 
     <!-- HELP -->
@@ -2978,9 +2996,82 @@ async function prefsTune(){
   if(S.view === "prefs") renderPrefs(true);
 }
 function prefsCtxOptions(cfg){ const o = BAR_CTX.includes(cfg) ? BAR_CTX : BAR_CTX.concat([cfg]).sort((a, b) => a - b); return o.map(n => `<option value="${n}" ${n === cfg ? "selected" : ""}>${fmtTok(n)}${n === 131072 ? " · default" : ""}</option>`).join(""); }
+
+/* ======================= Advanced > Engines: one card per engine, from the provider data ======================= */
+const ENG = {d: null, checks: {}, msg: "", sig: ""};
+const ENG_TIER = {"small-medium": "Small and medium models", large: "Large models"};
+async function engLoad(){
+  try{ ENG.d = await api("/ui/providers"); }catch(e){ ENG.msg = e.message; }
+  renderEngines();
+}
+function engUpdateRow(p){
+  const u = p.update || {}, c = ENG.checks[p.id], busy = ENG.checks["_busy_" + p.id];
+  if(u.state === "working") return `<div class="erow"><span class="stat-dot busy"></span><span>${esc(u.text || "Updating…")}</span></div><div class="prog ind"><i></i></div>`;
+  if(u.state === "error") return `<div class="note-bad">${esc(u.error || "The update didn't work.")}</div>`;
+  if(u.state === "done" && u.text) return `<div class="erow"><span class="stat-dot ok"></span><span>${esc(u.text)}</span></div>`;
+  if(u.state === "deferred") return `<div class="note-warn">${esc(u.text)}</div>`;
+  if(busy) return `<div class="erow"><span class="stat-dot busy"></span><span>Looking for updates…</span></div>`;
+  if(!c) return `<div class="erow"><button class="btn" data-eng="check" data-id="${esc(p.id)}">Check for updates</button></div>`;
+  if(c.error) return `<div class="note-warn">${esc(c.error)}</div>`;
+  if(c.supported === false) return c.note ? `<p class="help" style="margin:0">${esc(c.note)}</p>` : "";
+  if(c.major) return `<div class="note-warn">A bigger update is out${c.latest ? " (" + esc(c.latest) + ")" : ""}. Zest leaves that one for you to take yourself.</div>`;
+  if(c.available) return `<div class="erow"><span class="stat-dot busy"></span><span><b>A newer version is available</b>${c.latest ? " (" + esc(c.latest) + ")" : ""}.${c.deferred ? " It is running something you started, so it can't be replaced yet." : ""}</span>${c.deferred ? "" : `<button class="btn primary" data-eng="update" data-id="${esc(p.id)}">Update</button>`}</div>`;
+  return `<div class="erow"><span class="stat-dot ok"></span><span>Up to date.</span><button class="btn ghost" data-eng="check" data-id="${esc(p.id)}">Check again</button></div>`;
+}
+function engCard(p){
+  const run = p.running || [], zestRuns = run.some(r => r.owner === "zest"), more = {strata: "Saved setups, connections and the large-model program", lemonade: "Kinds of model and the hardware they use"}[p.id];
+  const stat = [p.installed ? `<span><b>${p.version ? "Version " + esc(p.version) : "Installed"}</b></span>` : `<span><b>Not installed</b></span>`,
+    run.length ? run.map(r => `<span><b>Running</b> · ${r.owner === "zest" ? "started by Zest" : "started by you"}${r.port ? ", port " + r.port : ""}</span>`).join("") : `<span>Not running right now. Zest starts it when a model needs it.</span>`].join("");
+  const cons = p.consent ? `<div class="note-warn"><b>This engine wants to ${p.consent.will.map(esc).join(" and ")}.</b>${p.consent.code ? " It also runs its own Python code inside Zest." : ""}${p.consent.unsafe_install ? " Its installer has no checksum to check." : ""}<details style="margin-top:6px"><summary>Exactly what it will run</summary><div class="mono mid">${p.consent.commands.map(c => esc(c.where) + ": " + esc((c.command || []).join(" "))).join("<br>")}</div></details><div class="erow" style="margin-top:8px"><button class="btn primary" data-eng="approve" data-id="${esc(p.id)}">Allow it</button></div></div>` : "";
+  return `<section class="panel engine" data-pid="${esc(p.id)}"><div class="ehead"><h3>${esc(p.name)}</h3><span class="chip">${esc(ENG_TIER[p.tier] || p.tier || "Engine")}</span><span class="chip ${p.trusted ? "" : "lem"}">${p.trusted ? "Built in" : "Added by you"}</span></div>
+    <p class="help" style="margin:0">${esc(p.summary || "")}</p>
+    <div class="estat">${stat}</div>${(p.problems || []).length ? `<div class="note-warn">${p.problems.map(esc).join("<br>")}</div>` : ""}${cons}
+    ${p.approved ? engUpdateRow(p) : ""}
+    ${zestRuns ? `<div class="erow"><button class="btn" data-eng="stop" data-id="${esc(p.id)}">Stop it</button><span class="help" style="margin:0">Frees the memory it is using. It starts again when a model needs it.</span></div>` : ""}
+    ${more ? `<details class="engmore" data-part="${esc(p.id)}"><summary>${more}</summary><div class="engslot" data-slot="${esc(p.id)}"></div></details>` : ""}</section>`;
+}
+function engMount(){                     // the engine-specific parts live in a holding area and move into their card
+  const hold = $("#engparts");
+  for(const [id, node] of [["strata", $("#stratabox")], ["lemonade", $("#bkpart")]]){
+    const slot = document.querySelector(`#engcards .engslot[data-slot="${id}"]`);
+    if(slot && node && node.parentNode !== slot) slot.appendChild(node);
+  }
+}
+function renderEngines(){
+  const d = ENG.d, host = $("#engcards"); if(!d) return;
+  const sig = JSON.stringify([d, ENG.checks, ENG.msg]);
+  if(sig === ENG.sig) return;
+  if(host.contains(document.activeElement) && /^(INPUT|SELECT|TEXTAREA)$/.test(document.activeElement.tagName)) return;
+  ENG.sig = sig;
+  const open = new Set([...document.querySelectorAll("#engcards details.engmore[open]")].map(x => x.dataset.part));
+  const hold = $("#engparts");
+  for(const n of [$("#stratabox"), $("#bkpart")]) if(n && n.parentNode !== hold) hold.appendChild(n);     // keep them alive while the cards are rebuilt
+  host.innerHTML = d.providers.map(engCard).join("");
+  engMount();
+  document.querySelectorAll("#engcards details.engmore").forEach(x => { if(open.has(x.dataset.part)) x.open = true; });
+  $("#engadd").innerHTML = `<section class="panel engine"><div class="ehead"><h3>Add an engine</h3></div>
+    <p class="help" style="margin:0">An engine is a folder with a <span class="mono">provider.yaml</span> file in it that says how to start the program, where to reach it and which models it can run. Put the folder in <span class="mono" style="overflow-wrap:anywhere">${esc(d.user_folder || "")}</span>, then press Reload. Zest asks before it lets an added engine run a program.</p>
+    <div class="erow"><button class="btn" data-eng="reload">Reload engines</button></div>
+    ${(d.errors || []).length ? `<div class="engerr"><b>Engines Zest couldn't load</b>${d.errors.map(e => `<div class="note-bad"><code>${esc(e.folder)}</code><br>${esc(e.error)}</div>`).join("")}</div>` : ""}
+    ${ENG.msg ? `<div class="note-bad">${esc(ENG.msg)}</div>` : ""}</section>`;
+}
+document.addEventListener("click", async e => {
+  const b = e.target.closest("[data-eng]"); if(!b || !b.closest("#v-backends")) return;
+  const act = b.dataset.eng, id = b.dataset.id; ENG.msg = "";
+  try{
+    if(act === "check"){ ENG.checks["_busy_" + id] = true; renderEngines(); ENG.checks[id] = await api("/ui/providers/check", {method: "POST", body: JSON.stringify({id})}); ENG.checks["_busy_" + id] = false; }
+    else if(act === "update"){ await api("/ui/providers/update", {method: "POST", body: JSON.stringify({id})}); delete ENG.checks[id]; }
+    else if(act === "stop"){ if(!confirm("Stop it? It frees the memory it is using, and starts again when a model needs it.")) return; await api("/ui/providers/stop", {method: "POST", body: JSON.stringify({id})}); toast("Stopped."); await Promise.all([pollServer(), pkLoad(true)]); }
+    else if(act === "approve"){ await api("/ui/providers/approve", {method: "POST", body: JSON.stringify({id})}); toast("Allowed."); }
+    else if(act === "reload"){ await api("/ui/providers/reload", {method: "POST", body: "{}"}); toast("Engines reloaded."); }
+  }catch(err){ ENG.checks["_busy_" + id] = false; ENG.msg = err.message; }
+  await engLoad();
+});
+
 async function enginesExtras(){
   try{ SU.pi.info = await api("/ui/pi"); }catch{}
   const box = $("#pibox"); if(box) box.innerHTML = SU.pi.info ? piPanel() : "";
+  await engLoad();
   if(S.view === "backends") setTimeout(enginesExtras, 2500);
 }
 function renderPrefs(force){
@@ -3136,17 +3227,6 @@ function strPaint(){
   if(!d.installed && !servers.length) parts.push(`<p class="help" style="margin:0">Strata runs models that are far too big for your graphics card by keeping part of them in RAM and on the SSD. It is a separate free program (<a href="https://github.com/Niko1221/Strata" target="_blank" rel="noopener noreferrer">Niko1221/Strata</a>). If you already run it, Zest finds it by itself. If not, Zest can install it and check the installer against the checksum Strata publishes. It works best with an NVIDIA RTX 20 series or newer, an AMD Radeon, or an AMD Ryzen AI Max, and a lot of RAM.</p>`
     + (ins.state === "installing" ? `<div class="line"><span class="stat-dot busy"></span><span class="grow">Installing Strata… ${esc((ins.log || []).slice(-1)[0] || "")}</span></div>` : `<div class="line"><button class="btn" data-str="install">Install Strata</button></div>`)
     + (ins.state === "error" ? `<div class="note-bad">${esc(ins.error)}</div>` : ""));
-  const su = SU.strUpd, uc = su && su.check, us = su && su.update || {};
-  if(d.installed){
-    if(us.state === "working") parts.push(`<div class="line"><span class="stat-dot busy"></span><span class="grow">${esc(us.text || "Updating Strata…")}</span></div>`);
-    else if(us.state === "done") parts.push(`<div class="line"><span class="stat-dot ok"></span><span class="grow">${esc(us.text)}${us.stopped ? " It starts again by itself when a chat needs it." : ""}</span></div>`);
-    else if(us.state === "error") parts.push(`<div class="note-bad">${esc(us.error)}</div>`);
-    else if(us.state === "deferred") parts.push(`<div class="note-warn">${esc(us.text)}</div>`);
-    else if(uc && uc.major) parts.push(`<div class="note-warn">Strata has a bigger update (Control ${esc(uc.control.offered)}). Zest leaves that one for you: run <code>strata update</code> in a terminal when you are ready.</div>`);
-    else if(uc && uc.available) parts.push(`<div class="line"><span class="stat-dot busy"></span><span class="grow"><b>A Strata update is available</b> (${[uc.engine.new ? "engine " + esc(uc.engine.installed) + " → " + esc(uc.engine.offered) : "", uc.control.new ? "control " + esc(uc.control.installed) + " → " + esc(uc.control.offered) : ""].filter(Boolean).join(", ")}, about ${(uc.bytes / 1e9).toFixed(1)} GB). ${uc.deferred ? "A model you started is running, so it can't be replaced yet." : "Zest checks the download and Strata test-starts it before switching."}</span>${uc.deferred ? "" : '<button class="btn primary" data-str="update">Update</button>'}</div>`);
-    if(uc && uc.installed && uc.tested === false) parts.push(`<p class="help" style="margin:0">Zest has been tried with Strata ${"0.2"}.x; this is ${esc(uc.version)}. It should work, but tell us if something doesn't.</p>`);
-  }
-  if(servers.some(r => r.owner === "zest" && r.source === "launch")) parts.push(`<div class="line"><label class="grow help" style="margin:0">Free the memory when Strata started by Zest has been idle for <input id="stridle" type="number" min="0" max="1440" value="${+d.idle_minutes}" style="width:70px"> minutes (0 keeps it running).</label><button class="btn ghost" data-str="idle">Save</button></div>`);
   parts.push(`<details><summary class="help" style="cursor:pointer">Connect to a Strata on another computer</summary><form class="line" id="strform" style="margin-top:8px"><input id="strurl" type="text" inputmode="url" placeholder="http://192.168.1.20:8080" autocomplete="off" spellcheck="false" aria-label="Strata address"><input id="strk" type="password" placeholder="API key (if it has one)" autocomplete="off" aria-label="Strata API key"><button class="btn" type="submit">Connect</button></form></details>`);
   box.innerHTML = `<section class="panel" style="margin-bottom:16px"><div class="skhead"><h3>Bigger models with Strata</h3><span class="chip">Experimental</span></div>${parts.join("")}${STR.msg ? `<div class="note-bad">${esc(STR.msg)}</div>` : ""}</section>`;
   if(wasOpen) box.querySelector("details").open = true;

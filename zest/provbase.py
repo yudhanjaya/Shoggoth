@@ -231,6 +231,10 @@ class Base:
     def update(self, progress):
         raise NotImplementedError
 
+    def update_status(self):
+        """Where an update stands: {state: idle | working | done | error | deferred, text, error}. Default: idle."""
+        return {"state": "idle", "text": "", "error": None}
+
     # -- serving
     def models(self):
         raise NotImplementedError

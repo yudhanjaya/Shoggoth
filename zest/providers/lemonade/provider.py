@@ -111,6 +111,9 @@ class Provider(provbase.GenericProvider):
         return {"base_url": "http://127.0.0.1:%d/api/v1" % zest_port, "key": "zest"}
 
     def update_check(self):
+        if lem.healthy() and not engine.running():
+            # a Lemonade the person runs (for example a system service): Zest can only fetch a separate copy of its own, which wouldn't update it
+            return {"supported": False, "available": False, "note": "You run this one yourself, so update it where you installed it."}
         try:
             c = engine.check(store.load())
         except RuntimeError as e:
@@ -174,3 +177,11 @@ class Provider(provbase.GenericProvider):
         if c is None or time.time() - c[0] > 10:
             c = self._dl = (time.time(), [m for m in lem.get("/v1/models").get("data", []) if m.get("downloaded")])
         return c[1]
+
+    def update_status(self):
+        u = dict(engine.UPD)
+        working = u.get("state") in ("downloading", "verifying", "installing")
+        text = {"downloading": "Downloading Lemonade %s…", "verifying": "Checking the download…", "installing": "Installing…"}.get(u.get("state"), "") % ((u.get("version"),) if u.get("state") == "downloading" else ())
+        return {"state": "working" if working else "done" if u.get("state") == "done" else "error" if u.get("state") == "error" else "idle",
+                "text": text or ("Lemonade %s is installed. It starts the next time Lemonade restarts." % u.get("version") if u.get("state") == "done" else ""),
+                "error": u.get("error"), "bytes": u.get("bytes"), "total": u.get("total")}

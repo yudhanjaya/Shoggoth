@@ -185,7 +185,8 @@ class Registry:
         spec, runs = p.spec, []
         run = spec.get("run") or {}
         if run.get("mode", "managed") == "managed" and run.get("start"):
-            runs.append("start a program on your computer: %s" % " ".join(str(x) for x in run["start"]))
+            exe = os.path.basename(p.binary() or "") if hasattr(p, "binary") and p.binary() else os.path.basename(str(run["start"][0]).replace("{bin}", "its program"))
+            runs.append("start a program on your computer (%s)" % (exe or "its program"))
         inst = spec.get("install") or {}
         if inst.get("url"):
             runs.append("download and run an installer from %s" % inst["url"])
@@ -195,7 +196,7 @@ class Registry:
         if not runs:
             return None                                    # it only points at an address that is already running
         return {"id": p.id, "name": p.name, "will": runs, "code": code, "unsafe_install": bool(inst.get("unsafe_install")),
-                "commands": [{"where": w, "command": c} for w, c in _commands(spec)]}
+                "commands": [{"where": w, "command": [(p.binary() or "its program") if str(x) == "{bin}" else x for x in c]} for w, c in _commands(spec)]}
 
     def approve(self, pid):
         p = self.providers.get(pid)
@@ -222,8 +223,12 @@ class Registry:
                 st = p.summary()
             except Exception as e:  # noqa: BLE001
                 st = dict(p.summary(), problems=[str(e)])
-            out.append(dict(st, consent=self.consent(p) if not p.approved else None))
-        return {"providers": out, "errors": list(self.errors)}
+            try:
+                us = p.update_status()
+            except Exception:  # noqa: BLE001
+                us = {"state": "idle", "text": "", "error": None}
+            out.append(dict(st, consent=self.consent(p) if not p.approved else None, update=us))
+        return {"providers": out, "errors": list(self.errors), "user_folder": self.user}
 
 
 _default = {"r": None}
