@@ -1198,13 +1198,13 @@ h3.themesec{font:600 12px var(--sans);letter-spacing:.08em;text-transform:upperc
       <button data-view="skills"><svg class="i" viewBox="0 0 24 24"><path d="M13 3L5 13.5h6L10 21l8-10.5h-6z"/></svg><span>Skills</span></button>
       <button data-view="docs"><svg class="i" viewBox="0 0 24 24"><path d="M5 4h10a3 3 0 0 1 3 3v13H8a3 3 0 0 1-3-3z"/><path d="M5 17a3 3 0 0 1 3-3h10M9 8h5"/></svg><span>Docs</span></button>
       <button data-view="help"><svg class="i" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M9.5 9.5a2.6 2.6 0 0 1 5 1c0 1.7-2.5 2-2.5 3.6M12 17.2v.1"/></svg><span>Help</span></button>
+      <button data-view="prefs"><svg class="i" viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M12 3v3M12 18v3M3 12h3M18 12h3M5.6 5.6l2.1 2.1M16.3 16.3l2.1 2.1M18.4 5.6l-2.1 2.1M7.7 16.3l-2.1 2.1"/></svg><span>Settings</span></button>
       <button data-view="advanced"><svg class="i" viewBox="0 0 24 24"><path d="M4 7h9M17 7h3M4 17h3M11 17h9"/><circle cx="15" cy="7" r="2"/><circle cx="9" cy="17" r="2"/></svg><span>Advanced</span><span class="navdot" id="navdot" hidden></span></button>
       <div class="sub" id="subnav">
         <button data-view="server"><span>Server</span></button>
         <button data-view="hardware"><span>Hardware</span></button>
         <button data-view="backends"><span>Engines</span></button>
-        <button data-view="settings"><span>All settings</span></button>
-        <button data-view="setup"><span>Setup guide</span></button>
+        <button data-view="settings"><span>Engine settings</span></button>
         <button data-view="tuning"><span>Tuning</span></button>
         <button data-view="themes"><span>Themes</span></button>
       </div>
@@ -1342,6 +1342,7 @@ h3.themesec{font:600 12px var(--sans);letter-spacing:.08em;text-transform:upperc
     <!-- BACKENDS -->
     <section class="view" id="v-backends"><div class="pad"><div class="wrap">
       <div id="stratabox"></div>
+      <div id="pibox"></div>
       <p class="lede">An <b>engine</b> is the program that actually runs a model, and each kind of model needs its own: one for chat, one for turning speech into text, one for pictures, and so on. Each engine can run on different hardware, called a <b>backend</b>. Pick the one you want, or install one that's missing. Changes apply the next time a model loads.</p>
       <details class="panel bkhelp" open><summary>Which backend should I pick?</summary>
         <dl class="bkdl">
@@ -1378,7 +1379,7 @@ h3.themesec{font:600 12px var(--sans);letter-spacing:.08em;text-transform:upperc
     </div></div></section>
 
     <!-- SETUP -->
-    <section class="view" id="v-setup"><div class="pad"><div class="wrap" id="setup"></div></div></section>
+    <section class="view" id="v-prefs"><div class="pad"><div class="wrap" id="prefs"></div></div></section>
 
     <!-- SETTINGS -->
     <section class="view" id="v-settings"><div class="pad"><div class="wrap">
@@ -1502,9 +1503,10 @@ async function api(path, opts={}){
 }
 
 /* ======================= navigation ======================= */
-const TITLES = {welcome:"Welcome", cowork:"Chat", chat:"Earlier chats", skills:"Skills", docs:"Docs", models:"Library", help:"Help", advanced:"Advanced", server:"Server", hardware:"Hardware", backends:"Engines", settings:"All settings", setup:"Setup guide", tuning:"Tuning", themes:"Themes"};
-const ADV = ["advanced","server","hardware","backends","settings","setup","tuning","themes"];
+const TITLES = {welcome:"Welcome", cowork:"Chat", chat:"Earlier chats", skills:"Skills", docs:"Docs", models:"Library", help:"Help", advanced:"Advanced", server:"Server", hardware:"Hardware", backends:"Engines", settings:"Engine settings", prefs:"Settings", tuning:"Tuning", themes:"Themes"};
+const ADV = ["advanced","server","hardware","backends","settings","tuning","themes"];
 function show(v){
+  if(v === "setup") v = "prefs";                                                   // the Setup guide's pieces now live in Settings
   S.view = v;
   $$(".view").forEach(el => el.classList.toggle("active", el.id === "v-"+v));
   const inAdv = ADV.includes(v);
@@ -1523,9 +1525,10 @@ function show(v){
   if(v === "docs") renderDocs();
   if(v === "models") libShow();
   if(v === "hardware") renderHardware();
-  if(v === "backends"){ loadBackends(); strRefresh(); }
+  if(v === "backends"){ loadBackends(); strRefresh(); enginesExtras(); }
   if(v === "settings") loadSettings();
-  if(v === "setup" || v === "welcome") refreshSetup(true);
+  if(v === "prefs" || v === "welcome") refreshSetup(true);
+  if(v === "prefs"){ libLoad(); prefsTune(); strRefresh(); }
   if(v === "welcome"){ libLoad(); pkLoad(true); strRefreshWelcome(); }
   if(v === "tuning") tnShow();
   $(".app").classList.toggle("focus", v === "welcome");
@@ -2111,7 +2114,7 @@ const isChatModel = m => m.recipe === "llamacpp" && !(m.labels || []).some(l => 
 async function libLoad(fresh){
   if(LIB.busy) return; LIB.busy = true;
   try{ LIB.d = await api("/ui/library"); LIB.t = Date.now(); }catch{}
-  LIB.busy = false; if(S.view === "models") renderModels(); if(S.view === "welcome") renderWelcome(true);
+  LIB.busy = false; if(S.view === "models") renderModels(); if(S.view === "welcome") renderWelcome(true); if(S.view === "prefs") renderPrefs(true);
 }
 /* while the first-run screen is up, keep the Large-model download state fresh */
 async function strRefreshWelcome(){ if(S.view !== "welcome") return; try{ STR.d = await api("/ui/strata"); }catch{} renderWelcome(); setTimeout(strRefreshWelcome, 3000); }
@@ -2227,7 +2230,7 @@ function renderModels(){
   if(!LIB_TABS.some(t => t[0] === LIB.tab)) LIB.tab = "installed";
   libFilters();
   const noBackend = S.bk && S.bk.length && !backendsInstalled().length;
-  $("#modelsbanner").innerHTML = noBackend ? `<div class="note-warn" style="margin-bottom:12px">Zest still needs one small piece before models can run. <a href="#setup" data-go="setup">Finish setting up</a>.</div>` : "";
+  $("#modelsbanner").innerHTML = noBackend ? `<div class="note-warn" style="margin-bottom:12px">Zest still needs one small piece before models can run. <a href="#backends" data-go="backends">Open Engines to finish it</a>.</div>` : "";
   $("#libwhere").innerHTML = libWhereHTML();
   $("#libdl").innerHTML = libDlHTML();
   const open = new Set($$("#grid details.more[open]").map(d => d.closest(".card")?.dataset.id));
@@ -2764,14 +2767,14 @@ async function doPiCheck(silent){
   SU.busy.pcheck = false; updateNavDot(); if(inSetup()) renderSetup(true); if(S.view === "cowork") cwRenderSide();
 }
 function updatePanel(){
-  const u = SU.up || {state: "idle", items: {}}, working = u.state === "working", names = {zest: "Zest", lemonade: "Lemonade", pi: "Pi", strata: "Strata"};
+  const u = SU.up || {state: "idle", items: {}}, working = u.state === "working", names = {zest: "Zest", lemonade: "The part that runs AI (Lemonade)", pi: "The agent helper (Pi)", strata: "Large models (Strata)"};
   const dot = {current: "ok", updated: "ok", working: "busy", checking: "busy", error: "bad", manual: "busy", skipped: "ok"};
   const rows = ["zest", "lemonade", "pi", "strata"].filter(k => u.items[k]).map(k => { const it = u.items[k];
     return `<div class="line"><span class="stat-dot ${dot[it.state] || "busy"}"></span><span class="grow"><b>${names[k]}:</b> ${esc(it.text)}${it.page ? ` <a href="${esc(it.page)}" target="_blank" rel="noopener noreferrer">Releases</a>` : ""}</span></div>`; }).join("");
   return `<section class="step" id="step-upd"><header><span class="num">↻</span><h3>Update everything</h3></header><div class="sbody">
-    <p class="lead">One button looks for newer versions of Zest, Lemonade, Pi and Strata (if you use it), checks each download, and installs what it finds. Nothing is replaced until the download has been verified.</p>
+    <p class="lead">One button looks for newer versions of everything Zest uses, checks each download, and installs what it finds. Nothing is replaced until the download has been verified.</p>
     <div class="panel2"><div class="line"><button class="btn primary" data-act="update-all" ${working ? "disabled" : ""}>${working ? "Updating…" : "Check and update everything"}</button>
-      ${u.restart ? '<button class="btn" data-act="update-restart">Restart Zest to finish</button>' : ""}</div>${rows}${u.error ? `<div class="note-bad">${esc(u.error)}</div>` : ""}</div></div></section>`;
+      ${u.restart ? '<button class="btn" data-act="update-restart">Restart Zest to finish</button>' : ""}<label class="aechk" style="margin-left:auto"><input type="checkbox" data-act="autocheck" ${autoCheckOn() ? "checked" : ""}> Look for updates when Zest opens</label></div>${rows}${u.error ? `<div class="note-bad">${esc(u.error)}</div>` : ""}</div></div></section>`;
 }
 async function refreshUpdate(){ try{ SU.up = await api("/ui/update"); }catch{} renderSetup(); }
 function piPanel(){
@@ -2801,18 +2804,12 @@ async function doCheck(silent){
   catch(e){ SU.check = null; SU.checkErr = silent ? "" : e.message; }
   SU.busy.check = false; updateNavDot(); if(inSetup()) renderSetup(true);
 }
-function setupSteps(){
-  const st = SU.st;
-  const eng = !!st.lemonade.reachable, be = backendsInstalled().length > 0, mo = downloadedChat().length > 0, ch = S.convs.some(c => c.messages.length) || !!S.loaded;
-  return [{k: "eng", t: "Engine", d: "Lemonade runs your models", done: eng}, {k: "be", t: "Backend", d: "Fits your hardware", done: be},
-          {k: "mo", t: "Models", d: "Bring or download one", done: mo}, {k: "ch", t: "Chat", d: "Load it and say hello", done: ch}];
-}
 function stepShell(n, key, title, doneFlag, chipHTML, body){
   return `<section class="step ${doneFlag ? "done" : ""}" id="step-${key}"><header><span class="num">${doneFlag ? "✓" : n}</span><h3>${esc(title)}</h3>${chipHTML || ""}</header><div class="sbody">${body}</div></section>`;
 }
 
 /* ======================= first-run welcome ======================= */
-const inSetup = () => S.view === "setup" || S.view === "welcome";
+const inSetup = () => S.view === "prefs" || S.view === "welcome";
 function tierModels(){
   // A fixed set, whatever the hardware: people with less memory can pick something else under "See every model".
   const tiers = [["Quick", ["LFM2.5-8B-A1B"]],
@@ -2917,7 +2914,7 @@ function renderWelcome(force){
     <ol class="wlist" aria-label="Getting ready">${rows.map(wRowHTML).join("")}</ol>
     ${ready && go ? wModelCards() : ""}
     ${have && ready ? `<div class="wrow"><button class="btn primary xl" data-act="w-start">Start chatting${pick ? " with " + esc(friendly(pick)) : ""}</button></div>` : ""}</div>
-    <div class="wfoot"><button class="linkbtn" data-go="setup">I run my own server</button><button class="linkbtn" data-act="finish">Skip this, I'll set things up myself</button></div></div>`;
+    <div class="wfoot"><button class="linkbtn" data-act="w-own">I run my own server</button><button class="linkbtn" data-act="finish">Skip this, I'll set things up myself</button></div></div>`;
   wAuto(rec, go);
 }
 
@@ -2969,99 +2966,51 @@ function engineStep(){
   return stepShell(1, "eng", "Lemonade, the engine", st.lemonade.reachable, chip, `<p class="lead">${lead}</p><div class="choices" role="radiogroup" aria-label="Which Lemonade">${built}${exist}</div>${panel}`);
 }
 
-/* ---- step 2: a backend for the hardware */
-const BACKEND_BLURB = {cuda: "NVIDIA graphics cards. Usually the fastest on NVIDIA.", vulkan: "Most graphics cards (NVIDIA, AMD, Intel). A good all-rounder.", rocm: "Recent AMD graphics cards.", cpu: "No graphics card needed, but much slower.", metal: "Apple silicon.", system: "A llama.cpp already installed on this computer."};
-function backendStep(){
-  const st = SU.st, r = llamaRecipe(), b = SU.busy;
-  if(!st.lemonade.reachable) return stepShell(2, "be", "A backend for your hardware", false, "", `<p class="lead">Waiting for Lemonade to start…</p>`);
-  if(!r) return stepShell(2, "be", "A backend for your hardware", false, "", `<p class="lead">Lemonade didn't report any backends yet. Give it a moment, or open the Engines page.</p>`);
-  const inst = r.backends.filter(x => x.state === "installed"), todo = r.backends.filter(x => ["installable", "update_required"].includes(x.state));
-  const gpus = ((st.gpus_found && st.gpus_found.length) ? st.gpus_found : (S.gpus || [])).map(g => g.name.replace(/^NVIDIA GeForce /, ""));
-  const rec = todo.find(x => x.name === r.default) || todo.find(x => x.name === "vulkan") || todo[0];
-  const hw = gpus.length ? `We found <b>${esc(groupNames(gpus).join(" and "))}</b>.` : `We couldn't identify a graphics card, so the choice below is the one that works on any computer.`;
-  const lead = `A backend is the program that does the heavy lifting for models. Lemonade downloads it for you; pick the one that matches your hardware. ${hw}`;
-  const row = (x, primary) => {
-    const key = "inst-" + x.name, busy = b[key];
-    return `<div class="starter"><div><b>${esc(x.name.toUpperCase())}${primary ? ' <span class="chip lem">Recommended</span>' : ""}</b><small>${esc(BACKEND_BLURB[x.name] || "")}${x.version ? ` · ${esc(x.version)}` : ""}</small>${busy ? `<div class="prog ind"><i></i></div><small>Downloading and installing. This can take a minute or two…</small>` : ""}</div>
-      <button class="btn ${primary ? "primary" : ""}" data-act="install" data-backend="${esc(x.name)}" ${Object.keys(b).some(k => k.startsWith("inst-") && b[k]) ? "disabled" : ""}>${busy ? "Installing…" : (x.state === "update_required" ? "Update" : "Install")}</button></div>`;
-  };
-  let body = `<p class="lead">${lead}</p>`;
-  if(inst.length) body += `<div class="line panel2"><span class="stat-dot ok"></span><span class="grow">Installed: ${inst.map(x => `<b>${esc(x.name.toUpperCase())}</b> <span class="faint">${esc(x.version || "")}</span>`).join(" · ")}</span><button class="btn ghost" data-go="backends">Manage engines</button></div>`;
-  if(todo.length) body += `<div class="starters">${todo.map(x => row(x, !inst.length && rec && x.name === rec.name)).join("")}</div>`;
-  if(SU.msg.backend) body += `<div class="note-bad">${esc(SU.msg.backend)}</div>`;
-  if(inst.length && inst.every(x => x.name === "cpu") && gpus.length && todo.some(x => x.name !== "cpu")) body += `<div class="note-warn">Only the CPU backend is installed. A graphics-card backend would be a lot faster.</div>`;
-  return stepShell(2, "be", "A backend for your hardware", inst.length > 0, inst.length ? `<span class="chip ok">Installed</span>` : `<span class="chip">To do</span>`, body);
-}
-
-/* ---- step 3: models (where they live, ones you already have, getting one) */
-function starterModels(){
-  const v = vramAvail(), cap = v && v.live ? v.avail * 0.8 - 0.8 : (v ? v.avail * 0.8 - 0.8 : 4);
-  const pool = S.models.filter(m => !m.downloaded && m.recipe === "llamacpp" && (m.labels || []).includes("chat") && !(m.labels || []).includes("coding") && m.size && !/test/i.test(m.id));
-  const fits = pool.filter(m => m.size <= Math.max(cap, 1)).sort((a, b) => ((b.labels || []).includes("hot")) - ((a.labels || []).includes("hot")) || b.size - a.size);
-  const out = fits.slice(0, 3);
-  const small = pool.slice().sort((a, b) => a.size - b.size)[0];
-  if(small && !out.includes(small)) out.push(small);
-  return out;
-}
-function modelStep(){
-  const st = SU.st, mo = st.models, b = SU.busy;
-  const have = downloadedChat();
-  const hf = `<div class="choice" role="radio" aria-checked="${mo.storage === "hf"}" tabindex="0" data-act="storage-hf">
-      <div class="ct"><span class="rad"></span>Hugging Face cache <span class="chip lem">Default</span></div>
-      <p>The standard place most AI tools keep models, so downloads can be shared with them. <span class="mono" style="font-size:12px">${esc(mo.hf_dir)}</span></p></div>`;
-  const cu = `<div class="choice" role="radio" aria-checked="${mo.storage === "custom"}" tabindex="0" data-act="storage-custom-pick">
-      <div class="ct"><span class="rad"></span>A folder I choose</div>
-      <p>Keep new downloads somewhere else, for example a bigger drive.</p>
-      <div class="row2" style="grid-template-columns:1fr auto"><input type="text" id="cudir" value="${esc(mo.custom_dir)}" placeholder="/path/to/models" aria-label="Models folder" spellcheck="false"><button class="btn" data-act="browse-storage">Browse…</button></div>
-      <button class="btn" data-act="storage-custom">Use this folder</button></div>`;
-  let found = "";
-  if(SU.sources){
-    found = SU.sources.length ? `<div class="srclist">${SU.sources.map(s => `<label class="src"><input type="checkbox" data-src="${esc(s.id)}" ${SU.sel.has(s.id) ? "checked" : ""}><span><b>${esc(s.label)}</b><small>${esc(s.path)}</small><small>${esc(s.samples.join(", "))}${s.count > s.samples.length ? " …" : ""}</small></span><span class="sz">${s.count} model${s.count === 1 ? "" : "s"}<br>${fmtBytes(s.bytes)}</span></label>`).join("")}</div>`
-      : `<p class="lead">Nothing found in the usual places (LM Studio, Ollama, llama.cpp, GPT4All, Jan, your Downloads and models folders).</p>`;
-  }
-  const imported = mo.imports.length ? `<p class="lead">Already using: ${mo.imports.map(i => `<span class="chip">${esc(i.label)}</span>`).join(" ")}</p>` : "";
-  const existing = `<div class="panel2"><div class="line"><b class="grow">Models you already have</b><button class="btn" data-act="scan" ${b.scan ? "disabled" : ""}>${b.scan ? "Looking…" : "Look on this computer"}</button><button class="btn" data-act="browse-source">Add a folder…</button></div>
-      <p class="lead">Zest can use model files you've already downloaded elsewhere. Nothing is copied: Lemonade just gets a link to each file.</p>${imported}${found}
-      ${SU.sources && SU.sources.length ? `<div class="line"><button class="btn primary" data-act="import" ${b.import ? "disabled" : ""}>${b.import ? "Linking…" : "Use the ticked models"}</button></div>` : ""}
-      ${SU.msg.import ? `<div class="${SU.msg.importBad ? "note-warn" : "faint"}" style="font-size:13.5px">${esc(SU.msg.import)}</div>` : ""}</div>`;
-  const starters = starterModels();
-  const getone = `<div class="panel2"><div class="line"><b class="grow">Download a model</b><button class="btn" data-go="models">Browse all models</button></div>
-      <p class="lead">These suggestions fit your hardware's memory. Models are big; they download in the background while you carry on.</p>
-      <div class="starters">${starters.map(m => { const j = dlJob(m.id), pct = j ? j.percent : 0; return `<div class="starter"><div><b>${esc(m.id)}</b><small>${m.size.toFixed(1)} GB${(m.labels || []).filter(l => ["vision", "tool-calling", "hot"].includes(l)).map(l => ` · ${l}`).join("")}</small>${j ? `<div class="prog"><i style="width:${pct}%"></i></div><small>${pct}%</small>` : ""}</div>
-        ${j ? `<button class="btn" data-act="cancel-dl" data-model="${esc(m.id)}">Cancel</button>` : `<button class="btn primary" data-act="dl" data-model="${esc(m.id)}" ${S.dlSupported === false ? "disabled" : ""}>Download</button>`}</div>`; }).join("") || `<p class="lead">No suggestions yet. Open the Models page to see everything Lemonade offers.</p>`}</div>
-      ${SU.msg.dl ? `<div class="note-bad">${esc(SU.msg.dl)}</div>` : ""}</div>`;
-  const note = st.mode === "existing" ? `<div class="note-warn">You're connected to a Lemonade you run yourself. If it runs as a system service it may not be allowed to read files in your home folder, and these choices change that Lemonade's own settings.</div>` : "";
-  const lead = `Models are the AI brains themselves: big files, usually a few gigabytes. Choose where Zest keeps them, bring in ones you already have, or download one.`;
-  return stepShell(3, "mo", "Your models", have.length > 0, have.length ? `<span class="chip ok">${have.length} ready</span>` : `<span class="chip">To do</span>`,
-    `<p class="lead">${lead}</p>${note}<div class="choices" role="radiogroup" aria-label="Where models are stored">${hf}${cu}</div>${SU.msg.storage ? `<div class="${SU.msg.storageBad ? "note-bad" : "faint"}" style="font-size:13.5px">${esc(SU.msg.storage)}</div>` : ""}${existing}${getone}`);
-}
-
-/* ---- step 4: load one and chat */
-function chatStep(){
-  const have = downloadedChat(), steps = setupSteps(), ready = steps[0].done && steps[1].done && have.length;
-  const pick = have.find(m => m.id === S.model) ? S.model : (have[0] && have[0].id);
-  const body = ready ? `<p class="lead">Everything is in place. Pick a model, and Zest will load it and open the chat.</p>
-      <div class="line"><select id="startmodel" aria-label="Model" style="min-height:42px;border:1px solid var(--line);border-radius:10px;background:var(--bg);color:var(--text);padding:0 12px;min-width:240px">${have.map(m => `<option value="${esc(m.id)}" ${m.id === pick ? "selected" : ""}>${esc(m.id)}${m.id === S.loaded ? " (loaded)" : ""}</option>`).join("")}</select>
-        <button class="btn primary" data-act="load-chat" ${SU.busy.load ? "disabled" : ""}>${SU.busy.load ? "Loading…" : (pick === S.loaded ? "Open the chat" : "Load and start chatting")}</button></div>`
-    : `<p class="lead">Finish the steps above first. Once you have an engine, a backend and a model, you can load it here and start chatting.</p>`;
-  return stepShell(4, "ch", "Say hello", steps[3].done, steps[3].done ? `<span class="chip ok">Done</span>` : "", body);
-}
-
 function renderSetup(force){
   if(S.view === "welcome") return renderWelcome(force);
-  const host = $("#setup"); if(!SU.st){ host.innerHTML = `<div class="empty-note">Loading…</div>`; return; }
-  const sig = JSON.stringify([SU.st, S.bk && S.bk.length, S.models.filter(m => m.downloaded).length, S.downloads, SU.busy, SU.msg, SU.sources, [...SU.sel], SU.check, SU.checkErr, S.loaded, autoCheckOn(), SU.pi.info, SU.pi.check, SU.pi.err, SU.up]);
+  if(S.view === "prefs") return renderPrefs(force);
+}
+/* ======================= Settings: the few things worth choosing, in plain words ======================= */
+const PREFS = {tune: null, tuneAt: 0};
+async function prefsTune(){
+  if(Date.now() - PREFS.tuneAt < 30000) return; PREFS.tuneAt = Date.now();
+  try{ const d = await api("/ui/tuning"); PREFS.tune = {n: d.targets.filter(t => t.tuned.has && !t.tuned.stale).length, total: d.targets.length}; }catch{}
+  if(S.view === "prefs") renderPrefs(true);
+}
+function prefsCtxOptions(cfg){ const o = BAR_CTX.includes(cfg) ? BAR_CTX : BAR_CTX.concat([cfg]).sort((a, b) => a - b); return o.map(n => `<option value="${n}" ${n === cfg ? "selected" : ""}>${fmtTok(n)}${n === 131072 ? " · default" : ""}</option>`).join(""); }
+async function enginesExtras(){
+  try{ SU.pi.info = await api("/ui/pi"); }catch{}
+  const box = $("#pibox"); if(box) box.innerHTML = SU.pi.info ? piPanel() : "";
+  if(S.view === "backends") setTimeout(enginesExtras, 2500);
+}
+function renderPrefs(force){
+  const host = $("#prefs"); if(!SU.st){ host.innerHTML = `<div class="empty-note">Loading…</div>`; return; }
+  const sig = JSON.stringify([SU.st, SU.busy, SU.msg, SU.check, SU.checkErr, autoCheckOn(), SU.up, LIB.d && [LIB.d.chosen, LIB.d.root, LIB.d.disk], LIB.notNow, LIB.picked, LIB.err, (S.ms || {}).chat_ctx, STR.d && [STR.d.installed, STR.d.idle_minutes], PREFS.tune, SU.pi.info, SU.pi.check]);
   const typing = host.contains(document.activeElement) && /^(INPUT|TEXTAREA|SELECT)$/.test(document.activeElement.tagName);
-  if(!force && (sig === SU.sig || typing)) return;
-  SU.sig = sig;
-  const st = SU.st, steps = setupSteps(), now = steps.findIndex(s => !s.done);
-  const sc = $(".view.active")?.scrollTop;
-  host.innerHTML = `<div class="hero"><h2>${st.setup_done ? "Setup <em>guide</em>" : "Welcome to <em>Zest</em>"}</h2>
-      <p>${st.setup_done ? "Everything you need to get models running, in one place. You can come back here any time to update Lemonade, add a backend, or change where models live." : "Zest is a friendly front door to Lemonade, the engine that runs AI models on your own computer. Four short steps get you chatting, and nothing ever leaves your machine."}</p>
-      <ol class="flow">${steps.map((s, i) => `<li class="${s.done ? "done" : i === now ? "now" : ""}"><b>${s.t}</b><span>${s.d}</span></li>`).join("")}</ol></div>
-    ${engineStep()}${backendStep()}${modelStep()}${chatStep()}${st.setup_done ? updatePanel() + piPanel() : ""}
-    <div class="setfoot">${st.setup_done ? "" : `<button class="btn ghost" data-act="finish">Skip, take me to Zest</button>`}<button class="btn ${steps.every(s => s.done) && !st.setup_done ? "primary" : ""}" data-act="finish">${st.setup_done ? "Back to Zest" : "Finish setup"}</button></div>`;
-  if(sc != null) $(".view.active").scrollTop = sc;
+  if(!force && (sig === SU.sig || typing)) return; SU.sig = sig;
+  const d = LIB.d || {}, cfg = (S.ms || {}).chat_ctx || 131072, big = STR.d && STR.d.installed, t = PREFS.tune;
+  const where = d.chosen ? `<p class="lead" style="margin:0">Your models live in <b class="mono" style="overflow-wrap:anywhere">${esc(d.root)}</b>${d.disk ? `, with ${d.disk.free_gb} GB free` : ""}.</p>
+      <p class="help" style="margin:0">Changing it sends new models there. Models you already have stay where they are and still show up in the Library.</p>
+      <div class="line"><button class="btn" type="button" data-lib="where">Choose another folder…</button><button class="btn ghost" type="button" data-act="w-add">Add models you already have</button></div>`
+    : `<p class="lead" style="margin:0">Models are kept wherever each program puts them. Pick one folder, and Zest keeps every new model there.</p>${LIB.notNow ? `<div class="line"><button class="btn primary" type="button" data-lib="again">Choose a folder…</button></div>` : libWhereHTML()}`;
+  host.innerHTML = `<p class="lede">The few things worth choosing. Everything else Zest looks after.</p>
+    <section class="step"><header><span class="num">▤</span><h3>Where your models live</h3></header><div class="sbody">${where}</div></section>
+    <section class="step"><header><span class="num">◔</span><h3>Memory</h3></header><div class="sbody">
+      <p class="lead" style="margin:0">Models use your computer's memory while they are ready. Zest frees the memory of whatever else was running when you choose another model.</p>
+      ${big ? `<div class="line"><label class="grow help" style="margin:0">Free the memory of large models after <input id="stridle" type="number" min="0" max="1440" value="${+(STR.d.idle_minutes ?? 20)}" style="width:70px"> idle minutes (0 keeps them ready). This only applies to large models Zest started itself.</label><button class="btn" data-act="idle-save">Save</button></div>` : `<p class="help" style="margin:0">Nothing to set yet. If you get a large model, you can choose here how long it stays in memory when you aren't using it.</p>`}</div></section>
+    <section class="step"><header><span class="num">∞</span><h3>How much a chat remembers</h3></header><div class="sbody">
+      <p class="lead" style="margin:0">A longer memory lets a chat keep more of the conversation, and the files it has read, in mind. It uses more memory. 128k suits most work.</p>
+      <div class="line"><label class="help" style="margin:0">Remembers up to <select id="prefctx" aria-label="How much a chat remembers">${prefsCtxOptions(cfg)}</select></label></div>
+      <p class="help" style="margin:0">A few large models decide this themselves; the chat bar shows it when you choose one.</p></div></section>
+    <section class="step"><header><span class="num">⚡</span><h3>Speed</h3></header><div class="sbody">
+      <p class="lead" style="margin:0">Zest can measure a model on this computer and keep the settings that make it answer faster. Answers stay the same.</p>
+      <div class="line"><button class="btn primary" type="button" data-go="tuning">Make models faster</button>${t ? `<span class="help" style="margin:0">${t.n} of ${t.total} models tuned</span>` : ""}</div></div></section>
+    ${updatePanel()}
+    <details class="panel" id="ownserver"><summary><b>My own server, and the first-run screen</b></summary><div style="margin-top:12px;display:grid;gap:14px">
+      <p class="help" style="margin:0">Most people never need this. Zest runs its own copy of what runs AI. If you run one yourself, for example as a system service, you can point Zest at it here.</p>
+      ${engineStep()}
+      <div class="line"><button class="btn" type="button" data-go="welcome">Show the first-run screen again</button></div></div></details>
+    <div class="setfoot"><button class="btn" data-act="finish">Back to Zest</button></div>`;
   updateNavDot();
 }
 
@@ -3098,38 +3047,17 @@ const setupClick = async e => {
     try{ const r = await suPost("/ui/backend/install", {recipe: "llamacpp", backend: el.dataset.backend}); if(r.switched) toast(`Lemonade will use the ${r.switched.toUpperCase()} backend. You can change this on the Engines page.`); }catch(err){ SU.msg.backend = err.message; }
     S.bk = (await api("/ui/backends")).recipes; S.info = await api("/ui/info").catch(() => S.info);
   });
-  if(a === "storage-hf") return suBusy("storage", async () => { const r = await suPost("/ui/models/storage", {kind: "hf"}); SU.msg.storage = r.ok ? "Models will be kept in the Hugging Face cache." : r.message; SU.msg.storageBad = !r.ok; });
-  if(a === "storage-custom-pick"){ $("#cudir")?.focus(); return; }
-  if(a === "storage-custom") return suBusy("storage", async () => {
-    try{ const r = await suPost("/ui/models/storage", {kind: "custom", path: $("#cudir").value.trim()}); SU.msg.storage = r.ok ? "New models will be downloaded to that folder." : r.message; SU.msg.storageBad = !r.ok; }
-    catch(err){ SU.msg.storage = err.message; SU.msg.storageBad = true; }
-  });
-  if(a === "browse-storage") return openFs($("#cudir").value || "", p => { $("#cudir").value = p; });
-  if(a === "browse-source") return openFs("", async p => {
-    try{ const r = await api("/ui/models/source?path=" + encodeURIComponent(p)); SU.sources = SU.sources || []; if(!SU.sources.some(s => s.id === r.source.id)) SU.sources.push(r.source); SU.sel.add(r.source.id); SU.msg.import = ""; renderSetup(true); }
-    catch(err){ SU.msg.import = err.message; SU.msg.importBad = true; renderSetup(true); }
-  });
-  if(a === "scan") return suBusy("scan", async () => { const r = await api("/ui/models/scan"); const have = new Set(SU.st.models.imports.map(i => i.id)); SU.sources = r.sources; SU.sel = new Set(r.sources.filter(s => have.has(s.id) || (!have.size && s.label !== "Downloads")).map(s => s.id)); SU.msg.import = ""; });
-  if(a === "import") return suBusy("import", async () => {
-    const chosen = (SU.sources || []).filter(s => SU.sel.has(s.id));
-    const r = await suPost("/ui/models/imports", {sources: chosen.map(s => ({kind: s.kind, path: s.path, label: s.label}))});
-    const more = r.listed_after - r.listed_before;
-    SU.msg.import = !chosen.length ? "No folders are being used now." : more > 0 ? `Lemonade now lists ${more} more model${more === 1 ? "" : "s"} (${r.linked} files linked).` : `${r.linked} files were linked, but Lemonade doesn't list any new models yet. If it runs as a system service it may not be able to read them.`;
-    SU.msg.importBad = !r.ok || (chosen.length && more <= 0);
-    await loadModels();
-  });
   if(a === "dl") return startDownload(el.dataset.model);
   if(a === "cancel-dl") return cancelDownload(el.dataset.model);
   if(a === "w-fit") { SU.msg.backend = ""; const r = llamaRecipe(); const rec = r && r.backends.find(x => ["installable", "update_required"].includes(x.state)); if(rec) W.auto["fit-" + rec.name] = false; return renderWelcome(true); }
   if(a === "w-add"){ show("models"); return libAddOpen(); }
+  if(a === "w-own"){ show("prefs"); setTimeout(() => { const d = $("#ownserver"); if(d){ d.open = true; d.scrollIntoView({block: "start"}); } }, 400); return; }
+  if(a === "idle-save"){ try{ await api("/ui/strata/idle", {method: "POST", body: JSON.stringify({minutes: +$("#stridle").value || 0})}); toast("Saved."); await strRefresh(); }catch(err){ toast(err.message); } return renderPrefs(true); }
   if(a === "sget"){
     if(!confirm("Get this model? It can be tens of gigabytes, and the first start takes a few minutes.")) return;
     try{ STR.d = await api("/ui/strata/setup", {method: "POST", body: JSON.stringify({family: el.dataset.family, model: el.dataset.model})}); }catch(err){ toast(err.message); }
     return renderWelcome(true);
   }
-  if(a === "load-chat"){ const id = $("#startmodel").value; S.model = id; store.set("zest.model", id); syncModelSelect();
-    if(S.loaded === id){ show("cowork"); return $("#cwinput").focus(); }
-    return suBusy("load", async () => { await loadModelNow(id); show("cowork"); }); }
   if(a === "finish"){ await suPost("/ui/setup/done", {done: true}); SU.st.setup_done = true; show("cowork"); }
   if(a === "w-start"){
     const have = downloadedChat(), pick = ((wFirstModels().find(o => o.rec && o.m && o.m.downloaded) || {}).m) || have.find(m => m.id === S.model) || have[0];
@@ -3137,13 +3065,14 @@ const setupClick = async e => {
     await suPost("/ui/setup/done", {done: true}); SU.st.setup_done = true; renderThread(); show("cowork"); $("#cwinput").focus();
   }
 };
-$("#setup").addEventListener("click", setupClick);
 $("#welcome").addEventListener("click", setupClick);
-$("#setup").addEventListener("change", e => {
-  const c = e.target.closest("[data-src]"); if(c){ c.checked ? SU.sel.add(c.dataset.src) : SU.sel.delete(c.dataset.src); return; }
-  if(e.target.dataset.act === "autocheck"){ store.set("zest.autocheck", e.target.checked); }
+$("#prefs").addEventListener("click", setupClick);
+$("#pibox").addEventListener("click", setupClick);
+$("#prefs").addEventListener("change", async e => {
+  if(e.target.id === "prefctx"){ const n = +e.target.value; try{ await api("/ui/model/ctx", {method: "POST", body: JSON.stringify({ctx: n})}); toast(`Chats will remember up to ${fmtTok(n)}.`); await pollServer(); }catch(err){ toast(err.message); } renderPrefs(true); }
+  else if(e.target.dataset && e.target.dataset.act === "autocheck") store.set("zest.autocheck", e.target.checked);
 });
-$("#setup").addEventListener("keydown", e => { if((e.key === "Enter" || e.key === " ") && e.target.matches(".choice[data-act]")){ e.preventDefault(); e.target.click(); } });
+$("#prefs").addEventListener("keydown", e => { if((e.key === "Enter" || e.key === " ") && e.target.matches(".choice[data-act]")){ e.preventDefault(); e.target.click(); } });
 async function waitLemonade(){
   for(let i = 0; i < 60; i++){ await refreshSetup(true); if(SU.st.lemonade.reachable && (SU.st.mode !== "builtin" || SU.st.engine.running)) break; if(SU.st.engine.state === "error") break; await new Promise(r => setTimeout(r, 1000)); }
   await pollServer(); await loadModels(); try{ S.bk = (await api("/ui/backends")).recipes; }catch{} renderStatus();
@@ -3158,12 +3087,13 @@ async function strUpdFetch(fresh){
   updateNavDot(); if(S.view === "models") strPaint();
 }
 async function strRefresh(){
-  if(S.view !== "models" && S.view !== "backends") return;
+  if(S.view !== "models" && S.view !== "backends" && S.view !== "prefs") return;
   try{ STR.d = await api("/ui/strata"); }catch{ STR.d = null; }
   if(STR.d && STR.d.installed && (!SU.strUpd || (SU.strUpd.update || {}).state === "working")) await strUpdFetch();
   if(Date.now() - STR.recAt > 60000 && !(STR.d && STR.d.run && String(STR.d.run.state).startsWith("start"))){ STR.recAt = Date.now(); try{ STR.rec = await api("/ui/strata/recommend"); }catch{} }
   strPaint();
   if(S.view === "models" && !document.activeElement?.closest?.("#grid, #filters, #adddlg")) renderModels();
+  if(S.view === "prefs") renderPrefs();
 }
 function strPaint(){
   const box = $("#stratabox"), d = STR.d; if(!box) return;
@@ -3254,7 +3184,7 @@ $("#stratabox").addEventListener("submit", async e => {
   try{ STR.d = await api("/ui/strata/connect", {method: "POST", body: JSON.stringify({url: $("#strurl").value.trim(), key: $("#strk").value.trim()})}); }catch(err){ STR.msg = err.message; }
   strPaint();
 });
-setInterval(() => { if((S.view === "models" || S.view === "backends") && !document.hidden) strRefresh(); }, 3000);
+setInterval(() => { if((S.view === "models" || S.view === "backends" || S.view === "prefs") && !document.hidden) strRefresh(); }, 3000);
 
 /* ---- folder browser */
 const FS = {cb: null, path: ""};
@@ -3344,8 +3274,7 @@ const ADV_CARDS = [
   ["server", "Server", "Let other apps use your models, like opencode, Hermes or any chat app. See who is asking, live, and read the activity log."],
   ["hardware", "Hardware", "Watch your graphics card fill up as models load, and choose which one Zest uses."],
   ["backends", "Engines", "Pick how models run on your computer, or install a faster option."],
-  ["settings", "All settings", "Every setting Lemonade offers, searchable. Changes save as you make them."],
-  ["setup", "Setup guide", "Update the helper, bring in models you already have, or connect to your own Lemonade."],
+  ["settings", "Engine settings", "Every setting the engine offers, searchable. Changes save as you make them."],
   ["tuning", "Tuning", "Make a model run faster on this computer. Zest measures the settings and keeps only what clearly helps."],
   ["themes", "Themes", "Change how Zest looks. Light Touch is the default; there are fifteen to try."]
 ];
@@ -3848,7 +3777,7 @@ function renderHardware(){
           </div>
         </div>
       </article>`;
-    }).join("") : `<div class="empty-note" style="grid-column:1/-1">${S.info?.needs_backend ? "No llama.cpp backend is installed yet, so there are no devices to show. Finish the <a href=\"#setup\" data-go=\"setup\">Setup guide</a>, and your graphics cards will appear here." : S.info?.backend?.resolved === "cpu" ? "You're using the CPU backend, which doesn't use a graphics card. Install a graphics-card engine on the Engines page to see your cards here." : "No devices found. Zest couldn\'t see a graphics card. Make sure an engine is installed (see Engines) and the helper is running."}</div>`;
+    }).join("") : `<div class="empty-note" style="grid-column:1/-1">${S.info?.needs_backend ? "No llama.cpp backend is installed yet, so there are no devices to show. Finish setting up on the <a href=\"#backends\" data-go=\"backends\">Engines page</a>, and your graphics cards will appear here." : S.info?.backend?.resolved === "cpu" ? "You're using the CPU backend, which doesn't use a graphics card. Install a graphics-card engine on the Engines page to see your cards here." : "No devices found. Zest couldn\'t see a graphics card. Make sure an engine is installed (see Engines) and the helper is running."}</div>`;
     host.parentElement.querySelector(".warn-note")?.remove();
     if(note) host.insertAdjacentHTML("beforebegin", note);
   }
@@ -3970,7 +3899,7 @@ async function loadLogs(){
 $("#logq").addEventListener("input", loadLogs); $("#logref").addEventListener("click", loadLogs);
 setInterval(() => { if(S.view === "server" && $("#logauto").checked && !document.hidden) loadLogs(); }, 3000);
 
-window.addEventListener("hashchange", () => { let h = location.hash.slice(1); if(h === "logs"){ pendingLogScroll = true; h = "server"; } if(TITLES[h] && h !== S.view) show(h); });
+window.addEventListener("hashchange", () => { let h = location.hash.slice(1); if(h === "logs"){ pendingLogScroll = true; h = "server"; } if(h === "setup") h = "prefs"; if(TITLES[h] && h !== S.view) show(h); });
 
 /* keep-alive so the desktop (AppImage) build knows the tab is still open */
 setInterval(() => fetch("/ui/ping", {method:"POST"}).catch(() => {}), 5000); fetch("/ui/ping", {method:"POST"}).catch(() => {});
@@ -3981,7 +3910,7 @@ setInterval(() => fetch("/ui/ping", {method:"POST"}).catch(() => {}), 5000); fet
   try{ SU.st = await api("/ui/setup"); S.bk = (await api("/ui/backends")).recipes; }catch{}
   if(!S.convs.length || !conv()) { if(S.convs.length) S.cur = S.convs[0].id; else { const c = {id:uid(), title:"New chat", messages:[], system:"", created:Date.now()}; S.convs.push(c); S.cur = c.id; } }
   renderConvs(); syncModelSelect(); renderStatus(); setSendState();
-  let h = location.hash.slice(1); if(h === "logs"){ pendingLogScroll = true; h = "server"; }
+  let h = location.hash.slice(1); if(h === "logs"){ pendingLogScroll = true; h = "server"; } if(h === "setup") h = "prefs";
   show(TITLES[h] && h !== "welcome" ? h : (SU.st && !SU.st.setup_done ? "welcome" : "cowork"));
   renderThread();
   grow();
@@ -4818,7 +4747,7 @@ function cwDetailsTab(t){
       <button class="btn" type="button" id="cwcompact">Make room</button></section>` : ""}
     ${cwSearchSection()}
     <section><h4>Skills</h4><p class="help" style="margin:0 0 8px">${CW.skillsOn ? CW.skillsOn + " switched on." : "None switched on."}</p><button class="btn" type="button" id="cwside-skills">Manage skills</button></section>
-    ${CW.piVersion ? `<p class="help" style="margin:0">Agent: Pi ${esc(CW.piVersion)}${SU.pi.check && SU.pi.check.update_available ? ` · <a href="#setup" data-go="setup">update available</a>` : ""}</p>` : ""}
+    ${CW.piVersion ? `<p class="help" style="margin:0">Agent: Pi ${esc(CW.piVersion)}${SU.pi.check && SU.pi.check.update_available ? ` · <a href="#backends" data-go="setup">update available</a>` : ""}</p>` : ""}
     ${plain ? "" : `<section><h4>Files it changed</h4>${files.length ? `<div class="cwfiles">${files.map(([p, op]) => `<div><b>${op === "edited" ? "M" : "A"}</b><span title="${esc(p)}">${esc(p)}</span></div>`).join("")}</div>` : '<p class="help">None yet.</p>'}</section>`}`;
 }
 function cwRenderSide(){

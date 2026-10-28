@@ -54,7 +54,7 @@ Zest runs on Linux. It needs no technical setup: you download one file and follo
 
 *The first-run screen ends with a button that opens the chat.*
 
-People who already have models, or run their own Lemonade, can skip to **Advanced > Setup guide**, which keeps the full set of choices: where models are stored, models you already have (LM Studio, Ollama, llama.cpp and others are found for you), and Lemonade updates.
+People who already have models, or run their own Lemonade, can skip the first-run screen: Zest finds what is already there. **Settings** holds the few choices (where models live, how long big models stay in memory, how much a chat remembers, updates), the Library's **Add models** brings in models you already have (LM Studio, Ollama, llama.cpp and others are found for you), and **Settings > My own server** connects a Lemonade you run yourself.
 
 ### What you need
 
@@ -67,7 +67,7 @@ If your system has no FUSE support, run `./Zest-*-x86_64.AppImage --appimage-ext
 
 ## Finding your way around
 
-The left-hand menu has six places. Everything a newcomer needs is in the first five; everything technical sits behind **Advanced**, and so does the choice of theme.
+The left-hand menu has seven places. Everything a newcomer needs is in the first six; everything technical sits behind **Advanced**, and so does the choice of theme.
 
 | Menu item | What it is for |
 | --- | --- |
@@ -76,7 +76,8 @@ The left-hand menu has six places. Everything a newcomer needs is in the first f
 | **Skills** | Switch skills on and off, and add more from a GitHub link. |
 | **Docs** | A plain-language guide to all of this, inside the app. |
 | **Help** | Short answers to common questions, and a button to see the first-run screen again. |
-| **Advanced** | Server, Hardware, Engines, All settings, the Setup guide and Themes. You never need these just to chat. |
+| **Settings** | Where your models live, how long large models stay in memory, how much a chat remembers, a link to tuning, and one button to update everything. |
+| **Advanced** | Server, Hardware, Engines, Engine settings, Tuning and Themes. You never need these just to chat. |
 
 ![The Docs page, with the menu on the left](docs/screenshots/docs.png)
 
@@ -192,23 +193,23 @@ Other apps never talk to Zest's own page. Zest opens a second, much smaller door
 
 ## Keeping everything up to date
 
-![The Setup guide](docs/screenshots/setup.png)
+![Settings](docs/screenshots/setup.png)
 
-*Advanced > Setup guide, where Lemonade and Pi are updated, models are brought in and backends are added.*
+*Settings, where updates, the models folder and a few other choices live.*
 
-**Check and update everything** at the top of the Setup guide looks for newer versions of Zest, Lemonade and Pi in one go, verifies each download against its published checksum and installs what it finds. A new Zest is saved as a new AppImage next to the current one (which is kept), and **Restart Zest to finish** switches over to it. The sections below cover Lemonade and Pi on their own.
+**Check and update everything** on the Settings page looks for newer versions of Zest, Lemonade and Pi in one go, verifies each download against its published checksum and installs what it finds. A new Zest is saved as a new AppImage next to the current one (which is kept), and **Restart Zest to finish** switches over to it. The sections below cover Lemonade and Pi on their own, and where each now lives.
 
 ### Lemonade
 
 The AppImage ships with a recent Lemonade, but Lemonade moves quickly, so Zest can update its own copy without you downloading a new Zest.
 
-- Press **Check for Lemonade updates** on the Setup guide page (Advanced > Setup guide). If a newer stable release exists, one button downloads it, **checks it against the checksum GitHub publishes for that file**, installs it and offers to restart Lemonade onto it.
+- Press **Check for Lemonade updates** under **Settings > My own server, and the first-run screen**. If a newer stable release exists, one button downloads it, **checks it against the checksum GitHub publishes for that file**, installs it and offers to restart Lemonade onto it.
 - Zest can also look for an update when it opens and put a dot on **Advanced** if there is one. You can switch that off with the checkbox.
 - Updates are kept in your own data folder, because the AppImage itself is read-only. The version that came with Zest is never touched, so **"Go back to the version that came with Zest"** is always one click away.
 
 ### Pi, the agent helper
 
-Pi is the part that lets a model read files, make edits and run steps. It is updated separately, from **Advanced > Setup guide**, at the bottom, under **The agent helper**.
+Pi is the part that lets a model read files, make edits and run steps. It is updated separately, from **Advanced > Engines**, under **The agent helper** (and **Check and update everything** includes it).
 
 - Press **Check for Pi updates**. If a newer release exists, one button downloads it from the npm registry, **checks it against the checksum npm publishes**, unpacks it, and starts it once to make sure it works with Zest. Only a Pi that passes is offered; otherwise nothing is installed.
 - Your next message uses the new Pi. A task that is working right now finishes on the old one.
@@ -220,14 +221,14 @@ Pi is the part that lets a model read files, make edits and run steps. It is upd
 
 Everything under **Advanced** is optional.
 
-![The Advanced menu: Server, Hardware, Engines, All settings, Setup guide and Themes](docs/screenshots/advanced.png)
+![The Advanced menu: Server, Hardware, Engines, Engine settings, Tuning and Themes](docs/screenshots/advanced.png)
 
 - **Advanced > Server** lets other apps use your models (see below), with a live picture of what they ask for. The address and key to paste into those apps are at the top, and the Lemonade **activity log** (filter and follow mode) sits at the bottom of the same page.
 - **Advanced > Hardware** shows every device llama.cpp can see as a live VRAM tank with utilisation, temperature, power, a short history, and which processes are holding its memory. Pick which devices to use and put them in order, then apply.
 - **Advanced > Engines** explains what an engine is (the program that runs one kind of model) and what each backend means (CUDA, ROCm, Vulkan, CPU), then lists every Lemonade engine (llama.cpp, Whisper.cpp, StableDiffusion.cpp and more) with the backends each supports (CUDA, Vulkan, ROCm, CPU). Choose one per engine, or install and update missing ones.
-- **Advanced > All settings** edits everything in Lemonade's own configuration, searchable, with a reset-to-default for every value.
+- **Advanced > Engine settings** edits everything in Lemonade's own configuration, searchable, with a reset-to-default for every value.
 - **Advanced > Themes** changes how Zest looks (see below).
-- **Advanced > Setup guide** is the full version of the welcome steps. That is where you update Lemonade and Pi, add a backend, bring in models you already have, or change where models live. **Help > Run the welcome steps again** repeats the short tour.
+- **Settings** is where you change where models live, how long large models stay in memory and how much a chat remembers, and update everything. Its **My own server, and the first-run screen** section is where you check Lemonade's version or connect to one you run yourself; **Advanced > Engines** has backends, Strata and the agent helper. **Help > Run the welcome steps again** shows the first-run screen again.
 
 ![Advanced > Hardware: each graphics card as a live VRAM tank, with utilisation, temperature and power](docs/screenshots/hardware.png)
 
@@ -235,7 +236,7 @@ Everything under **Advanced** is optional.
 
 ### Using a Lemonade you already run
 
-Already have Lemonade Server installed (for example as a system service)? On Advanced > Setup guide choose **A Lemonade I already run**, enter its address and, if needed, its API key. Zest will use it instead of starting its own, and won't touch the built-in copy. Switching back later is one click. Starting Zest with `--lemonade HOST:PORT` does the same without saving anything.
+Already have Lemonade Server installed (for example as a system service)? Under **Settings > My own server, and the first-run screen** choose **A Lemonade I already run**, enter its address and, if needed, its API key. Zest will use it instead of starting its own, and won't touch the built-in copy. Switching back later is one click. Starting Zest with `--lemonade HOST:PORT` does the same without saving anything.
 
 A few things work differently with a Lemonade you run yourself: Zest can't update it (use your package manager), and if it runs as a system service it may not be allowed to read model files in your home folder.
 
@@ -306,7 +307,7 @@ Diagrams in Chat need Mermaid: run `./packaging/fetch-vendor.sh` once (a 26 MB d
 
 Chat's agent features need [Pi](https://pi.dev) (Node 22.19 or newer): `npm install -g @earendil-works/pi-coding-agent`, or point `ZEST_PI` at a `pi` binary. The AppImage already includes both.
 
-Then open <http://127.0.0.1:13306> (it opens automatically unless you pass `--no-browser`). A source checkout doesn't include Lemonade: on the welcome screen or Advanced > Setup guide, **Download Lemonade** fetches it (about 7 MB), or you can connect to one you already run.
+Then open <http://127.0.0.1:13306> (it opens automatically unless you pass `--no-browser`). A source checkout doesn't include Lemonade: on the first-run screen, **Download Lemonade** fetches it (about 7 MB), or you can connect to one you already run.
 
 | Flag | Environment variable | Default | Meaning |
 | --- | --- | --- | --- |
