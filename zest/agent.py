@@ -281,7 +281,7 @@ def _pi_model(m, window):
 def write_config(models, default, ctx=0):
     d = agent_dir()
     os.makedirs(d, exist_ok=True)
-    own = [m for m in models if m.get("provider") != "strata"]
+    own = [m for m in models if not m.get("provider")]
     provider = {
         "baseUrl": "http://127.0.0.1:%d/api/v1" % _zest_port["v"],      # through Zest, so it shows on the Server page
         "api": "openai-completions",
@@ -290,14 +290,14 @@ def write_config(models, default, ctx=0):
         "models": [_pi_model(m, ctx if (ctx and m["id"] == default) else min(m["ctx"], DEFAULT_CTX)) for m in own],
     }
     providers = {"lemonade": provider}
-    big = [m for m in models if m.get("provider") == "strata"]
-    if big:
-        # Strata is its own server on its own port; Pi talks to it directly. Its window is whatever it was started with.
-        providers["strata"] = {"baseUrl": big[0]["url"].rstrip("/") + "/v1", "api": "openai-completions", "apiKey": "strata",
-                               "compat": {"supportsDeveloperRole": False, "supportsUsageInStreaming": True},
-                               "models": [_pi_model(dict(m, id=m["bare"]), m["ctx"]) for m in big]}
+    for name in sorted({m["provider"] for m in models if m.get("provider", "").startswith("strata")}):
+        # Each Strata is its own server on its own address; Pi talks to it directly. Its window is whatever it was started with.
+        big = [m for m in models if m.get("provider") == name]
+        providers[name] = {"baseUrl": big[0]["url"].rstrip("/") + "/v1", "api": "openai-completions", "apiKey": big[0].get("key") or "strata",
+                           "compat": {"supportsDeveloperRole": False, "supportsUsageInStreaming": True},
+                           "models": [_pi_model(dict(m, id=m["bare"]), m["ctx"]) for m in big]}
     _write(os.path.join(d, "models.json"), {"providers": providers})
-    settings = {"defaultProvider": "strata" if strata.is_model(default) else "lemonade", "defaultProjectTrust": "never", "quietStartup": True,
+    settings = {"defaultProvider": (strata.find_model(default) or {}).get("provider", "lemonade"), "defaultProjectTrust": "never", "quietStartup": True,
                 "enableInstallTelemetry": False, "autoCompaction": True}
     if default:
         settings["defaultModel"] = strata.bare(default)
@@ -696,7 +696,7 @@ class Session:
             if note:
                 args += ["--append-system-prompt", note]
         if t.get("model"):
-            args += ["--provider", "strata" if strata.is_model(t["model"]) else "lemonade", "--model", strata.bare(t["model"])]
+            args += ["--provider", (strata.find_model(t["model"]) or {}).get("provider", "lemonade"), "--model", strata.bare(t["model"])]
         extra = [f for f in t.get("folders", [])]
         allow = list(folderstore.get(_origin(t))["allow"]) + list((t.get("job") or {}).get("allow", []))
         self.proc = subprocess.Popen(args, cwd=t["cwd"], env=_env(t.get("mode", "ask"), inject, extra, allow),

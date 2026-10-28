@@ -301,7 +301,7 @@ class Handler(BaseHTTPRequestHandler):
             "/ui/cowork/job/apply": self.post_job_apply, "/ui/cowork/job/discard": self.post_job_discard,
             "/ui/cowork/folders": self.post_cowork_folders, "/ui/cowork/seen": self.post_cowork_seen,
             "/ui/cowork/allow/remove": self.post_allow_remove, "/ui/cowork/folder": self.post_cowork_folder, "/ui/skills/install": self.post_skills_install, "/ui/pi/check": self.post_pi_check,
-            "/ui/pi/update": self.post_pi_update, "/ui/strata/start": self.post_strata_start, "/ui/strata/stop": self.post_strata_stop, "/ui/strata/install": self.post_strata_install, "/ui/update/all": self.post_update_all, "/ui/update/restart": self.post_update_restart, "/ui/pi/use": self.post_pi_use,
+            "/ui/pi/update": self.post_pi_update, "/ui/strata/start": self.post_strata_start, "/ui/strata/stop": self.post_strata_stop, "/ui/strata/connect": self.post_strata_connect, "/ui/strata/forget": self.post_strata_forget, "/ui/strata/key": self.post_strata_key, "/ui/strata/install": self.post_strata_install, "/ui/update/all": self.post_update_all, "/ui/update/restart": self.post_update_restart, "/ui/pi/use": self.post_pi_use,
             "/ui/skills/remove": self.post_skills_remove, "/ui/skills/toggle": self.post_skills_toggle,
             "/ui/models/storage": self.post_storage, "/ui/models/imports": self.post_imports,
         }.get(p)
@@ -607,8 +607,23 @@ class Handler(BaseHTTPRequestHandler):
             agent.unload_model("")
         self.send_json({"started": strata.start(preset), **strata.summary()})
 
+    def post_strata_connect(self, body):
+        ok, msg = strata.connect(body.get("url", ""), str(body.get("key", "")).strip())
+        agent.restart_idle()
+        self.send_json({"ok": ok, "error": msg, **strata.summary()}, 200 if ok else 400)
+
+    def post_strata_forget(self, body):
+        strata.forget(body.get("url", ""))
+        agent.restart_idle()
+        self.send_json({"ok": True, **strata.summary()})
+
+    def post_strata_key(self, body):
+        strata.set_key(body.get("url", ""), body.get("key", ""))
+        agent.restart_idle()
+        self.send_json({"ok": True, **strata.summary()})
+
     def post_strata_stop(self, body):
-        ok, msg = strata.stop()
+        ok, msg = strata.stop(body.get("url") or None)
         agent.restart_idle()
         self.send_json({"ok": ok, "error": msg}, 200 if ok else 409)
 

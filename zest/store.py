@@ -13,6 +13,8 @@ DEFAULTS = {
     "search": {"enabled": True, "provider": "duckduckgo", "brave_key": "", "tavily_key": ""},   # the model may search the web; every search still asks first
     "chat": {"ctx": 131072},  # the context window every chat load asks for (128k): long chats and agent work need the room
     "pi": {"version": ""},   # which Pi (the agent) to run: "" = newest, "bundled" = the one that came with Zest, or a version number
+    # Strata (bigger models): servers typed in by hand, keys, and the one Zest itself started (so a restart of Zest still knows).
+    "strata": {"remote": [], "keys": {}, "owned": {"preset": "", "port": 0}},
     "models": {"storage": "hf", "custom_dir": "", "imports": []},
     # The door for other apps: its own port, always needs the key, this computer only unless `lan` is on.
     "gateway": {"enabled": True, "port": 13308, "api_key": "", "lan": False, "capture": False},
@@ -25,11 +27,11 @@ def _xdg(var, fallback):
 
 
 def config_dir():
-    return _xdg("XDG_CONFIG_HOME", "~/.config")
+    return os.environ.get("ZEST_CONFIG_DIR") or _xdg("XDG_CONFIG_HOME", "~/.config")      # ZEST_*_DIR: for tests, so other programs keep their own folders
 
 
 def data_dir():
-    return _xdg("XDG_DATA_HOME", "~/.local/share")
+    return os.environ.get("ZEST_DATA_DIR") or _xdg("XDG_DATA_HOME", "~/.local/share")
 
 
 def _path():

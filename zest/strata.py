@@ -79,55 +79,103 @@ def version():
     return m.group(1) if m else ""
 
 
+PROBE_PORTS = range(8080, 8090)          # Strata's default is 8080; a second server takes the next free one
+
+
+def _settings():
+    return store.load().setdefault("strata", {"remote": [], "keys": {}, "owned": {"preset": "", "port": 0}})
+
+
+def _save(mutate):
+    s = store.load()
+    st = s.setdefault("strata", {"remote": [], "keys": {}, "owned": {"preset": "", "port": 0}})
+    mutate(st)
+    store.save(s)
+
+
 def _http_json(url, key="", timeout=3):
-    req = urllib.request.Request(url, headers={"Authorization": "Bearer " + key} if key else {})
+    h = {"Authorization": "Bearer " + key, "x-api-key": key} if key else {}
     try:
-        with urllib.request.urlopen(req, timeout=timeout) as r:
-            return json.load(r)
+        with urllib.request.urlopen(urllib.request.Request(url, headers=h), timeout=timeout) as r:
+            return r.status, json.load(r)
+    except urllib.error.HTTPError as e:
+        return e.code, {}
     except (OSError, ValueError):
-        return {}
+        return 0, {}
+
+
+def _health(url):
+    """/health of a Strata server, or None when what answers isn't one."""
+    status, h = _http_json(url + "/health", timeout=1.5)
+    return h if status == 200 and h.get("service") == "strata" else None
+
+
+def _show_key(url):
+    """The key of a server `strata launch` manages. Empty when there isn't one or the command doesn't say."""
+    code, out = _run(["launch", "--show-key"], 10)
+    words = re.findall(r"[A-Za-z0-9_\-]{16,}", out) if code == 0 else []
+    return words[-1] if words else ""
 
 
 def running():
-    """Cached for a few seconds: the chat bar and every new message ask."""
+    """Every Strata server Zest can see, cached for a few seconds (the chat bar and every new message ask).
+
+    [{url, port, name, state, source, owner, needs_key, key, models:[{id, ctx, vision}]}]
+    source: launch (strata launch manages it), probe (found answering on a local port), saved (an address typed in).
+    owner: "zest" if Zest started it, otherwise "yours". Zest only ever acts by itself on its own."""
     now = time.time()
     if _cache["v"] is None or now - _cache["t"] > 3:
-        _cache.update(t=now, v=_running())
+        _cache.update(t=now, v=_discover())
     return _cache["v"]
 
 
-def _running():
-    """[{name, url, port, state, models:[{id, ctx, vision}]}] of the Strata servers `strata launch` has started."""
-    out = []
+def _discover():
+    st = _settings()
+    found = {}
     for r in _json(["launch", "--status", "--output", "json"], 15).get("running", []):
-        url = str(r.get("url") or "")
-        if not url:
-            continue
+        if r.get("url"):
+            found[r["url"].rstrip("/")] = {"name": r.get("name"), "port": r.get("port"), "state": r.get("state"), "source": "launch"}
+    probe = [u for u in ("http://127.0.0.1:%d" % p for p in PROBE_PORTS) if u not in found]
+    for u in probe:
+        h = _health(u)
+        if h:
+            found[u] = {"name": h.get("model") or "Strata", "port": int(u.rsplit(":", 1)[1]), "state": "ready" if h.get("loaded") else "loading", "source": "probe"}
+    for r in st["remote"]:
+        u = str(r.get("url", "")).rstrip("/")
+        if u and u not in found:
+            h = _health(u)
+            found[u] = {"name": (h or {}).get("model") or u, "port": 0, "state": ("ready" if h.get("loaded") else "loading") if h else "unreachable", "source": "saved"}
+    owned = st["owned"].get("port")
+    out = []
+    for u, r in sorted(found.items()):
+        key = st["keys"].get(u, "") or (_show_key(u) if r["source"] == "launch" else "")
+        status, data = _http_json(u + "/v1/models", key) if r["state"] == "ready" else (0, {})
         models = []
-        for m in _http_json(url + "/v1/models").get("data", []):
+        for m in data.get("data", []):
             mods = (m.get("architecture") or {}).get("input_modalities") or []
-            models.append({"id": m.get("id"), "ctx": int((m.get("meta") or {}).get("n_ctx") or 0), "vision": "image" in mods})
-        out.append({"name": r.get("name"), "url": url, "port": r.get("port"), "state": r.get("state"), "models": [m for m in models if m["id"]]})
+            if m.get("id"):
+                models.append({"id": m["id"], "ctx": int((m.get("meta") or {}).get("n_ctx") or 0), "vision": "image" in mods})
+        out.append(dict(r, url=u, key=key, needs_key=status in (401, 403), models=models,
+                        owner="zest" if owned and r["port"] == owned else "yours"))
+    if owned and not any(r["owner"] == "zest" for r in out):
+        _save(lambda s: s["owned"].update(preset="", port=0))       # the one Zest started has gone: forget it
     return out
 
 
 def presets():
     return [{"name": p.get("name"), "family": p.get("family"), "model": p.get("model"), "context": p.get("context"),
-             "vision": p.get("vision"), "last_used": p.get("last_used")}
+             "vision": p.get("vision"), "port": p.get("port"), "last_used": p.get("last_used")}
             for p in _json(["launch", "--list-presets", "--output", "json"], 15).get("presets", []) if p.get("name")]
 
 
 def models():
-    """Chat models Zest can offer from every ready Strata server: {id, url, ctx, vision, ...} with Zest's prefix on id."""
-    if not binary():
-        return []
+    """Chat models Zest can offer from every ready Strata server: {id, url, key, ctx, vision, provider, ...}, id with Zest's prefix.
+    Pi gets one provider per server (strata, strata2, ...)."""
     out = []
-    for r in running():
-        if r["state"] != "ready":
-            continue
+    for i, r in enumerate([r for r in running() if r["state"] == "ready" and not r["needs_key"]]):
         for m in r["models"]:
             out.append({"id": PREFIX + m["id"], "tools": True, "reasoning": True, "vision": m["vision"], "ctx": m["ctx"] or 32768,
-                        "provider": "strata", "url": r["url"], "bare": m["id"]})
+                        "provider": "strata" if i == 0 else "strata%d" % (i + 1), "url": r["url"], "key": r["key"], "bare": m["id"]})
     return out
 
 
@@ -137,11 +185,41 @@ def find_model(name):
 
 def summary():
     exe = binary()
-    s = {"installed": bool(exe), "version": version() if exe else "", "presets": [], "running": [], "run": dict(RUN), "install": dict(UPD),
-         "command": "strata launch"}
+    s = {"installed": bool(exe), "version": version() if exe else "", "presets": [], "run": dict(RUN), "install": dict(UPD),
+         "command": "strata launch", "servers": [{k: v for k, v in r.items() if k != "key"} for r in running()]}
     if exe:
-        s["presets"], s["running"] = presets(), running()
+        s["presets"] = presets()
     return s
+
+
+def connect(url, key=""):
+    """Remember a Strata server at `url` (and its key). Returns (ok, message)."""
+    url = str(url or "").strip().rstrip("/")
+    if not re.match(r"^https?://[\w.\-\[\]:]+(/.*)?$", url):
+        return False, "Type an address like http://192.168.1.20:8080."
+    h = _health(url)
+    if not h:
+        return False, "Nothing that looks like Strata answered at %s." % url
+
+    def add(s):
+        s["remote"] = [r for r in s["remote"] if r.get("url") != url] + [{"url": url}]
+        if key:
+            s["keys"][url] = key
+    _save(add)
+    _changed()
+    return True, ""
+
+
+def forget(url):
+    url = str(url or "").rstrip("/")
+    _save(lambda s: (s.update(remote=[r for r in s["remote"] if r.get("url") != url]), s["keys"].pop(url, None)))
+    _changed()
+
+
+def set_key(url, key):
+    url = str(url or "").rstrip("/")
+    _save(lambda s: s["keys"].__setitem__(url, str(key or "").strip()))
+    _changed()
 
 
 # ---------------------------------------------------------------- starting and stopping
@@ -157,15 +235,20 @@ def start(preset):
         if not binary():
             RUN.update(state="error", preset=preset, error="Strata isn't installed.", log=[])
             return False
-        if preset not in [p["name"] for p in presets()]:
+        mine = next((p for p in presets() if p["name"] == preset), None)
+        if not mine:
             RUN.update(state="error", preset=preset, error="Strata has no saved preset called “%s”." % preset, log=[])
             return False
+        other = next((r for r in running() if r["state"] in ("ready", "loading") and r["owner"] == "yours" and r["source"] != "saved"), None)
+        if other:
+            RUN.update(state="error", preset=preset, log=[], error="Strata is already running %s on this computer. Zest won't start a second big model beside it: chat with that one, or stop it first." % (other["name"] or "a model"))
+            return False
         RUN.update(state="starting", preset=preset, error=None, log=[], since=time.time())
-    threading.Thread(target=_do_start, args=(preset,), daemon=True).start()
+    threading.Thread(target=_do_start, args=(preset, mine.get("port")), daemon=True).start()
     return True
 
 
-def _do_start(preset):
+def _do_start(preset, port):
     try:
         p = subprocess.Popen([binary(), "launch", "--preset", preset, "--yes", "--no-tui"], stdin=subprocess.DEVNULL,
                              stdout=subprocess.PIPE, stderr=subprocess.STDOUT, text=True, start_new_session=True)
@@ -175,16 +258,22 @@ def _do_start(preset):
         if code != 0:
             tail = [l for l in RUN["log"] if l.strip()][-2:]
             raise RuntimeError(" ".join(tail) or "Strata stopped with code %d." % code)
+        if port:
+            _save(lambda st: st["owned"].update(preset=preset, port=int(port)))
         RUN["state"] = "ready"
         _changed()
     except Exception as e:  # noqa: BLE001
         RUN.update(state="error", error=str(e) or e.__class__.__name__)
 
 
-def stop():
-    """Stop the running Strata. Returns (ok, message)."""
+def stop(url=None):
+    """Stop a Strata that `strata launch` manages (the only kind it can stop). Returns (ok, message)."""
+    target = next((r for r in running() if url is None or r["url"] == str(url).rstrip("/")), None)
+    if target and target["source"] != "launch":
+        return False, "Zest can't stop that one, because it wasn't started with `strata launch`. Stop it where you started it."
     code, out = _run(["launch", "--stop"], 60)
     RUN.update(state="idle", error=None)
+    _save(lambda s: s["owned"].update(preset="", port=0))
     _changed()
     return code == 0, "" if code == 0 else (out.strip().splitlines() or ["Strata didn't stop."])[-1]
 

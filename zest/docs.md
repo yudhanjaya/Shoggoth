@@ -164,11 +164,12 @@ Some models are far too big for a graphics card. [Strata](https://github.com/Nik
 
 On the **Models** page, the **Bigger models with Strata** box does three things:
 
+- **Zest finds Strata by itself.** If you already have it installed, or already have a model running (started with `strata launch`, by the Strata app, or by hand on a local port), it shows up here and in Chat with no setup. To use a Strata on another computer, open **Connect to a Strata on another computer** and type its address (and key, if it has one).
 - If Strata isn't installed, **Install Strata** downloads its installer, checks it against the checksum Strata publishes, and runs it.
 - Once Strata has a saved setup (made in a terminal with `strata launch`: pick a model, save it as a preset), the box lists your setups with a **Start** button. Starting one frees any model Lemonade has loaded, because they share the same memory.
 - While Strata is running, its model appears in Chat as `strata/<model name>`. **Stop** frees the memory again.
 
-Zest never restarts a Strata you started yourself. If one is already running, Zest shows it and lets you chat with it.
+Zest never stops, restarts or updates a Strata you started yourself. It shows it, lets you chat with it, and has a **Stop** button (with a confirmation) only when you ask for one. While one of yours is running, Zest won't start a second big model beside it.
 
 ## Using your models in other apps
 
