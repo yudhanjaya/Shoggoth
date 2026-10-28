@@ -2535,12 +2535,13 @@ async function refreshSetup(force){
   try{ SU.pi.info = await api("/ui/pi"); }catch{}
   if(autoCheckOn() && !SU.pi.autoChecked && SU.pi.info && SU.pi.info.active){ SU.pi.autoChecked = true; doPiCheck(true); }
   if(SU.st.mode === "builtin" && autoCheckOn() && !SU.autoChecked && SU.st.engine.running){ SU.autoChecked = true; doCheck(true); }
+  if(autoCheckOn() && !SU.strChecked){ SU.strChecked = true; strUpdFetch(); }
   if(!inSetup()) return;
   if(force || !S.bk){ try{ S.bk = (await api("/ui/backends")).recipes; }catch{} }
   renderSetup(force);
 }
 function updateNavDot(){
-  const on = !!((SU.check && SU.check.update_available && SU.st && SU.st.mode === "builtin") || (SU.pi.check && SU.pi.check.update_available));
+  const on = !!((SU.check && SU.check.update_available && SU.st && SU.st.mode === "builtin") || (SU.pi.check && SU.pi.check.update_available) || (SU.strUpd && SU.strUpd.check && SU.strUpd.check.available));
   $("#navdot").hidden = !on;
 }
 async function doPiCheck(silent){
@@ -2550,9 +2551,9 @@ async function doPiCheck(silent){
   SU.busy.pcheck = false; updateNavDot(); if(inSetup()) renderSetup(true); if(S.view === "cowork") cwRenderSide();
 }
 function updatePanel(){
-  const u = SU.up || {state: "idle", items: {}}, working = u.state === "working", names = {zest: "Zest", lemonade: "Lemonade", pi: "Pi"};
+  const u = SU.up || {state: "idle", items: {}}, working = u.state === "working", names = {zest: "Zest", lemonade: "Lemonade", pi: "Pi", strata: "Strata"};
   const dot = {current: "ok", updated: "ok", working: "busy", checking: "busy", error: "bad", manual: "busy", skipped: "ok"};
-  const rows = ["zest", "lemonade", "pi"].filter(k => u.items[k]).map(k => { const it = u.items[k];
+  const rows = ["zest", "lemonade", "pi", "strata"].filter(k => u.items[k]).map(k => { const it = u.items[k];
     return `<div class="line"><span class="stat-dot ${dot[it.state] || "busy"}"></span><span class="grow"><b>${names[k]}</b> ${esc(it.text)}${it.page ? ` <a href="${esc(it.page)}" target="_blank" rel="noopener noreferrer">Releases</a>` : ""}</span></div>`; }).join("");
   return `<section class="step" id="step-upd"><header><span class="num">↻</span><h3>Update everything</h3></header><div class="sbody">
     <p class="lead">One button looks for newer versions of Zest, Lemonade and Pi, checks each download, and installs what it finds. Nothing is replaced until the download has been verified.</p>
@@ -2890,9 +2891,14 @@ setInterval(() => { if(!document.hidden && (inSetup() || (SU.st && ["downloading
 
 /* ======================= Strata: bigger models ======================= */
 const STR = {d: null, msg: "", rec: null, recAt: 0};
+async function strUpdFetch(fresh){
+  try{ SU.strUpd = await api("/ui/strata/update" + (fresh ? "?fresh=1" : "")); }catch{ SU.strUpd = null; }
+  updateNavDot(); if(S.view === "models") strPaint();
+}
 async function strRefresh(){
   if(S.view !== "models") return;
   try{ STR.d = await api("/ui/strata"); }catch{ STR.d = null; }
+  if(STR.d && STR.d.installed && (!SU.strUpd || (SU.strUpd.update || {}).state === "working")) await strUpdFetch();
   if(STR.d && STR.d.installed && Date.now() - STR.recAt > 60000 && !(STR.d.run || {}).state?.startsWith("start")){ STR.recAt = Date.now(); try{ STR.rec = await api("/ui/strata/recommend"); }catch{} }
   strPaint();
 }
@@ -2936,6 +2942,16 @@ function strPaint(){
   if(!d.installed && !servers.length) parts.push(`<p class="help" style="margin:0">Strata runs models that are far too big for your graphics card by keeping part of them in RAM and on the SSD. It is a separate free program (<a href="https://github.com/Niko1221/Strata" target="_blank" rel="noopener noreferrer">Niko1221/Strata</a>). If you already run it, Zest finds it by itself. If not, Zest can install it and check the installer against the checksum Strata publishes. It works best with an NVIDIA RTX 20 series or newer, an AMD Radeon, or an AMD Ryzen AI Max, and a lot of RAM.</p>`
     + (ins.state === "installing" ? `<div class="line"><span class="stat-dot busy"></span><span class="grow">Installing Strata… ${esc((ins.log || []).slice(-1)[0] || "")}</span></div>` : `<div class="line"><button class="btn" data-str="install">Install Strata</button></div>`)
     + (ins.state === "error" ? `<div class="note-bad">${esc(ins.error)}</div>` : ""));
+  const su = SU.strUpd, uc = su && su.check, us = su && su.update || {};
+  if(d.installed){
+    if(us.state === "working") parts.push(`<div class="line"><span class="stat-dot busy"></span><span class="grow">${esc(us.text || "Updating Strata…")}</span></div>`);
+    else if(us.state === "done") parts.push(`<div class="line"><span class="stat-dot ok"></span><span class="grow">${esc(us.text)}${us.stopped ? " It starts again by itself when a chat needs it." : ""}</span></div>`);
+    else if(us.state === "error") parts.push(`<div class="note-bad">${esc(us.error)}</div>`);
+    else if(us.state === "deferred") parts.push(`<div class="note-warn">${esc(us.text)}</div>`);
+    else if(uc && uc.major) parts.push(`<div class="note-warn">Strata has a bigger update (Control ${esc(uc.control.offered)}). Zest leaves that one for you: run <code>strata update</code> in a terminal when you are ready.</div>`);
+    else if(uc && uc.available) parts.push(`<div class="line"><span class="stat-dot busy"></span><span class="grow"><b>A Strata update is available</b> (${[uc.engine.new ? "engine " + esc(uc.engine.installed) + " → " + esc(uc.engine.offered) : "", uc.control.new ? "control " + esc(uc.control.installed) + " → " + esc(uc.control.offered) : ""].filter(Boolean).join(", ")}, about ${(uc.bytes / 1e9).toFixed(1)} GB). ${uc.deferred ? "A model you started is running, so it can't be replaced yet." : "Zest checks the download and Strata test-starts it before switching."}</span>${uc.deferred ? "" : '<button class="btn primary" data-str="update">Update</button>'}</div>`);
+    if(uc && uc.installed && uc.tested === false) parts.push(`<p class="help" style="margin:0">Zest has been tried with Strata ${"0.2"}.x; this is ${esc(uc.version)}. It should work, but tell us if something doesn't.</p>`);
+  }
   if(servers.some(r => r.owner === "zest" && r.source === "launch")) parts.push(`<div class="line"><label class="grow help" style="margin:0">Free the memory when Strata started by Zest has been idle for <input id="stridle" type="number" min="0" max="1440" value="${+d.idle_minutes}" style="width:70px"> minutes (0 keeps it running).</label><button class="btn ghost" data-str="idle">Save</button></div>`);
   parts.push(`<details><summary class="help" style="cursor:pointer">Connect to a Strata on another computer</summary><form class="line" id="strform" style="margin-top:8px"><input id="strurl" type="text" inputmode="url" placeholder="http://192.168.1.20:8080" autocomplete="off" spellcheck="false" aria-label="Strata address"><input id="strk" type="password" placeholder="API key (if it has one)" autocomplete="off" aria-label="Strata API key"><button class="btn" type="submit">Connect</button></form></details>`);
   box.innerHTML = `<section class="panel" style="margin-bottom:16px"><div class="skhead"><h3>Bigger models with Strata</h3><span class="chip">Experimental</span></div>${parts.join("")}${STR.msg ? `<div class="note-bad">${esc(STR.msg)}</div>` : ""}</section>`;
@@ -2950,6 +2966,7 @@ $("#stratabox").addEventListener("click", async e => {
     else if(act === "stop"){ if(!confirm("Stop Strata? Anything that is using the model right now, here or in another app, will stop answering.")) return; b.disabled = true; await api("/ui/strata/stop", {method: "POST", body: JSON.stringify({url: u})}); STR.d = await api("/ui/strata"); }
     else if(act === "forget"){ STR.d = await api("/ui/strata/forget", {method: "POST", body: JSON.stringify({url: u})}); }
     else if(act === "key"){ const k = box_key(u); if(!k) return; STR.d = await api("/ui/strata/key", {method: "POST", body: JSON.stringify({url: u, key: k})}); }
+    else if(act === "update"){ SU.strUpd = await api("/ui/strata/update", {method: "POST", body: "{}"}); }
     else if(act === "idle"){ STR.d = await api("/ui/strata/idle", {method: "POST", body: JSON.stringify({minutes: +$("#stridle").value || 0})}); toast("Saved."); }
     else if(act === "anyway"){
       const rt = (STR.d.run || {}).retry || {};

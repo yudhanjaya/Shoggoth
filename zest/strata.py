@@ -153,7 +153,7 @@ def _discover():
     found = {}
     for r in _json(["launch", "--status", "--output", "json"], 15).get("running", []):
         if r.get("url"):
-            found[r["url"].rstrip("/")] = {"name": r.get("name"), "port": r.get("port"), "state": r.get("state"), "source": "launch"}
+            found[r["url"].rstrip("/")] = {"name": r.get("name"), "profile": r.get("profile"), "port": r.get("port"), "state": r.get("state"), "source": "launch"}
     probe = [u for u in ("http://127.0.0.1:%d" % p for p in PROBE_PORTS) if u not in found]
     for u in probe:
         h = _health(u)
@@ -705,3 +705,102 @@ def free_for_lemonade():
         return "Strata is answering right now. Wait for it to finish, or stop it from the Models page, then try again."
     stop(r["url"])
     return ""
+
+
+# ---------------------------------------------------------------- updates
+TESTED_SERIES = "0.2"                   # the Terminal series Zest has been tried with (strata --version: 0.2.x)
+SUPD = {"state": "idle", "text": "", "error": None, "log": [], "stopped": ""}      # state: idle, working, done, deferred, error
+_uc = {"t": 0, "v": None}
+
+
+def _vkey(v):
+    return tuple(int(x) if x.isdigit() else 0 for x in re.findall(r"\d+", str(v))[:3]) or (0,)
+
+
+def update_check(max_age=0):
+    """What `strata update --check` says, boiled down: {available, engine, control, bytes, serving, deferred, major, tested}.
+
+    Strata checks its own signed feed and only offers an engine that fits this computer. `serving` are the profiles running now:
+    an update can't replace an engine that is serving, so Zest stops its own and waits for the person to stop theirs.
+    `major`: the offered Control is a different series than the installed one; Zest leaves that for the person to take."""
+    if max_age and _uc["v"] is not None and time.time() - _uc["t"] < max_age:
+        return _uc["v"]
+    if not binary():
+        return {"installed": False}
+    d = _json(["update", "--check", "--output", "json"], 60)
+    if not d.get("ok"):
+        raise RuntimeError(((d.get("error") or {}).get("message") if isinstance(d.get("error"), dict) else d.get("error")) or "Couldn't read Strata's update feed. Check your internet connection.")
+    eng, ctl = d.get("engine") or {}, d.get("control") or {}
+    e_new = eng.get("status") == "available"
+    c_new = ctl.get("status") == "available"
+    major = bool(c_new and ctl.get("installed") and _vkey(ctl.get("offered"))[:2] != _vkey(ctl.get("installed"))[:2])
+    serving = [x.get("profile") for x in d.get("serving") or []]
+    zest = zest_server()
+    theirs = [p for p in serving if not zest or p != zest.get("profile")]       # serving, and not the one Zest started
+    v = version()
+    out = {"installed": True, "version": v, "available": bool((e_new or c_new) and not major), "major": major,
+           "engine": {"installed": (eng.get("installed") or {}).get("version"), "offered": (eng.get("offered") or {}).get("version"), "new": e_new},
+           "control": {"installed": ctl.get("installed"), "offered": ctl.get("offered"), "new": c_new},
+           "bytes": int((eng.get("download_bytes") or 0) if e_new else 0) + int((ctl.get("download_bytes") or 0) if c_new else 0),
+           "serving": serving, "deferred": bool(theirs),
+           "tested": _vkey(v)[:2] == _vkey(TESTED_SERIES)[:2] if v else True, "problem": eng.get("problem")}
+    _uc.update(t=time.time(), v=out)
+    return out
+
+
+def start_update():
+    """Download and install the newest engine and Control from Strata's signed feed, in the background. Strata tries the new engine
+    with a test start before switching to it. Returns False when nothing was started (see SUPD)."""
+    with _lock:
+        if SUPD["state"] == "working":
+            return False
+        SUPD.update(state="working", text="Looking for a Strata update…", error=None, log=[], stopped="")
+    try:
+        c = update_check()
+    except RuntimeError as e:
+        SUPD.update(state="error", error=str(e))
+        return False
+    if not c.get("installed"):
+        SUPD.update(state="idle", text="")
+        return False
+    if c["major"]:
+        SUPD.update(state="deferred", text="Strata has a bigger update (Control %s). Zest leaves that one for you: run `strata update` in a terminal when you are ready." % c["control"]["offered"])
+        return False
+    if not c["available"]:
+        SUPD.update(state="idle", text="Strata is up to date (engine %s, control %s)." % (c["engine"]["installed"], c["control"]["installed"]))
+        return False
+    if c["deferred"]:
+        SUPD.update(state="deferred", text="Strata is running a model you started, and an update can't replace an engine that is serving. Update after you stop it.")
+        return False
+    threading.Thread(target=_do_update, args=(c,), daemon=True).start()
+    return True
+
+
+def _do_update(c):
+    try:
+        r = zest_server()
+        if r:                                                  # Zest's own: stop it, update, and it starts again when a chat needs it
+            SUPD.update(text="Stopping the Strata Zest started, so it can be updated…", stopped=r["name"] or "")
+            stop(r["url"])
+            time.sleep(3)
+        SUPD["text"] = "Updating Strata (about %.1f GB to download)…" % (c["bytes"] / 1e9)
+        p = subprocess.Popen([binary(), "update", "--output", "json"], stdin=subprocess.DEVNULL, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, text=True)
+        out = []
+        for line in p.stdout:
+            out.append(line)
+            SUPD["log"] = (SUPD["log"] + [line.rstrip()])[-20:]
+        code = p.wait()
+        try:
+            res = json.JSONDecoder().raw_decode("".join(out).lstrip())[0]
+        except ValueError:
+            res = {}
+        if code != 0 or res.get("ok") is False:
+            err = res.get("error")
+            msg = (err.get("message") if isinstance(err, dict) else err) or " ".join([l for l in SUPD["log"] if l.strip()][-2:]) or "Strata's update failed."
+            raise RuntimeError(msg)
+        _uc["v"] = None
+        n = update_check()
+        SUPD.update(state="done", text="Strata is updated (engine %s, control %s)." % (n["engine"]["installed"], n["control"]["installed"]))
+        _changed()
+    except Exception as e:  # noqa: BLE001
+        SUPD.update(state="error", error=str(e) or e.__class__.__name__)

@@ -74,12 +74,12 @@ earlier Zest is reused rather than duplicated. Strata gets the same three cases.
 - Zest-owned Strata stops after N idle minutes (default 20, adjustable). Yours never does.
 - Free-RAM check before every start; refuse with a clear message rather than swapping the machine to death.
 
-## Phase 3: seamless updates
+## Phase 3 (built on `strata-support`; tested with fakes and a real read-only check): seamless updates
 
 - Strata (control and engine) joins "Check and update everything" via `strata update --check` / `update`.
 - Serving conflict: if Zest owns the instance, stop, update, restart on the next message. If it is yours, defer and say why.
 - Tested version range, like Pi: newer-than-tested is shown, and a major jump is not taken automatically.
-- After an update, `presets status` / `recheck`; offer a re-tune if the tuning went stale.
+- After an update, `presets status` / `recheck`; offer a re-tune if the tuning went stale. (Moved to Phase 4, which owns tuning.)
 
 ## Phase 4: tuning for both engines
 
