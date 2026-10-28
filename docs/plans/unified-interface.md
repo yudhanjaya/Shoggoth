@@ -41,8 +41,7 @@ Strata directly; this plan generalises them).
   headers. Sharing a folder only applies to a Lemonade Zest runs itself.
 - **GGUF headers read fast** once arrays are skipped in blocks (about 0.1 s for a model with a 250k-word tokenizer), and the results are
   remembered by size and modified time.
-- **Some disks can't hold links** (NTFS, FAT, exFAT). Zest tests this when a root is chosen and keeps the views in its own data folder
-  if the disk can't.
+- **Some disks can't hold links** (NTFS, FAT, exFAT). The views therefore live in Zest's own data folder, not on the models disk.
 
 ## 2. Principles
 
@@ -149,11 +148,16 @@ Advanced.
 ### Shape
 
 ```
-<library root>/                 chosen by the person (decision 1); Settings can move it later
-  hub/                          Hugging Face layout; Lemonade's models_dir
-  strata/                       Strata's data dir: models/, mtp/, packs/ (strata launch --data-dir)
-  .views/<provider>/            symlinks Zest maintains: only the files that provider can run
+Models/                         the one folder the person chooses (decision 1); Settings can move it later
+  lemonade/                     what Lemonade downloads (Hugging Face layout; its models_dir)
+  strata/                       what Strata downloads: models/, mtp/, packs/ (strata launch --data-dir)
+
+<Zest data folder>/views/<engine>/   links Zest maintains: only the files that engine can run (never inside Models/)
 ```
+
+The Models folder holds only models, one subfolder per engine. The views are tiny folders of links kept in Zest's own data folder, so they
+work whatever kind of disk the models are on (a disk that can't hold links is no longer a problem) and the Models folder stays clean to
+look at, back up or move. A new engine gets its own subfolder the same way (`models.data_dir: "{library}/<engine>"`).
 
 Zest owns a **catalog**: every model file set found under the root and under optional extra sources (LM Studio, Ollama,
 other Hugging Face caches, adopted engines' folders). For each it records identity, files, size, and, read from the GGUF
@@ -176,10 +180,9 @@ is not what is wanted, the rule changes in one place: the tier cut-offs in the c
 
 ### Making both read "the same folder"
 
-- Lemonade: `models_dir` → `<root>/hub`; `extra_models_dir` → `<root>/.views/lemonade` (links to any other file it can run).
-- Strata: `--data-dir <root>/strata` for new downloads; `--model-path` pointing into `hub/` or a view for standard GGUF it
-  can use.
-- Zest keeps the `.views` folders in sync whenever the catalog changes. No file is stored twice.
+- Lemonade: `models_dir` → `Models/lemonade`; `extra_models_dir` → the Lemonade view in Zest's data folder (links to any other file it can run).
+- Strata: `--data-dir Models/strata` for new downloads. Strata uses its own files in place and refuses ordinary models, so it needs no view.
+- Zest keeps the views in sync whenever the catalog changes. No file is stored twice.
 - **Verify early (spike):** that Lemonade accepts an arbitrary `models_dir` with the HF layout; that Strata accepts
   `--model-path` for a standard GGUF shard set; and what Lemonade does with a file it can't run in `extra_models_dir`
   (hide it from the views so it never sees one).
@@ -287,7 +290,7 @@ endpoint: {base_url: "http://127.0.0.1:{port}/api/v1"}
 models:
   formats: [gguf]
   architectures: [llama, qwen2, qwen3, qwen3moe, gemma3, gemma4, lfm2, glm4, …]   # from Lemonade's own model data
-  data_dir: "{library}/hub"
+  data_dir: "{library}/lemonade"
   download: {mode: api, pull: {method: POST, path: /api/v1/pull}}
 memory: {group: gpu, exclusive: false, need: {from: file-size}, max_loaded: 1}
 capabilities: {context: per-load, multi_model: true, tuning: {builtin: zest-measure}}

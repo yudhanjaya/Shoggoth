@@ -58,7 +58,7 @@ class Env(unittest.TestCase):
             tier: small-medium
             run: {mode: external}
             endpoint: {base_url: "http://127.0.0.1:1/v1"}
-            models: {formats: [gguf], excluded_architectures: [qwen4exp], data_dir: "{library}/hub", view: true}
+            models: {formats: [gguf], excluded_architectures: [qwen4exp], data_dir: "{library}/lemonade", view: true}
             """)
         self.add("big", """
             id: big
@@ -119,9 +119,9 @@ class Headers(Env):
 
 class Catalog(Env):
     def test_routing_and_tiers(self):
-        write_gguf(os.path.join(self.lib, "hub", "small", "Small-Q4.gguf"), size=4 * GB)
-        write_gguf(os.path.join(self.lib, "hub", "mid", "Mid-Q4.gguf"), size=18 * GB)
-        write_gguf(os.path.join(self.lib, "hub", "huge", "Huge-Q4.gguf"), size=40 * GB)             # plain format, but very large
+        write_gguf(os.path.join(self.lib, "lemonade", "small", "Small-Q4.gguf"), size=4 * GB)
+        write_gguf(os.path.join(self.lib, "lemonade", "mid", "Mid-Q4.gguf"), size=18 * GB)
+        write_gguf(os.path.join(self.lib, "lemonade", "huge", "Huge-Q4.gguf"), size=40 * GB)             # plain format, but very large
         write_gguf(os.path.join(self.lib, "strata", "Flash-IQ3_S-00001-of-00002.gguf"), arch="qwen4exp", file_type=26, size=1 * GB)
         write_gguf(os.path.join(self.lib, "strata", "Flash-IQ3_S-00002-of-00002.gguf"), arch="qwen4exp", file_type=26, size=1 * GB)
         c = self.by_stem()
@@ -140,17 +140,17 @@ class Catalog(Env):
         self.assertFalse(self.by_stem()["Flash"]["complete"])
 
     def test_support_files_and_projectors_are_not_models(self):
-        write_gguf(os.path.join(self.lib, "hub", "m", "Vision-Q4.gguf"))
-        write_gguf(os.path.join(self.lib, "hub", "m", "mmproj-Vision-BF16.gguf"), arch="clip", kind="mmproj")
-        write_gguf(os.path.join(self.lib, "hub", "draft", "Drafter.gguf"), arch="dflash")
-        write_gguf(os.path.join(self.lib, "hub", "voice", "Voice.gguf"), arch="parakeet")
+        write_gguf(os.path.join(self.lib, "lemonade", "m", "Vision-Q4.gguf"))
+        write_gguf(os.path.join(self.lib, "lemonade", "m", "mmproj-Vision-BF16.gguf"), arch="clip", kind="mmproj")
+        write_gguf(os.path.join(self.lib, "lemonade", "draft", "Drafter.gguf"), arch="dflash")
+        write_gguf(os.path.join(self.lib, "lemonade", "voice", "Voice.gguf"), arch="parakeet")
         c = self.by_stem()
         self.assertEqual(sorted(c), ["Vision-Q4"])
         self.assertTrue(c["Vision-Q4"]["vision"])
         self.assertTrue(c["Vision-Q4"]["mmproj"].endswith("mmproj-Vision-BF16.gguf"))
 
     def test_fit_follows_this_computer(self):
-        write_gguf(os.path.join(self.lib, "hub", "m", "Mid-Q4.gguf"), size=18 * GB)
+        write_gguf(os.path.join(self.lib, "lemonade", "m", "Mid-Q4.gguf"), size=18 * GB)
         self.assertEqual(self.by_stem()["Mid-Q4"]["fit"], "fits")                 # 24 GB card
         self.machine = {"ram_gb": 16, "vram_gb": 6, "best_gpu_gb": 6, "gpus": ["x"], "free_disk_gb": 500}
         m = self.by_stem()["Mid-Q4"]
@@ -158,15 +158,15 @@ class Catalog(Env):
         self.assertIn("graphics memory", m["why"])
 
     def test_the_same_file_in_two_places_is_one_model(self):
-        write_gguf(os.path.join(self.lib, "hub", "a", "Same-Q4.gguf"), size=3 * GB)
+        write_gguf(os.path.join(self.lib, "lemonade", "a", "Same-Q4.gguf"), size=3 * GB)
         os.makedirs(os.path.join(self.lib, "strata", "b"))
-        os.symlink(os.path.join(self.lib, "hub", "a", "Same-Q4.gguf"), os.path.join(self.lib, "strata", "b", "Same-Q4.gguf"))
+        os.symlink(os.path.join(self.lib, "lemonade", "a", "Same-Q4.gguf"), os.path.join(self.lib, "strata", "b", "Same-Q4.gguf"))
         self.assertEqual(len([m for m in self.cat() if m["stem"] == "Same-Q4"]), 1)
 
     def test_a_model_no_engine_can_run_says_so(self):
         # the only engines here are fast (not qwen4exp) and big (only qwen4exp): a format neither lists is refused with a reason
-        os.makedirs(os.path.join(self.lib, "hub", "z"))
-        with open(os.path.join(self.lib, "hub", "z", "Odd.gguf"), "wb"):
+        os.makedirs(os.path.join(self.lib, "lemonade", "z"))
+        with open(os.path.join(self.lib, "lemonade", "z", "Odd.gguf"), "wb"):
             pass
         self.add("picky", """
             id: picky
@@ -180,7 +180,7 @@ class Catalog(Env):
         self.assertNotIn("Odd", self.by_stem())
 
     def test_headers_are_remembered(self):
-        write_gguf(os.path.join(self.lib, "hub", "m", "A.gguf"))
+        write_gguf(os.path.join(self.lib, "lemonade", "m", "A.gguf"))
         self.cat()
         self.assertTrue(os.path.isfile(library._index_path()))
         library._index.update(loaded=False, d={})
@@ -190,7 +190,7 @@ class Catalog(Env):
 class Views(Env):
     def setUp(self):
         super().setUp()
-        write_gguf(os.path.join(self.lib, "hub", "own", "Own-Q4.gguf"), size=2 * GB)              # the engine keeps this itself
+        write_gguf(os.path.join(self.lib, "lemonade", "own", "Own-Q4.gguf"), size=2 * GB)              # the engine keeps this itself
         self.elsewhere = os.path.join(self.tmp, "other-disk")
         write_gguf(os.path.join(self.elsewhere, "Extra-Q4.gguf"), size=2 * GB)
         write_gguf(os.path.join(self.lib, "strata", "Flash-00001-of-00001.gguf"), arch="qwen4exp")
@@ -218,23 +218,23 @@ class Views(Env):
 
     def test_config_for_a_lemonade_zest_runs(self):
         c = library.lemonade_config()
-        self.assertEqual(c["models_dir"], os.path.join(self.lib, "hub"))
-        self.assertEqual(c["extra_models_dir"], os.path.join(self.lib, ".views", "lemonade"))
+        self.assertEqual(c["models_dir"], os.path.join(self.lib, "lemonade"))
+        self.assertEqual(c["extra_models_dir"], os.path.join(self.tmp, "data", "views", "lemonade"))
 
 
-class NoLinks(Env):
-    def test_a_disk_that_cannot_hold_links_keeps_views_in_zests_own_folder(self):
-        orig = library._can_symlink
-        library._can_symlink = lambda folder: False
-        try:
-            library.set_root(os.path.join(self.tmp, "fat-disk"))
-            self.assertEqual(library.views_base(), os.path.join(self.tmp, "data", "views"))
-            self.assertTrue(library.lemonade_config()["extra_models_dir"].startswith(os.path.join(self.tmp, "data", "views")))
-            self.assertFalse(library.summary()["links"])
-        finally:
-            library._can_symlink = orig
-        library.set_root(os.path.join(self.tmp, "good-disk"))
-        self.assertEqual(library.views_base(), os.path.join(self.tmp, "good-disk", ".views"))
+class Layout(Env):
+    def test_the_models_folder_holds_only_models(self):
+        # engines get their own subfolders; the views (links) live in Zest's data folder, never in the Models folder
+        write_gguf(os.path.join(self.lib, "lemonade", "a", "A-Q4.gguf"), size=2 * GB)
+        self.elsewhere = os.path.join(self.tmp, "other")
+        write_gguf(os.path.join(self.elsewhere, "B-Q4.gguf"), size=2 * GB)
+        s = __import__("store").load()
+        s.setdefault("models", {})["imports"] = [{"kind": "folder", "path": self.elsewhere, "label": "x"}]
+        __import__("store").save(s)
+        library.sync_views(self.cat(), self.reg)
+        self.assertEqual(sorted(os.listdir(self.lib)), ["lemonade", "strata"])
+        self.assertTrue(os.path.islink(os.path.join(self.tmp, "data", "views", "fast", "B-Q4.gguf")))
+        self.assertEqual(library.views_base(), os.path.join(self.tmp, "data", "views"))
 
 
 class Places(Env):
@@ -243,11 +243,12 @@ class Places(Env):
         self.assertTrue(ps)
         self.assertEqual([p["free_gb"] for p in ps], sorted([p["free_gb"] for p in ps], reverse=True))
         self.assertLessEqual(sum(1 for p in ps if p["suggested"]), 1)
+        self.assertTrue(all(p["folder"].endswith(os.sep + "Models") for p in ps))
 
     def test_set_root_makes_the_folders_and_refuses_the_unwritable(self):
         new = os.path.join(self.tmp, "elsewhere", "My Models")
         self.assertEqual(library.set_root(new), new)
-        for sub in ("hub", "strata", ".views"):
+        for sub in ("lemonade", "strata"):
             self.assertTrue(os.path.isdir(os.path.join(new, sub)))
         self.assertEqual(library.root(), new)
         with self.assertRaises(ValueError):

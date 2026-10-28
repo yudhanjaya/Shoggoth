@@ -28,7 +28,7 @@ models:
   formats: [gguf]
   # Lemonade's llama.cpp does not know these; they are Strata's own architectures.
   excluded_architectures: [qwen4exp, deepseek41]
-  data_dir: "{library}/hub"
+  data_dir: "{library}/lemonade"
   download: {mode: api}          # plain GGUF downloads go through Lemonade
   view: true                     # Lemonade lists any GGUF in a folder it is pointed at, so it is only pointed at a view of files it can run
 

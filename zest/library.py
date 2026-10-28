@@ -2,7 +2,7 @@
 
 Zest reads each model file's own header (gguf.py), asks every provider whether it can run the file and how much room it needs,
 sorts the model into a tier (Small, Medium, Large) and picks the provider that serves it. Where files live is one folder the
-person chooses (the library root); each engine keeps what it downloads under it, and Zest keeps small per-engine "views" (folders of
+person chooses (the Models folder); each engine keeps what it downloads in its own subfolder (lemonade/, strata/), and Zest keeps small per-engine "views" (folders of
 links) so an engine is only ever shown files it can run. Nothing is copied or moved. Standard library only.
 """
 import json
@@ -20,7 +20,7 @@ import store
 TIERS = ("small", "medium", "large")
 TIER_LABEL = {"small": "Small", "medium": "Medium", "large": "Large"}
 SMALL_GB, MEDIUM_GB = 10, 24             # graphics memory a model needs: under 10 is Small, up to 24 Medium, beyond that Large
-SUBDIRS = ("hub", "strata")
+SUBDIRS = ("lemonade", "strata")         # one folder per engine under the person's Models folder; nothing else lives there
 _index = {"loaded": False, "d": {}}
 
 
@@ -30,7 +30,8 @@ def root():
 
 
 def places():
-    """Disks a person could keep models on, most free space first: [{path, free_gb, total_gb, suggested}].
+    """Disks a person could keep models on, most free space first: [{path, folder, free_gb, total_gb, suggested}]; `folder` is the
+    Models folder Zest would create there.
 
     A place is a real, writable disk or the home folder. The suggestion is the one with the most room."""
     skip_fs = {"proc", "sysfs", "devtmpfs", "devpts", "tmpfs", "cgroup", "cgroup2", "squashfs", "overlay", "efivarfs", "securityfs", "debugfs",
@@ -60,33 +61,13 @@ def places():
         if key not in found or u.free > found[key]["free"]:
             found[key] = {"path": base, "free": u.free, "total": u.total}
     rows = sorted(found.values(), key=lambda r: -r["free"])
-    return [{"path": r["path"], "free_gb": round(r["free"] / 1e9, 1), "total_gb": round(r["total"] / 1e9, 1), "suggested": i == 0 and r["free"] > 20e9}
-            for i, r in enumerate(rows)]
-
-
-def _can_symlink(folder):
-    """Can this disk hold links? (Windows-style disks, FAT and exFAT can't.)"""
-    a, b = os.path.join(folder, ".zest-link-a"), os.path.join(folder, ".zest-link-b")
-    try:
-        with open(a, "w") as f:
-            f.write("x")
-        os.symlink(a, b)
-        return os.path.realpath(b) == os.path.realpath(a)
-    except OSError:
-        return False
-    finally:
-        for x in (b, a):
-            try:
-                os.remove(x)
-            except OSError:
-                pass
+    return [{"path": r["path"], "folder": os.path.join(r["path"], "Models"), "free_gb": round(r["free"] / 1e9, 1), "total_gb": round(r["total"] / 1e9, 1),
+             "suggested": i == 0 and r["free"] > 20e9} for i, r in enumerate(rows)]
 
 
 def views_base():
-    """Where per-engine views live: inside the library when its disk can hold links, otherwise in Zest's own data folder."""
-    r = root()
-    if r and (store.load().get("library") or {}).get("links", True):
-        return os.path.join(r, ".views")
+    """Where the per-engine views (folders of links) live: Zest's own data folder, so the Models folder holds only models and the
+    links work whatever kind of disk the models are on."""
     return os.path.join(store.data_dir(), "views")
 
 
@@ -99,7 +80,7 @@ def set_root(path):
     if path == "/":
         raise ValueError("Choose a folder for your models, not the whole disk.")
     try:
-        for sub in SUBDIRS + (".views",):
+        for sub in SUBDIRS:
             os.makedirs(os.path.join(path, sub), exist_ok=True)
         probe = os.path.join(path, ".zest-write-test")
         with open(probe, "w") as f:
@@ -108,7 +89,7 @@ def set_root(path):
     except OSError as e:
         raise ValueError("Zest can't write to that folder (%s). Choose another." % (e.strerror or e))
     s = store.load()
-    s.setdefault("library", {}).update(root=path, links=_can_symlink(path))
+    s.setdefault("library", {})["root"] = path
     store.save(s)
     registry.reload()                                         # providers read the library folder through their context
     return path
@@ -282,7 +263,7 @@ def catalog(reg=None, machine=None, refresh=False):
 
 # ---------------------------------------------------------------- per-engine views
 def sync_views(entries=None, reg=None):
-    """Keep <root>/.views/<engine>/ holding links to exactly the files that engine should be shown: those routed to it that it doesn't
+    """Keep <Zest data folder>/views/<engine>/ holding links to exactly the files that engine should be shown: those routed to it that it doesn't
     already keep itself. Only links are ever created or removed here, never real files. Returns {engine: view folder}."""
     r = root()
     reg = reg or registry.default()
@@ -317,17 +298,17 @@ def sync_views(entries=None, reg=None):
 
 
 def lemonade_config():
-    """The folder settings Lemonade should have so it reads the library: its own downloads under hub/, everything else it can run
+    """The folder settings Lemonade should have so it reads the library: its own downloads under lemonade/, everything else it can run
     through the view. {} until a root is chosen. Applying this is only ever done to a Lemonade Zest runs itself."""
     r = root()
-    return {"models_dir": os.path.join(r, "hub"), "extra_models_dir": os.path.join(views_base(), "lemonade")} if r else {}
+    return {"models_dir": os.path.join(r, "lemonade"), "extra_models_dir": os.path.join(views_base(), "lemonade")} if r else {}
 
 
 def summary():
     """What the Library page and the first-run screen need."""
     r = root()
     cat = catalog()
-    return {"root": r, "chosen": bool(r), "links": (store.load().get("library") or {}).get("links", True), "places": places(), "machine": hardware.machine(),
+    return {"root": r, "chosen": bool(r), "places": places(), "machine": hardware.machine(),
             "tiers": [{"id": t, "label": TIER_LABEL[t]} for t in TIERS], "models": cat,
             "bytes": sum(m["size_bytes"] for m in cat),
             "disk": {"free_gb": round(shutil.disk_usage(r).free / 1e9, 1)} if r and os.path.isdir(r) else None}
