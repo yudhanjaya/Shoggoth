@@ -334,6 +334,14 @@ class Handler(BaseHTTPRequestHandler):
             handler(self.read_json())
         except ValueError as e:
             self.send_json({"ok": False, "error": str(e)}, 400)
+        except (BrokenPipeError, ConnectionResetError):
+            raise
+        except Exception as e:  # noqa: BLE001 - a bad request must never drop the connection or leave the page waiting
+            sys.stderr.write("Zest: %s failed: %r\n" % (p, e))
+            try:
+                self.send_json({"ok": False, "error": "Something went wrong with that request. If it keeps happening, restart Zest."}, 500)
+            except OSError:
+                pass
 
     do_DELETE = do_POST
 
@@ -470,7 +478,9 @@ class Handler(BaseHTTPRequestHandler):
     def post_imports(self, body):
         s = store.load()
         chosen, seen = [], set()
-        for src in body.get("sources", []):
+        for src in body.get("sources") if isinstance(body.get("sources"), list) else []:
+            if not isinstance(src, dict):
+                continue
             kind, path = src.get("kind"), str(src.get("path", ""))
             if kind == "ollama":
                 if not os.path.isdir(path):
@@ -484,10 +494,15 @@ class Handler(BaseHTTPRequestHandler):
                 chosen.append(item)
         before = lem.get("/v1/models?show_all=true").get("data", [])
         s["models"]["imports"] = chosen
-        linked = modelscan.sync_farm(chosen, accept=library.lemonade_accepts)       # Lemonade is only shown files it can run
-        ok, msg = (lem.set_config({"extra_models_dir": modelscan.farm_dir() if linked else ""})
-                   if lem.healthy() else (True, ""))
-        store.save(s)
+        if library.root():
+            store.save(s)
+            linked = len(chosen)
+            ok, msg = library.apply_to_lemonade() if (engine.running() and lem.healthy()) else (True, "")     # the library's view shows Lemonade what it can run
+        else:
+            linked = modelscan.sync_farm(chosen, accept=library.lemonade_accepts)       # Lemonade is only shown files it can run
+            ok, msg = (lem.set_config({"extra_models_dir": modelscan.farm_dir() if linked else ""})
+                       if lem.healthy() else (True, ""))
+            store.save(s)
         time.sleep(1.5)                       # let Lemonade rescan
         after = lem.get("/v1/models?show_all=true").get("data", [])
         invalidate()
@@ -650,6 +665,8 @@ class Handler(BaseHTTPRequestHandler):
 
     def post_library_root(self, body):
         library.set_root(body.get("path", ""))
+        if engine.running() and lem.healthy():                    # only a Lemonade Zest runs itself is ever re-pointed
+            threading.Thread(target=lambda: modelscan.apply_to_lemonade(store.load()), daemon=True).start()
         self.send_json(self.library_summary())
 
     @staticmethod

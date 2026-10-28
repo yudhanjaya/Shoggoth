@@ -352,7 +352,7 @@ def remove(sid):
     if sid == MINE:
         raise ValueError("That is your own skills folder. Delete the skill folders you don't want from it.")
     folder = os.path.join(root(), "sets", sid)
-    if not re.fullmatch(r"[\w.-]+", sid) or not os.path.isdir(folder):
+    if not re.fullmatch(r"[\w.-]+", sid) or sid.startswith(".") or not os.path.isdir(folder):
         raise ValueError("That set isn't installed.")
     with _lock:
         shutil.rmtree(folder, ignore_errors=True)

@@ -153,6 +153,28 @@ class Catalog(Env):
         self.assertEqual(c["A-Q4"]["provider"], "mine")                 # it asked for this kind, so it gets it
         self.assertEqual(c["B-Q4"]["provider"], "fast")                 # everything else goes where it did before
 
+    def test_models_downloaded_before_a_library_folder_was_chosen_stay_in_the_library(self):
+        write_gguf(os.path.join(self.tmp, "nohf", "models--org--old-GGUF", "snapshots", "abc", "Old-Q4.gguf"), size=3 * GB)
+        c = self.by_stem()
+        self.assertIn("Old-Q4", c)
+        self.assertEqual(c["Old-Q4"]["source"], "Hugging Face cache")
+        self.assertEqual(c["Old-Q4"]["provider"], "fast")                 # and goes to an engine like any other model
+
+    def test_a_folder_chosen_in_the_older_settings_stays_too(self):
+        old = os.path.join(self.tmp, "oldmodels")
+        write_gguf(os.path.join(old, "x", "Legacy-Q4.gguf"), size=3 * GB)
+        s = library.store.load()
+        s["models"].update(storage="custom", custom_dir=old)
+        library.store.save(s)
+        self.assertIn("Legacy-Q4", self.by_stem())
+
+    def test_nothing_outside_the_library_is_read_until_a_folder_is_chosen(self):
+        write_gguf(os.path.join(self.tmp, "nohf", "models--org--old-GGUF", "snapshots", "abc", "Old-Q4.gguf"), size=3 * GB)
+        s = library.store.load()
+        s["library"]["root"] = ""
+        library.store.save(s)
+        self.assertNotIn("Old-Q4", [os.path.basename(f)[:-5] for e in library.catalog(self.reg) for f in e["files"]])
+
     def test_incomplete_shards_are_flagged(self):
         write_gguf(os.path.join(self.lib, "strata", "Flash-00001-of-00003.gguf"), arch="qwen4exp")
         self.assertFalse(self.by_stem()["Flash"]["complete"])

@@ -196,7 +196,15 @@ def sync_farm(sources, accept=None):
 
 
 def apply_to_lemonade(settings):
-    """Push Zest's model-folder choices into Lemonade. Returns (ok, message)."""
+    """Push Zest's model-folder choices into Lemonade. Returns (ok, message).
+
+    Once a library folder is chosen it decides everything (see library.apply_to_lemonade); before that, the older choices below apply."""
+    import engine
+    import library
+    if library.root():
+        if not engine.running():                               # a Lemonade you run yourself is never re-pointed
+            return True, "Your own Lemonade keeps its own folders."
+        return library.apply_to_lemonade()
     m = settings["models"]
     storage = "auto" if m.get("storage") != "custom" or not m.get("custom_dir") else m["custom_dir"]
     ok, msg = lem.set_config({"models_dir": storage})

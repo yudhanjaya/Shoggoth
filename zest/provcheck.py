@@ -5,10 +5,8 @@ import difflib
 import json
 import os
 import re
-import shutil
 import sys
 
-import provbase
 import registry
 import store
 

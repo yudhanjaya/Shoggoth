@@ -534,6 +534,8 @@ def create(cwd, mode=None, model="", extra_folders=None):
 
 
 def delete(sid):
+    if not re.fullmatch(r"[0-9a-f]{12}", str(sid)):           # ids are made here; anything else is not one of ours (and is never a path)
+        return
     t = get_task(sid)
     stop(sid)
     ids = {sid}

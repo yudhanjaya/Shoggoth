@@ -125,12 +125,11 @@ class Provider(provbase.GenericProvider):
 
     def model_folders(self):
         import modelscan
-        out = [(modelscan.hf_cache_dir(), "Lemonade")]
+        out = [(modelscan.hf_cache_dir(), "Lemonade")]            # "auto" means the Hugging Face cache
         if lem.healthy():
-            cfg = lem.flat_config()
-            md = cfg.get("models_dir")
+            md = lem.flat_config().get("models_dir")
             if md and md != "auto" and md != modelscan.hf_cache_dir():
-                out.append((md, "Lemonade"))
+                out = [(md, "Lemonade")]                          # moved: what it kept in the cache before is no longer its own
         return [(p, l) for p, l in out if p and __import__("os").path.isdir(p)]
 
     def model_id(self, entry):

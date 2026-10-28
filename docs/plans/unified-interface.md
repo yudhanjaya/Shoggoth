@@ -448,3 +448,16 @@ Run against a real Strata 0.2.6 with two models on a second disk, two graphics c
 - **A real update: engine failed safe, message was raw JSON, fixed.** Strata updated its app 0.1.51 to 0.1.53 but its new engine (0.1.52) failed its own test start on this computer and was not installed; the engine stayed on 0.1.50. Zest showed Strata's JSON. `strata.update_failure()` now says what failed, that nothing was broken, and what did update.
 - **Not exercised:** a real first-time Get it of a model that fits (no model here fits the free disk), a fresh Strata install, and the idle release (20 minutes).
 
+## Phase F: polish and a code review (2026-10-28)
+
+Found by reading the code, a small undefined-name and duplicate-definition checker, a malformed-body fuzz of 33 POST routes, a phone-width and accessibility audit in the browser, and a run with a built-in Lemonade:
+
+- **The library folder was never applied to Lemonade.** `library.lemonade_config()` existed and was tested but nothing used it, so a Zest-run Lemonade kept downloading to the old place and never saw the view of links. Now `library.apply_to_lemonade()` (called when the engine connects, when the folder is chosen and when imports change) sets `models_dir` to `<root>/lemonade`, then syncs the view, then points `extra_models_dir` at it. A Lemonade you run yourself is never re-pointed. Checked against a real `lemond`.
+- **Earlier models vanished from Lemonade when a folder was chosen.** The Hugging Face cache (Zest's own earlier downloads) and a folder chosen in the older settings now stay in the library once a root is set, and Lemonade is shown them through the view. Lemonade's `model_folders()` stops claiming the cache as its own once `models_dir` has moved.
+- **Progress was unreadable during a start.** `router.state()` waited on the lock held for the whole activation, so the page's progress card hung while a big model loaded. It now has its own small lock (tested).
+- **Two path-injection holes.** `agent.delete` joined a request's id into a folder it removed (`../..` would have removed what it pointed at); `skills.remove("..")` would have removed the whole skills folder, including "My skills". Both are closed and tested.
+- **Unexpected errors dropped the connection.** One malformed body to `/ui/models/imports` closed the socket without an answer. Handlers now answer a plain 500, and `sources` must be a list.
+- **Phone width.** A wide code block stretched the Server page's panels; touch targets under 32 px (inputs, selects, link buttons) are taller on small or touch screens. Everything else already fit, contrast passed (one 3.6:1 note), and every control has a name.
+- **Cleanups.** Unused imports; `GenericProvider` duplicate (earlier).
+- **Measured, no change needed:** a 400-model library scans in 3 s the first time and 0.15 s after.
+

@@ -117,6 +117,30 @@ class Resolving(Env):
         self.assertEqual((m["id"], m["pi_model"], m["pi_provider"], m["live"], m["ctx"]), ("fast/m1", "m1", "fast", True, 4096))
 
 
+class Progress(Env):
+    def test_the_page_can_read_progress_while_an_engine_is_still_starting(self):
+        import threading
+        seen, release = {}, threading.Event()
+        real = self.big.ensure
+
+        def slow(model_id, progress, opts=None):
+            progress("Loading the model…")
+            release.wait(10)                                   # a real big model takes minutes
+            return real(model_id, progress, opts)
+        self.big.ensure = slow
+        t = threading.Thread(target=lambda: router.activate("big/m1", lambda x: None), daemon=True)
+        t.start()
+        time.sleep(0.5)
+        t0 = time.time()
+        seen.update(router.state())
+        self.assertLess(time.time() - t0, 1.0)                  # it must not wait for the start to finish
+        self.assertEqual(seen["step"], "Loading the model…")
+        self.assertEqual(seen["provider"], "big")
+        release.set()
+        t.join(30)
+        self.assertEqual(router.state()["step"], "")
+
+
 class Arbiter(Env):
     def test_a_big_model_frees_the_fast_engine_and_back(self):
         log = []

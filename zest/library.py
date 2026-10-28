@@ -194,9 +194,14 @@ def sources(reg=None):
     if r:
         for sub in SUBDIRS:
             add(os.path.join(r, sub), "Zest library", None)
-    for imp in (store.load().get("models") or {}).get("imports") or []:
+    m = store.load().get("models") or {}
+    for imp in m.get("imports") or []:
         if imp.get("kind") == "folder":
             add(imp.get("path", ""), imp.get("label") or "Your folder", None)
+    if r:                                                      # models Zest itself downloaded before there was a library folder stay in the library
+        add(modelscan.hf_cache_dir(), "Hugging Face cache", None)
+        if m.get("storage") == "custom" and m.get("custom_dir"):
+            add(m["custom_dir"], "Your earlier models folder", None)
     return out
 
 
@@ -302,6 +307,21 @@ def lemonade_config():
     through the view. {} until a root is chosen. Applying this is only ever done to a Lemonade Zest runs itself."""
     r = root()
     return {"models_dir": os.path.join(r, "lemonade"), "extra_models_dir": os.path.join(views_base(), "lemonade")} if r else {}
+
+
+def apply_to_lemonade():
+    """Point a Lemonade Zest runs itself at the library: downloads go to <root>/lemonade, and every other file it can run is shown to it
+    through its view of links. Returns (ok, message). Does nothing (ok) until a library folder is chosen."""
+    if not root():
+        return True, ""
+    import lem
+    cfg = lemonade_config()
+    ok, msg = lem.set_config({"models_dir": cfg["models_dir"]})        # first, so what it kept before (the Hugging Face cache) is no longer "its own"
+    if not ok:
+        return ok, msg
+    registry.reload()
+    sync_views()
+    return lem.set_config({"extra_models_dir": cfg["extra_models_dir"]})     # and again, so it looks in the view now that the links exist
 
 
 def summary():

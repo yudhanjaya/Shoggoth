@@ -11,7 +11,8 @@ import time
 import provbase
 import registry
 
-_lock = threading.RLock()
+_lock = threading.RLock()          # one activation at a time (held for as long as an engine takes to start)
+_slock = threading.Lock()          # guards STATE only, so the page can always read the progress of a start in progress
 STATE = {"ref": None, "provider": None, "step": "", "since": 0}      # what is being started right now, for the page's progress card
 busy_checks = []          # callables(provider id) -> bool; True when something of Zest's (a chat answering) is using that provider
 on_change = []            # callables run after an activation or a stop, so cached model lists are re-read
@@ -119,7 +120,7 @@ def fixed_ctx(ref):
 
 
 def state():
-    with _lock:
+    with _slock:
         return dict(STATE)
 
 
@@ -169,11 +170,12 @@ def activate(ref, progress=None, opts=None):
         raise provbase.ProviderError("No engine is set up to run models.")
 
     def step(text):
-        with _lock:
+        with _slock:
             STATE["step"] = text
         progress(text)
     with _lock:
-        STATE.update(ref=str(ref), provider=p.id, step="Getting ready…", since=time.time())
+        with _slock:
+            STATE.update(ref=str(ref), provider=p.id, step="Getting ready…", since=time.time())
         try:
             opts = opts or {}
             live, cur = p.loaded(mid)
@@ -182,7 +184,8 @@ def activate(ref, progress=None, opts=None):
                 make_room(p, step)
             ep = p.ensure(mid, step, opts)
         finally:
-            STATE.update(ref=None, provider=None, step="", since=0)
+            with _slock:
+                STATE.update(ref=None, provider=None, step="", since=0)
     invalidate()
     return dict(ep or {}, provider=p.id, model=mid)
 

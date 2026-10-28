@@ -5,7 +5,6 @@ import shutil
 
 import engine
 import lem
-import store
 from util import cached, run
 
 # ---------------------------------------------------------------- GPUs
