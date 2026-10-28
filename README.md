@@ -148,6 +148,18 @@ Press **Settings** on any downloaded card. Set the backend and devices, and tune
 
 ![Model settings](docs/screenshots/model-options.png)
 
+### Bigger models with Strata (experimental)
+
+Some models are far too big for a graphics card. [Strata](https://github.com/Niko1221/Strata) is a separate free program that runs them anyway, by keeping part of the model in RAM and on the SSD. It is slower than a model that fits, and it needs a lot of RAM and disk.
+
+On the **Models** page, the **Bigger models with Strata** box does three things:
+
+- If Strata isn't installed, **Install Strata** downloads its installer, checks it against the checksum Strata publishes, and runs it.
+- Once Strata has a saved setup (made in a terminal with `strata launch`: pick a model, save it as a preset), the box lists your setups with a **Start** button. Starting one frees any model Lemonade has loaded, because they share the same memory.
+- While Strata is running, its model appears in Chat as `strata/<model name>`. **Stop** frees the memory again.
+
+Zest never restarts a Strata you started yourself. If one is already running, Zest shows it and lets you chat with it.
+
 ## Skills
 
 **Skills** are short instruction sheets the model reads when a job calls for them. Zest comes with Superpowers (a trimmed copy of [obra/superpowers](https://github.com/obra/superpowers): ask what you really want, plan, test first, find a bug's cause before fixing it, prove it works before saying so), a diagrams skill (the model writes Mermaid and Zest draws it in the chat, with Copy and Save as image; if it doesn't draw, one button asks the model to fix it) and a markdown-writing skill. **To add more, open Skills, paste a link to a GitHub repository (or to one folder in it) and press Add skills.** Any repository that follows the [Agent Skills](https://agentskills.io) format works; [Hermes Atlas](https://hermesatlas.com/ecosystem/) lists many. Switch skills on and off one by one, or by set, and type `/` in a folder conversation to pick one. Only add skills from people you trust. See [docs/COWORK.md](docs/COWORK.md).

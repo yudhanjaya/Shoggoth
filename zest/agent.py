@@ -21,6 +21,7 @@ import folders as folderstore
 import lem
 import piup
 import skills
+import strata
 import store
 import workcopy
 
@@ -114,7 +115,7 @@ def chat_models():
         out.append({"id": m["id"], "tools": "tool-calling" in labels, "reasoning": "reasoning" in labels,
                     "vision": "vision" in labels, "ctx": int(m.get("context_length") or 131072)})
     out.sort(key=lambda m: (not m["tools"], m["id"].lower()))
-    return out
+    return out + strata.models()          # Strata's models (big ones, split across GPU and RAM) after Lemonade's
 
 
 def _health():
@@ -123,6 +124,9 @@ def _health():
 
 def loaded_state(model, health=None):
     """(in memory?, its context window in tokens or 0 when Lemonade doesn't say)."""
+    if strata.is_model(model):
+        m = strata.find_model(model)
+        return (True, m["ctx"]) if m else (False, 0)
     for m in (health if health is not None else _health()).get("all_models_loaded", []):
         if m.get("model_name") != model:
             continue
@@ -140,6 +144,8 @@ def loaded_state(model, health=None):
 
 def model_max_ctx(model):
     """The longest context the model was trained for, when Lemonade knows it (0 when it doesn't)."""
+    if strata.is_model(model):
+        return (strata.find_model(model) or {}).get("ctx", 0)
     for m in lem.get("/v1/models").get("data", []):
         if m.get("id") == model:
             try:
@@ -160,6 +166,8 @@ def chat_ctx():
 
 def want_ctx(model):
     """What a load of `model` asks for: the chat setting, never more than the model can do."""
+    if strata.is_model(model):
+        return model_max_ctx(model)         # Strata's context is fixed when it starts
     n, top = chat_ctx(), model_max_ctx(model)
     # "128k" models are listed as 128000; only a model with clearly less room than asked for is held back
     return top if top and top * 1.05 < n else n
@@ -176,6 +184,9 @@ def model_state():
     h = _health()
     name = h.get("model_loaded") or None
     ctx = loaded_state(name, h)[1] if name else 0
+    if not name and strata.models():
+        name = strata.models()[0]["id"]
+        ctx = strata.models()[0]["ctx"]
     with _lock:
         loading = dict(_loading) if _loading["model"] else None
     return {"loaded": name, "ctx": ctx, "chat_ctx": chat_ctx(), "loading": loading, "default_ctx": DEFAULT_CTX}
@@ -190,6 +201,9 @@ def load_model(model, ctx=None, force=False):
     Returns (ok, message, ctx). A model that is already loaded at that size is left alone; at another size it is reloaded."""
     if not model:
         return False, "Choose a model first.", 0
+    if strata.is_model(model):
+        m = strata.find_model(model)
+        return (True, "", m["ctx"]) if m else (False, "Strata isn't running that model. Start it from the Models page.", 0)
     with _load_lock:
         ctx = int(ctx) if ctx else want_ctx(model)
         isl, cur = loaded_state(model)
@@ -217,6 +231,8 @@ def unload_model(model):
     """Free the model's memory. Returns (ok, message)."""
     if _busy_with(model):
         return False, "It is answering right now. Wait for it to finish, or stop it, then try again."
+    if strata.is_model(model):
+        return strata.stop()
     status, payload = lem.request("POST", "/v1/unload", {"model_name": model} if model else {}, timeout=60)
     touch()
     return status == 200, "" if status == 200 else lem.error_text(payload, "Lemonade couldn't unload the model.")
@@ -237,6 +253,10 @@ def ensure_loaded(model, s=None):
     """Before a prompt goes to `model`: load it at the chat context size if it isn't in memory, or has less room than that.
     The page is told, so it can say "Loading the model" instead of sitting silent. Raises ValueError when it can't be loaded."""
     if not model:
+        return
+    if strata.is_model(model):
+        if not strata.find_model(model):
+            raise ValueError("Strata isn't running that model. Start it from the Models page.")
         return
     want = want_ctx(model)
     isl, cur = loaded_state(model)
@@ -261,18 +281,26 @@ def _pi_model(m, window):
 def write_config(models, default, ctx=0):
     d = agent_dir()
     os.makedirs(d, exist_ok=True)
+    own = [m for m in models if m.get("provider") != "strata"]
     provider = {
         "baseUrl": "http://127.0.0.1:%d/api/v1" % _zest_port["v"],      # through Zest, so it shows on the Server page
         "api": "openai-completions",
         "apiKey": "zest",
         "compat": {"supportsDeveloperRole": False, "supportsUsageInStreaming": True},
-        "models": [_pi_model(m, ctx if (ctx and m["id"] == default) else min(m["ctx"], DEFAULT_CTX)) for m in models],
+        "models": [_pi_model(m, ctx if (ctx and m["id"] == default) else min(m["ctx"], DEFAULT_CTX)) for m in own],
     }
-    _write(os.path.join(d, "models.json"), {"providers": {"lemonade": provider}})
-    settings = {"defaultProvider": "lemonade", "defaultProjectTrust": "never", "quietStartup": True,
+    providers = {"lemonade": provider}
+    big = [m for m in models if m.get("provider") == "strata"]
+    if big:
+        # Strata is its own server on its own port; Pi talks to it directly. Its window is whatever it was started with.
+        providers["strata"] = {"baseUrl": big[0]["url"].rstrip("/") + "/v1", "api": "openai-completions", "apiKey": "strata",
+                               "compat": {"supportsDeveloperRole": False, "supportsUsageInStreaming": True},
+                               "models": [_pi_model(dict(m, id=m["bare"]), m["ctx"]) for m in big]}
+    _write(os.path.join(d, "models.json"), {"providers": providers})
+    settings = {"defaultProvider": "strata" if strata.is_model(default) else "lemonade", "defaultProjectTrust": "never", "quietStartup": True,
                 "enableInstallTelemetry": False, "autoCompaction": True}
     if default:
-        settings["defaultModel"] = default
+        settings["defaultModel"] = strata.bare(default)
     _write(os.path.join(d, "settings.json"), settings)
 
 
@@ -668,7 +696,7 @@ class Session:
             if note:
                 args += ["--append-system-prompt", note]
         if t.get("model"):
-            args += ["--provider", "lemonade", "--model", t["model"]]
+            args += ["--provider", "strata" if strata.is_model(t["model"]) else "lemonade", "--model", strata.bare(t["model"])]
         extra = [f for f in t.get("folders", [])]
         allow = list(folderstore.get(_origin(t))["allow"]) + list((t.get("job") or {}).get("allow", []))
         self.proc = subprocess.Popen(args, cwd=t["cwd"], env=_env(t.get("mode", "ask"), inject, extra, allow),

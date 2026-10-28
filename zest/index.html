@@ -1258,6 +1258,7 @@ h3.themesec{font:600 12px var(--sans);letter-spacing:.08em;text-transform:upperc
         <div class="pagebtns"><button class="btn ghost" type="button" data-pick>How do I choose a model?</button>
         <button class="btn" id="hfopen" type="button"><svg class="i" viewBox="0 0 24 24"><path d="M12 4v11M7 11l5 5 5-5M5 20h14"/></svg>Get from Hugging Face</button></div></div>
       <div id="modelsbanner"></div>
+      <div id="stratabox"></div>
       <div class="filters" id="filters" role="group" aria-label="Filter models"></div>
       <div class="grid" id="grid"></div>
     </div></div></section>
@@ -1446,7 +1447,7 @@ function show(v){
   if(v === "cowork" && typeof cwShow === "function") cwShow();
   if(v === "skills") renderSkills();
   if(v === "docs") renderDocs();
-  if(v === "models") renderModels();
+  if(v === "models"){ renderModels(); strRefresh(); }
   if(v === "hardware") renderHardware();
   if(v === "backends") loadBackends();
   if(v === "settings") loadSettings();
@@ -2886,6 +2887,52 @@ async function waitLemonade(){
 }
 setInterval(() => { if(!document.hidden && SU.up && SU.up.state === "working") refreshUpdate(); }, 1500);
 setInterval(() => { if(!document.hidden && (inSetup() || (SU.st && ["downloading","verifying","installing"].includes(SU.st.engine.update.state)) || (SU.pi.info && ["downloading","installing"].includes(SU.pi.info.update.state)))) refreshSetup(); }, 1500);
+
+/* ======================= Strata: bigger models ======================= */
+const STR = {d: null, msg: ""};
+async function strRefresh(){
+  if(S.view !== "models") return;
+  try{ STR.d = await api("/ui/strata"); }catch{ STR.d = null; }
+  strPaint();
+}
+function strPaint(){
+  const box = $("#stratabox"), d = STR.d; if(!box) return;
+  if(!d){ box.innerHTML = ""; return; }
+  const run = d.run || {}, ins = d.install || {}, up = (d.running || []).find(r => r.state === "ready");
+  const busy = run.state === "starting", loaded = S.ms && S.ms.loaded && !String(S.ms.loaded).startsWith("strata/");
+  let body;
+  if(!d.installed){
+    body = `<p class="help" style="margin:0">Strata runs models that are far too big for your graphics card by keeping part of them in RAM and on the SSD. It is a separate free program (<a href="https://github.com/Niko1221/Strata" target="_blank" rel="noopener noreferrer">Niko1221/Strata</a>), and Zest can install it for you and check the installer against the checksum Strata publishes. It works best with an NVIDIA RTX 20 series or newer, an AMD Radeon, or an AMD Ryzen AI Max, and a lot of RAM.</p>
+      ${ins.state === "installing" ? `<div class="line"><span class="stat-dot busy"></span><span class="grow">Installing Strata… ${esc((ins.log || []).slice(-1)[0] || "")}</span></div>` : `<div class="line"><button class="btn" data-str="install">Install Strata</button></div>`}
+      ${ins.state === "error" ? `<div class="note-bad">${esc(ins.error)}</div>` : ""}`;
+  }else if(up){
+    const m = up.models[0] || {};
+    body = `<div class="line"><span class="stat-dot ok"></span><span class="grow"><b>${esc(m.id || up.name)}</b> is running${m.ctx ? " with " + fmtTok(m.ctx) + " of context" : ""}. Pick it as <b>strata/${esc(m.id || "")}</b> in Chat.</span><button class="btn" data-str="stop">Stop</button></div>
+      <p class="help" style="margin:0">Its memory is taken from the same computer as your other models, so stop it when you want Lemonade's models back.</p>`;
+  }else if(busy){
+    body = `<div class="line"><span class="stat-dot busy"></span><span class="grow">Starting <b>${esc(run.preset)}</b>… the first start can take a few minutes while it loads. <span class="mono faint">${esc((run.log || []).filter(Boolean).slice(-1)[0] || "")}</span></span></div>`;
+  }else{
+    const ps = d.presets || [];
+    body = ps.length ? `<p class="help" style="margin:0">Your saved Strata setups. ${loaded ? `Starting one frees <b>${esc(S.ms.loaded)}</b> from memory first.` : ""}</p>` + ps.map(p => `<div class="line"><span class="grow"><b>${esc(p.name)}</b> <span class="faint">${esc([p.model, p.context ? fmtTok(p.context) + " context" : ""].filter(Boolean).join(" · "))}</span></span><button class="btn primary" data-str="start" data-preset="${esc(p.name)}">Start</button></div>`).join("")
+      : `<p class="help" style="margin:0">Strata is installed (${esc(d.version)}), but it has no saved setup yet. In a terminal run <code>strata launch</code>, choose a model and save it as a preset. It will show up here.</p>`;
+    if(run.state === "error") body += `<div class="note-bad">${esc(run.error)}</div>`;
+  }
+  box.innerHTML = `<section class="panel" style="margin-bottom:16px"><div class="skhead"><h3>Bigger models with Strata</h3><span class="chip">Experimental</span></div>${body}${STR.msg ? `<div class="note-bad">${esc(STR.msg)}</div>` : ""}</section>`;
+}
+$("#stratabox").addEventListener("click", async e => {
+  const b = e.target.closest("[data-str]"); if(!b) return;
+  STR.msg = "";
+  try{
+    if(b.dataset.str === "install") STR.d = await api("/ui/strata/install", {method: "POST", body: "{}"});
+    else if(b.dataset.str === "stop"){ if(!confirm("Stop Strata? Anything that is using the model right now, here or in another app, will stop answering.")) return; b.disabled = true; await api("/ui/strata/stop", {method: "POST", body: "{}"}); STR.d = await api("/ui/strata"); }
+    else if(b.dataset.str === "start"){
+      const free = !!(S.ms && S.ms.loaded && !String(S.ms.loaded).startsWith("strata/"));
+      STR.d = await api("/ui/strata/start", {method: "POST", body: JSON.stringify({preset: b.dataset.preset, free_lemonade: free})});
+    }
+  }catch(err){ STR.msg = err.message; }
+  strPaint();
+});
+setInterval(() => { if(S.view === "models" && !document.hidden) strRefresh(); }, 3000);
 
 /* ---- folder browser */
 const FS = {cb: null, path: ""};

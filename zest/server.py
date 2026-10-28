@@ -37,6 +37,7 @@ import modelscan   # noqa: E402
 import piup        # noqa: E402
 import skills      # noqa: E402
 import store       # noqa: E402
+import strata      # noqa: E402
 import util        # noqa: E402
 import websearch   # noqa: E402
 import zestup      # noqa: E402
@@ -241,6 +242,8 @@ class Handler(BaseHTTPRequestHandler):
             self.send_json(agent.state())
         elif p == "/ui/pi":
             self.send_json(piup.summary())
+        elif p == "/ui/strata":
+            self.send_json(strata.summary())
         elif p == "/ui/update":
             self.send_json(zestup.status())
         elif p == "/ui/skills":
@@ -298,7 +301,7 @@ class Handler(BaseHTTPRequestHandler):
             "/ui/cowork/job/apply": self.post_job_apply, "/ui/cowork/job/discard": self.post_job_discard,
             "/ui/cowork/folders": self.post_cowork_folders, "/ui/cowork/seen": self.post_cowork_seen,
             "/ui/cowork/allow/remove": self.post_allow_remove, "/ui/cowork/folder": self.post_cowork_folder, "/ui/skills/install": self.post_skills_install, "/ui/pi/check": self.post_pi_check,
-            "/ui/pi/update": self.post_pi_update, "/ui/update/all": self.post_update_all, "/ui/update/restart": self.post_update_restart, "/ui/pi/use": self.post_pi_use,
+            "/ui/pi/update": self.post_pi_update, "/ui/strata/start": self.post_strata_start, "/ui/strata/stop": self.post_strata_stop, "/ui/strata/install": self.post_strata_install, "/ui/update/all": self.post_update_all, "/ui/update/restart": self.post_update_restart, "/ui/pi/use": self.post_pi_use,
             "/ui/skills/remove": self.post_skills_remove, "/ui/skills/toggle": self.post_skills_toggle,
             "/ui/models/storage": self.post_storage, "/ui/models/imports": self.post_imports,
         }.get(p)
@@ -596,6 +599,22 @@ class Handler(BaseHTTPRequestHandler):
     def post_pi_update(self, body):
         self.send_json({"started": piup.start_update(), "update": dict(piup.UPD)})
 
+    def post_strata_start(self, body):
+        """Start a saved Strata preset. A big model and Lemonade's models compete for memory, so Lemonade's are freed first
+        when the page says so (`free_lemonade`)."""
+        preset = str(body.get("preset", "")).strip()
+        if body.get("free_lemonade"):
+            agent.unload_model("")
+        self.send_json({"started": strata.start(preset), **strata.summary()})
+
+    def post_strata_stop(self, body):
+        ok, msg = strata.stop()
+        agent.restart_idle()
+        self.send_json({"ok": ok, "error": msg}, 200 if ok else 409)
+
+    def post_strata_install(self, body):
+        self.send_json({"started": strata.install(), **strata.summary()})
+
     def post_update_all(self, body):
         self.send_json({"started": zestup.start_all(VERSION, current_mode()), **zestup.status()})
 
@@ -794,6 +813,7 @@ def main():
     agent.set_zest_port(a.port)
     agent.recover()
     piup.on_installed.append(agent.restart_idle)
+    strata.on_change.append(agent.restart_idle)
     threading.Thread(target=agent.reaper, daemon=True).start()
     s = store.load()
     if a.lemonade:

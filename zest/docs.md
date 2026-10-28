@@ -158,6 +158,18 @@ You can also add models from Hugging Face. **Get from Hugging Face** adds a mode
 - Memory (the context window): this is how much the AI can keep in mind at once. Zest sets a roomy 128k by default. Working in a folder can use a lot of it, because the AI reads files. The Details panel shows how full it is, with a **Make room** button that tidies the older part of the conversation. The context menu in the chat's model bar changes the size.
 - **Settings for one model** (the **Settings** button on its card) let you change which devices it uses, backend options and more. The defaults are fine for nearly everyone. Chat always loads a model with the context size in its model bar.
 
+## Bigger models with Strata (experimental)
+
+Some models are far too big for a graphics card. [Strata](https://github.com/Niko1221/Strata) is a separate free program that runs them anyway, by keeping part of the model in RAM and on the SSD. It is slower than a model that fits, and it needs a lot of RAM and disk.
+
+On the **Models** page, the **Bigger models with Strata** box does three things:
+
+- If Strata isn't installed, **Install Strata** downloads its installer, checks it against the checksum Strata publishes, and runs it.
+- Once Strata has a saved setup (made in a terminal with `strata launch`: pick a model, save it as a preset), the box lists your setups with a **Start** button. Starting one frees any model Lemonade has loaded, because they share the same memory.
+- While Strata is running, its model appears in Chat as `strata/<model name>`. **Stop** frees the memory again.
+
+Zest never restarts a Strata you started yourself. If one is already running, Zest shows it and lets you chat with it.
+
 ## Using your models in other apps
 
 **Advanced**, then **Server**, gives you an address and a key to paste into other tools (coding assistants, chat apps, anything that talks to an OpenAI-style server). The same page shows live what those apps are asking for. It only listens on this computer unless you turn on sharing.
