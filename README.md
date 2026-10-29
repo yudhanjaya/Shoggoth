@@ -9,7 +9,7 @@
 [![Open issues](https://img.shields.io/github/issues/yudhanjaya/Zest)](https://github.com/yudhanjaya/Zest/issues)
 [![Stars](https://img.shields.io/github/stars/yudhanjaya/Zest?style=social)](https://github.com/yudhanjaya/Zest)
 
-**Run AI models on your own computer, and put them to work, with one download.** Zest is a friendly interface for [Lemonade](https://lemonade-server.ai), the open-source engine that runs language models locally, and for [Pi](https://pi.dev), a coding-agent harness. The Zest AppImage **includes both**. Linux-only for now.
+**Run AI models on your own computer, and put them to work, with one download.** Zest is a friendly interface for open-source engines that run language models locally ([Lemonade](https://lemonade-server.ai) for small and medium models, [Strata](https://github.com/Niko1221/Strata) for very large ones) and for [Pi](https://pi.dev), a coding-agent harness. You never have to choose an engine: Zest picks and starts the right one for the model you choose. The Zest AppImage **includes Lemonade and Pi**, and sets up Strata the first time you want a large model. Linux-only for now.
 
 The idea is to provide a user interface that people who aren't necessarily steeped in technical know-how can still navigate to get open-weights models running on their own hardware, and then do real work with them: chat, draw diagrams, write documents, or let a model read and change the files in a folder while they watch. Download Zest, and you're good to go.
 
@@ -42,20 +42,18 @@ Zest runs on Linux. It needs no technical setup: you download one file and follo
    ./Zest-*-x86_64.AppImage
    ```
 
-3. **Follow the welcome steps.** Zest opens in your browser and walks you through four short steps in plain language, one screen at a time:
+3. **Let Zest get ready.** Zest opens in your browser on one screen called **Getting ready**. It asks one question and does the rest itself:
 
-   | Step | What happens |
-   | --- | --- |
-   | **Helper** | Zest starts its own private copy of Lemonade. Nothing to choose. |
-   | **Your computer** | Zest looks at your graphics card and downloads the program that suits it (CUDA for NVIDIA, Vulkan for most cards, the processor as a fallback). One button. |
-   | **A model** | Suggestions in three tiers. Quick is LFM2.5 8B A1B (fast, to the point, good with tools, happy on almost any computer). Balanced is Qwen3.6 35B A3B MTP or Gemma 4 26B A4B. Thorough is Qwen3.6 27B MTP or Gemma 4 31B MTP. Press Download on one. If a model is too big for your computer, **See every model** has smaller ones. |
-   | **Chat** | Press Start chatting. Type a question or a task. The model works in your home folder unless you choose another folder. |
+   - **Where should your models live?** Models are big, so Zest lists your disks with their free space, preselects the one with the most room, and one click accepts it. Zest keeps everything in one folder called Models there. If you already have models or an engine running, Zest finds them and skips the question.
+   - **Then it works down a short checklist by itself:** it looks at your computer, gets the part that runs AI (a small download, with progress), and fits it to your graphics card (CUDA for NVIDIA, Vulkan for most cards, the processor as a fallback).
+   - **Choose your first model.** One suggestion per size: **Small** (LFM2.5 8B A1B: fast, to the point, good with tools, happy on almost any computer), **Medium** (Qwen3.6 35B A3B MTP or Gemma 4 26B A4B, the general pick and the recommended one when it fits) and **Large** (for big computers; it takes a couple of minutes to start). Press **Get it** on one; the download shows its progress right there. **I already have models** brings in the ones you have.
+   - **Start chatting.** The button names the model it will use. The model works in your home folder unless you choose another folder.
 
-   ![The last welcome step: Zest is ready and shows which model it will use](docs/screenshots/welcome.png)
+   ![The Getting ready screen: the checklist is done and Zest suggests a first model per size](docs/screenshots/welcome.png)
 
-*The welcome steps finish with a button that opens the chat.*
+*The first-run screen ends with a button that opens the chat.*
 
-People who already have models, or run their own Lemonade, can skip to **Advanced > Setup guide**, which keeps the full set of choices: where models are stored, models you already have (LM Studio, Ollama, llama.cpp and others are found for you), and Lemonade updates.
+People who already have models, or run their own Lemonade or Strata, can skip the first-run screen: Zest finds what is already there. **Settings** holds the few choices (where models live, how long big models stay in memory, how much a chat remembers, updates), the Library's **Add models** brings in models you already have (LM Studio, Ollama, llama.cpp and others are found for you), and **Settings > My own server** connects a Lemonade you run yourself.
 
 ### What you need
 
@@ -68,16 +66,17 @@ If your system has no FUSE support, run `./Zest-*-x86_64.AppImage --appimage-ext
 
 ## Finding your way around
 
-The left-hand menu has six places. Everything a newcomer needs is in the first five; everything technical sits behind **Advanced**, and so does the choice of theme.
+The left-hand menu has seven places. Everything a newcomer needs is in the first six; everything technical sits behind **Advanced**, and so does the choice of theme.
 
 | Menu item | What it is for |
 | --- | --- |
 | **Chat** | Talk to a model, or choose a folder and let it work on your files. |
-| **Models** | See which models will run on your computer, download them, load and unload them. |
+| **Library** | Every model on your computer in one list, grouped Small, Medium and Large, with the ones that will run well recommended. Get new ones, add ones you have, change a model's settings. |
 | **Skills** | Switch skills on and off, and add more from a GitHub link. |
 | **Docs** | A plain-language guide to all of this, inside the app. |
-| **Help** | Short answers to common questions, and a button to repeat the welcome steps. |
-| **Advanced** | Server, Hardware, Engines, All settings, the Setup guide and Themes. You never need these just to chat. |
+| **Help** | Short answers to common questions, and a button to see the first-run screen again. |
+| **Settings** | Where your models live, how long large models stay in memory, how much a chat remembers, a link to tuning, and one button to update everything. |
+| **Advanced** | Server, Hardware, Engines, Engine settings, Tuning and Themes. You never need these just to chat. |
 
 ![The Docs page, with the menu on the left](docs/screenshots/docs.png)
 
@@ -107,45 +106,58 @@ Every chat works in a folder (your home folder unless you choose one) and can re
 
 ## Choosing and managing models
 
-Lemonade handles models; Zest gives you the choices.
-
-**Getting them**
-
-- **Where they live.** The default is the **Hugging Face cache** (`~/.cache/huggingface/hub`, or wherever `HF_HOME` points), so downloads are shared with other AI tools. Or choose **any folder** as the place new downloads go.
-- **Models you already have.** **Look on this computer** checks the usual places (LM Studio, llama.cpp's cache, GPT4All, Jan, Ollama, `~/models`, `~/Downloads`) and lists what it finds. Tick what you want, or add any folder yourself. **Nothing is copied**: Zest gives Lemonade a folder of links to your files, so there's no extra disk use and your originals stay where they are.
-- **Downloading.** Press **Get it** on any model, or **Get from Hugging Face** to paste a link to a GGUF model and choose a version. It runs in the background with a progress bar, and you can keep using Zest. Zest's suggestions are the models that fit your hardware's free memory.
-
-**Choosing the right one**
-
-- **Models**: shows you what models you can run and one sentence on whether it will run comfortably on your computer. The fit comes from the memory that is actually *free* on your graphics cards right now, so you can tell before loading whether another program is in the way. The default page, **My picks**, leads with the models I've tested and recommend. **More models** shows the rest of what Lemonade offers that will run well on your computer. A **Details** fold on each card holds the technical names and **Settings for this model**: context window, backend, devices and the llama-server options (flash attention, cache precision, expert layers in system RAM, GPU splitting, thinking, speculative decoding) as tick boxes and dropdowns with plain explanations, checked against your own `llama-server` before you load.
-- **Context window: 128k by default.** Chat always loads a model with a 128k (131,072-token) context window, a good threshold for usefulness in long chats and agentic work. The context menu in the chat's model bar changes it for every chat. A size saved under **Settings for this model** is used when other apps load the model through the Server page. A bigger window needs more graphics memory.
-- **How do I choose a model?** A button on Models (and an entry in Help) explains how to pick: will it fit, what is it for, how much it needs to remember. It then links to places to compare and learn about various models: Luke's Dev Lab, Artificial Analysis, LMArena, Aider, the Berkeley Function-Calling Leaderboard, SWE-bench, LiveBench, BenchLM, LLM Stats, r/LocalLLaMA and the Level1Techs forum.
-
-**Loading, unloading and adding**
-
-- **Load, unload and reload live in the chat.** A bar under the chat's title shows the model, the context size and whether the model is in memory, with **Load**, **Unload** and **Reload** next to them. Pick a different model there, or change the context size (128k by default; the choice is remembered) and a loaded model is reloaded at the new size. Sending a message to a model that isn't in memory loads it for you, at that size. The **Models** page is for downloading models and editing their settings: each downloaded card has **Chat with it** and **Settings**. **Delete from this computer** is under **Details**; it asks first, says how much disk it frees, unloads the model if it is running, and you can download it again later.
-- **Get from Hugging Face** takes a link or `org/name`, lists the GGUF versions in the repository with their sizes and a plain label (for example "A good balance"), marks which ones fit your computer, and hands the download to Lemonade.
-
-### The Models page
-
-The Models page is for downloading models and editing how they run. **My picks** leads with the models I've tested and recommend; **On this computer** lists what you have. The meter on each card shows what will fit in the memory that is free on your graphics cards right now; if another program is using it, Zest warns you and names it.
+The **Library** is one list of every model on your computer, whichever engine runs it, and the place you get new ones. You don't pick an engine: Zest runs small and medium models on [Lemonade](https://lemonade-server.ai) and large ones on [Strata](https://github.com/Niko1221/Strata), starts whichever the model you chose needs, and frees the memory of whatever else was running. The engine's name sits, small, at the foot of each card.
 
 ![Models on this computer](docs/screenshots/models.png)
 
+**Installed** lists what you have, grouped by size: **Small** (under 10 GB of graphics memory, ready in seconds), **Medium** (10 to 24 GB) and **Large** (for computers with about 64 GB of RAM; they take a couple of minutes to start). **Recommended for this computer** leads with the models I've tested and recommend, plus any Large model that fits. **Everything** is the full list, with a filter for pictures, speech and sound. Each card shows whether the model fits in the memory that is *free* on your graphics cards right now; if another program is using it, Zest says so and names it.
+
+**Getting models**
+
+- **Get it** downloads a model in the background with a progress bar, and you can keep using Zest. Downloads share one "Getting models" strip. A model that needs something extra, such as the first Large model, sets it up for you as part of the same step.
+- **Add models** brings in models from a Hugging Face link (a repository's GGUF versions are listed with their sizes and a plain label such as "A good balance"), from any folder, or from the usual places other programs keep them (LM Studio, llama.cpp's cache, GPT4All, Jan, Ollama, `~/models`, `~/Downloads`). **Nothing is copied.** Zest gives each engine a folder of links to your files, so there's no extra disk use and your originals stay where they are.
+- **Where they live.** You choose one folder, once (**Settings**, or the first-run screen). Zest keeps new models there, in a **Models** folder with a subfolder for each engine, and moves nothing you already have.
+- When an engine refuses a model (its architecture isn't supported yet, it needs a login, it can't be found, or memory or disk is short), Zest shows a plain-language message with the technical details tucked underneath.
+
+**Choosing the right one**
+
+- **How do I choose a model?** A button in the Library (and an entry in Help) explains how to pick: will it fit, what is it for, how much it needs to remember. It links to places to compare and learn about models: Luke's Dev Lab, Artificial Analysis, LMArena, Aider, the Berkeley Function-Calling Leaderboard, SWE-bench, LiveBench, BenchLM, LLM Stats, r/LocalLLaMA and the Level1Techs forum.
 - **Start here: LFM2.5 8B A1B.** Very fast, runs on almost anything, calls tools well, and keeps answers short.
 - **My general pick: Qwen3.6 35B A3B MTP.** Fast and competent at everyday tasks, research and agent work.
 - **If Qwen 3.6 won't run: GLM 4.7 Flash.** Fast, but it makes things up, so it comes with a warning.
-- **Bigger and slower, dense models: Gemma 4 31B MTP and Qwen3.8 27B.** Good answers, but slow. With a GPU and 64 GB of RAM, try Strata instead.
-- **For advanced users: Strata and Maya,** separate inference engines built for huge models, with a clear warning that they run outside Zest and Lemonade.
+- **Bigger and slower, dense models: Gemma 4 31B MTP and Qwen3.8 27B.** Good answers, but slow.
+- **Large:** with a GPU and 64 GB of RAM, the Large group runs models far bigger than your graphics card.
 - **Make any model better:** OpenChamber as the app I recommend, and obra/superpowers for skills.
 
-**Get from Hugging Face** is for experts. It lists the GGUF versions in a repository, with a plain label, the size, and whether each fits. When Lemonade or llama.cpp refuses a model (for example because its architecture isn't supported yet, it needs a login, it can't be found, or memory or disk is short), Zest shows a plain-language message with the technical details tucked underneath, and offers to open Engines when an update may help. **How do I choose a model?** explains what to look for and links to benchmark sites and communities.
+**Loading and unloading**
+
+- **Load, unload and reload live in the chat.** A bar under the chat's title shows the model, the context size and whether the model is in memory, with **Load**, **Unload** and **Reload**. Pick a different model there and Zest gets it ready and frees the previous one's memory. Sending a message to a model that isn't in memory loads it for you.
+- **Context window: 128k by default.** Chat loads a model with a 128k (131,072-token) context window, a good threshold for usefulness in long chats and agentic work. The context menu in the chat's model bar changes it, and **Settings** has a default for every chat. A bigger window needs more graphics memory.
+- **Delete from this computer** is under **Details** on a card. It asks first, says how much disk it frees, and unloads the model if it is running. You can download it again later.
 
 ### Settings for one model
 
 Press **Settings** on any downloaded card. Set the backend and devices, and tune `llama-server` with tick boxes and dropdowns instead of flags. Rows you have changed are highlighted, the exact arguments Zest will pass are shown, and anything your `llama-server` does not understand is flagged. **Save** keeps it; for a model that is in memory, press **Reload** in the chat's model bar to use the new settings.
 
 ![Model settings](docs/screenshots/model-options.png)
+
+### Large models (experimental)
+
+Some models are far too big for a graphics card. Zest runs them anyway, through [Strata](https://github.com/Niko1221/Strata), which keeps part of the model in RAM and on the SSD. They are slower than a model that fits, and need a lot of RAM and disk.
+
+- **You use them like any other model.** Zest suggests the best Large model that fits your RAM, graphics memory and free disk. **Get it** downloads it and, the first time, sets up Strata for you: it downloads Strata's installer, checks it against the checksum Strata publishes, runs it and saves a setup for the model with a 128k context window (DeepSeek V4.1 is fixed at 8K). Pick the model in Chat and a card shows it starting.
+- **Memory is shared.** Only one big model runs at a time. Picking one frees whatever else was running; picking a small one frees the big one, unless it is answering right now. Before a big model starts, Zest checks there is enough free memory and, if not, says how much is missing and which programs are using the most (with a **Start anyway** button).
+- **It frees itself** after 20 idle minutes (change it under **Memory** in **Settings**, or set 0 to keep it ready). The next chat starts it again.
+- **Existing Strata installs are found by themselves.** If you already have Strata installed, or a model running (started with `strata launch`, by the Strata app, or by hand on a local port), its models show up in the Library and in Chat with no setup. To use a Strata on another computer, open **Advanced > Engines**, then Strata's card, then **Connect to a Strata on another computer**. Zest never stops, restarts or updates a Strata you started yourself, and has a **Stop** button (with a confirmation) only when you ask for one. While one of yours is running, Zest won't start a second big model beside it.
+- **Updates.** Strata's engine and Control update from its own signed feed, and Strata test-starts a new engine before switching to it. **Check and update everything** in Settings includes Strata. If the Strata Zest started is running, Zest stops it, updates, and it starts again when a chat needs it. A bigger jump (a new Control series) is left for you to take with `strata update`.
+
+### Tuning
+
+**Advanced > Tuning** makes a model answer faster on your computer. It measures the model as it is, tries changes one at a time, and keeps only those that clearly help. Answers stay the same: tuning never changes how a model is compressed.
+
+- **Large models** are tuned by Strata's own tuner (`strata tune auto`), quick (about 20 minutes) or thorough (up to 2 hours), for chat or for coding with long prompts. The result is saved and used every time the model starts. **Switch off** keeps it but goes back to the standard settings.
+- **Small and medium models** that run on llama.cpp are tuned by Zest: batch sizes, flash attention, threads, which backend and which graphics cards. Each is tried by loading the model with it, and a change is kept only if it beats the measuring noise (and at least 3%). **Undo** puts the old settings back.
+- Tuning needs the graphics cards to itself, so Zest shows the plan first (time, and what it will stop) and waits for your go-ahead. It stops what Zest started and waits while a chat is answering. It will not start while a Strata you started yourself is running. You can cancel at any time and nothing is changed.
 
 ## Skills
 
@@ -172,23 +184,23 @@ Other apps never talk to Zest's own page. Zest opens a second, much smaller door
 
 ## Keeping everything up to date
 
-![The Setup guide](docs/screenshots/setup.png)
+![Settings](docs/screenshots/setup.png)
 
-*Advanced > Setup guide, where Lemonade and Pi are updated, models are brought in and backends are added.*
+*Settings, where updates, the models folder and a few other choices live.*
 
-**Check and update everything** at the top of the Setup guide looks for newer versions of Zest, Lemonade and Pi in one go, verifies each download against its published checksum and installs what it finds. A new Zest is saved as a new AppImage next to the current one (which is kept), and **Restart Zest to finish** switches over to it. The sections below cover Lemonade and Pi on their own.
+**Check and update everything** on the Settings page looks for newer versions of Zest, Lemonade, Pi and (if you use it) Strata in one go, verifies each download against its published checksum and installs what it finds. A new Zest is saved as a new AppImage next to the current one (which is kept), and **Restart Zest to finish** switches over to it. The sections below cover Lemonade and Pi on their own, and where each now lives.
 
 ### Lemonade
 
 The AppImage ships with a recent Lemonade, but Lemonade moves quickly, so Zest can update its own copy without you downloading a new Zest.
 
-- Press **Check for Lemonade updates** on the Setup guide page (Advanced > Setup guide). If a newer stable release exists, one button downloads it, **checks it against the checksum GitHub publishes for that file**, installs it and offers to restart Lemonade onto it.
+- Press **Check for updates** on Lemonade's card under **Advanced > Engines**. If a newer stable release exists, one button downloads it, **checks it against the checksum GitHub publishes for that file**, installs it and offers to restart Lemonade onto it.
 - Zest can also look for an update when it opens and put a dot on **Advanced** if there is one. You can switch that off with the checkbox.
 - Updates are kept in your own data folder, because the AppImage itself is read-only. The version that came with Zest is never touched, so **"Go back to the version that came with Zest"** is always one click away.
 
 ### Pi, the agent helper
 
-Pi is the part that lets a model read files, make edits and run steps. It is updated separately, from **Advanced > Setup guide**, at the bottom, under **The agent helper**.
+Pi is the part that lets a model read files, make edits and run steps. It is updated separately, from **Advanced > Engines**, under **The agent helper** (and **Check and update everything** includes it).
 
 - Press **Check for Pi updates**. If a newer release exists, one button downloads it from the npm registry, **checks it against the checksum npm publishes**, unpacks it, and starts it once to make sure it works with Zest. Only a Pi that passes is offered; otherwise nothing is installed.
 - Your next message uses the new Pi. A task that is working right now finishes on the old one.
@@ -200,14 +212,14 @@ Pi is the part that lets a model read files, make edits and run steps. It is upd
 
 Everything under **Advanced** is optional.
 
-![The Advanced menu: Server, Hardware, Engines, All settings, Setup guide and Themes](docs/screenshots/advanced.png)
+![The Advanced menu: Server, Hardware, Engines, Engine settings, Tuning and Themes](docs/screenshots/advanced.png)
 
 - **Advanced > Server** lets other apps use your models (see below), with a live picture of what they ask for. The address and key to paste into those apps are at the top, and the Lemonade **activity log** (filter and follow mode) sits at the bottom of the same page.
 - **Advanced > Hardware** shows every device llama.cpp can see as a live VRAM tank with utilisation, temperature, power, a short history, and which processes are holding its memory. Pick which devices to use and put them in order, then apply.
-- **Advanced > Engines** explains what an engine is (the program that runs one kind of model) and what each backend means (CUDA, ROCm, Vulkan, CPU), then lists every Lemonade engine (llama.cpp, Whisper.cpp, StableDiffusion.cpp and more) with the backends each supports (CUDA, Vulkan, ROCm, CPU). Choose one per engine, or install and update missing ones.
-- **Advanced > All settings** edits everything in Lemonade's own configuration, searchable, with a reset-to-default for every value.
+- **Advanced > Engines** has one card for each engine Zest can use (Lemonade for small and medium models, Strata for large ones, and any you add): what it is, its version, whether it is running and who started it, **Check for updates** and **Update**, and **Stop it** for one Zest started (never one you started yourself). Inside each card, collapsed, are the details specific to it: for Lemonade, every kind of model it runs (llama.cpp, Whisper.cpp, StableDiffusion.cpp and more) with the hardware each can use (CUDA, Vulkan, ROCm, CPU), which you can choose per kind or install; for Strata, your saved setups, connections to a Strata on another computer, and installing it. Below the cards, **The agent helper** (Pi) and **Add an engine**: put a folder with a `provider.yaml` file in the engines folder shown there and press Reload. Zest asks once before an engine you added runs a program, and lists any folder it couldn't load with the line to fix. [docs/ENGINES.md](docs/ENGINES.md) is the guide to writing one ("Add an engine in ten minutes"), with `Zest.AppImage providers new` and `providers check` to start and test it.
+- **Advanced > Engine settings** edits everything in Lemonade's own configuration, searchable, with a reset-to-default for every value.
 - **Advanced > Themes** changes how Zest looks (see below).
-- **Advanced > Setup guide** is the full version of the welcome steps. That is where you update Lemonade and Pi, add a backend, bring in models you already have, or change where models live. **Help > Run the welcome steps again** repeats the short tour.
+- **Settings** is where you change where models live, how long large models stay in memory and how much a chat remembers, and update everything. Its **My own server, and the first-run screen** section is where you check Lemonade's version or connect to one you run yourself; **Advanced > Engines** has backends, Strata and the agent helper. **Help > Run the welcome steps again** shows the first-run screen again.
 
 ![Advanced > Hardware: each graphics card as a live VRAM tank, with utilisation, temperature and power](docs/screenshots/hardware.png)
 
@@ -215,7 +227,7 @@ Everything under **Advanced** is optional.
 
 ### Using a Lemonade you already run
 
-Already have Lemonade Server installed (for example as a system service)? On Advanced > Setup guide choose **A Lemonade I already run**, enter its address and, if needed, its API key. Zest will use it instead of starting its own, and won't touch the built-in copy. Switching back later is one click. Starting Zest with `--lemonade HOST:PORT` does the same without saving anything.
+Already have Lemonade Server installed (for example as a system service)? Under **Settings > My own server, and the first-run screen** choose **A Lemonade I already run**, enter its address and, if needed, its API key. Zest will use it instead of starting its own, and won't touch the built-in copy. Switching back later is one click. Starting Zest with `--lemonade HOST:PORT` does the same without saving anything.
 
 A few things work differently with a Lemonade you run yourself: Zest can't update it (use your package manager), and if it runs as a system service it may not be allowed to read model files in your home folder.
 
@@ -245,11 +257,12 @@ Zest looks the same everywhere you use it, but you can change its finish. Open *
 | What | Where |
 | --- | --- |
 | Zest's settings, including the built-in Lemonade's API key and the key for other apps (file mode `600`) | `~/.config/zest/settings.json` |
+| The secret that lets a browser into Zest's own page (file mode `600`) | `~/.config/zest/ui-token` |
 | Lemonade updates you've downloaded | `~/.local/share/zest/lemonade/<version>/` |
 | The built-in Lemonade's own config and the backends it installs | `~/.local/share/zest/lemonade-data/` |
 | Its log (shown on the Logs page) | `~/.local/share/zest/lemond.log` |
-| Links to models you chose to bring in | `~/.local/share/zest/imported-models/` |
-| Models you download | the Hugging Face cache, or the folder you chose |
+| Links to models you chose to bring in, and each engine's view of your Models folder | `~/.local/share/zest/` (`imported-models/`, `views/`) |
+| Models you download | the folder you chose (a **Models** folder with a subfolder for each engine), or the Hugging Face cache if you kept that |
 | Skills you added and which are switched on | `~/.local/share/zest/skills/` |
 | Newer versions of Pi that you downloaded | `~/.local/share/zest/pi/<version>/` |
 | Chat conversations, jobs, their transcripts, the folders Zest has worked in (and the commands you always allow there), work copies of folders awaiting review, and Pi's configuration (rewritten at each start) | `~/.local/share/zest/cowork/` |
@@ -266,8 +279,8 @@ Zest and Lemonade do contact the following services:
 - **html.duckduckgo.com, api.search.brave.com or api.tavily.com**: only when you allow the model to search the web, whichever provider you chose, with the words of that search.
 - **codeload.github.com**: only when you paste a link under Skills, to download that repository's skills.
 - **registry.npmjs.org**: looking for and downloading Pi updates (the same automatic-check switch covers it).
-- **api.github.com and github.com**: looking for and downloading Lemonade updates (the automatic check can be switched off), and Lemonade downloading the backends you install.
-- **Hugging Face**: Lemonade downloading the models you choose, and Zest reading a repository's public file list when you use **Get from Hugging Face**. Gated models, which need a login, are not supported yet.
+- **api.github.com and github.com**: looking for and downloading Zest and Lemonade updates (the automatic check can be switched off), Lemonade downloading the backends you install, and, if you use large models, Strata's installer and its checksum list. Strata checks for its own engine updates from its own feed.
+- **Hugging Face**: your engines downloading the models you choose, and Zest reading a repository's public file list when you add one by link. Gated models, which need a login, are not supported yet.
 - **Benchmark and community sites**: the links in **How do I choose a model?** open in your browser only when you click them. Zest never contacts those sites itself.
 
 ## For developers
@@ -286,7 +299,7 @@ Diagrams in Chat need Mermaid: run `./packaging/fetch-vendor.sh` once (a 26 MB d
 
 Chat's agent features need [Pi](https://pi.dev) (Node 22.19 or newer): `npm install -g @earendil-works/pi-coding-agent`, or point `ZEST_PI` at a `pi` binary. The AppImage already includes both.
 
-Then open <http://127.0.0.1:13306> (it opens automatically unless you pass `--no-browser`). A source checkout doesn't include Lemonade: on the welcome screen or Advanced > Setup guide, **Download Lemonade** fetches it (about 7 MB), or you can connect to one you already run.
+Then open <http://127.0.0.1:13306> (it opens automatically unless you pass `--no-browser`). A source checkout doesn't include Lemonade: on the first-run screen, **Download Lemonade** fetches it (about 7 MB), or you can connect to one you already run.
 
 | Flag | Environment variable | Default | Meaning |
 | --- | --- | --- | --- |
@@ -297,7 +310,7 @@ Then open <http://127.0.0.1:13306> (it opens automatically unless you pass `--no
 | `--app` | | | Quit automatically once the tab is closed (the AppImage does this) |
 | (none) | `ZEST_LEMONADE_DIR` | none | A folder containing a `lemond` to use as the built-in Lemonade |
 
-> **Security.** Zest's own page has no login and can change Lemonade's configuration, so it listens on `127.0.0.1` only by default and refuses requests whose `Host` header isn't this computer (a defence against DNS-rebinding). Its built-in Lemonade is private: its own port, protected by a random API key that only Zest knows. Other apps use the separate key-protected door described above, never the page itself. Only use `--host 0.0.0.0` on a network you trust.
+> **Security.** Zest's own page can change settings, start engines and run commands in a folder, so it is not open to everything that can reach the port. Zest keeps a secret in `~/.config/zest/ui-token` (mode 600). The window Zest opens carries a one-time code (good for two minutes, once) that the server swaps for an HttpOnly, SameSite=Strict cookie; every other request is refused with 401, and a browser that hasn't been let in sees a page saying to start Zest again. A script can send the secret as `Authorization: Bearer <secret>`; `ZEST_AUTH=off` switches this off for a machine only you use. Running Zest a second time asks the running one for a fresh code. It also listens on `127.0.0.1` only by default and refuses requests whose `Host` header isn't this computer (a defence against DNS-rebinding). Its built-in Lemonade is private: its own port, protected by a random API key that only Zest knows. Other apps use the separate key-protected door described above, never the page itself. Only use `--host 0.0.0.0` on a network you trust.
 
 ### How it works
 
@@ -319,6 +332,10 @@ Zest is a small Python program with no dependencies (`zest/server.py` plus a few
 - **Process names are shown on the Hardware page.** They come from `nvidia-smi` or the amdgpu driver (name only, not the full path) and are only displayed in your own browser.
 - **Devices appear once a backend is installed**, because Zest asks llama.cpp itself for the list rather than guessing.
 - Tested on Linux with NVIDIA GPUs. The Vulkan and ROCm paths follow Lemonade's own backend data but haven't been tried on real hardware yet. Reports welcome.
+
+### Adding an engine
+
+An engine is one folder with one `provider.yaml` (plus a `provider.py` only when YAML can't say it). `zest/providers/_template/` is the annotated starting point, `zest/providers/_examples/llama-server/` is a complete YAML-only engine around a plain `llama-server` (tested end to end with a real one), and [docs/ENGINES.md](docs/ENGINES.md) explains every setting. `python3 zest/server.py providers check <folder>` validates a folder the way Zest itself will read it, `providers new <id> [--from llama-server]` and `providers list` do what they say, and `providers doctor` asks the installed Lemonade and Strata the questions Zest asks and says if their answers have changed (run it before a release). Nothing in Zest's own code needs to change to add one.
 
 ### Building the AppImage
 

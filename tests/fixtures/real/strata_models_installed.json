@@ -1,0 +1,42 @@
+{
+ "schema_version": 1,
+ "ok": true,
+ "scope": "local_run_configs",
+ "install_dir": "/home/user/.local/share/strata/install",
+ "install_dir_source": "remembered",
+ "install_dirs": [
+  "/home/user/.local/share/strata/install"
+ ],
+ "models": [
+  {
+   "id": "deepseek-v4.1-flash-ist-das-2.00bpw",
+   "name": "deepseek-v4.1-flash",
+   "source_config": "/home/user/.local/share/strata/install/strata-deepseek-v4.1-flash-ist-das-2.00bpw.json",
+   "source_sha256": "66057accf91fd1ed99ae4a641959124523e0f9f00270b6a9fd1150554945e947",
+   "backend": null,
+   "context_tokens": 131072,
+   "component_status": "present",
+   "issue_codes": [],
+   "missing": [],
+   "execution_compatibility": "unverified",
+   "install_dir": "/home/user/.local/share/strata/install",
+   "install_dir_source": "remembered"
+  },
+  {
+   "id": "iq3_s",
+   "name": "qwen3.8-flash-next-iq3_s",
+   "source_config": "/home/user/.local/share/strata/install/strata-iq3_s.json",
+   "source_sha256": "df03befa691f513184a4746c1e6900783c26fed5e234be2a73e99a3eb64f74f5",
+   "backend": null,
+   "context_tokens": 131072,
+   "component_status": "present",
+   "issue_codes": [],
+   "missing": [],
+   "execution_compatibility": "unverified",
+   "install_dir": "/home/user/.local/share/strata/install",
+   "install_dir_source": "remembered"
+  }
+ ],
+ "model_count": 2,
+ "discovery_limit": 128
+}

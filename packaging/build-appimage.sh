@@ -62,7 +62,7 @@ find "$APPDIR" -name __pycache__ -prune -exec rm -rf {} +
 ./packaging/fetch-vendor.sh
 cp zest/*.py zest/index.html zest/docs.md "$APPDIR/usr/share/zest/"
 cp zest/pi/* "$APPDIR/usr/share/zest/pi/"
-cp -r zest/skills zest/vendor "$APPDIR/usr/share/zest/"
+cp -r zest/skills zest/vendor zest/_vendor zest/providers "$APPDIR/usr/share/zest/"
 # the sandboxed catalog test runs as another user: everything we ship must be world-readable
 chmod -R a+rX "$APPDIR/usr/share/zest"
 

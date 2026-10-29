@@ -1,0 +1,1 @@
+strata 0.2.7 (build 0.1.53; python 3.12.15 at /home/user/.local/share/strata/components/control/0.1.53/python/bin/python3.12)

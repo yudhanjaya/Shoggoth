@@ -8,9 +8,7 @@ import hashlib
 import json
 import os
 import re
-import shutil
 import subprocess
-import sys
 import threading
 import time
 import urllib.error
@@ -19,6 +17,7 @@ import urllib.request
 import engine
 import piup
 import store
+import strata
 
 REPO = "yudhanjaya/Zest"
 UPD = {"state": "idle", "bytes": 0, "total": 0, "version": None, "error": None, "path": None}
@@ -155,7 +154,8 @@ def _wait(upd, active):
 def _run_all(version, mode):
     settings = store.load()
     ALL.update(state="working", items={}, error=None)
-    for n in ("zest", "lemonade", "pi"):
+    names = ["zest", "lemonade", "pi"] + (["strata"] if strata.binary() else [])
+    for n in names:
         _item(n, state="checking", text="Looking for updates…")
     jobs = []
     # Zest
@@ -198,12 +198,31 @@ def _run_all(version, mode):
             jobs.append(("pi", piup.start_update, piup.UPD, ("downloading", "installing")))
     except RuntimeError as e:
         _item("pi", state="error", text=str(e))
+    # Strata (only if it is installed; adopted installs count: updating is Strata's own signed feed, and a Strata you
+    # started yourself is left alone and reported as waiting)
+    if strata.binary():
+        try:
+            c = strata.update_check()
+            if c["major"]:
+                _item("strata", state="manual", text="Strata has a bigger update (Control %s). Run `strata update` in a terminal when you are ready." % c["control"]["offered"])
+            elif not c["available"]:
+                _item("strata", state="current", text="Strata is up to date (engine %s)." % c["engine"]["installed"])
+            elif c["deferred"]:
+                _item("strata", state="manual", text="Strata %s is available, but a model you started is running. Stop it and Zest will update next time." % (c["engine"]["offered"] or c["control"]["offered"]))
+            else:
+                _item("strata", state="working", text="Updating Strata…")
+                jobs.append(("strata", strata.start_update, strata.SUPD, ("working",)))
+        except RuntimeError as e:
+            _item("strata", state="error", text=str(e))
     for name, start, upd, active in jobs:
         start()
     for name, start, upd, active in jobs:
         _wait(upd, active)
         if upd["state"] == "error":
             _item(name, state="error", text=upd.get("error") or "The update failed.")
+        elif name == "strata":
+            _item(name, state="updated" if upd["state"] == "done" else "current", text=(upd["text"] or "Strata is up to date.") +
+                  (" It starts again by itself when a chat needs it." if upd["state"] == "done" and upd.get("stopped") else ""))
         else:
             _item(name, state="updated", text={"zest": "Zest %s is downloaded. Restart to start using it.",
                                               "lemonade": "Lemonade %s is installed. It starts the next time Lemonade restarts.",

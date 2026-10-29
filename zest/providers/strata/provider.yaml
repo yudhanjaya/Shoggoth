@@ -1,0 +1,56 @@
+# Strata: the big-model engine. Runs models far larger than a graphics card by splitting them across GPU, RAM and SSD.
+id: strata
+name: Strata
+summary: Runs very large models by splitting them across the graphics card, RAM and the SSD.
+tier: large
+api_version: 1
+
+detect:
+  binaries: [$ZEST_STRATA, strata, ~/.local/bin/strata]
+  ports: 8080-8089
+  health: {path: /health, expect: {service: strata}}
+
+install:
+  method: script
+  url: https://github.com/Niko1221/Strata/releases/latest/download/install.sh
+  checksum: {url: https://github.com/Niko1221/Strata/releases/latest/download/SHA256SUMS.txt, name: install.sh}
+
+update:
+  check:
+    command: ["{bin}", update, --check, --output, json]
+    parse: {available: "$.engine.status", serving: "$.serving[*].profile"}
+  apply: {command: ["{bin}", update, --output, json], needs_stopped: true}
+  series_guard: "0.2"
+
+run:
+  mode: managed
+  start: ["{bin}", launch, --preset, "{preset}", --yes, --no-tui]
+  stop: ["{bin}", launch, --stop]
+  ready: {path: /health, expect: {loaded: true}, timeout: 1800}
+  port_range: 8080-8089
+
+endpoint:
+  base_url: "http://127.0.0.1:{port}/v1"
+  models: {path: /v1/models, id: "$.data[*].id", context: "$.data[*].meta.n_ctx"}
+
+models:
+  formats: [gguf]
+  architectures: [qwen4exp, deepseek41]
+  data_dir: "{library}/strata"
+  download: {mode: provider}      # downloads happen inside `strata launch`
+  setup:
+    command: ["{bin}", launch, --family, "{family}", --model, "{model}", --context, "{context}", --save-preset, "{name}", --yes, --no-tui]
+    plan: ["{bin}", launch, --plan, --family, "{family}", --model, "{model}", --output, json]
+
+memory:
+  group: gpu
+  exclusive: true
+  idle_stop_minutes: 20
+  start_estimate: {seconds: 120}
+
+capabilities:
+  context: fixed
+  multi_model: false
+  tuning:
+    run: ["{bin}", tune, auto, "{profile}", --output, json]
+    status_file: true

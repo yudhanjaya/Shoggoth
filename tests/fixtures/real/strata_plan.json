@@ -1,0 +1,64 @@
+{
+ "schema_version": 1,
+ "ok": true,
+ "plan": {
+  "profile": "launch-iq3_s-128k",
+  "settings": {
+   "schema": "strata.launch/1",
+   "name": "IQ3_S 128K",
+   "family": "qwen",
+   "model": "IQ3_S",
+   "model_path": null,
+   "dsv41_package": null,
+   "data_dir": null,
+   "gpus": null,
+   "gpu_roles": null,
+   "context": 131072,
+   "kv": null,
+   "vision": "cpu",
+   "parallel": null,
+   "speed": null,
+   "drafting": null,
+   "mtp": null,
+   "tune": "skip",
+   "tune_allow_small": false,
+   "access": "local",
+   "port": 8080,
+   "api_key": null,
+   "no_key": false,
+   "extra": {},
+   "tuned_preset": null,
+   "tuned_at": null,
+   "last_used": null,
+   "created": null
+  },
+  "warnings": [],
+  "flags": "strata launch --model iq3_s --context 128k --vision cpu --tune skip --access local --port 8080",
+  "steps": [
+   "engine",
+   "model",
+   "config",
+   "tune",
+   "start",
+   "access"
+  ],
+  "model": {
+   "title": "Qwen3.8-Flash-Next IQ3_S",
+   "family": "qwen",
+   "model": "IQ3_S",
+   "model_gb": 83.6,
+   "own_files": false,
+   "folder": null
+  },
+  "download": {
+   "gb": 0,
+   "parts": [],
+   "engine_missing": false,
+   "engine_usable": true,
+   "own_files": false,
+   "text": "Nothing to download: the model is already on this computer."
+  },
+  "drafting": "Drafting: MTP",
+  "speed": ""
+ }
+}

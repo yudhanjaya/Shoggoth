@@ -5,7 +5,6 @@ import shutil
 
 import engine
 import lem
-import store
 from util import cached, run
 
 # ---------------------------------------------------------------- GPUs
@@ -379,3 +378,28 @@ def backends():
         })
     out.sort(key=lambda r: r["order"])
     return out
+
+
+# ---------------------------------------------------------------- how big this computer is
+def _ram_gb():
+    try:
+        with open("/proc/meminfo") as f:
+            return int(re.search(r"MemTotal:\s+(\d+)", f.read()).group(1)) / 1048576
+    except (OSError, AttributeError, ValueError):
+        return 0.0
+
+
+def machine():
+    """RAM, graphics memory and free disk, the way the fit rule counts them. Memory the GPU shares with the system counts once."""
+    ram = _ram_gb()
+    gpus = []
+    for g in all_gpus():
+        gb = (g.get("mem_total_mb") or 0) / 1024
+        if gb:
+            gpus.append({"name": g.get("name"), "gb": gb, "vendor": g.get("vendor")})
+    shared = lambda g: g["vendor"] != "NVIDIA" and g["gb"] >= ram * 0.4          # an APU's "VRAM" is system memory
+    vram = sum(g["gb"] for g in gpus if not shared(g))
+    where = os.path.expanduser("~/.local/share")
+    os.makedirs(where, exist_ok=True)
+    return {"ram_gb": round(ram, 1), "vram_gb": round(vram, 1), "best_gpu_gb": round(max([g["gb"] for g in gpus if not shared(g)] or [0]), 1),
+            "gpus": [g["name"] for g in gpus], "free_disk_gb": round(shutil.disk_usage(where).free / 1e9, 1)}

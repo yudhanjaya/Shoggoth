@@ -32,11 +32,18 @@ import gateway     # noqa: E402
 import hardware    # noqa: E402
 import hf          # noqa: E402
 import lem         # noqa: E402
+import library     # noqa: E402
 import llamaargs   # noqa: E402
 import modelscan   # noqa: E402
 import piup        # noqa: E402
+import provbase    # noqa: E402
+import registry    # noqa: E402
+import router      # noqa: E402
 import skills      # noqa: E402
 import store       # noqa: E402
+import strata      # noqa: E402
+import tuning      # noqa: E402
+import uiauth      # noqa: E402
 import util        # noqa: E402
 import websearch   # noqa: E402
 import zestup      # noqa: E402
@@ -175,6 +182,29 @@ class Handler(BaseHTTPRequestHandler):
         host = (self.headers.get("Host") or "").rsplit(":", 1)[0].strip("[]").lower()
         return host in ("localhost", "127.0.0.1", "::1")
 
+    def authed(self):
+        return uiauth.allowed(self.server.server_address[1], self.headers.get("Cookie"), self.headers.get("Authorization"))
+
+    def _refuse(self, page=False):
+        if page:
+            self.send_response(401)
+            self.send_header("Content-Type", "text/html; charset=utf-8")
+            self.send_header("Content-Length", str(len(uiauth.LOCKED_PAGE)))
+            self.send_header("Cache-Control", "no-store")
+            self.end_headers()
+            self.wfile.write(uiauth.LOCKED_PAGE)
+        else:
+            self.send_json({"error": "not signed in: open Zest from its own window"}, 401)
+
+    def _let_in(self):
+        """The window Zest opened came with a one-time code: swap it for the cookie and show the page on a clean address."""
+        self.send_response(302)
+        self.send_header("Set-Cookie", uiauth.set_cookie(self.server.server_address[1]))
+        self.send_header("Location", "/")
+        self.send_header("Cache-Control", "no-store")
+        self.send_header("Content-Length", "0")
+        self.end_headers()
+
     def _info(self):
         return cached("info", 4, get_info)
 
@@ -184,6 +214,12 @@ class Handler(BaseHTTPRequestHandler):
             return self.send_json({"error": "unexpected Host header"}, 403)
         u = urlparse(self.path)
         p = u.path
+        if p == "/ui/ping":                                       # the version only: how a second launch finds this Zest
+            return self.send_json({"zest": VERSION})
+        if p == "/" and uiauth.enabled() and uiauth.redeem(parse_qs(u.query).get("c", [""])[0]):
+            return self._let_in()
+        if not self.authed():
+            return self._refuse(page=p in ("/", "/index.html"))
         if p in ("/", "/index.html"):
             with open(os.path.join(HERE, "index.html"), "rb") as f:
                 body = f.read()
@@ -241,6 +277,28 @@ class Handler(BaseHTTPRequestHandler):
             self.send_json(agent.state())
         elif p == "/ui/pi":
             self.send_json(piup.summary())
+        elif p == "/ui/picker":
+            self.send_json(library.picker(0 if parse_qs(u.query).get("fresh") else 8))
+        elif p == "/ui/library":
+            self.send_json(self.library_summary())
+        elif p == "/ui/disk":
+            self.send_json(library.models_disk())
+        elif p == "/ui/library/places":
+            self.send_json({"places": library.places(), "root": library.root()})
+        elif p == "/ui/router":
+            self.send_json({"state": router.state(), "models": router.chat_models()})
+        elif p == "/ui/providers":
+            self.send_json(registry.default().summary())
+        elif p == "/ui/tuning":
+            self.send_json({"targets": tuning.targets(), "job": tuning.status()})
+        elif p == "/ui/tuning/job":
+            self.send_json(tuning.status())
+        elif p == "/ui/strata/update":
+            self.get_strata_update(parse_qs(u.query))
+        elif p == "/ui/strata/recommend":
+            self.send_json(strata.recommend())
+        elif p == "/ui/strata":
+            self.send_json(strata.summary())
         elif p == "/ui/update":
             self.send_json(zestup.status())
         elif p == "/ui/skills":
@@ -275,9 +333,13 @@ class Handler(BaseHTTPRequestHandler):
         if not self.host_ok():
             return self.send_json({"error": "unexpected Host header"}, 403)
         p = urlparse(self.path).path
-        if p == "/ui/ping":
+        if not self.authed():
+            return self._refuse()
+        if p == "/ui/ping":                                       # only the real page keeps Zest open
             _last_ping["t"] = time.time()
             return self.send_json({"zest": VERSION})
+        if p == "/ui/code":                                       # a second launch asks the running Zest for a way in (it holds the secret)
+            return self.send_json({"code": uiauth.new_code()})
         if not self.same_origin():
             return self.send_json({"error": "cross-origin request refused"}, 403)
         if p.startswith("/api/"):
@@ -298,7 +360,7 @@ class Handler(BaseHTTPRequestHandler):
             "/ui/cowork/job/apply": self.post_job_apply, "/ui/cowork/job/discard": self.post_job_discard,
             "/ui/cowork/folders": self.post_cowork_folders, "/ui/cowork/seen": self.post_cowork_seen,
             "/ui/cowork/allow/remove": self.post_allow_remove, "/ui/cowork/folder": self.post_cowork_folder, "/ui/skills/install": self.post_skills_install, "/ui/pi/check": self.post_pi_check,
-            "/ui/pi/update": self.post_pi_update, "/ui/update/all": self.post_update_all, "/ui/update/restart": self.post_update_restart, "/ui/pi/use": self.post_pi_use,
+            "/ui/pi/update": self.post_pi_update, "/ui/strata/start": self.post_strata_start, "/ui/strata/stop": self.post_strata_stop, "/ui/library/root": self.post_library_root, "/ui/library/folder": self.post_library_folder, "/ui/providers/approve": self.post_provider_approve, "/ui/providers/check": self.post_provider_check, "/ui/providers/update": self.post_provider_update, "/ui/providers/stop": self.post_provider_stop, "/ui/providers/reload": self.post_provider_reload, "/ui/tuning/plan": self.post_tuning_plan, "/ui/tuning/run": self.post_tuning_run, "/ui/tuning/cancel": self.post_tuning_cancel, "/ui/tuning/action": self.post_tuning_action, "/ui/strata/setup": self.post_strata_setup, "/ui/strata/update": self.post_strata_update, "/ui/strata/idle": self.post_strata_idle, "/ui/strata/connect": self.post_strata_connect, "/ui/strata/forget": self.post_strata_forget, "/ui/strata/key": self.post_strata_key, "/ui/strata/install": self.post_strata_install, "/ui/update/all": self.post_update_all, "/ui/update/restart": self.post_update_restart, "/ui/pi/use": self.post_pi_use,
             "/ui/skills/remove": self.post_skills_remove, "/ui/skills/toggle": self.post_skills_toggle,
             "/ui/models/storage": self.post_storage, "/ui/models/imports": self.post_imports,
         }.get(p)
@@ -308,6 +370,14 @@ class Handler(BaseHTTPRequestHandler):
             handler(self.read_json())
         except ValueError as e:
             self.send_json({"ok": False, "error": str(e)}, 400)
+        except (BrokenPipeError, ConnectionResetError):
+            raise
+        except Exception as e:  # noqa: BLE001 - a bad request must never drop the connection or leave the page waiting
+            sys.stderr.write("Zest: %s failed: %r\n" % (p, e))
+            try:
+                self.send_json({"ok": False, "error": "Something went wrong with that request. If it keeps happening, restart Zest."}, 500)
+            except OSError:
+                pass
 
     do_DELETE = do_POST
 
@@ -444,7 +514,9 @@ class Handler(BaseHTTPRequestHandler):
     def post_imports(self, body):
         s = store.load()
         chosen, seen = [], set()
-        for src in body.get("sources", []):
+        for src in body.get("sources") if isinstance(body.get("sources"), list) else []:
+            if not isinstance(src, dict):
+                continue
             kind, path = src.get("kind"), str(src.get("path", ""))
             if kind == "ollama":
                 if not os.path.isdir(path):
@@ -458,13 +530,19 @@ class Handler(BaseHTTPRequestHandler):
                 chosen.append(item)
         before = lem.get("/v1/models?show_all=true").get("data", [])
         s["models"]["imports"] = chosen
-        linked = modelscan.sync_farm(chosen)
-        ok, msg = (lem.set_config({"extra_models_dir": modelscan.farm_dir() if linked else ""})
-                   if lem.healthy() else (True, ""))
-        store.save(s)
+        if library.root():
+            store.save(s)
+            linked = len(chosen)
+            ok, msg = library.apply_to_lemonade() if (engine.running() and lem.healthy()) else (True, "")     # the library's view shows Lemonade what it can run
+        else:
+            linked = modelscan.sync_farm(chosen, accept=library.lemonade_accepts)       # Lemonade is only shown files it can run
+            ok, msg = (lem.set_config({"extra_models_dir": modelscan.farm_dir() if linked else ""})
+                       if lem.healthy() else (True, ""))
+            store.save(s)
         time.sleep(1.5)                       # let Lemonade rescan
         after = lem.get("/v1/models?show_all=true").get("data", [])
         invalidate()
+        library._pk["v"] = None
         self.send_json({"ok": ok, "error": msg, "linked": linked, "listed_before": len(before), "listed_after": len(after),
                         "models": setup_state()["models"]})
 
@@ -595,6 +673,154 @@ class Handler(BaseHTTPRequestHandler):
 
     def post_pi_update(self, body):
         self.send_json({"started": piup.start_update(), "update": dict(piup.UPD)})
+
+    def post_strata_start(self, body):
+        """Start a saved Strata preset. A big model and Lemonade's models compete for memory, so Lemonade's are freed first
+        when the page says so (`free_lemonade`)."""
+        preset = str(body.get("preset", "")).strip()
+        self.send_json({"started": strata.start(preset, bool(body.get("force"))), **strata.summary()})
+
+    @staticmethod
+    def library_summary():
+        d = library.summary()
+        d["views"] = library.sync_views(d["models"]) if d["chosen"] else {}        # only links are ever written
+        return d
+
+    def post_library_folder(self, body):
+        """Add (or, with `remove`, drop) one folder the library should read, keeping the others."""
+        cur = [i for i in (store.load().get("models") or {}).get("imports", [])]
+        if body.get("remove"):
+            keep = [i for i in cur if i.get("id") != body["remove"]]
+        elif body.get("kind") == "ollama":
+            path = str(body.get("path", ""))
+            keep = [i for i in cur if i.get("path") != path] + [{"id": modelscan._source_id("ollama", path), "kind": "ollama", "label": "Ollama", "path": path}]
+        else:
+            src = modelscan.source_from_path(str(body.get("path", "")), body.get("label"))
+            keep = [i for i in cur if i.get("id") != src["id"]] + [{k: src[k] for k in ("id", "kind", "label", "path")}]
+        self.post_imports({"sources": keep})
+
+    def post_library_root(self, body):
+        library.set_root(body.get("path", ""))
+        if engine.running() and lem.healthy():                    # only a Lemonade Zest runs itself is ever re-pointed
+            threading.Thread(target=lambda: modelscan.apply_to_lemonade(store.load()), daemon=True).start()
+        self.send_json(self.library_summary())
+
+    @staticmethod
+    def _provider(body):
+        p = registry.default().get(str(body.get("id", "")))
+        if not p:
+            raise ValueError("No such engine.")
+        return p
+
+    def post_provider_check(self, body):
+        """Is a newer version of this engine available? One answer shape for every engine."""
+        p = self._provider(body)
+        try:
+            c = p.update_check()
+        except NotImplementedError:
+            return self.send_json({"supported": False, "available": False})
+        except provbase.ProviderError as e:
+            return self.send_json({"supported": True, "available": False, "error": str(e)})
+        d = c.get("detail") or {}
+        latest = d.get("latest") or (d.get("engine") or {}).get("offered") or ""
+        self.send_json({"supported": c.get("supported", True), "available": bool(c.get("available")), "deferred": bool(c.get("deferred")), "major": bool(c.get("major")),
+                        "latest": latest, "note": c.get("note", "")})
+
+    def post_provider_update(self, body):
+        p = self._provider(body)
+        try:
+            started = bool(p.update(lambda t: None))
+        except NotImplementedError:
+            raise ValueError("That engine can't be updated from here.")
+        except provbase.ProviderError as e:
+            raise ValueError(str(e))
+        self.send_json({"started": started, "update": p.update_status()})
+
+    def post_provider_stop(self, body):
+        """Stop what Zest started for this engine. Never stops one the person started."""
+        p = self._provider(body)
+        try:
+            ok, msg = p.stop()
+        except NotImplementedError:
+            ok, msg = False, "That engine can't be stopped from here."
+        invalidate("info")
+        self.send_json({"ok": ok, "error": msg}, 200 if ok else 409)
+
+    def post_provider_approve(self, body):
+        registry.default().approve(str(body.get("id", "")))
+        self.send_json(registry.default().summary())
+
+    def post_provider_reload(self, body):
+        self.send_json(registry.reload().summary())
+
+    @staticmethod
+    def _tune_args(body):
+        engine, target = str(body.get("engine", "")), str(body.get("target", ""))
+        if engine not in ("strata", "lemonade") or not target:
+            raise ValueError("Choose something to tune.")
+        return engine, target, {k: body.get(k) for k in ("mode", "use", "goal")}
+
+    def post_tuning_plan(self, body):
+        self.send_json(tuning.plan(*self._tune_args(body)))
+
+    def post_tuning_run(self, body):
+        tuning.start(*self._tune_args(body))
+        self.send_json({"ok": True, "job": tuning.status()})
+
+    def post_tuning_cancel(self, body):
+        self.send_json({"ok": tuning.cancel()})
+
+    def post_tuning_action(self, body):
+        engine, target, _ = self._tune_args(body)
+        ok, msg = tuning.action(engine, target, str(body.get("act", "")))
+        self.send_json({"ok": ok, "error": msg, "targets": tuning.targets()}, 200 if ok else 409)
+
+    def get_strata_update(self, q):
+        """The last look at Strata's feed (kept six hours; ?fresh=1 looks again), and where an update stands."""
+        try:
+            check = strata.update_check(0 if q.get("fresh") else 6 * 3600)
+            err = ""
+        except RuntimeError as e:
+            check, err = {"installed": bool(strata.binary())}, str(e)
+        self.send_json({"check": check, "error": err, "update": dict(strata.SUPD)})
+
+    def post_strata_update(self, body):
+        self.send_json({"started": strata.start_update(), "update": dict(strata.SUPD)})
+
+    def post_strata_idle(self, body):
+        strata.set_idle_minutes(body.get("minutes", 20))
+        self.send_json({"ok": True, **strata.summary()})
+
+    def post_strata_setup(self, body):
+        """Get a big model in one step: install Strata if needed, download, save as a Zest preset, start. Lemonade's models are
+        freed first because they share the memory."""
+        family, model = str(body.get("family", "")), str(body.get("model", ""))
+        if not any(e["family"] == family and e["model"] == model for e in strata.CATALOG):
+            raise ValueError("Zest doesn't know that model.")
+        self.send_json({"started": strata.setup(family, model, bool(body.get("force"))), **strata.summary()})
+
+    def post_strata_connect(self, body):
+        ok, msg = strata.connect(body.get("url", ""), str(body.get("key", "")).strip())
+        agent.restart_idle()
+        self.send_json({"ok": ok, "error": msg, **strata.summary()}, 200 if ok else 400)
+
+    def post_strata_forget(self, body):
+        strata.forget(body.get("url", ""))
+        agent.restart_idle()
+        self.send_json({"ok": True, **strata.summary()})
+
+    def post_strata_key(self, body):
+        strata.set_key(body.get("url", ""), body.get("key", ""))
+        agent.restart_idle()
+        self.send_json({"ok": True, **strata.summary()})
+
+    def post_strata_stop(self, body):
+        ok, msg = strata.stop(body.get("url") or None)
+        agent.restart_idle()
+        self.send_json({"ok": ok, "error": msg}, 200 if ok else 409)
+
+    def post_strata_install(self, body):
+        self.send_json({"started": strata.install(), **strata.summary()})
 
     def post_update_all(self, body):
         self.send_json({"started": zestup.start_all(VERSION, current_mode()), **zestup.status()})
@@ -730,6 +956,21 @@ class Handler(BaseHTTPRequestHandler):
             s.last = time.time()
 
 
+def open_window(host, port):
+    """Open a browser on a Zest that is already running, with a one-time way in. Returns the address that was opened."""
+    url = "http://%s:%d/" % (host, port)
+    try:
+        c = http.client.HTTPConnection(host, port, timeout=3)
+        c.request("POST", "/ui/code", body="{}", headers={"Authorization": "Bearer " + uiauth.token(), "Content-Type": "application/json"})
+        code = json.loads(c.getresponse().read()).get("code")
+        if code:
+            url += "?c=" + code
+    except (OSError, ValueError, AttributeError):
+        pass                                                      # it will show the "start Zest again" page, which says what to do
+    webbrowser.open(url)
+    return url
+
+
 def zest_running(host, port):
     """The version of the Zest answering on this port, or None when it isn't Zest (or nothing is there)."""
     try:
@@ -754,6 +995,10 @@ def watchdog(srv, grace):
 
 
 def main():
+    args = [a for a in sys.argv[1:] if a != "--app"]            # the AppImage adds --app; `Zest.AppImage providers check <folder>` is the tool for engine authors
+    if args[:1] == ["providers"]:
+        import provcheck
+        sys.exit(provcheck.main(args[1:]))
     ap = argparse.ArgumentParser(description="Zest: a console for Lemonade Server")
     ap.add_argument("--host", default=os.environ.get("ZEST_HOST", "127.0.0.1"), help="address to listen on (default 127.0.0.1)")
     ap.add_argument("--port", type=int, default=int(os.environ.get("ZEST_PORT", "13306")), help="port to listen on (default 13306)")
@@ -772,7 +1017,7 @@ def main():
     if there == VERSION:  # second launch: just show the existing one
         print(f"Zest is already running at {url}")
         if not a.no_browser:
-            webbrowser.open(url)
+            open_window(shown, a.port)
         return
     if there:
         # An older Zest is still running (its window may be hidden). Showing it would open the old interface, so start
@@ -794,7 +1039,10 @@ def main():
     agent.set_zest_port(a.port)
     agent.recover()
     piup.on_installed.append(agent.restart_idle)
+    strata.on_change.append(agent.restart_idle)
+    strata.before_launch.append(lambda: lem.healthy() and lem.request("POST", "/v1/unload", {}, timeout=60))
     threading.Thread(target=agent.reaper, daemon=True).start()
+    threading.Thread(target=router.watch, daemon=True).start()
     s = store.load()
     if a.lemonade:
         h, _, p = a.lemonade.rpartition(":")
@@ -804,6 +1052,7 @@ def main():
         apply_mode(s)
     print(f"Zest {VERSION} on {url}  ->  Lemonade {effective_mode(s)} ({'%s:%s' % lem.target()})", flush=True)
 
+    uiauth.token()                       # make the secret now, so a second launch can read it
     gateway.ensure_key(s)
     gateway.GATEWAY.start(s["gateway"])
     if gateway.GATEWAY.error:
@@ -813,7 +1062,7 @@ def main():
     if a.app:
         threading.Thread(target=watchdog, args=(srv, int(os.environ.get("ZEST_APP_GRACE", "180"))), daemon=True).start()
     if not a.no_browser:
-        threading.Timer(0.6, webbrowser.open, args=(url,)).start()
+        threading.Timer(0.6, webbrowser.open, args=(url + "/?c=" + uiauth.new_code() if uiauth.enabled() else url,)).start()
     try:
         srv.serve_forever()
     except (KeyboardInterrupt, SystemExit):
@@ -821,6 +1070,7 @@ def main():
     finally:
         agent.stop_all()
         gateway.GATEWAY.stop()
+        router.stop_started()     # what Zest started goes with it; nothing keeps holding memory with no one left to stop it
         srv.server_close()        # free the port first; stopping Lemonade can take a few seconds
         engine.stop()
 

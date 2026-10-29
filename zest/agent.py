@@ -20,8 +20,11 @@ import uuid
 import folders as folderstore
 import lem
 import piup
+import provbase
+import router
 import skills
 import store
+import uiauth
 import workcopy
 
 HERE = os.path.dirname(os.path.abspath(__file__))
@@ -105,16 +108,8 @@ def agent_dir():
 
 
 def chat_models():
-    """Downloaded models that can drive an agent: chat models, preferring ones Lemonade says can call tools."""
-    out = []
-    for m in lem.get("/v1/models").get("data", []):
-        labels = m.get("labels") or []
-        if not m.get("downloaded") or m.get("recipe") in NOT_CHAT or "embeddings" in labels or "chat" not in labels and "tool-calling" not in labels:
-            continue
-        out.append({"id": m["id"], "tools": "tool-calling" in labels, "reasoning": "reasoning" in labels,
-                    "vision": "vision" in labels, "ctx": int(m.get("context_length") or 131072)})
-    out.sort(key=lambda m: (not m["tools"], m["id"].lower()))
-    return out
+    """Every model a chat can use, from every engine, in one list (see router.chat_models)."""
+    return router.chat_models()
 
 
 def _health():
@@ -122,32 +117,13 @@ def _health():
 
 
 def loaded_state(model, health=None):
-    """(in memory?, its context window in tokens or 0 when Lemonade doesn't say)."""
-    for m in (health if health is not None else _health()).get("all_models_loaded", []):
-        if m.get("model_name") != model:
-            continue
-        cmd = m.get("launch_command") or []
-        if isinstance(cmd, str):
-            cmd = cmd.split()
-        if "--ctx-size" in cmd:
-            try:
-                return True, int(cmd[cmd.index("--ctx-size") + 1])
-            except (ValueError, IndexError):
-                pass
-        return True, 0
-    return False, 0
+    """(in memory?, its context window in tokens or 0 when the engine doesn't say)."""
+    return router.loaded(model)
 
 
 def model_max_ctx(model):
-    """The longest context the model was trained for, when Lemonade knows it (0 when it doesn't)."""
-    for m in lem.get("/v1/models").get("data", []):
-        if m.get("id") == model:
-            try:
-                n = int(m.get("context_length") or 0)
-            except (TypeError, ValueError):
-                return 0
-            return n if n >= 2048 else 0
-    return 0
+    """The longest context the model was trained for, when the engine knows it (0 when it doesn't)."""
+    return router.max_ctx(model)
 
 
 def chat_ctx():
@@ -160,6 +136,8 @@ def chat_ctx():
 
 def want_ctx(model):
     """What a load of `model` asks for: the chat setting, never more than the model can do."""
+    if router.fixed_ctx(model):
+        return model_max_ctx(model)         # some engines decide the window when they start (Strata)
     n, top = chat_ctx(), model_max_ctx(model)
     # "128k" models are listed as 128000; only a model with clearly less room than asked for is held back
     return top if top and top * 1.05 < n else n
@@ -175,14 +153,32 @@ def model_state():
     """What the chat bar shows: the model in memory, how much context it has, and what Zest is loading right now."""
     h = _health()
     name = h.get("model_loaded") or None
-    ctx = loaded_state(name, h)[1] if name else 0
+    ctx = loaded_state(name)[1] if name else 0
+    if not name:
+        live = [m for m in router.chat_models() if m["live"]]
+        if live:
+            name, ctx = live[0]["id"], live[0]["ctx"]
     with _lock:
         loading = dict(_loading) if _loading["model"] else None
-    return {"loaded": name, "ctx": ctx, "chat_ctx": chat_ctx(), "loading": loading, "default_ctx": DEFAULT_CTX}
+    return {"loaded": name, "ctx": ctx, "chat_ctx": chat_ctx(), "loading": loading, "default_ctx": DEFAULT_CTX,
+            "step": router.state()["step"]}
 
 
 def _busy_with(model):
     return [s for s in list(_sessions.values()) if s.running and s.task.get("model") == model]
+
+
+def _provider_busy(pid):
+    """Is any chat answering through provider `pid`? The router asks before it stops an engine to make room."""
+    for s in list(_sessions.values()):
+        if s.running:
+            p, _ = router.resolve(s.task.get("model", ""))
+            if p is not None and p.id == pid:
+                return True
+    return False
+
+
+router.busy_checks.append(_provider_busy)
 
 
 def load_model(model, ctx=None, force=False):
@@ -193,33 +189,31 @@ def load_model(model, ctx=None, force=False):
     with _load_lock:
         ctx = int(ctx) if ctx else want_ctx(model)
         isl, cur = loaded_state(model)
-        if isl and cur == ctx and not force:
-            return True, "", ctx
+        if isl and (cur == ctx or router.fixed_ctx(model)) and not force:
+            return True, "", cur or ctx
         if isl and _busy_with(model):
             return False, "It is answering right now. Wait for it to finish, or stop it, then try again.", cur
         with _lock:
             _loading.update(model=model, ctx=ctx, since=time.time())
         touch()
         try:
-            if isl:
-                lem.request("POST", "/v1/unload", {"model_name": model}, timeout=60)
-            status, payload = lem.request("POST", "/v1/load", {"model_name": model, "ctx_size": ctx}, timeout=900)
+            ep = router.activate(model, opts={"ctx": ctx, "exact": True, "force": force})
+        except provbase.ProviderError as e:
+            return False, str(e), cur
         finally:
             with _lock:
                 _loading.update(model=None, ctx=0, since=0)
             touch()
-        if status == 200:
-            return True, "", ctx
-        return False, lem.error_text(payload, "Lemonade couldn't load the model."), ctx
+        return True, "", (ep.get("ctx") or ctx) if router.fixed_ctx(model) else ctx
 
 
 def unload_model(model):
     """Free the model's memory. Returns (ok, message)."""
     if _busy_with(model):
         return False, "It is answering right now. Wait for it to finish, or stop it, then try again."
-    status, payload = lem.request("POST", "/v1/unload", {"model_name": model} if model else {}, timeout=60)
+    ok, msg = router.deactivate(model or None)
     touch()
-    return status == 200, "" if status == 200 else lem.error_text(payload, "Lemonade couldn't unload the model.")
+    return ok, msg
 
 
 def set_chat_ctx(tokens):
@@ -234,21 +228,34 @@ def set_chat_ctx(tokens):
 
 
 def ensure_loaded(model, s=None):
-    """Before a prompt goes to `model`: load it at the chat context size if it isn't in memory, or has less room than that.
-    The page is told, so it can say "Loading the model" instead of sitting silent. Raises ValueError when it can't be loaded."""
+    """Before a prompt goes to `model`: have it running at the chat context size, starting its engine (and freeing memory) if needed.
+    The page is told, so it can say "Loading the model" instead of sitting silent. Raises ValueError when it can't be done."""
     if not model:
         return
     want = want_ctx(model)
     isl, cur = loaded_state(model)
-    if isl and (not cur or cur >= want):
+    if isl and (not cur or cur >= want or router.fixed_ctx(model)):
         return
     if s:
         s.push({"type": "zest_loading", "model": model, "ctx": want})
-    ok, msg, ctx = load_model(model, want)
-    if not ok:
-        raise ValueError(msg)
+
+    def step(text):
+        if s:
+            s.push({"type": "zest_loading_step", "model": model, "text": text})
+    with _load_lock:
+        with _lock:
+            _loading.update(model=model, ctx=want, since=time.time())
+        touch()
+        try:
+            ep = router.activate(model, progress=step, opts={"ctx": want})
+        except provbase.ProviderError as e:
+            raise ValueError(str(e))
+        finally:
+            with _lock:
+                _loading.update(model=None, ctx=0, since=0)
+    touch()
     if s:
-        s.push({"type": "zest_loaded", "model": model, "ctx": ctx})
+        s.push({"type": "zest_loaded", "model": model, "ctx": (ep.get("ctx") or want) if router.fixed_ctx(model) else want})
 
 
 def _pi_model(m, window):
@@ -261,24 +268,33 @@ def _pi_model(m, window):
 def write_config(models, default, ctx=0):
     d = agent_dir()
     os.makedirs(d, exist_ok=True)
-    provider = {
-        "baseUrl": "http://127.0.0.1:%d/api/v1" % _zest_port["v"],      # through Zest, so it shows on the Server page
-        "api": "openai-completions",
-        "apiKey": "zest",
-        "compat": {"supportsDeveloperRole": False, "supportsUsageInStreaming": True},
-        "models": [_pi_model(m, ctx if (ctx and m["id"] == default) else min(m["ctx"], DEFAULT_CTX)) for m in models],
-    }
-    _write(os.path.join(d, "models.json"), {"providers": {"lemonade": provider}})
-    settings = {"defaultProvider": "lemonade", "defaultProjectTrust": "never", "quietStartup": True,
+    providers, groups = {}, {}
+    for m in models:
+        groups.setdefault(m["pi_provider"], []).append(m)
+    for name, ms in groups.items():
+        first = ms[0]
+        if first.get("pi_url"):                                  # an engine with its own server per model (Strata): talk to it directly
+            url, key = first["pi_url"], first.get("pi_key") or name
+        else:
+            ep = router.get(first["engine"]).pi_endpoint(_zest_port["v"]) or {}
+            url, key = ep.get("base_url", ""), ep.get("key", name)
+        providers[name] = {"baseUrl": url, "api": "openai-completions", "apiKey": key,
+                           "compat": {"supportsDeveloperRole": False, "supportsUsageInStreaming": True},
+                           "models": [_pi_model(dict(m, id=m["pi_model"]),
+                                                m["ctx"] if router.fixed_ctx(m["id"]) else (ctx if (ctx and m["id"] == default) else min(m["ctx"], DEFAULT_CTX)))
+                                      for m in ms]}
+    _write(os.path.join(d, "models.json"), {"providers": providers})
+    chosen = router.info(default) or {}
+    settings = {"defaultProvider": chosen.get("pi_provider", "lemonade"), "defaultProjectTrust": "never", "quietStartup": True,
                 "enableInstallTelemetry": False, "autoCompaction": True}
     if default:
-        settings["defaultModel"] = default
+        settings["defaultModel"] = chosen.get("pi_model", default)
     _write(os.path.join(d, "settings.json"), settings)
 
 
 def _write(path, obj):
     tmp = "%s.%d.%d.tmp" % (path, os.getpid(), threading.get_ident())
-    with open(tmp, "w") as f:
+    with os.fdopen(os.open(tmp, os.O_WRONLY | os.O_CREAT | os.O_TRUNC, 0o600), "w") as f:      # it can hold the key to Zest's own address
         json.dump(obj, f, indent=2)
     os.replace(tmp, path)
 
@@ -322,7 +338,8 @@ def _env(mode="ask", inject=(), extra_folders=(), allow=()):
     e.update(PI_CODING_AGENT_DIR=agent_dir(), PI_OFFLINE="1", PI_TELEMETRY="0", PI_SKIP_VERSION_CHECK="1",
              ZEST_APPROVAL=mode, ZEST_INJECT=json.dumps(list(inject)), NO_COLOR="1",
              ZEST_FOLDERS=json.dumps(list(extra_folders)), ZEST_ALLOW=json.dumps(list(allow)),
-             ZEST_SEARCH="1" if search_enabled() else "0", ZEST_SEARCH_URL="http://127.0.0.1:%d/ui/search" % _zest_port["v"])
+             ZEST_SEARCH="1" if search_enabled() else "0", ZEST_SEARCH_URL="http://127.0.0.1:%d/ui/search" % _zest_port["v"],
+             ZEST_SEARCH_KEY=uiauth.token())
     return e
 
 
@@ -519,6 +536,8 @@ def create(cwd, mode=None, model="", extra_folders=None):
 
 
 def delete(sid):
+    if not re.fullmatch(r"[0-9a-f]{12}", str(sid)):           # ids are made here; anything else is not one of ours (and is never a path)
+        return
     t = get_task(sid)
     stop(sid)
     ids = {sid}
@@ -668,7 +687,8 @@ class Session:
             if note:
                 args += ["--append-system-prompt", note]
         if t.get("model"):
-            args += ["--provider", "lemonade", "--model", t["model"]]
+            chosen = router.info(t["model"]) or {}
+            args += ["--provider", chosen.get("pi_provider", "lemonade"), "--model", chosen.get("pi_model", t["model"])]
         extra = [f for f in t.get("folders", [])]
         allow = list(folderstore.get(_origin(t))["allow"]) + list((t.get("job") or {}).get("allow", []))
         self.proc = subprocess.Popen(args, cwd=t["cwd"], env=_env(t.get("mode", "ask"), inject, extra, allow),

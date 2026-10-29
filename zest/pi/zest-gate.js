@@ -55,6 +55,27 @@ export function lineKeys(cmd) {
   return parts.map(commandKey);
 }
 
+// What a command could do beyond looking around, in words the card shows beside it. A reading of the text, not a guarantee: the command
+// is still the thing to read. Exported so it can be tested.
+// A program name only counts where a command starts (after ; && || | or a wrapper like sudo or xargs), so "echo rmdir" says nothing.
+const at = (names, rest = "") => new RegExp("(?:^|[;&|(\\n])\\s*(?:(?:sudo|xargs|nohup|time|env|exec|command)\\s+)*(?:" + names + ")\\b" + rest);
+const RISKS = [
+  [at("curl|wget|ssh|scp|sftp|rsync|nc|ncat|ftp|telnet"), "can use the internet"],
+  [at("git", "\\s+(?:push|pull|fetch|clone)\\b"), "can use the internet"],
+  [at("pip3?|pipx|uv|npm|pnpm|yarn|bun|cargo|gem|apt(?:-get)?|dnf|yum|pacman|brew|snap|flatpak", "\\s+(?:install|add|i|remove|uninstall|upgrade|update|get)\\b"), "installs or removes software"],
+  [at("go", "\\s+(?:get|install)\\b"), "installs or removes software"],
+  [/\|\s*(?:sudo\s+)?(?:ba|z)?sh\b/, "installs or removes software"],
+  [at("rm|rmdir|shred|unlink|truncate|trash"), "can delete or overwrite files"],
+  [at("find", "[^;|&]*-delete\\b"), "can delete or overwrite files"],
+  [at("git", "\\s+(?:clean|reset\\s+--hard|restore)\\b"), "can delete or overwrite files"],
+  [at("sudo|su|doas|pkexec"), "runs with administrator rights"],
+  [at("kill|pkill|killall|systemctl|crontab|reboot|shutdown|mkfs|dd|chmod|chown"), "changes the system or other programs"],
+];
+export function risksOf(command) {
+  const text = String(command || "");
+  return [...new Set(RISKS.filter(([re]) => re.test(text)).map(([, say]) => say))];
+}
+
 export default function (pi) {
   let mode = process.env.ZEST_APPROVAL || "ask";
   const home = path.resolve(process.cwd());
@@ -128,7 +149,7 @@ export default function (pi) {
     const what = tool === "bash" ? String(event.input.command || "")
       : WRITES.has(tool) ? String(target || "")
       : JSON.stringify(event.input || {}).slice(0, 400);
-    const title = JSON.stringify({ tool, what, outside: !!outside, folder: home, key });
+    const title = JSON.stringify({ tool, what, outside: !!outside, folder: home, key, risks: tool === "bash" ? risksOf(event.input && event.input.command) : [] });
     const options = [ALLOW];
     if (tool === "bash") { if (key) options.push(ALWAYS + key); }
     else if (!outside) options.push(SESSION);

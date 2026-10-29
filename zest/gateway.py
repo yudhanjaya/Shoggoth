@@ -21,6 +21,8 @@ from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from urllib.parse import urlparse
 
 import lem
+import provbase
+import router
 import store
 
 # What counts as "a request worth showing" (polling for health or the model list is not).
@@ -262,12 +264,60 @@ class Tap:
 
 
 # ---------------------------------------------------------------- forwarding
-def relay(h, method, path, body, rec=None, capture=False):
-    """Send the request to Lemonade and stream the answer back through handler `h`."""
+def _route(path, body):
+    """Where a request should go: (host, port, key, path, body, error). Requests for a model another engine serves are sent there
+    (starting it, and freeing what would fight it, first); everything else goes to the default engine as it always did."""
+    host, port = lem.target()
+    key = lem.key()
+    model, _ = describe(body)
+    if not model or not INFER.match(norm(path)):
+        return host, port, key, path, body, None
+    provider, mid = router.resolve(model)
+    if provider is None or not router.known(model):
+        return host, port, key, path, body, None                      # not a chat model Zest knows: the default engine decides
+    try:
+        ep = router.activate(model)
+    except provbase.ProviderError as e:
+        return host, port, key, path, body, str(e)
+    if provider is router.default_provider() or not ep.get("base_url"):
+        return host, port, key, path, body, None
+    u = urlparse(ep["base_url"])
+    p = norm(path)
+    out_path = u.path.rstrip("/") + p[len("/v1"):] + (("?" + urlparse(path).query) if urlparse(path).query else "")
+    try:
+        o = json.loads(body)
+        o["model"] = mid                                              # the engine knows the model by its own name
+        body = json.dumps(o).encode()
+    except (ValueError, TypeError):
+        pass
+    return u.hostname, u.port, ep.get("key") or "", out_path, body, None
+
+
+def _models_for_apps(h):
+    """GET /v1/models for other apps: the default engine's list plus the models other engines can serve. Returns True when answered."""
+    status, d = lem.request("GET", "/api/v1/models", timeout=15)
+    if status != 200 or not isinstance(d, dict) or not isinstance(d.get("data"), list):
+        return False
+    dflt = router.default_provider()
+    d["data"] += [{"id": m["id"], "object": "model", "created": 0, "owned_by": m["engine"]} for m in router.chat_models() if m["engine"] != getattr(dflt, "id", "")]
+    h.send_json(d)
+    return True
+
+
+def relay(h, method, path, body, rec=None, capture=False, merge_models=False):
+    """Send the request to whichever engine serves the model and stream the answer back through handler `h`."""
+    if merge_models and method == "GET" and re.match(r"^/v1/models/?$", norm(path)) and _models_for_apps(h):
+        return
+    host, port, key, path, body, error = _route(path, body)
+    if error:
+        if rec:
+            rec["error"] = error
+            Tap(rec, False).finish(503)
+        return h.send_json({"error": {"message": error, "type": "model_unavailable"}}, 503)
     headers = {k: v for k, v in h.headers.items() if k.lower() in ("content-type", "accept")}
-    if lem.key():
-        headers["Authorization"] = "Bearer " + lem.key()
-    conn = http.client.HTTPConnection(*lem.target(), timeout=900)
+    if key:
+        headers["Authorization"] = "Bearer " + key
+    conn = http.client.HTTPConnection(host, port, timeout=900)
     tap = Tap(rec, capture) if rec else None
     try:
         conn.request(method, path, body=body, headers=headers)
@@ -371,7 +421,7 @@ class GWHandler(BaseHTTPRequestHandler):
             model, stream = describe(body)
             rec = REC.start(app, "app", self.command, p, model, stream, self.client_address[0])
         q = urlparse(self.path).query
-        relay(self, self.command, p + ("?" + q if q else ""), body, rec, CONFIG["capture"])
+        relay(self, self.command, p + ("?" + q if q else ""), body, rec, CONFIG["capture"], merge_models=True)
 
     do_GET = do_POST = handle_any
 

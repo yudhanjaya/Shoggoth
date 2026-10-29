@@ -14,11 +14,21 @@ DEFAULTS = {
     "search": {"enabled": True, "provider": "duckduckgo", "brave_key": "", "tavily_key": ""},   # the model may search the web; every search still asks first
     "chat": {"ctx": 131072},  # the context window every chat load asks for (128k): long chats and agent work need the room
     "pi": {"version": ""},   # which Pi (the agent) to run: "" = newest, "bundled" = the one that came with Zest, or a version number
+    # Strata (bigger models): servers typed in by hand, keys, and the one Zest itself started (so a restart of Zest still knows).
+    "strata": {"remote": [], "keys": {}, "owned": {"preset": "", "port": 0}, "known": {}, "idle_minutes": 20},
+    "library": {"root": ""},       # where every model lives (the person chooses it once)
+    "providers": {},               # per engine: its own settings, and the fingerprint of a user-added one that was approved
     "models": {"storage": "hf", "custom_dir": "", "imports": []},
     # The door for other apps: its own port, always needs the key, this computer only unless `lan` is on.
     "gateway": {"enabled": True, "port": 13308, "api_key": "", "lan": False, "capture": False},
 }
-_lock = threading.Lock()
+_lock = threading.RLock()
+
+
+class Settings(dict):
+    """What `load()` returns: a plain dict that also remembers what the file held when it was read, so `save()` can write only what the
+    caller changed on top of whatever is on disk now (two threads changing different settings no longer undo each other)."""
+    _base = None
 
 
 def _xdg(var, fallback):
@@ -40,11 +50,11 @@ def _usable(path, kind):
 
 
 def config_dir():
-    return _usable(_xdg("XDG_CONFIG_HOME", "~/.config"), "config")
+    return os.environ.get("ZEST_CONFIG_DIR") or _usable(_xdg("XDG_CONFIG_HOME", "~/.config"), "config")      # ZEST_*_DIR: for tests, so other programs keep their own folders
 
 
 def data_dir():
-    return _usable(_xdg("XDG_DATA_HOME", "~/.local/share"), "data")
+    return os.environ.get("ZEST_DATA_DIR") or _usable(_xdg("XDG_DATA_HOME", "~/.local/share"), "data")
 
 
 def _path():
@@ -60,7 +70,7 @@ def _merge(base, extra):
     return base
 
 
-def load():
+def _read():
     s = copy.deepcopy(DEFAULTS)
     try:
         with open(_path()) as f:
@@ -70,14 +80,52 @@ def load():
     return s
 
 
+def load():
+    s = Settings(_read())
+    s._base = copy.deepcopy(dict(s))
+    return s
+
+
+_GONE = object()
+
+
+def _apply(cur, base, new):
+    """Put what changed between `base` and `new` onto `cur`. Dicts are followed key by key; anything else (lists, values) is replaced whole."""
+    for k in set(base) | set(new):
+        b, n = base.get(k, _GONE), new.get(k, _GONE)
+        if b == n:
+            continue
+        if n is _GONE:
+            cur.pop(k, None)
+        elif isinstance(n, dict) and isinstance(b, dict) and isinstance(cur.get(k), dict):
+            _apply(cur[k], b, n)
+        else:
+            cur[k] = copy.deepcopy(n)
+
+
 def save(s):
     with _lock:
-        os.makedirs(config_dir(), exist_ok=True)
+        if isinstance(s, Settings) and s._base is not None:
+            cur = _read()
+            _apply(cur, s._base, s)
+            s.clear()
+            s.update(cur)                                  # the caller carries on with the merged settings
+            s._base = copy.deepcopy(cur)
+        os.makedirs(config_dir(), mode=0o700, exist_ok=True)
         tmp = _path() + ".tmp"
         fd = os.open(tmp, os.O_WRONLY | os.O_CREAT | os.O_TRUNC, 0o600)   # it holds an API key
         with os.fdopen(fd, "w") as f:
             json.dump(s, f, indent=2)
         os.replace(tmp, _path())
+
+
+def update(fn):
+    """Change settings in one step: `fn(settings)` runs on the current file and the result is saved, with no other writer in between."""
+    with _lock:
+        s = load()
+        fn(s)
+        save(s)
+        return s
 
 
 def new_key():

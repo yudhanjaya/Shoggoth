@@ -1,0 +1,97 @@
+{
+ "schema_version": 1,
+ "ok": true,
+ "feed": {
+  "source": "https://github.com/Niko1221/Strata/releases/latest/download",
+  "sequence": 116,
+  "channel": "stable",
+  "key_id": "5d1bc23abbeffd0d",
+  "generated_at": "2026-10-28T08:53:20Z",
+  "trusted_by": "built-in keys"
+ },
+ "engine": {
+  "installed": {
+   "version": "0.1.50",
+   "platform": "linux-x86_64",
+   "backend": "cuda",
+   "variant": "cuda13",
+   "build_id": "1aff6d14117b+cuda13.0",
+   "folder": "0.1.50-linux-x86_64-cuda-cuda13",
+   "signed": true
+  },
+  "offered": {
+   "version": "0.1.52",
+   "platform": "linux-x86_64",
+   "backend": "cuda",
+   "variant": "cuda13",
+   "archs": [
+    "sm_75",
+    "sm_86",
+    "sm_89",
+    "sm_120",
+    "compute_120"
+   ],
+   "min_driver": {
+    "nvidia": "580.65"
+   },
+   "min_runtime": null,
+   "build_id": "a42cc3d7df70+cuda13.0",
+   "size": 645979691,
+   "installed_bytes": 1039550681,
+   "format": "tar.gz",
+   "url": "strata-engine-0.1.52-linux-x86_64-cuda-cuda13.tar.gz",
+   "sha256": "4177c1a8ffc59bf66074093b22ac55ed477bcbe84f8bd12e378b0f1236da55c7",
+   "manifest_sha256": "52f57c1943e982cccc75426a050ab3961d0fd5791b0b9e66dacc3a764be1b4a7"
+  },
+  "reasons": [
+   "0.1.52 linux-x86_64-hip-halo is a hip engine, this PC needs cuda",
+   "0.1.52 linux-x86_64-hip-rx6000 is a hip engine, this PC needs cuda",
+   "0.1.52 linux-x86_64-hip-rx7900 is a hip engine, this PC needs cuda",
+   "0.1.52 linux-x86_64-hip-rx9070 is a hip engine, this PC needs cuda",
+   "0.1.52 linux-x86_64-sycl is a sycl engine, this PC needs cuda",
+   "0.1.52 macos-arm64-metal is for macos-arm64, this PC is linux-x86_64",
+   "0.1.52 windows-x86_64-cuda-cuda12 is for windows-x86_64, this PC is linux-x86_64",
+   "0.1.52 windows-x86_64-cuda-cuda13 is for windows-x86_64, this PC is linux-x86_64",
+   "0.1.52 windows-x86_64-hip-rdna2 is for windows-x86_64, this PC is linux-x86_64",
+   "0.1.52 windows-x86_64-hip-rdna3 is for windows-x86_64, this PC is linux-x86_64",
+   "0.1.52 windows-x86_64-hip-rx9070 is for windows-x86_64, this PC is linux-x86_64"
+  ],
+  "status": "failed-before",
+  "download_bytes": 645979691,
+  "previous": "0.1.48-linux-x86_64-cuda-cuda13",
+  "pinned": null,
+  "problem": null,
+  "note": "0.1.52 failed its test start on 2026-10-28T09:36:23.954597+00:00 (it did not answer a one-token probe (server_exited) |                        the expert arena on one CUDA GPU (no --batch) starts blocking and tries it for a                        while when the swaps hold the windows up, keeping it only if it is faster; 0 = the                        blocking tier); run with --force to try it again"
+ },
+ "control": {
+  "installed": "0.1.53",
+  "offered": "0.1.53",
+  "status": "current",
+  "download_bytes": 99446914
+ },
+ "app": {
+  "installed": null,
+  "offered": "0.2.7",
+  "status": "unknown-installed",
+  "notes": "",
+  "download_bytes": 291482104
+ },
+ "serving": [],
+ "hardware": {
+  "platform": "linux-x86_64",
+  "backend": "cuda",
+  "backend_source": "nvidia-smi",
+  "runtime": "0.1.53",
+  "nvidia_driver": "580.178.04",
+  "cuda_archs": [
+   "sm_86",
+   "sm_89"
+  ],
+  "gfx": [],
+  "gpu_names": [],
+  "variant_wanted": "",
+  "makes": [
+   "cuda"
+  ]
+ }
+}

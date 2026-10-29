@@ -1,0 +1,1 @@
+{"name": "zest-ui-smoke", "private": true, "description": "Loads zest/index.html in jsdom against recorded API answers and opens every page.", "devDependencies": {"jsdom": "24.1.3"}}
