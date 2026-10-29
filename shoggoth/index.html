@@ -106,7 +106,7 @@ main{position:relative}
 .harness .sig{fill:none;stroke-width:2;stroke-linecap:round;stroke:transparent}
 .harness.flow .sig{stroke:var(--lemon);stroke-dasharray:3 10;animation:sig .5s linear infinite}
 @keyframes sig{to{stroke-dashoffset:-13}}
-.picnote{display:flex;align-items:center;gap:4px 8px;font-size:13px;color:var(--muted);padding:6px 6px 6px 14px;margin:10px 20px 0;border-radius:10px;background:var(--surface-2)}
+.picnote{display:flex;flex-wrap:wrap;align-items:center;gap:2px 8px;font-size:13px;color:var(--muted);padding:6px 6px 6px 12px;margin:0 0 14px;border-radius:10px;background:var(--surface-2)}
 .picnote .x{margin-left:auto}
 .picnote[hidden]{display:none}.picnote a{white-space:nowrap}.picnote .x{border:0;background:none;font-size:16px;color:var(--faint);min-width:32px;min-height:32px}
 @media (prefers-reduced-motion:reduce){.vtube *,.harness *{animation:none!important;transition:none!important}}
@@ -130,9 +130,12 @@ dialog.mcdlg::backdrop{background:rgba(20,18,10,.22)}
 .mcbay{position:relative;border-radius:12px;min-height:110px;background:var(--well);box-shadow:inset 0 3px 8px var(--sh);padding:10px;display:grid;gap:8px;align-content:center}
 .mcbay::before{content:"";position:absolute;left:18px;right:18px;top:6px;height:4px;border-radius:3px;background:color-mix(in srgb,var(--text) 22%,transparent)}
 .mcbay.drop{outline:2.5px dashed var(--lemon-text);outline-offset:-4px}.mcempty{text-align:center;font-size:13px;color:var(--faint);margin:0}
-.mcseat{display:grid;grid-template-columns:auto 1fr auto;align-items:center;gap:12px;background:var(--surface);border-radius:10px;padding:6px 10px 6px 6px;border-top:5px solid var(--tone);box-shadow:0 2px 0 var(--edge)}
-.mcseat .th{width:84px;height:72px;display:grid;place-items:center;overflow:hidden}.mcseat .th svg{width:80px;height:68px}
-.mcseat b{font-size:14px;display:block;line-height:1.25}.mcseat small{font-size:12px;color:var(--muted)}.mcseat .tag{margin-top:3px}
+/* the name gets the full width and breaks only at spaces; size, tags and the button share the row under it */
+.mcseat{display:grid;grid-template-columns:76px minmax(0,1fr) auto;grid-template-rows:auto auto auto;align-items:center;column-gap:12px;row-gap:2px;background:var(--surface);border-radius:10px;padding:8px 10px 8px 6px;border-top:5px solid var(--tone);box-shadow:0 2px 0 var(--edge)}
+.mcseat .th{grid-row:1 / 4;width:76px;height:72px;display:grid;place-items:center;overflow:hidden}.mcseat .th svg{width:80px;height:68px}
+.mcseat > b{grid-column:2 / 4;font-size:15px;line-height:1.3;align-self:end}.mcseat > b span{white-space:nowrap}.mcseat small{font-size:12px;color:var(--muted)}
+.mcseat .mmeta{grid-column:2;display:flex;flex-wrap:wrap;align-items:center;gap:4px 8px}.mcseat .tag{white-space:nowrap}
+.mcseat > .btn,.mcseat > .tag{grid-column:3;grid-row:2}.mcseat .mnote{grid-column:2 / 4;line-height:1.4;align-self:start}
 .tag{display:inline-block;font-size:11.5px;font-weight:700;padding:1px 8px;border-radius:999px;background:var(--surface-2);border:1px solid var(--line);color:var(--muted)}
 .inserting{animation:mcSlide .55s var(--ease) both}@keyframes mcSlide{from{transform:translateY(-34px);opacity:0}to{transform:none;opacity:1}}
 .mcg{display:grid;gap:3px;font-size:12px;color:var(--muted)}.mcg .row{display:flex;justify-content:space-between;gap:8px}.mcg .row b{color:var(--text);font-weight:600;font-variant-numeric:tabular-nums}
@@ -968,6 +971,7 @@ svg.gl{width:1.2em;height:1.2em;vertical-align:-.25em;stroke:currentColor;fill:n
 .cwcut .cwnote{margin:0}
 /* the model bar: which model, how much context, in memory or not */
 .mbar{display:flex;align-items:center;gap:10px;padding:7px 20px;border-bottom:1px solid var(--line-soft);background:var(--surface-2);flex-wrap:wrap}
+.mbar .btn{flex:none;white-space:nowrap}
 .mbar .grow{display:none}
 .mdot{width:9px;height:9px;border-radius:50%;background:var(--steel);flex:none}
 .mdot.on{background:var(--leaf)}.mdot.busy{background:var(--lemon);animation:pulse 1s infinite}
@@ -1459,13 +1463,12 @@ h3.themesec{font:600 12px var(--sans);letter-spacing:.08em;text-transform:upperc
             <button class="mpbtn" id="mbpick" type="button" aria-haspopup="listbox" aria-expanded="false" aria-controls="mbpop"><span class="mpname" id="mbname">Choose a model</span><span class="mptier" id="mbtier"></span><svg class="i" viewBox="0 0 24 24" aria-hidden="true"><path d="M6 9l6 6 6-6"/></svg></button>
             <div class="mpop" id="mbpop" role="listbox" aria-label="Models" hidden></div>
           </div>
-          <label class="mpick"><span class="mlab">Remembers</span><select id="mbctx" title="How much of the conversation the model can keep in mind. 128k is the default."></select></label>
+          <label class="mpick"><span class="mlab">Memory</span><select id="mbctx" title="How much of the conversation the model can keep in mind. 128k is the default."></select></label>
           <span class="mstate" id="mbstate" role="status"></span>
           <span class="grow"></span>
           <button class="btn ghost" id="mbfree" type="button" hidden title="Free the memory the model is using">Free memory</button>
         </div>
         <div class="mcard" id="mbcard" hidden role="status" aria-live="polite"></div>
-        <div class="picnote" id="picnote" hidden>Model pictures are on. <a href="#prefs" data-go="prefs">Turn them off in Settings › Look</a><button class="x" type="button" id="picnotex" aria-label="Dismiss">×</button></div>
         <div class="jobstrip" id="cwjobstrip" hidden></div>
         <div class="thread" id="cwthread" aria-live="polite"><div class="col" id="cwmsgs"></div></div>
         <div class="composer-wrap">
@@ -2240,13 +2243,14 @@ function fitInfo(m){
   if(!v || !m.size || m.recipe !== "llamacpp") return null;
   // weights plus a margin for the conversation memory
   const need = m.size + 0.8, r = v.avail > 0 ? need / v.avail : Infinity;
-  const cls = r <= .8 ? "ok" : r <= 1 ? "tight" : "over";
+  // a model that fits this computer but is crowded out right now is a snug fit (amber), not a no (red)
+  const cls = r <= .8 ? "ok" : r <= 1 || need <= v.total ? "tight" : "over";
   const who = v.holders.length ? v.holders[0].name : "";
   let note;
   if(cls === "ok") note = "Runs comfortably on your computer.";
-  else if(cls === "tight") note = "Will run, but it's a snug fit. Keep chats short.";
-  else if(v.live && v.avail < 0.6) note = `Your graphics memory is almost full${who ? " (" + who + " is using it)" : ""}. Close that app, then try again.`;
-  else if(need <= v.total) note = `Fits your computer, but other apps are using some of the memory${who ? " (" + who + ")" : ""}. Close them first.`;
+  else if(r <= 1) note = "Will run, but it's a snug fit. Keep chats short.";
+  else if(need <= v.total) note = v.live && v.avail < 0.6 ? `Your graphics memory is almost full${who ? " (" + who + " is using it)" : ""}. Close that app, then try again.`
+    : `Fits, but ${who || "other apps"} ${who ? "is" : "are"} using the graphics memory right now.`;
   else note = "Probably too big for your computer. It may be very slow, or not start at all.";
   return {cls, pct: Math.min(100, r * 100), note, need, vram: v.avail};
 }
@@ -3105,6 +3109,13 @@ function wModelCards(){
     <div class="tiers">${cards || '<p class="wsmall">Shoggoth is still looking at your computer…</p>'}</div>${libDlHTML()}
     <div class="wrow"><button class="linkbtn" data-act="w-add">I already have models</button></div>`;
 }
+/* The model "Start chatting" opens with, and names: the one in memory, else the recommended one you have, else your last choice */
+function wStartPick(){
+  const live = pkFind((S.ms || {}).loaded);
+  if(live) return {id: live.id, name: live.title};
+  const have = downloadedChat(), m = ((wFirstModels().find(o => o.rec && o.m && o.m.downloaded) || {}).m) || have.find(x => x.id === S.model) || have[0];
+  return m ? {id: m.id, name: friendly(m)} : null;
+}
 function renderWelcome(force){
   const host = $("#welcome"); if(!SU.st){ host.innerHTML = `<div class="wcard"><div class="prog ind"><i></i></div></div>`; return; }
   const sig = JSON.stringify([SU.st, S.bk && S.bk.length, S.models.filter(m => m.downloaded).length, S.downloads, SU.busy, SU.msg, S.gpus.length, LIB.d && [LIB.d.chosen, LIB.d.models.length], LIB.notNow, LIB.picked, LIB.err, STR.rec && STR.rec.pick, STR.d && STR.d.run, S.pk.models.length]);
@@ -3112,7 +3123,7 @@ function renderWelcome(force){
   const {rows, rec, go} = wRows(), ready = rows.every(r => r.s === "done"), have = downloadedChat().length > 0 || S.pk.models.length > 0;
   const q = libWhereHTML();
   const asking = !!q && !go;
-  const mine = downloadedChat(), pick = have ? ((wFirstModels().find(o => o.rec && o.m && o.m.downloaded) || {}).m || mine.find(m => m.id === S.model) || mine[0]) : null;
+  const pick = have ? wStartPick() : null;
   host.innerHTML = `<div class="wcard">
     <div class="brandbig"><svg viewBox="0 0 64 64" aria-hidden="true"><rect x="2" y="2" width="60" height="60" rx="14" fill="#f7d916"/><rect x="7" y="3.2" width="50" height="1.4" rx=".7" fill="#fff" fill-opacity=".45"/><path d="M7 62 C 6 50 8 40 12 33 C 13 26 18 18 26 17 C 31 13 39 14 43 19 C 50 20 55 27 54 35 C 58 40 58 49 55 56 C 56 59 57 61 58 62 Z" fill="#1d1d22"/><path d="M12 47 C 6 47 4 42 6 38 C 7 36 9 37 8 39 C 7 42 9 44 12 43" fill="none" stroke="#1d1d22" stroke-width="3.2" stroke-linecap="round"/><path d="M53 44 C 59 43 61 38 59 34 C 58 32 56 33 57 35 C 58 38 56 40 53 40" fill="none" stroke="#1d1d22" stroke-width="3" stroke-linecap="round"/><path d="M30 17 C 29 11 32 7 36 8 C 38 8.5 38 10.5 36.5 10.5 C 34.5 10.5 33.5 12.5 34 16" fill="none" stroke="#1d1d22" stroke-width="2.8" stroke-linecap="round"/><g fill="#efe8d2"><ellipse cx="25" cy="32" rx="7.2" ry="6.4"/><ellipse cx="41.5" cy="27" rx="4.8" ry="4.4"/><ellipse cx="38" cy="43" rx="4" ry="3.6"/><ellipse cx="19.5" cy="47" rx="3" ry="2.7"/><ellipse cx="48" cy="38" rx="2.6" ry="2.4"/><ellipse cx="30" cy="51" rx="2.2" ry="2"/></g><g fill="#f7d916"><circle cx="25.6" cy="32.4" r="4.4"/><circle cx="41.8" cy="27.4" r="3"/><circle cx="38.3" cy="43.3" r="2.4"/></g><g fill="#0e0e12"><ellipse cx="25.6" cy="32.4" rx="1.3" ry="3.8"/><ellipse cx="41.8" cy="27.4" rx=".9" ry="2.6"/><ellipse cx="38.3" cy="43.3" rx=".75" ry="2.1"/><ellipse cx="19.7" cy="47.2" rx=".7" ry="1.9"/><ellipse cx="48.1" cy="38.2" rx=".6" ry="1.7"/><ellipse cx="30.1" cy="51.1" rx=".55" ry="1.4"/></g><g fill="#fff" fill-opacity=".85"><circle cx="23" cy="30" r="1.4"/><circle cx="40.3" cy="25.7" r=".9"/></g></svg></div>
     <div class="wbody"><h2>Getting <span class="hl">ready</span></h2>
@@ -3120,7 +3131,7 @@ function renderWelcome(force){
     ${asking ? q : ""}
     <ol class="wlist" aria-label="Getting ready">${rows.map(wRowHTML).join("")}</ol>
     ${ready && go ? wModelCards() : ""}
-    ${have && ready ? `<div class="wrow"><button class="btn primary xl" data-act="w-start">Start chatting${pick ? " with " + esc(friendly(pick)) : ""}</button></div>` : ""}</div>
+    ${have && ready ? `<div class="wrow"><button class="btn primary xl" data-act="w-start">Start chatting${pick ? " with " + esc(pick.name) : ""}</button></div>` : ""}</div>
     <div class="wfoot"><button class="linkbtn" data-act="w-own">I run my own server</button><button class="linkbtn" data-act="finish">Skip this, I'll set things up myself</button></div></div>`;
   wAuto(rec, go);
 }
@@ -3352,7 +3363,7 @@ const setupClick = async e => {
   }
   if(a === "finish"){ await suPost("/ui/setup/done", {done: true}); SU.st.setup_done = true; show("cowork"); }
   if(a === "w-start"){
-    const have = downloadedChat(), pick = ((wFirstModels().find(o => o.rec && o.m && o.m.downloaded) || {}).m) || have.find(m => m.id === S.model) || have[0];
+    const pick = wStartPick();
     if(pick){ S.model = pick.id; store.set("shoggoth.model", pick.id); syncModelSelect(); }
     await suPost("/ui/setup/done", {done: true}); SU.st.setup_done = true; renderThread(); show("cowork"); $("#cwinput").focus();
   }
@@ -3739,6 +3750,8 @@ const appLabel = a => a === "Shoggoth" ? "Shoggoth chat" : a;
 function stateWord(r){ return {waiting: "Reading the question", thinking: "Thinking", answering: "Writing", done: "Done", error: "Didn't work"}[r.state]; }
 const wordsOf = chars => Math.max(0, Math.round((chars || 0) / 5.5));
 const wordsTxt = chars => { const n = wordsOf(chars); return n.toLocaleString() + (n === 1 ? " word" : " words"); };
+/* a request's model as the Library names it, falling back to a tidied id */
+const reqModel = id => id ? ((pkFind(id) || {}).title || friendly(id)) : "";
 function nowDetail(r, now){
   const end = r.t_end || now;
   if(r.state === "waiting") return `${(now - r.t0).toFixed(1)} s so far`;
@@ -3761,7 +3774,7 @@ function glassHTML(r){
   return `<article class="nowcard ${r.state}" data-gid="${r.id}">
     <header><span class="appbadge">${esc((appLabel(r.app)[0] || "?").toUpperCase())}</span><b>${esc(appLabel(r.app))}</b></header>
     <div class="nowbody">${glassSVG(r)}<div class="nowtext"><h4>${stateWord(r)}</h4><p class="nowdetail" data-rid="${r.id}">${esc(nowDetail(r, srvNow()))}</p>
-      <p class="nowmodel">${esc(friendly(r.model || "") || "a model")}</p></div></div>
+      <p class="nowmodel">${esc(reqModel(r.model) || "a model")}</p></div></div>
     ${q ? `<blockquote class="nowquote">“${esc(q.replace(/[*_`#>]+/g, "").replace(/\s+/g, " ").trim())}”</blockquote>` : ""}</article>`;
 }
 /* ======================= the Server page's bench and log ======================= */
@@ -3794,6 +3807,7 @@ function srvLogNote(reqs, g){
 function srvBench(live){
   const id = live[0] && live[0].model, m = pkModels().find(x => x.id === id || (id && x.id.endsWith(id))) || pkFind((S.ms || {}).loaded);
   const tint = m ? crTone(m) : "var(--steel)", n = Math.max(1, Math.min(4, live.length)), span = 560 / n;
+  const shelf = Math.floor(((live.length ? 210 + span / 2 - 50 : 790) - 30) / 7.4);   // letters of the model's name that fit before the first flask's label
   const flasks = live.slice(0, 4).map((r, i) => {
     const x = 210 + span * (i + .5), fl = `M${x - 8} 66 V104 L${x - 36} 170 Q${x - 38} 178 ${x - 30} 178 H${x + 30} Q${x + 38} 178 ${x + 36} 170 L${x + 8} 104 V66 Z`;
     const lvl = r.state === "thinking" ? .12 : r.state === "answering" ? .25 + Math.min(.7, (r.out_chars || 0) / 1800) : r.state === "done" ? 1 : r.state === "error" ? .1 : 0;
@@ -3817,7 +3831,7 @@ function srvBench(live){
     ${m ? crPic(m, {mood: live.some(r => r.state === "answering") ? "answering" : live.some(r => r.state === "thinking") ? "thinking" : "idle", live: true, crop: true, label: false}).replace("<svg ", '<svg x="34" y="88" width="92" height="86" ') : ""}
     <path d="M24 70 H136 V160 Q136 178 118 178 H42 Q24 178 24 160 Z" fill="url(#kGlassH)"/><path d="M24 70 H136 V160 Q136 178 118 178 H42 Q24 178 24 160 Z" fill="none" stroke="var(--line)" stroke-width="1.6"/>
     <rect x="18" y="64" width="124" height="7" rx="3" fill="url(#kTorus)" stroke="var(--line)" stroke-width=".9"/>
-    <text x="80" y="205" text-anchor="middle">${m ? esc(hwShort(m.title, 16)).toUpperCase() : "NO MODEL"}</text>
+    <text x="24" y="205">${m ? esc(hwShort(m.title, shelf)).toUpperCase() : "NO MODEL"}</text>
     ${flasks || `<text x="480" y="130" text-anchor="middle" class="st">NOTHING IS BEING ASKED</text>`}</svg>`;
 }
 
@@ -3868,7 +3882,7 @@ function reqRow(r){
   const chip = r.state === "done" ? `<span class="chip ok">Done · ${dur.toFixed(1)}s</span>` : r.state === "error" ? `<span class="chip bad">${r.status === 401 ? "Wrong key" : "Didn't work"}</span>` : `<span class="chip lem">${stateWord(r)}</span>`;
   const g = SRV.g || {};
   return `<div class="req ${open ? "open" : ""}" data-rid="${r.id}"><button type="button" class="reqhead" data-sact="row" data-id="${r.id}" aria-expanded="${open}">
-      <span class="rt mono num">${fmtT(r.t0)}</span><span class="reqapp"><i>${esc(appLabel(r.app)[0] || "?")}</i>${esc(appLabel(r.app))}</span><span class="rm">${esc(friendly(r.model || "") || (r.status === 401 ? (r.error || "no key sent").toLowerCase() : r.path))}</span>${chip}</button>
+      <span class="rt mono num">${fmtT(r.t0)}</span><span class="reqapp"><i>${esc(appLabel(r.app)[0] || "?")}</i>${esc(appLabel(r.app))}</span><span class="rm">${esc(reqModel(r.model) || (r.status === 401 ? (r.error || "no key sent").toLowerCase() : r.path))}</span>${chip}</button>
     ${open ? `<div class="reqbody">
       <dl class="kv"><dt>Asked for</dt><dd>${esc(r.path)}</dd><dt>From</dt><dd>${esc(r.source === "zest" ? "Shoggoth chat" : r.ip)}</dd>
         ${r.model ? `<dt>Model</dt><dd>${esc(r.model)}</dd>` : ""}
@@ -3896,6 +3910,8 @@ $("#server").addEventListener("click", async e => {
   if(a === "filter"){ SRV.filter = b.dataset.a; const fl = $("#srvfilters"); if(fl) fl.dataset.sig = ""; $("#reqlist").dataset.sig = ""; return srvPaint(); }
   if(a === "row"){ const id = +b.dataset.id; SRV.open.has(id) ? SRV.open.delete(id) : SRV.open.add(id); $("#reqlist").dataset.sig = ""; srvPaint(); return srvFetch(); }
   if(a === "test"){
+    // a test should never make an engine load a model of its own choosing
+    if(!(S.ms || {}).loaded){ toast("Nothing is in memory. Load a model in Chat first, then send a test."); return; }
     b.disabled = true;
     try{
       const r = await fetch(g.url + "/chat/completions", {method:"POST", headers:{"Content-Type":"application/json", "Authorization":"Bearer " + g.key, "X-Shoggoth-App":"Test button"},
@@ -4072,12 +4088,15 @@ function tubeSvg(m, mood){
   </svg>`;
 }
 /* The cable: one lead in the text colour from the module's socket to a plug on the model picker, with an accent collar. */
-function harnessSvg(sx, sy, ex, ey){
-  const d = `M${sx} ${sy} C ${sx} ${sy + 18}, ${ex} ${ey - 30}, ${ex} ${ey - 10}`;
-  return `<path d="${d}" stroke="var(--text)" stroke-opacity=".85" stroke-width="4" fill="none" stroke-linecap="round"/>
-    <path d="${d}" stroke="var(--hi)" stroke-width="1" fill="none" transform="translate(-1,-.8)"/><path class="sig" d="${d}"/>
-    <rect x="${ex - 4}" y="${ey - 12}" width="8" height="5" rx="1.5" fill="var(--lemon)" stroke="var(--line)" stroke-width=".6"/>
-    <g filter="url(#kShadow)"><rect x="${ex - 9}" y="${ey - 7}" width="18" height="9" rx="3" fill="var(--surface-2)" stroke="var(--line)" stroke-width=".9"/></g>`;
+/* The cable from the tube to the model bar: down the chat column's empty left margin, clipped at the row divider,
+   and into the bar's lamp from the side, so it never crosses the chat's title. */
+function harnessSvg(sx, sy, gx, clipY, ey, ex){
+  const d = `M${sx} ${sy} C ${sx} ${sy + 12}, ${gx} ${sy + 8}, ${gx} ${sy + 22} L ${gx} ${ey - 9} Q ${gx} ${ey}, ${gx + 9} ${ey} L ${ex - 10} ${ey}`;
+  return `<path d="${d}" stroke="var(--text)" stroke-opacity=".85" stroke-width="4" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
+    <path d="${d}" stroke="var(--hi)" stroke-width="1" fill="none" transform="translate(-.8,-.8)"/><path class="sig" d="${d}"/>
+    <g filter="url(#kShadow)"><rect x="${gx - 5}" y="${clipY - 4}" width="10" height="8" rx="2" fill="var(--surface-2)" stroke="var(--line)" stroke-width=".8"/><circle cx="${gx}" cy="${clipY}" r="1.2" fill="var(--muted)"/></g>
+    <rect x="${ex - 11}" y="${ey - 4.5}" width="11" height="9" rx="2.5" fill="var(--surface-2)" stroke="var(--line)" stroke-width=".9"/>
+    <rect x="${ex}" y="${ey - 2}" width="3" height="4" rx="1" fill="var(--lemon)" stroke="var(--line)" stroke-width=".5"/>`;
 }
 const MOOD_WORD = {idle: "Ready", thinking: "Thinking", answering: "Writing", loading: "Loading", working: "Using a tool", none: "Not loaded"};
 const PHASE_MOOD = {load: "loading", read: "thinking", think: "thinking", write: "answering", tool: "working", ask: "working"};
@@ -4105,19 +4124,19 @@ function hdrPaint(){
     const l = $("#plamp"); l.className = "lamp " + mood; l.textContent = MOOD_WORD[mood];
   }
   hdrCable(mood);
-  $("#picnote").hidden = store.get("shoggoth.picturesNoted", false);
 }
 function hdrCable(mood){
-  const harness = $("#harness"), conn = $("#ptube .conn"), name = $("#mbname"), btn = $("#mbpick");
-  if(!conn || !name || !btn || !btn.offsetParent){ harness.innerHTML = ""; return; }
-  const o = $("main").getBoundingClientRect(), a = conn.getBoundingClientRect(), n = name.getBoundingClientRect(), b = btn.getBoundingClientRect();
-  harness.innerHTML = harnessSvg(a.left + a.width / 2 - o.left, a.bottom - o.top - 2, n.left + n.width / 2 - o.left, b.top - o.top + 2);
+  const harness = $("#harness"), conn = $("#ptube .conn"), lamp = $("#cwmbar .mdot"), bar = $("#cwbar");
+  if(!conn || !lamp || !bar || !lamp.offsetParent){ harness.innerHTML = ""; return; }
+  const o = $("main").getBoundingClientRect(), a = conn.getBoundingClientRect(), l = lamp.getBoundingClientRect(), b = bar.getBoundingClientRect();
+  harness.innerHTML = harnessSvg(a.left + a.width / 2 - o.left, a.bottom - o.top - 2, b.left - o.left + 7, b.bottom - o.top,
+    l.top + l.height / 2 - o.top, l.left - o.left - 3);
   harness.classList.toggle("flow", mood === "loading" || mood === "answering");
 }
 addEventListener("resize", () => hdrPaint());
 document.addEventListener("click", e => {
   if(e.target.closest("#ptubebtn")) return openMachine();
-  if(e.target.closest("#picnotex")){ store.set("shoggoth.picturesNoted", true); $("#picnote").hidden = true; }
+  if(e.target.closest("#picnotex")){ store.set("shoggoth.picturesNoted", true); $("#picnote")?.remove(); }
   const sw = e.target.closest("#picsw");
   if(sw){ store.set("shoggoth.pictures", !picturesOn()); sw.setAttribute("aria-checked", picturesOn()); store.set("shoggoth.picturesNoted", true); hdrPaint(); }
 });
@@ -4157,7 +4176,7 @@ function mcSeat(m, eng){
   const q = String(m.quant || "").replace(/^UD-/, "").replace(/_K_[MSL]|_K_XL|_0$|_[SM]$/, "");
   const act = loading ? '<span class="tag">Loading…</span>' : mine ? `<button class="btn" type="button" data-mcunload="${esc(m.id)}">Unload</button>` : '<span class="tag">Started by you</span>';
   return `<div class="mcseat${MC.justIn === m.id ? " inserting" : ""}" style="--tone:${crTone(m)}"><div class="th">${crPic(m, {mood: loading ? "loading" : "idle", crop: true, label: false})}</div>
-    <div><b>${esc(m.title)}</b><small>${m.size_gb ? m.size_gb + " GB · " : ""}${esc(q)}</small>${cwBarModel() === m.id && !loading ? '<br><span class="tag">Chat uses this</span>' : ""}${mine ? "" : `<br><small>Shoggoth didn't load this, so it won't unload it.</small>`}</div>${act}</div>`;
+    <b>${esc(m.title).split(" ").map(w => `<span>${w}</span>`).join(" ")}</b><div class="mmeta"><small>${m.size_gb ? m.size_gb + " GB · " : ""}${esc(q)}</small>${cwBarModel() === m.id && !loading ? '<span class="tag">Chat uses this</span>' : ""}</div>${act}${mine ? "" : `<small class="mnote">Shoggoth didn't load this, so it won't unload it.</small>`}</div>`;
 }
 function mcLcd(eng, seated){
   const ms = S.ms || {}, id = ms.loading || S.loadingModel, p = MC.provs.find(x => x.id === eng) || {};
@@ -5415,7 +5434,7 @@ function cwModelBar(){
   const sig = JSON.stringify([cfg, m && m.ctx_fixed, m && m.ctx]);
   if(bar._sig !== sig){
     bar._sig = sig;
-    if(m && m.ctx_fixed) selC.innerHTML = `<option value="fixed">${fmtTok(m.ctx)} · set by this model</option>`;
+    if(m && m.ctx_fixed) selC.innerHTML = `<option value="fixed">${fmtTok(m.ctx)}</option>`;
     else{ const opts = BAR_CTX.includes(cfg) ? BAR_CTX : BAR_CTX.concat([cfg]).sort((a, b) => a - b); selC.innerHTML = opts.map(n => `<option value="${n}">${fmtTok(n)}${n === (ms.default_ctx || 131072) ? " · default" : ""}</option>`).join(""); }
   }
   if(document.activeElement !== selC) selC.value = m && m.ctx_fixed ? "fixed" : String(cfg);
@@ -5432,7 +5451,8 @@ function cwModelBar(){
   if(loading) st.textContent = (S.loadSteps[S.loadSteps.length - 1]) || "Getting ready…";
   else if(!models.length) st.textContent = "Download a model from the Library to start.";
   else if(CW.running) st.textContent = "Answering…";
-  else if(here) st.textContent = ms.ctx ? `Ready · remembers up to ${fmtTok(ms.ctx)}${!(m && m.ctx_fixed) && ms.ctx < cfg ? `. The setting is ${fmtTok(cfg)}; it is raised when you next send.` : ""}` : "Ready";
+  /* the memory select already says how much it remembers; only a difference needs words */
+  else if(here) st.textContent = ms.ctx && !(m && m.ctx_fixed) && ms.ctx < cfg ? `Ready · on ${fmtTok(ms.ctx)} until you next send` : "Ready";
   else if(ms.loaded) st.textContent = "Another model is in memory. Choosing this one frees it first.";
   else st.textContent = "Starts when you send a message" + (m && m.start && !m.live && m.start_s >= 45 ? ` · ${m.start.toLowerCase()}` : "");
   st.title = st.textContent;
@@ -6084,7 +6104,10 @@ function cwDetailsTab(t){
   const u = CW.stats && CW.stats.contextUsage, pct = u ? Math.min(100, Math.round(u.percent)) : 0;
   const levels = CW.state && CW.state.model && CW.state.model.reasoning;
   const files = [...CW.files.entries()];
-  return `
+  /* the first-time note sits here, not above the conversation, so it never pushes the chat down */
+  const picNote = picturesOn() && !store.get("shoggoth.picturesNoted", false)
+    ? '<div class="picnote" id="picnote">Model pictures are on. <a href="#prefs" data-go="prefs">Turn them off in Settings › Look</a><button class="x" type="button" id="picnotex" aria-label="Dismiss">×</button></div>' : "";
+  return `${picNote}
     <section><h4>Folder</h4><div class="path">${folder ? esc(folder) : "None. Just chatting."}</div>${isHome ? '<p class="help" style="margin:6px 0 0"><b>This is your home folder.</b> Choose a project folder for focused work. In your home folder, <b>Ask first</b> is the safe choice.</p>' : ""}${isJob ? "" : `<button class="btn" type="button" id="cwside-folder" style="margin-top:8px">${folder ? "Change folder…" : "Work in a folder…"}</button>`}</section>
     ${plain || isJob ? "" : `<section><h4>How careful</h4><div class="cwmodes">${CW_MODES.map(([k, n, d]) => `<label><input type="radio" name="cwmode" value="${k}" ${CW.mode === k ? "checked" : ""}><b>${n}</b><small>${d}</small></label>`).join("")}</div></section>`}
     ${CW.id && CW.ready && levels ? `<section><h4>Thinking</h4><select id="cwthink" aria-label="Thinking">${["off", "low", "medium", "high"].map(l => `<option ${CW.state.thinkingLevel === l ? "selected" : ""}>${l}</option>`).join("")}</select></section>` : ""}
