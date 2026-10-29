@@ -1,7 +1,8 @@
-"""The model cards and tools Zest recommends come from zest/recommendations/*.yaml. These tests check the files as shipped (so an edit
+"""The model cards and tools Shoggoth recommends come from shoggoth/recommendations/*.yaml. These tests check the files as shipped (so an edit
 with a mistake fails here before it reaches anyone), that a copy in the data folder wins, that a mistake is reported with where it is,
 and that Strata and the Server page read what the files say. Run: python3 -m unittest discover tests"""
 import os
+import re
 import contextlib
 import io
 import shutil
@@ -9,7 +10,7 @@ import sys
 import tempfile
 import unittest
 
-sys.path.insert(0, os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", "zest"))
+sys.path.insert(0, os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", "shoggoth"))
 
 import gateway  # noqa: E402
 import recs  # noqa: E402
@@ -19,12 +20,12 @@ import strata  # noqa: E402
 class Env(unittest.TestCase):
     def setUp(self):
         self.tmp = tempfile.mkdtemp()
-        self._old = os.environ.get("ZEST_DATA_DIR")
-        os.environ["ZEST_DATA_DIR"] = self.tmp
+        self._old = os.environ.get("SHOGGOTH_DATA_DIR")
+        os.environ["SHOGGOTH_DATA_DIR"] = self.tmp
         recs._cache.clear()
 
     def tearDown(self):
-        os.environ.pop("ZEST_DATA_DIR", None) if self._old is None else os.environ.__setitem__("ZEST_DATA_DIR", self._old)
+        os.environ.pop("SHOGGOTH_DATA_DIR", None) if self._old is None else os.environ.__setitem__("SHOGGOTH_DATA_DIR", self._old)
         recs._cache.clear()
         shutil.rmtree(self.tmp, ignore_errors=True)
 
@@ -48,7 +49,7 @@ class Shipped(Env):
         ids = {x["id"]: x for x in t["tools"]}
         self.assertEqual([x["id"] for x in t["tools"] if "server" in x["show"]], ["opencode", "hermes"])
         self.assertEqual(ids["hermes"]["connect"]["fields"], ["base_url", "key", "model"])
-        self.assertEqual(ids["opencode"]["connect"]["json"]["provider"]["zest"]["options"]["baseURL"], "{base_url}")
+        self.assertEqual(ids["opencode"]["connect"]["json"]["provider"]["shoggoth"]["options"]["baseURL"], "{base_url}")
         self.assertEqual(len([x for x in t["tools"] if "guides" in x["show"]]), 11)
 
 
@@ -72,7 +73,7 @@ class Yours(Env):
         self.assertEqual([m["id"] for m in s["models"]["recommended"]], ["B"])
         self.assertEqual(s["models"]["strata"], [])
         joined = "\n".join(s["problems"])
-        self.assertIn("recommended[0]: `lable` isn't a setting Zest reads (did you mean `label`?)", joined)
+        self.assertIn("recommended[0]: `lable` isn't a setting Shoggoth reads (did you mean `label`?)", joined)
         self.assertIn("strata[0]: `need_gb` must be a number", joined)
 
     def test_a_file_that_isnt_yaml_falls_back_to_zests_own(self):
@@ -97,6 +98,31 @@ class Yours(Env):
             self.assertEqual(recs.main(["check", os.path.join(recs.user_dir(), "models.yaml")]), 1)
             self.assertEqual(recs.main(["check", os.path.join(recs.BUNDLED, "models.yaml")]), 0)
         self.assertIn("needs `label`", out.getvalue())
+
+
+class Flavour(Env):
+    def test_the_lines_are_there_and_name_only_the_model(self):
+        lines = recs.summary()["flavour"]["lines"]
+        self.assertGreaterEqual(len(lines), 17)
+        for ls in lines.values():
+            for l in ls:
+                self.assertNotRegex(l, r"Cthulhu|Nyarlathotep|Dagon|Azathoth|Yog")
+                self.assertEqual(set(re.findall(r"\{(\w+)\}", l)) - {"model", "target"}, set())
+
+    def test_a_line_with_an_unknown_blank_is_skipped_and_reported(self):
+        self.mine("flavour", "lines:\n  thinking:\n    - \"{model} thinks.\"\n    - \"{whom} waits.\"\n  pondering: [x]\n")
+        s = recs.summary()
+        self.assertEqual(s["flavour"]["lines"]["thinking"], ["{model} thinks."])
+        joined = "\n".join(s["problems"])
+        self.assertIn("{whom} isn't something Shoggoth fills in", joined)
+        self.assertIn("`pondering` isn't a setting", joined)
+
+
+class NoEmojiInTheUI(unittest.TestCase):
+    def test_glyphs_stand_in_for_every_emoji(self):
+        html = open(os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", "shoggoth", "index.html"), encoding="utf8").read()
+        text = "\n".join(l for l in html.split("\n") if "base64," not in l)
+        self.assertEqual(re.findall(r"[\U0001F300-\U0001FAFF\u26A0\u26A1\u2705\u2702\u270D\u270F]", text), [])
 
 
 class ReadByTheApp(Env):

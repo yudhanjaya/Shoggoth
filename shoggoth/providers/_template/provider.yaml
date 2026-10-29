@@ -1,0 +1,46 @@
+# The whole engine is this one file. Make a copy of this folder in ~/.local/share/shoggoth/providers/<your-engine>/  (or run
+# `Shoggoth.AppImage providers new <your-engine>`), edit it, check it with `Shoggoth.AppImage providers check <folder>`, then open
+# Advanced > Engines in Shoggoth and press Reload. Shoggoth asks the person once before it runs anything you wrote here.
+# (Folders whose name starts with _ are ignored, so this template is never loaded.)
+#
+# Commands are lists of words, never one shell string: no pipes, no &&, no $VARS. Variables you may use in commands and addresses:
+#   {bin} the program found below    {host} {port} where Shoggoth asks it to listen    {context} the context window Shoggoth wants (tokens)
+#   {model} the model's name         {model_file} its file (needs models.serve: file)    {library} the Models folder    {data} Shoggoth's data folder
+id: my-engine                    # lowercase letters, digits, - or _
+name: My engine                  # shown under Advanced > Engines
+summary: One line about what it is good for.
+tier: small-medium               # small-medium (the usual) or large (needs lots of RAM, starts slowly)
+api_version: 1
+
+detect:
+  binaries: [my-engine-server]   # looked for on PATH; ~ and $VARS work. Leave out for an engine that is only an address.
+  ports: 9000-9009               # where an already-running copy might be listening (Shoggoth then uses it and never stops it)
+  health: {path: /health}        # relative to the server root; Shoggoth only sees engines that answer it with 200
+
+run:
+  mode: managed                  # managed: Shoggoth starts it | service: already running | external: an address on another computer
+  start: ["{bin}", --model, "{model_file}", --port, "{port}", --ctx-size, "{context}"]
+  ready: {path: /health, timeout: 120}
+  stop_grace_secs: 20
+  port_range: 9000-9009
+
+endpoint:
+  base_url: "http://127.0.0.1:{port}/v1"      # what OpenAI-style programs use
+  models: {path: /v1/models, id: "$.data[*].id"}
+
+models:
+  formats: [gguf]                # what it can run: gguf, safetensors
+  # architectures: [llama, qwen3]          # only these (leave out for any)
+  # prefer_architectures: [mynewarch]     # take these even when another engine could run them too
+  serve: file                    # Shoggoth hands it each library model as {model_file}; its name is the file's name
+  data_dir: "{library}/my-engine"           # a subfolder of the Models folder, for models this engine keeps itself
+
+memory:
+  group: gpu                     # engines in the same group don't run together if exclusive
+  exclusive: true
+  idle_stop_minutes: 20          # frees the memory after this long without work (needs capabilities.activity below)
+  start_estimate: {seconds: 30}
+
+capabilities:
+  context: per-load
+  # activity: {path: /slots, busy: "$[*].is_processing"}    # how Shoggoth can tell it is working, so idle_stop_minutes can apply

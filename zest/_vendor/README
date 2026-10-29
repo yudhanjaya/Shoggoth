@@ -1,2 +1,0 @@
-PyYAML 6.0.1 (pure Python, no libyaml), MIT licence, copied unmodified from the python3-yaml package.
-Zest ships its own Python with no site-packages, so the YAML reader for provider.yaml files is kept here. See COPYRIGHT in yaml/.

@@ -4021,26 +4021,26 @@
    },
    {
     "id": "zest",
-    "name": "Zest basics",
-    "blurb": "Skills written for Zest: diagrams that appear as pictures in the chat, and clear Markdown for documents.",
+    "name": "Shoggoth basics",
+    "blurb": "Skills written for Shoggoth: diagrams that appear as pictures in the chat, and clear Markdown for documents.",
     "source": "",
     "license": "MIT",
-    "author": "Zest",
+    "author": "Shoggoth",
     "note": "",
     "bundled": true,
     "mine": false,
     "skills": [
      {
-      "key": "zest/diagrams",
+      "key": "shoggoth/diagrams",
       "name": "diagrams",
       "dir": "diagrams",
-      "description": "Draw diagrams as Mermaid code that Zest shows as a picture in the chat. Use whenever the user asks for a diagram, flowchart, sequence diagram, architecture sketch, ER diagram, state machine, timeline, mind map or any picture of how things connect.",
+      "description": "Draw diagrams as Mermaid code that Shoggoth shows as a picture in the chat. Use whenever the user asks for a diagram, flowchart, sequence diagram, architecture sketch, ER diagram, state machine, timeline, mind map or any picture of how things connect.",
       "enabled": true,
       "bytes": 3471,
       "auto": true
      },
      {
-      "key": "zest/markdown-writing",
+      "key": "shoggoth/markdown-writing",
       "name": "markdown-writing",
       "dir": "markdown-writing",
       "description": "Write clear Markdown for chat replies and for files such as README, notes, docs, changelogs, meeting notes and plans. Use when the user asks you to write, draft, rewrite, tidy or structure a document or text, or when you are about to save a .md file.",
@@ -5075,7 +5075,7 @@
      "name": "obra/superpowers",
      "kind": "skills",
      "badge": "Skills",
-     "take": "Give your models a few skills, especially this set, and most of them turn into a very good daily driver. A trimmed copy already comes with Zest: switch it on under [Skills](#skills).",
+     "take": "Give your models a few skills, especially this set, and most of them turn into a very good daily driver. A trimmed copy already comes with Shoggoth: switch it on under [Skills](#skills).",
      "links": [
       {
        "label": "obra/superpowers on GitHub",
@@ -5108,14 +5108,14 @@
      ],
      "provider": "",
      "connect": {
-      "help": "Save this as `opencode.json` in your project, or add the `zest` part to your existing config.",
+      "help": "Save this as `opencode.json` in your project, or add the `shoggoth` part to your existing config.",
       "fields": [],
       "json": {
        "$schema": "https://opencode.ai/config.json",
        "provider": {
-        "zest": {
+        "shoggoth": {
          "npm": "@ai-sdk/openai-compatible",
-         "name": "Zest",
+         "name": "Shoggoth",
          "options": {
           "baseURL": "{base_url}",
           "apiKey": "{key}"
@@ -5191,7 +5191,7 @@
      "name": "llama.cpp server",
      "kind": "engine",
      "badge": "",
-     "take": "The engine underneath most local AI. Zest comes with a ready example: run `providers new llama-server --from llama-server` and follow [the ten-minute guide](https://github.com/yudhanjaya/Zest/blob/main/docs/ENGINES.md).",
+     "take": "The engine underneath most local AI. Shoggoth comes with a ready example: run `providers new llama-server --from llama-server` and follow [the ten-minute guide](https://github.com/yudhanjaya/Zest/blob/main/docs/ENGINES.md).",
      "links": [
       {
        "label": "llama.cpp on GitHub",

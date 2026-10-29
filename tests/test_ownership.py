@@ -1,4 +1,4 @@
-"""What is Zest's to stop, and what isn't: a Strata of yours on Zest's old port, a process number given to another program, models
+"""What is Shoggoth's to stop, and what isn't: a Strata of yours on Shoggoth's old port, a process number given to another program, models
 another program loaded into your Lemonade. Also: a Strata model keeps its name when it starts. Run: python3 -m unittest discover tests"""
 import os
 import shutil
@@ -10,7 +10,7 @@ import threading
 import time
 import unittest
 
-sys.path.insert(0, os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", "zest"))
+sys.path.insert(0, os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", "shoggoth"))
 
 import engine  # noqa: E402
 import lem  # noqa: E402
@@ -21,9 +21,9 @@ import strata  # noqa: E402
 
 
 def _load(name):
-    """A bundled provider.py, loaded the way the registry loads it (its folder shares a name with a module of Zest's)."""
+    """A bundled provider.py, loaded the way the registry loads it (its folder shares a name with a module of Shoggoth's)."""
     import importlib.util
-    path = os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", "zest", "providers", name, "provider.py")
+    path = os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", "shoggoth", "providers", name, "provider.py")
     spec = importlib.util.spec_from_file_location("zest_provider_test_" + name, path)
     mod = importlib.util.module_from_spec(spec)
     spec.loader.exec_module(mod)
@@ -38,8 +38,8 @@ class Patch(unittest.TestCase):
     def setUp(self):
         self._undo = []
         self.tmp = tempfile.mkdtemp()
-        self._env = {k: os.environ.get(k) for k in ("ZEST_DATA_DIR", "ZEST_CONFIG_DIR")}
-        os.environ["ZEST_DATA_DIR"], os.environ["ZEST_CONFIG_DIR"] = os.path.join(self.tmp, "data"), os.path.join(self.tmp, "config")
+        self._env = {k: os.environ.get(k) for k in ("SHOGGOTH_DATA_DIR", "SHOGGOTH_CONFIG_DIR")}
+        os.environ["SHOGGOTH_DATA_DIR"], os.environ["SHOGGOTH_CONFIG_DIR"] = os.path.join(self.tmp, "data"), os.path.join(self.tmp, "config")
 
     def tearDown(self):
         for mod, name, old in reversed(self._undo):
@@ -65,13 +65,13 @@ class StrataOwnership(Patch):
 
     def test_a_strata_of_yours_on_zests_old_port_stays_yours(self):
         out = self.discover([{"url": "http://127.0.0.1:8080", "name": "Mine", "profile": "launch-my-own", "port": 8080, "state": "ready"}],
-                            {"preset": "Zest IQ3_S", "port": 8080})
+                            {"preset": "Shoggoth IQ3_S", "port": 8080})
         self.assertEqual(out[0]["owner"], "yours")
-        self.assertEqual(strata._settings()["owned"]["port"], 0)                    # and Zest forgets the one it started, which has gone
+        self.assertEqual(strata._settings()["owned"]["port"], 0)                    # and Shoggoth forgets the one it started, which has gone
 
     def test_the_one_zest_started_is_zests(self):
-        out = self.discover([{"url": "http://127.0.0.1:8080", "name": "Q", "profile": "launch-zest-iq3_s", "port": 8080, "state": "loading"}],
-                            {"preset": "Zest IQ3_S", "port": 8080})
+        out = self.discover([{"url": "http://127.0.0.1:8080", "name": "Q", "profile": "launch-shoggoth-iq3_s", "port": 8080, "state": "loading"}],
+                            {"preset": "Shoggoth IQ3_S", "port": 8080})
         self.assertEqual(out[0]["owner"], "zest")
         self.assertIsNotNone(strata.zest_server())
         self.patch(strata, "running", lambda: out)
@@ -81,13 +81,13 @@ class StrataOwnership(Patch):
 class StrataNames(Patch):
     LIVE = {"id": "strata/served-name", "url": "http://127.0.0.1:8080", "key": "", "ctx": 131072, "bare": "served-name", "vision": False}
     DORMANT = {"id": "strata/qwen3.8-flash-next-iq3_s", "url": "http://127.0.0.1:8080", "key": "", "ctx": 131072, "bare": "qwen3.8-flash-next-iq3_s",
-               "vision": False, "dormant": True, "preset": "Zest IQ3_S"}
+               "vision": False, "dormant": True, "preset": "Shoggoth IQ3_S"}
 
     def test_a_dormant_model_is_listed_under_the_name_its_server_gave_it(self):
-        strata._save(lambda s: s["known"].update({"Zest IQ3_S": {"id": "served-name", "ctx": 131072, "vision": False}}))
+        strata._save(lambda s: s["known"].update({"Shoggoth IQ3_S": {"id": "served-name", "ctx": 131072, "vision": False}}))
         self.patch(strata, "running", lambda: [])
         self.patch(strata, "binary", lambda: "/bin/true")
-        self.patch(strata, "_presets_cached", lambda: [{"name": "Zest IQ3_S", "model": "IQ3_S", "port": 8080}])
+        self.patch(strata, "_presets_cached", lambda: [{"name": "Shoggoth IQ3_S", "model": "IQ3_S", "port": 8080}])
         self.patch(strata, "installed_models", lambda: [{"id": "iq3_s", "name": "qwen3.8-flash-next-iq3_s", "status": "present"}])
         self.assertEqual([m["id"] for m in strata.models()], ["strata/served-name"])
 
@@ -106,6 +106,17 @@ class StrataNames(Patch):
     def test_a_strata_on_another_computer_holds_no_memory_here(self):
         self.patch(strata, "running", lambda: [{"state": "ready", "source": "saved"}])
         self.assertFalse(strata_provider.Provider.is_running(None))
+
+
+class StrataFromBeforeTheRename(Patch):
+    def test_a_server_started_while_it_was_zest_is_still_its_own(self):
+        out = StrataOwnership.discover(self, [{"url": "http://127.0.0.1:8080", "name": "Q", "profile": "launch-zest-iq3_s", "port": 8080, "state": "ready"}],
+                                       {"preset": "Zest IQ3_S", "port": 8080})
+        self.assertEqual(out[0]["owner"], "zest")
+
+    def test_a_preset_it_made_as_zest_is_still_preferred(self):
+        presets = [{"name": "Mine", "model": "IQ3_S", "last_used": "2026-10-29"}, {"name": "Zest IQ3_S", "model": "IQ3_S", "last_used": None}]
+        self.assertEqual(strata._preset_for({"id": "iq3_s"}, presets)["name"], "Zest IQ3_S")
 
 
 class LemonadeMakesWay(Patch):
@@ -133,6 +144,13 @@ class LemonadeMakesWay(Patch):
         self.assertIn("other-app", msg)
         self.assertEqual(self.unloaded, ["zest-loaded"])
 
+    def test_models_it_loaded_as_zest_are_still_its_own(self):
+        saved = {"lemonade": {"loaded_by_zest": ["old-one"]}}
+        ctx = provbase.Context(settings=lambda pid: saved.get(pid, {}), save=lambda pid, **kv: saved.setdefault(pid, {}).update(kv))
+        p = lemonade_provider.Provider({"id": "lemonade", "name": "Lemonade", "api_version": 1}, self.tmp, ctx)
+        self.assertEqual(p._mine(add="new-one"), ["old-one", "new-one"])
+        self.assertEqual(saved["lemonade"]["loaded_by_shoggoth"], ["old-one", "new-one"])
+
     def test_a_lemonade_zest_runs_is_emptied(self):
         self.patch(engine, "running", lambda: True)
         self.assertEqual(self.p.make_way(), (True, ""))
@@ -145,7 +163,7 @@ class ProcessNumbers(unittest.TestCase):
         try:
             tmp = tempfile.mkdtemp()
             p = provbase.GenericProvider({"id": "x", "name": "X", "api_version": 1}, tmp, provbase.Context())
-            p._owned, p._pid, p._port, p._t = True, other.pid, 1, -1         # Zest's process was this number, started at another time
+            p._owned, p._pid, p._port, p._t = True, other.pid, 1, -1         # Shoggoth's process was this number, started at another time
             self.assertIsNone(p.owned_instance())
             p.stop()
             time.sleep(0.2)

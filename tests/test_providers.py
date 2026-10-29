@@ -13,7 +13,7 @@ import time
 import unittest
 
 HERE = os.path.dirname(os.path.abspath(__file__))
-sys.path.insert(0, os.path.join(HERE, "..", "zest"))
+sys.path.insert(0, os.path.join(HERE, "..", "shoggoth"))
 
 import engine  # noqa: E402
 import provbase  # noqa: E402
@@ -29,8 +29,8 @@ GOOD = {"id": "demo", "name": "Demo", "api_version": 1, "run": {"mode": "managed
 class Env(unittest.TestCase):
     def setUp(self):
         self.tmp = tempfile.mkdtemp()
-        self._old = {k: os.environ.get(k) for k in ("ZEST_DATA_DIR", "ZEST_CONFIG_DIR")}
-        os.environ["ZEST_DATA_DIR"], os.environ["ZEST_CONFIG_DIR"] = os.path.join(self.tmp, "data"), os.path.join(self.tmp, "config")
+        self._old = {k: os.environ.get(k) for k in ("SHOGGOTH_DATA_DIR", "SHOGGOTH_CONFIG_DIR")}
+        os.environ["SHOGGOTH_DATA_DIR"], os.environ["SHOGGOTH_CONFIG_DIR"] = os.path.join(self.tmp, "data"), os.path.join(self.tmp, "config")
         self.user = os.path.join(self.tmp, "data", "providers")
         os.makedirs(self.user)
 
@@ -50,7 +50,7 @@ class Env(unittest.TestCase):
         return d
 
     def registry(self):
-        return registry.Registry(bundled=os.path.join(HERE, "..", "zest", "providers"), user=self.user).load()
+        return registry.Registry(bundled=os.path.join(HERE, "..", "shoggoth", "providers"), user=self.user).load()
 
 
 class Helpers(unittest.TestCase):
@@ -136,7 +136,7 @@ class Loading(Env):
 
 
 class YamlOnlyProvider(Env):
-    """The promise of the design: drop a folder with one YAML file in, and Zest can start the engine and use its models."""
+    """The promise of the design: drop a folder with one YAML file in, and Shoggoth can start the engine and use its models."""
     PORTS = "18970-18979"
 
     def add_demo(self, **over):
@@ -205,11 +205,11 @@ class YamlOnlyProvider(Env):
         p = r.get("demo-openai")
         p.ensure("m1", lambda t: None)
         try:
-            again = self.registry().get("demo-openai")                  # a fresh start of Zest: new objects, nothing remembered in memory
+            again = self.registry().get("demo-openai")                  # a fresh start of Shoggoth: new objects, nothing remembered in memory
             self.assertTrue(again.approved)
             self.assertEqual([m["owner"] for m in again.models()], ["zest"])
             self.assertIsNotNone(again.owned_instance())                # so the idle clock can stop it
-            ok, msg = again.stop()                                      # and Zest can stop what the earlier Zest started
+            ok, msg = again.stop()                                      # and Shoggoth can stop what the earlier Shoggoth started
             self.assertTrue(ok, msg)
             self.assertEqual(again.models(), [])
             self.assertFalse(provbase.port_open(int(self.PORTS.split("-")[0])))
@@ -226,7 +226,7 @@ class YamlOnlyProvider(Env):
             rec = r.context().settings("demo-openai")["started"]
             r.context().remember("demo-openai", started=dict(rec, t=(rec["t"] or 0) + 1))      # same number and port, but a different process start
             other = self.registry().get("demo-openai")
-            self.assertEqual([m["owner"] for m in other.models()], ["yours"])                   # found running, but not Zest's
+            self.assertEqual([m["owner"] for m in other.models()], ["yours"])                   # found running, but not Shoggoth's
             self.assertFalse(other.stop()[0])
             self.assertTrue(provbase.port_open(rec["port"]))                                    # and left alone
         finally:
@@ -326,7 +326,7 @@ class LemonadeNames(Env):
 class EnginesPage(Env):
     """What the Advanced > Engines page is built from."""
     def real(self):
-        return registry.Registry(bundled=os.path.join(HERE, "..", "zest", "providers"), user=self.user).load()
+        return registry.Registry(bundled=os.path.join(HERE, "..", "shoggoth", "providers"), user=self.user).load()
 
     def test_summary_carries_what_each_card_shows(self):
         d = self.real().summary()
@@ -408,7 +408,7 @@ class Sdk(Env):
         self.assertTrue(rep["ok"], self.levels(rep))
         self.assertEqual((rep["id"], rep["name"]), ("mine", "Mine"))
         self.assertTrue(any("start a program" in t for _, t in self.levels(rep)))
-        self.assertIn("Zest will load this engine", provcheck.render(rep))
+        self.assertIn("Shoggoth will load this engine", provcheck.render(rep))
 
     def test_a_typo_is_pointed_out_with_the_right_word(self):
         rep = provcheck.check(self.add("mine", self.GOOD_YAML.replace("port_range: 18980-18981}", "port_rnge: 18980-18981}")))

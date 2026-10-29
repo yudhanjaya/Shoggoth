@@ -1,0 +1,1443 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Shoggoth prototype</title>
+<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Archivo:ital,wdth,wght@0,62..125,100..900;1,62..125,100..900&family=Doto:wght@400..900&family=Geist+Mono:wght@400..700&family=Geist:wght@300..800&family=IBM+Plex+Mono:ital,wght@0,400;0,600;1,400&family=Inter:ital,opsz,wght@0,14..32,300..800;1,14..32,300..800&family=JetBrains+Mono:ital,wght@0,400..700;1,400..700&family=Space+Grotesk:wght@300..700&family=Space+Mono:ital,wght@0,400;0,700;1,400&display=swap" rel="stylesheet">
+<!-- Prototype for docs/plans/shoggoth-cartridges.md. Mock data, nothing talks to the app. Open this file in a browser. -->
+<style>
+:root{
+  color-scheme:light;
+  --bg:#fffdf7; --surface:#ffffff; --surface-2:#f6f4ec; --line:#e4e2d8; --line-soft:#edebe2;
+  --text:#1a1a17; --muted:#58584f; --faint:#6f6f64;
+  --lemon:#f7d916; --lemon-ink:#1a1a17; --lemon-wash:rgba(247,217,22,.22); --lemon-text:#174f94;
+  --leaf:#1b7a3a; --warn:#9a4a00; --bad:#b3261e; --steel:#9b9a90;
+  --serif:"Young Serif","Iowan Old Style","Palatino Linotype",Palatino,Georgia,serif;
+  --sans:"Nunito Sans",ui-sans-serif,system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;
+  --mono:"JetBrains Mono",ui-monospace,"Fira Code",Menlo,Consolas,monospace;
+  --ease:cubic-bezier(.2,.7,.2,1);
+  --warn-bg:#fff8ec; --warn-line:#e6c9a0; --think-bg:#fdf6c8;
+  --edge:#d4d0c2; --hi:rgba(255,255,255,.85); --sh:rgba(60,50,30,.14); --well:#fbf9f2;
+  --lcd:#2b2f26; --lcd-text:#d8e6a8;
+  --veil:color-mix(in srgb,#141820 12%,transparent);
+}
+[data-theme="braun-t3"]{--muted:#4a4a42;--bg:#e9e6dc;--surface:#f4f1e8;--surface-2:#e2dfd4;--line:#cfcbbd;--line-soft:#d9d5c8;--faint:#58584f;--edge:#b9b5a6;--hi:rgba(255,255,255,.7);--sh:rgba(60,50,30,.25);--well:#f2efe6;--warn-bg:#f6ead2;--think-bg:#efe6b0}
+[data-theme="teenage-engineering"]{--bg:#e9e7df;--surface:#f5f3ec;--surface-2:#cfd3cf;--line:#1a1a17;--line-soft:#1a1a17;--text:#1a1a17;--muted:#3e3e38;--faint:#55554d;--lemon:#ffd400;--lemon-wash:rgba(255,212,0,.35);--leaf:#1b7a3a}
+[data-theme="one-dark-pro"]{color-scheme:dark;--bg:#282c34;--surface:#2c313a;--surface-2:#21252b;--line:#3e4451;--line-soft:color-mix(in srgb,#3e4451 65%,#282c34);
+  --text:#bcc2cd;--muted:color-mix(in srgb,#7f848e 25%,#bcc2cd);--faint:color-mix(in srgb,#7f848e 25%,#bcc2cd);
+  --lemon:#61afef;--lemon-ink:#14181f;--lemon-wash:color-mix(in srgb,#61afef 20%,#282c34);--lemon-text:color-mix(in srgb,#61afef 45%,#bcc2cd);
+  --leaf:color-mix(in srgb,#98c379 50%,#bcc2cd);--warn:color-mix(in srgb,#f3bd72 70%,#bcc2cd);--bad:#ff8f94;--steel:#7f848e;
+  --warn-bg:color-mix(in srgb,#e0a458 14%,#282c34);--warn-line:color-mix(in srgb,#e0a458 45%,#282c34);--think-bg:color-mix(in srgb,#61afef 22%,#282c34);
+  --edge:#1b1e24;--hi:rgba(255,255,255,.07);--sh:rgba(0,0,0,.45);--well:#252930;--lcd:#14171c;--lcd-text:#9fd0a0;--veil:color-mix(in srgb,#05070a 42%,transparent)}
+*{box-sizing:border-box}
+html,body{height:100%}
+body{margin:0;background:var(--bg);color:var(--text);font:16px/1.55 var(--sans);-webkit-font-smoothing:antialiased;overflow:hidden}
+button,input,select,textarea{font:inherit;color:inherit}
+button{cursor:pointer}
+:focus-visible{outline:2.5px solid var(--lemon-text);outline-offset:2px;border-radius:6px}
+.sr{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0)}
+[hidden]{display:none!important}
+.mono{font-family:var(--mono)}
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:8px;min-height:40px;padding:0 16px;border-radius:10px;border:1px solid var(--line);font-weight:550;font-size:14px;
+  background:linear-gradient(color-mix(in srgb,var(--surface) 90%,#fff),var(--surface));box-shadow:0 1.5px 0 var(--edge),0 1px 2px var(--sh);transition:background .15s,transform .1s}
+.btn:hover{background:var(--surface-2)}
+.btn:active{transform:translateY(1px);box-shadow:none}
+.btn.primary{background:linear-gradient(color-mix(in srgb,var(--lemon) 82%,#fff),var(--lemon));color:var(--lemon-ink);border-color:transparent;box-shadow:0 1.5px 0 color-mix(in srgb,var(--lemon) 55%,#000)}
+.btn.ghost{background:none;border-color:transparent;box-shadow:none;color:var(--muted)}
+.btn.sm{min-height:34px;padding:0 12px;font-size:13px}
+.btn[disabled]{opacity:.45;pointer-events:none}
+.link{border:0;background:none;color:var(--lemon-text);padding:0;font-size:13px;text-decoration:underline;text-underline-offset:2px;min-height:32px}
+
+/* shell, as in zest/index.html */
+.app{display:grid;grid-template-columns:220px 1fr;height:100dvh}
+.rail{display:flex;flex-direction:column;gap:4px;padding:20px 14px;border-right:1px solid var(--line-soft)}
+.brand{display:flex;align-items:center;gap:10px;padding:2px 10px 18px;font:400 24px/1 var(--serif)}
+.brand svg{flex:none}
+.nav button{display:flex;align-items:center;gap:12px;padding:0 12px;min-height:46px;border:0;background:none;border-radius:12px;color:var(--muted);font-size:15.5px;font-weight:550;text-align:left;width:100%}
+.nav button:hover{background:var(--surface-2);color:var(--text)}
+.nav button[aria-current="page"]{background:var(--lemon-wash);color:var(--text);font-weight:700}
+.nav button.sub{min-height:38px;font-size:14px;padding-left:34px}
+.railnote{margin-top:auto;margin-bottom:56px;padding:10px 12px;font-size:12.5px;color:var(--faint);line-height:1.45}
+main{display:flex;flex-direction:column;min-width:0;height:100dvh;overflow:hidden}
+.top{display:flex;align-items:center;gap:14px;padding:14px 26px;border-bottom:1px solid var(--line-soft);min-height:68px}
+.top h1{font:var(--h1w,400) var(--h1s,28px)/1.05 var(--serif);letter-spacing:var(--h1ls,-.01em);font-stretch:var(--hx,100%);margin:0}
+.top .crumb{border:0;background:none;color:var(--lemon-text);font-size:14px;padding:4px 0}
+.banner{font-size:12.5px;color:var(--warn);background:var(--warn-bg);border:1px solid var(--warn-line);border-radius:8px;padding:3px 10px;margin-left:auto}
+.view{display:flex;flex-direction:column;flex:1;min-height:0}
+.scroll{overflow:auto;flex:1;min-height:0}
+
+/* chat */
+.mbar{display:flex;align-items:center;gap:10px;padding:7px 20px;border-bottom:1px solid var(--line-soft);background:var(--surface-2);min-height:50px;position:relative}
+.mdot{width:9px;height:9px;border-radius:50%;background:var(--steel);flex:none}
+.mdot.on{background:var(--leaf)}.mdot.busy{background:var(--lemon)}
+.mpbtn{display:inline-flex;align-items:center;gap:8px;min-height:34px;padding:0 10px 0 12px;border-radius:9px;border:1px solid var(--line);background:var(--surface);font-size:13px}
+.mpbtn b{font-weight:600}.mpbtn small{color:var(--faint);font-size:11.5px}
+.mstate{font-size:13px;color:var(--muted);flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.mpop{position:absolute;z-index:30;left:20px;top:calc(100% - 2px);width:min(440px,92vw);background:var(--surface);border:1px solid var(--line);border-radius:14px;box-shadow:0 14px 40px rgba(0,0,0,.18);padding:6px}
+.pkrow{display:flex;align-items:center;gap:10px;width:100%;text-align:left;padding:9px 10px;border:0;border-radius:10px;background:none;font-size:13.5px}
+.pkrow:hover{background:var(--surface-2)}
+.pkrow small{margin-left:auto;color:var(--faint);font-size:12px}
+.pkfoot{display:flex;justify-content:flex-end;border-top:1px solid var(--line-soft);margin-top:6px;padding:4px 6px 0}
+.chatbody{display:grid;grid-template-columns:1fr;flex:1;min-height:0}
+.chatbody.side{grid-template-columns:1fr 184px}
+.msgs{overflow:auto;padding:24px 26px;display:flex;flex-direction:column;gap:14px}
+.msg{max-width:62ch;padding:12px 16px;border-radius:14px;background:var(--surface);border:1px solid var(--line-soft);font-size:15px}
+.msg.me{align-self:flex-end;background:var(--lemon-wash);border-color:transparent}
+.msg .who{font-size:12px;color:var(--faint);display:block;margin-bottom:2px}
+.composer{display:flex;gap:10px;padding:14px 26px;border-top:1px solid var(--line-soft)}
+.composer input{flex:1;min-height:46px;border:1px solid var(--line);border-radius:12px;padding:0 14px;background:var(--surface)}
+
+/* the picture beside the chat */
+.lamp{display:inline-flex;align-items:center;gap:6px;font:600 11px/1 var(--mono);letter-spacing:.06em;text-transform:uppercase;color:var(--muted);white-space:nowrap}
+.lamp::before{content:"";width:8px;height:8px;border-radius:50%;background:var(--steel);box-shadow:0 0 0 2px color-mix(in srgb,var(--steel) 25%,transparent)}
+.lamp.idle::before{background:var(--leaf)}
+.lamp.thinking::before,.lamp.answering::before{background:var(--lemon)}
+.lamp.loading::before{background:var(--warn)}
+.lamp.working::before{background:var(--lemon-text)}
+.pbar{display:flex;align-items:center;gap:8px}
+.pbtn{border:1px solid var(--line);background:var(--well);border-radius:9px;padding:2px;width:40px;height:40px;margin:-3px 0;overflow:hidden;display:grid;place-items:center;flex:none}
+.pbtn svg{width:34px;height:34px}
+/* the picture in a tube on the header, wired to the model picker */
+#v-chat{position:relative}
+.top.tall{min-height:112px;padding-top:6px;padding-bottom:6px}
+.ptube{display:flex;align-items:center;gap:12px;margin:0 0 0 96px;align-self:stretch}
+.ptube:empty{display:none}
+.ptube .tbtn{border:0;background:none;padding:0;height:98px;display:block;border-radius:14px}
+.vtube{display:block;overflow:visible}
+.vtube .led,.vtube .ledglow{fill:currentColor;color:var(--steel)}
+.vtube .ledglow{opacity:0;transition:opacity .3s}
+.vtube:not(.mood-none) .ledglow{opacity:.8}
+.vtube.mood-idle :is(.led,.ledglow){color:var(--leaf)}.vtube:is(.mood-thinking,.mood-answering) :is(.led,.ledglow){color:var(--lemon)}.vtube.mood-loading :is(.led,.ledglow){color:var(--warn)}.vtube.mood-working :is(.led,.ledglow){color:var(--lemon-text)}
+.vtube .tb-bub{opacity:0}
+.vtube.mood-thinking .tb-bub,.vtube.mood-answering .tb-bub,.vtube.mood-working .tb-bub{animation:tbRise 1.8s ease-in infinite}
+.vtube .tb-bub:nth-of-type(2){animation-delay:-.6s}.vtube .tb-bub:nth-of-type(3){animation-delay:-1.2s}
+@keyframes tbRise{0%{opacity:0;transform:translateY(0)}25%{opacity:.8}100%{opacity:0;transform:translateY(-26px)}}
+.vtube.mood-loading .tb-glass{fill-opacity:.32}
+.harness{position:absolute;left:0;top:0;width:100%;height:160px;pointer-events:none;z-index:4;overflow:visible}
+.harness .sig{fill:none;stroke-width:2;stroke-linecap:round;stroke:transparent}
+.harness.flow .sig{stroke:var(--lemon);stroke-dasharray:3 10;animation:sig .5s linear infinite}
+@keyframes sig{to{stroke-dashoffset:-13}}
+.pside{border-left:1px solid var(--line-soft);display:flex;flex-direction:column;align-items:center;gap:8px;padding:18px 12px;text-align:center}
+.pside .pbig{border:1px solid var(--line-soft);background:var(--well);border-radius:16px;width:156px;height:150px;padding:4px;display:grid;place-items:center}
+.pside .pbig:hover{border-color:var(--faint)}
+.pside svg{width:146px;height:128px}
+.pside b{font-size:13.5px;line-height:1.3}
+.pside .empty{font-size:13px;color:var(--faint)}
+
+/* creature (motion only on .live; a still picture keeps its pose) */
+.cr{display:block;overflow:visible}
+.cr .zc-breathe,.cr .zc-sway,.cr .zc-brain{transform-box:fill-box;transform-origin:50% 100%}
+.cr .zc-eye{transform-box:fill-box;transform-origin:50% 50%;transition:transform .5s ease}
+.cr .zc-pupil{transition:transform .6s cubic-bezier(.3,.7,.2,1)}
+.cr .zc-body{transform-box:fill-box}
+.cr .zc-spark{opacity:0}
+.cr.mood-loading .zc-eye{transform:scaleY(.1)}
+.cr.mood-thinking .zc-pupil{transform:translate(0,.12px)}
+.cr.mood-answering .zc-pupil{transform:translate(0,-.12px)}
+.cr.mood-working .zc-f-y .zc-pupil{transform:translate(.13px,0)}
+.cr.mood-working .zc-f-x .zc-pupil{transform:translate(-.13px,0)}
+.cr.none{opacity:.25;filter:grayscale(1)}
+.cr.live .zc-breathe{animation:zcBreathe 5s ease-in-out infinite}
+.cr.live.mood-thinking .zc-sway{animation:zcSway 2.6s ease-in-out infinite}
+.cr.live .zc-eye{animation:zcBlink 7s infinite}
+.cr.live.mood-loading .zc-eye{animation:none}
+.cr.live.mood-idle .zc-pupil{animation:zcLook 9s ease-in-out infinite}
+.cr.live.mood-thinking .zc-brain,.cr.live.mood-working .zc-brain{animation:zcPulse 1.7s ease-in-out infinite}
+.cr.live.mood-thinking .zc-spark,.cr.live.mood-working .zc-spark{animation:zcSpark 1.5s ease-in-out infinite}
+.cr.live.mood-answering .zc-body{animation:zcNod .55s ease-in-out infinite}
+.cr.live .zc-fl{animation:zcBob 4.5s ease-in-out infinite}
+.cr.live .zc-fl2{animation-delay:-1.5s;animation-duration:5.5s}
+.cr.live .zc-fl3{animation-delay:-3s;animation-duration:6.5s}
+@keyframes zcBreathe{0%,100%{transform:scale(1,1)}50%{transform:scale(1.008,1.016)}}
+@keyframes zcSway{0%,100%{transform:rotate(-.6deg)}50%{transform:rotate(.6deg)}}
+@keyframes zcBlink{0%,93%,100%{transform:scaleY(1)}96%{transform:scaleY(.06)}}
+@keyframes zcLook{0%,38%,100%{transform:translate(0,0)}46%,62%{transform:translate(.11px,.05px)}72%,88%{transform:translate(-.1px,-.04px)}}
+@keyframes zcPulse{0%,100%{transform:scale(1)}50%{transform:scale(1.04)}}
+@keyframes zcSpark{0%,100%{opacity:0}40%,60%{opacity:1}}
+@keyframes zcNod{0%,100%{transform:translateY(0)}50%{transform:translateY(2px)}}
+@keyframes zcBob{0%,100%{transform:translateY(0)}50%{transform:translateY(-5px)}}
+
+/* the machine */
+.machine{container-type:inline-size;display:grid;gap:22px;padding:22px 26px 120px}
+.machine h2{font:400 21px/1.2 var(--serif);margin:0}
+.machine .hint{font-size:13.5px;color:var(--muted);margin:2px 0 0}
+.case{border-radius:18px;padding:16px;background:linear-gradient(var(--surface-2),color-mix(in srgb,var(--surface-2) 85%,var(--edge)));border:1px solid var(--line);box-shadow:inset 0 1px 0 var(--hi),0 2px 0 var(--edge),0 10px 24px var(--sh)}
+.casehead{display:flex;align-items:baseline;gap:10px;flex-wrap:wrap;padding:0 4px 12px}
+.casehead b{font-size:15px}.casehead span{font-size:12.5px;color:var(--muted)}
+.slots{display:grid;gap:14px;grid-template-columns:1fr}
+@container (min-width:640px){.slots{grid-template-columns:minmax(0,1fr) minmax(0,1.25fr)}}
+.slot{border-radius:14px;background:var(--surface);border:1px solid var(--line-soft);padding:12px;display:grid;gap:10px;align-content:start;box-shadow:0 1px 0 var(--hi)}
+.slothead{display:flex;align-items:baseline;gap:8px;flex-wrap:wrap}
+.slothead b{font-size:14.5px}.slothead span{font-size:12px;color:var(--faint)}
+.lcd{background:var(--lcd);color:var(--lcd-text);font:12px/1.5 var(--mono);border-radius:8px;padding:7px 10px;min-height:44px;box-shadow:inset 0 2px 4px rgba(0,0,0,.35)}
+.lcd p{margin:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.lcd p:not(:last-child){opacity:.55}
+.bay{position:relative;border-radius:12px;min-height:118px;background:var(--well);box-shadow:inset 0 3px 8px var(--sh);padding:10px;display:grid;gap:8px;align-content:center}
+.bay::before{content:"";position:absolute;left:18px;right:18px;top:6px;height:4px;border-radius:3px;background:color-mix(in srgb,var(--text) 22%,transparent)}
+.bay.drop{outline:2.5px dashed var(--lemon-text);outline-offset:-4px}
+.bay .emptytxt{text-align:center;font-size:13px;color:var(--faint)}
+.seat{display:grid;grid-template-columns:auto 1fr auto;align-items:center;gap:12px;background:var(--surface);border-radius:10px;padding:6px 10px 6px 6px;border-top:5px solid var(--tone,#7aa296);box-shadow:0 2px 0 var(--edge)}
+.seat .th{width:84px;height:72px;display:grid;place-items:center;overflow:hidden}
+.seat .th svg{width:80px;height:68px}
+.seat .tag{margin-top:3px}
+.seat b{font-size:14px;display:block;line-height:1.25}
+.seat small{font-size:12px;color:var(--muted)}
+.tag{display:inline-block;font-size:11.5px;font-weight:700;padding:1px 8px;border-radius:999px;background:var(--surface-2);border:1px solid var(--line);color:var(--muted)}
+.inserting{animation:slideIn .55s var(--ease) both}
+.ejecting{animation:slideOut .38s ease-in both}
+@keyframes slideIn{from{transform:translateY(-34px);opacity:0}to{transform:none;opacity:1}}
+@keyframes slideOut{to{transform:translateY(-30px);opacity:0}}
+.gauge{display:grid;gap:3px;font-size:12px;color:var(--muted)}
+.gauge .row{display:flex;justify-content:space-between;gap:8px}
+.gauge .row b{color:var(--text);font-weight:600;font-variant-numeric:tabular-nums}
+.gauge .bar{height:8px;border-radius:5px;background:var(--surface-2);box-shadow:inset 0 1px 2px var(--sh);overflow:hidden}
+.gauge .bar i{display:block;height:100%;background:var(--leaf);border-radius:5px;transition:width .6s var(--ease)}
+.gauge .bar i.hot{background:var(--warn)}
+.trays{display:grid;gap:6px}
+.tray{display:grid;grid-template-columns:96px 1fr;gap:8px;align-items:center;font-size:12px;color:var(--muted)}
+.wait{display:grid;gap:8px;border:1px solid var(--warn-line);background:var(--warn-bg);border-radius:10px;padding:10px 12px;font-size:13.5px}
+.wait .acts{display:flex;gap:8px;flex-wrap:wrap}
+.shelf{display:grid;gap:14px}
+.shelfrow h3{font-size:12.5px;font-weight:700;color:var(--muted);margin:0 0 8px;text-transform:uppercase;letter-spacing:.06em}
+.carts{display:flex;flex-wrap:wrap;gap:12px}
+.cart{width:158px;display:grid;gap:4px;background:var(--surface);border:1px solid var(--line);border-radius:12px 12px 10px 10px;padding:0 0 10px;box-shadow:0 2px 0 var(--edge),0 4px 10px var(--sh);overflow:hidden;
+  clip-path:polygon(0 0,34% 0,38% 7px,62% 7px,66% 0,100% 0,100% 100%,0 100%)}
+.cart[draggable=true]{cursor:grab}
+.cart .lab{height:10px;background:var(--tone,#7aa296)}
+.cart .th{height:104px;display:grid;place-items:center;overflow:hidden}
+.cart .th svg{width:124px;height:108px}
+.cart b,.cart small,.cart .fit,.cart .btn{margin:0 10px}
+.cart b{font-size:13.5px;line-height:1.25}
+.cart small{font-size:11.5px;color:var(--muted)}
+.cart .fit{font-size:11.5px;color:var(--warn);min-height:16px}
+.cart .btn{margin-top:4px}
+.cart.out{opacity:.62}
+.cart.out .th svg{filter:grayscale(1)}
+.cart.in{opacity:.5}
+@container (min-width:900px){.cart{width:176px}.cart .th{height:120px}.cart .th svg{width:140px;height:122px}}
+
+/* drawer */
+dialog.drawer{margin:0 0 0 auto;height:100dvh;max-height:none;width:min(760px,100vw);padding:0;border:0;border-left:1px solid var(--line);background:var(--bg);color:var(--text);box-shadow:-20px 0 50px rgba(0,0,0,.18)}
+dialog.drawer[open]{animation:drawerIn .28s var(--ease)}
+dialog.drawer::backdrop{background:rgba(20,18,10,.22)}
+@keyframes drawerIn{from{transform:translateX(40px);opacity:0}}
+.dhead{display:flex;align-items:center;gap:10px;padding:14px 18px 14px 26px;border-bottom:1px solid var(--line-soft);position:sticky;top:0;background:var(--bg);z-index:2}
+.dhead h2{font:400 24px/1.1 var(--serif);margin:0;flex:1}
+.dwrap{height:100%;display:flex;flex-direction:column}
+
+/* server bench */
+.bench{margin:22px 26px 0;border-radius:16px;border:1px solid var(--line-soft);background:var(--surface-2);padding:12px 16px}
+.bench h2{font-size:13px;font-weight:700;color:var(--muted);margin:0 0 4px;text-transform:uppercase;letter-spacing:.06em}
+.bench svg.strip{width:100%;height:auto;display:block;max-height:220px}
+.glass .liq{transform-box:fill-box;transform-origin:50% 100%;transform:scaleY(0);transition:transform 1.2s ease-in}
+.glass.st-writing .liq{transform:scaleY(1);transition:transform 2.6s linear}
+.glass.st-done .liq{transform:scaleY(1)}
+.glass .bub{opacity:0}
+.glass.st-thinking .bub{animation:rise 1.3s ease-in infinite}
+.glass .bub:nth-of-type(2){animation-delay:-.45s}.glass .bub:nth-of-type(3){animation-delay:-.9s}
+@keyframes rise{0%{opacity:0;transform:translateY(0)}20%{opacity:.9}100%{opacity:0;transform:translateY(-34px)}}
+.tube{fill:none;stroke:var(--line);stroke-width:5;stroke-linecap:round}
+.glass.st-writing .tube{stroke:var(--lemon);stroke-dasharray:7 7;animation:flow .5s linear infinite}
+@keyframes flow{to{stroke-dashoffset:-14}}
+.glass text{font:600 13px var(--sans);fill:var(--text)}
+.glass .lamp2{fill:var(--steel)}.glass.st-thinking .lamp2{fill:var(--warn)}.glass.st-writing .lamp2{fill:var(--lemon)}.glass.st-done .lamp2{fill:var(--leaf)}
+
+.glass text.st{font:600 10.5px var(--mono);letter-spacing:.06em;fill:var(--muted)}
+table.reqs{width:calc(100% - 52px);margin:18px 26px 120px;border-collapse:collapse;font-size:13.5px}
+table.reqs th{text-align:left;font-size:12px;color:var(--faint);font-weight:600;padding:6px 8px;border-bottom:1px solid var(--line)}
+table.reqs td{padding:8px;border-bottom:1px solid var(--line-soft)}
+.note{font-size:12.5px;color:var(--faint);margin:6px 26px 0}
+
+/* specimens */
+.spec{display:grid;grid-template-columns:minmax(300px,420px) 1fr;gap:26px;padding:22px 26px 120px}
+.stage{border-radius:18px;background:var(--well);border:1px solid var(--line-soft);padding:14px;display:grid;gap:10px;align-content:start;position:sticky;top:0}
+.stage svg{width:100%;height:auto;aspect-ratio:480/420}
+.stage h2{font:400 22px/1.2 var(--serif);margin:0}
+.stage ul{margin:0;padding-left:18px;font-size:14px;display:grid;gap:4px}
+.seg{display:flex;gap:6px;flex-wrap:wrap}
+.seg button[aria-pressed=true]{background:var(--lemon-wash);border-color:var(--lemon-text)}
+.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:12px;align-content:start}
+.sp{border:1px solid var(--line-soft);background:var(--surface);border-radius:14px;padding:6px 6px 10px;display:grid;gap:2px;text-align:left}
+.sp[aria-pressed=true]{border-color:var(--lemon-text);box-shadow:0 0 0 2px var(--lemon-wash)}
+.sp svg{width:100%;height:auto;aspect-ratio:480/420}
+.sp b{font-size:13px;padding:0 6px}.sp small{font-size:11.5px;color:var(--muted);padding:0 6px}
+
+/* hardware apparatus */
+.hw{padding:18px 26px 120px;display:grid;gap:14px}
+.rig{border-radius:18px;border:1px solid var(--line-soft);background:radial-gradient(ellipse at 50% 10%,color-mix(in srgb,var(--surface) 80%,#fff),var(--surface-2) 70%);padding:10px 10px 0;overflow:hidden}
+.rig svg.appar{width:100%;height:auto;display:block}
+.hbub{animation:hwRise 2s linear infinite}
+.lamp{fill:#2e3035}.lamp.on{fill:var(--lemon)}
+.reel{transform-box:view-box;animation:spin 8s linear infinite}
+@keyframes spin{to{transform:rotate(360deg)}}
+@keyframes hwRise{from{transform:translateY(0)}to{transform:translateY(-290px)}}
+.hwstats{display:grid;grid-template-columns:repeat(4,1fr);gap:10px}
+.hwstats div{background:var(--surface);border:1px solid var(--line-soft);border-radius:12px;padding:10px 14px;display:grid}
+.hwstats b{font-size:22px;font-variant-numeric:tabular-nums}.hwstats span{font-size:12.5px;color:var(--muted)}
+@media (max-width:700px){.hwstats{grid-template-columns:repeat(2,1fr)}}
+/* glyphs, flavour and identity */
+svg.gl{width:20px;height:20px;stroke:currentColor;fill:none;stroke-width:1.6;stroke-linecap:round;stroke-linejoin:round;flex:none}
+svg.gl.big{width:30px;height:30px;stroke-width:1.4}
+.phase{display:flex;align-items:baseline;gap:8px;margin-top:6px;font-size:13.5px;color:var(--muted)}
+.phase .ph svg{position:relative;top:4px}
+.phase b{color:var(--text);font-weight:650;white-space:nowrap}
+.flav{font:var(--flav,italic 400 14px/1.4 var(--serif));color:var(--muted)}
+.tool{display:flex;gap:10px;align-items:flex-start;max-width:62ch;padding:10px 14px;border-radius:12px;background:var(--surface-2);border:1px solid var(--line-soft);font-size:13.5px}
+.tool > div{display:grid;gap:2px}.tool b{font-weight:650}.tool svg.gl{margin-top:1px}
+.tool.ask{border-color:var(--warn-line);background:var(--warn-bg)}.tool .acts{display:flex;gap:8px;margin-top:6px}
+.ident{padding:20px 26px 120px;display:grid;gap:26px;max-width:1100px}
+.idsec h2{font:400 22px/1.2 var(--serif);margin:0 0 8px}
+.wordmark{display:flex;align-items:center;gap:16px;font:400 46px/1 var(--serif);letter-spacing:-.01em}
+.icons{display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:14px}
+.iconcard{border:1px solid var(--line-soft);background:var(--surface);border-radius:16px;padding:14px;display:grid;gap:8px}
+.iconcard .hint{margin:0;font-size:13px}
+.sizes{display:flex;align-items:flex-end;gap:14px;padding:8px;border-radius:10px;background:var(--surface-2)}.sizes.dark{background:#1f2125}
+.glgrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:10px}
+.glrow{display:flex;gap:12px;align-items:center;padding:10px 12px;border:1px solid var(--line-soft);border-radius:12px;background:var(--surface)}
+.glrow > div{display:grid}.glrow small{color:var(--faint);font-size:12px}
+.flav-set{border:1px solid var(--line-soft);border-radius:12px;background:var(--surface);margin-bottom:8px}
+.flav-set summary{display:flex;gap:10px;align-items:center;padding:10px 14px;cursor:pointer}.flav-set summary span{color:var(--faint);font-size:12.5px;margin-left:auto}
+.flav-set ul{margin:0;padding:0 18px 12px 46px;display:grid;gap:4px;font:var(--flav,italic 400 14px/1.4 var(--serif));color:var(--muted)}
+/* first run */
+.meet{display:flex;gap:16px;align-items:center;max-width:70ch;padding:16px 18px;border-radius:16px;background:var(--surface);border:1px solid var(--line);box-shadow:0 2px 0 var(--edge),0 8px 20px var(--sh)}
+.meet .mpic{width:110px;height:100px;flex:none;border-radius:12px;background:var(--well);display:grid;place-items:center}.meet .mpic svg{width:96px;height:86px}
+.meet b{font:400 20px/1.2 var(--serif)}.meet p{margin:4px 0 8px;font-size:14px;color:var(--muted)}.meet .acts{display:flex;gap:8px}.meet small{display:block;margin-top:6px;color:var(--faint);font-size:12px}
+.meetnote{display:flex;align-items:center;gap:8px;font-size:13px;color:var(--muted);padding:6px 12px;border-radius:10px;background:var(--surface-2);align-self:flex-start}
+.meetnote .x{border:0;background:none;font-size:16px;color:var(--faint);min-width:28px;min-height:28px}
+.panel2{border:1px solid var(--line-soft);background:var(--surface);border-radius:16px;padding:6px 18px;max-width:760px}.panel2 h2{font:400 22px/1.2 var(--serif);margin:12px 0 4px}
+.prow{display:flex;gap:16px;align-items:center;justify-content:space-between;padding:14px 0;border-top:1px solid var(--line-soft)}.prow p{margin:2px 0 0;font-size:13.5px;color:var(--muted)}
+.sw2{width:46px;height:26px;border-radius:13px;border:1px solid var(--line);background:var(--surface-2);position:relative;flex:none}
+.sw2 i{position:absolute;top:2px;left:2px;width:20px;height:20px;border-radius:50%;background:var(--surface);box-shadow:0 1px 2px var(--sh);transition:left .2s}
+.sw2[aria-checked=true]{background:var(--lemon)}.sw2[aria-checked=true] i{left:22px}
+/* type pairings to choose from: --serif is the display face, --sans the body, --mono the labels */
+[data-type="space"]{--serif:"Space Grotesk",sans-serif;--sans:"Inter",sans-serif;--mono:"Space Mono",monospace;--h1w:600;--h1s:48px;--h1ls:-.03em;--hw:600;--flav:italic 400 13.5px/1.5 "Space Mono",monospace}
+[data-type="archivo"]{--serif:"Archivo",sans-serif;--sans:"Archivo",sans-serif;--mono:"IBM Plex Mono",monospace;--h1w:800;--h1s:44px;--h1ls:-.01em;--hx:125%;--hw:750;--flav:italic 400 14.5px/1.45 "Archivo",sans-serif}
+[data-type="doto"]{--serif:"Doto",monospace;--sans:"Inter",sans-serif;--mono:"JetBrains Mono",monospace;--h1w:900;--h1s:52px;--h1ls:0;--hw:800;--flav:italic 400 13px/1.5 "JetBrains Mono",monospace}
+[data-type="geist"]{--serif:"Geist",sans-serif;--sans:"Geist",sans-serif;--mono:"Geist Mono",monospace;--h1w:600;--h1s:48px;--h1ls:-.035em;--hw:600;--flav:400 13px/1.5 "Geist Mono",monospace}
+html[data-type] :is(.machine h2,.dhead h2,.stage h2,.idsec h2,.panel2 h2,.meet b,.wordmark,.brand){font-weight:var(--hw)!important;font-stretch:var(--hx,100%);letter-spacing:-.01em}
+html[data-type="doto"] :is(.brand,.wordmark){letter-spacing:.02em}
+.logscr{margin:14px 26px 0;border-radius:14px;background:#0c0d0f;border:1px solid #2a2c31;box-shadow:inset 0 2px 8px rgba(0,0,0,.6),0 1px 0 var(--hi);padding:10px 16px 12px;color:#a7a49a;font:500 13px/1.6 var(--mono)}
+.logscr header{display:flex;justify-content:space-between;font-size:11px;letter-spacing:.14em;color:#6d6b63;margin-bottom:4px}
+.logscr .ll{display:flex;gap:14px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.logscr time{color:#6d6b63}
+.logscr .ll.in span{color:#e9e6dc}.logscr .ll.ok span{color:var(--lemon)}.logscr .ll.sys span{color:#8f8c82}
+html[data-type="doto"] :is(.appar,.bench svg) text{font-family:"Doto",monospace!important;font-weight:900!important;letter-spacing:.04em}
+html[data-type="doto"] :is(.logscr,table.reqs){font-family:"Doto",monospace;font-weight:900;letter-spacing:.03em}
+html[data-type="doto"] .logscr{font-size:15px}html[data-type="doto"] table.reqs{font-size:15px}
+/* prototype controls (not part of the design) */
+.proto{position:fixed;left:14px;bottom:14px;z-index:50;width:300px;max-width:calc(100vw - 28px);font-size:13px;background:#1f1d17;color:#f3f0e4;border-radius:14px;box-shadow:0 12px 40px rgba(0,0,0,.35)}
+.proto:not([open]){width:auto}
+.proto summary{padding:10px 14px;font-weight:700;cursor:pointer;list-style:none}
+.proto summary::after{content:" ▾";opacity:.6}
+.proto .body{display:grid;gap:10px;padding:0 14px 14px;max-height:70vh;overflow:auto}
+.proto fieldset{border:1px solid #3c392e;border-radius:9px;padding:6px 10px 8px;margin:0;display:grid;gap:3px}
+.proto legend{font-size:11px;color:#bdb8a4;padding:0 4px;text-transform:uppercase;letter-spacing:.06em}
+.proto label{display:flex;gap:8px;align-items:center;min-height:26px}
+.proto select{background:#2c2a22;border:1px solid #4a473a;border-radius:6px;padding:3px 6px}
+.proto .pbtns{display:flex;flex-wrap:wrap;gap:6px}
+.proto .pbtns button{background:#3a372c;border:1px solid #57533f;color:#f3f0e4;border-radius:7px;padding:5px 9px;font-size:12.5px}
+.proto .pbtns button:hover{background:#4a4637}
+.proto :focus-visible{outline-color:#f7d916}
+
+.rm *,.rm *::before,.rm *::after{animation:none!important;transition:none!important}
+@media (prefers-reduced-motion:reduce){*,*::before,*::after{animation:none!important;transition:none!important}}
+@media (max-width:900px){.ptube .tbtn,.harness{display:none}.app{grid-template-columns:1fr}.rail{display:none}.chatbody.side{grid-template-columns:1fr}.pside{display:none}.spec{grid-template-columns:1fr}.stage{position:static}}
+</style>
+<script src="creature.js"></script>
+</head>
+<body>
+<svg width="0" height="0" style="position:absolute" aria-hidden="true"><defs>
+  <linearGradient id="kGlass" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#fff" stop-opacity=".55"/><stop offset=".22" stop-color="#fff" stop-opacity=".12"/><stop offset=".6" stop-color="#fff" stop-opacity="0"/><stop offset="1" stop-color="#fff" stop-opacity=".22"/></linearGradient>
+  <linearGradient id="kGlassH" x1="0" y1="0" x2="1" y2="0"><stop offset="0" stop-color="#fff" stop-opacity=".35"/><stop offset=".18" stop-color="#fff" stop-opacity=".05"/><stop offset=".75" stop-color="#fff" stop-opacity="0"/><stop offset=".9" stop-color="#fff" stop-opacity=".28"/><stop offset="1" stop-color="#fff" stop-opacity=".05"/></linearGradient>
+  <linearGradient id="kMatte" x1="0" y1="0" x2="0" y2="1"><stop offset="0" style="stop-color:var(--surface)"/><stop offset="1" style="stop-color:var(--surface-2)"/></linearGradient>
+  <linearGradient id="kMatteH" x1="0" y1="0" x2="1" y2="0"><stop offset="0" style="stop-color:var(--surface-2)"/><stop offset=".35" style="stop-color:var(--surface)"/><stop offset="1" style="stop-color:var(--surface-2)"/></linearGradient>
+  <linearGradient id="kAccent" x1="0" y1="0" x2="1" y2="0"><stop offset="0" style="stop-color:color-mix(in srgb,var(--lemon) 82%,#000)"/><stop offset=".4" style="stop-color:var(--lemon)"/><stop offset="1" style="stop-color:color-mix(in srgb,var(--lemon) 78%,#000)"/></linearGradient>
+  <linearGradient id="kDark" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#2f3136"/><stop offset="1" stop-color="#1c1d21"/></linearGradient>
+  <linearGradient id="kTorus" x1="0" y1="0" x2="0" y2="1"><stop offset="0" style="stop-color:color-mix(in srgb,var(--surface) 70%,#fff)"/><stop offset=".45" style="stop-color:var(--surface)"/><stop offset=".8" style="stop-color:var(--surface-2)"/><stop offset="1" style="stop-color:color-mix(in srgb,var(--surface-2) 80%,#000)"/></linearGradient>
+  <linearGradient id="kBezel" x1=".2" y1="0" x2=".8" y2="1"><stop offset="0" style="stop-color:color-mix(in srgb,var(--surface) 60%,#fff)"/><stop offset=".55" style="stop-color:var(--surface-2)"/><stop offset="1" style="stop-color:color-mix(in srgb,var(--surface-2) 78%,#000)"/></linearGradient>
+  <linearGradient id="kBezelIn" x1=".2" y1="0" x2=".8" y2="1"><stop offset="0" stop-color="#000" stop-opacity=".22"/><stop offset=".5" stop-color="#000" stop-opacity="0"/><stop offset="1" stop-color="#fff" stop-opacity=".55"/></linearGradient>
+  <radialGradient id="kRecess" cx=".5" cy=".45" r=".55"><stop offset=".82" stop-color="#000" stop-opacity="0"/><stop offset="1" stop-color="#000" stop-opacity=".16"/></radialGradient>
+  <radialGradient id="kDome" cx=".35" cy=".3" r=".75"><stop offset="0" stop-color="#fff" stop-opacity=".18"/><stop offset=".6" stop-color="#fff" stop-opacity="0"/><stop offset="1" stop-color="#000" stop-opacity=".06"/></radialGradient>
+  <linearGradient id="kCyl" x1="0" y1="0" x2="1" y2="0"><stop offset="0" stop-color="#000" stop-opacity=".18"/><stop offset=".3" stop-color="#fff" stop-opacity=".35"/><stop offset=".55" stop-color="#fff" stop-opacity="0"/><stop offset="1" stop-color="#000" stop-opacity=".22"/></linearGradient>
+  <linearGradient id="kTable" x1="0" y1="0" x2="0" y2="1"><stop offset="0" style="stop-color:color-mix(in srgb,var(--surface-2) 85%,#fff)"/><stop offset="1" style="stop-color:var(--surface-2)"/></linearGradient>
+  <linearGradient id="kTableFront" x1="0" y1="0" x2="0" y2="1"><stop offset="0" style="stop-color:var(--surface)"/><stop offset="1" style="stop-color:color-mix(in srgb,var(--surface-2) 88%,#000)"/></linearGradient>
+  <radialGradient id="kCrt" cx=".5" cy=".5" r=".7"><stop offset="0" style="stop-color:color-mix(in srgb,var(--lemon) 22%,#0c0d0f)"/><stop offset="1" stop-color="#0c0d0f"/></radialGradient>
+  <linearGradient id="kVeil" x1="0" y1="0" x2=".35" y2="1"><stop offset="0" stop-color="#fff" stop-opacity=".1"/><stop offset=".4" stop-color="#fff" stop-opacity="0"/><stop offset="1" stop-color="#000" stop-opacity=".06"/></linearGradient>
+  <radialGradient id="kArcGlow"><stop offset="0" style="stop-color:var(--lemon);stop-opacity:.55"/><stop offset="1" style="stop-color:var(--lemon);stop-opacity:0"/></radialGradient>
+  <filter id="kShadow" x="-10%" y="-20%" width="120%" height="160%"><feDropShadow dx="0" dy="1.5" stdDeviation="1.4" flood-color="#000" flood-opacity=".18"/></filter>
+  <filter id="kSoft" x="-100%" y="-100%" width="300%" height="300%"><feGaussianBlur stdDeviation="2.4"/></filter>
+  <filter id="kArc" x="-30%" y="-30%" width="160%" height="160%"><feGaussianBlur stdDeviation="2.2" result="b"/><feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge></filter>
+</defs></svg>
+<div class="app">
+  <nav class="rail" aria-label="Pages">
+    <div class="brand" id="brand">Shoggoth</div>
+    <div class="nav">
+      <button data-go="chat">Chat</button>
+      <button data-go="library" disabled title="Not part of this prototype">Library</button>
+      <button class="sub" data-go="machine">Machine</button>
+      <button data-go="server">Server</button>
+      <button data-go="library" disabled title="Not part of this prototype">Advanced</button>
+      <button class="sub" data-go="hardware">Hardware</button>
+      <button data-go="spec">Example pictures</button>
+      <button data-go="ident">Identity</button>
+      <button data-go="prefs">Settings › Look</button>
+    </div>
+    <p class="railnote">Prototype. Mock data. Nothing here talks to the app.</p>
+  </nav>
+  <main>
+    <section class="view" id="v-chat">
+      <div class="top"><h1>Chat</h1><span class="ptube" id="ptube"></span><span class="banner">Prototype · mock data</span></div>
+      <div class="mbar" aria-label="Model">
+        <span class="mdot" id="mdot"></span>
+        <button class="mpbtn" id="mpbtn" aria-haspopup="listbox" aria-expanded="false"><span>Model</span><b id="mpname">None</b><small id="mptier"></small> ▾</button>
+        <span class="mstate" id="mstate" role="status"></span>
+        <span class="pbar" id="pbar"></span>
+        <div class="mpop" id="mpop" hidden></div>
+      </div>
+      <div class="chatbody" id="chatbody">
+        <div class="msgs" id="msgs">
+          <div id="meet"></div>
+          <div class="msg me"><span class="who">You</span>What's a good way to keep basil alive indoors?</div>
+          <div class="msg"><span class="who">GLM-4.7 Flash</span>Give it the sunniest window you have, at least six hours a day, and water when the top of the soil is dry. Pinch off the flower buds so it keeps growing leaves.</div>
+        </div>
+        <aside class="pside" id="pside" hidden></aside>
+      </div>
+      <svg class="harness" id="harness" aria-hidden="true"></svg>
+      <form class="composer" id="composer"><input id="say" aria-label="Message" placeholder="Ask anything" autocomplete="off"><button class="btn primary">Send</button></form>
+    </section>
+
+    <section class="view" id="v-machine" hidden>
+      <div class="top"><button class="crumb" data-go="chat">Library ›</button><h1>Machine</h1><span class="banner">Prototype · mock data</span></div>
+      <div class="scroll" id="mpage"></div>
+    </section>
+
+    <section class="view" id="v-server" hidden>
+      <div class="top"><h1>Server</h1><span class="banner">Prototype · mock data</span></div>
+      <div class="scroll">
+        <div class="bench" id="bench"></div>
+        <p class="note">Prototype note: the picture is new. The list below is today's list, and it's still what screen readers read.</p>
+        <section class="logscr" aria-label="Server log"><header><span>LOG</span><span id="logn">0 LINES</span></header><div id="log" role="log"></div></section>
+        <table class="reqs"><thead><tr><th>Time</th><th>App</th><th>Model</th><th>Status</th></tr></thead><tbody id="reqs"></tbody></table>
+      </div>
+    </section>
+
+    <section class="view" id="v-hardware" hidden>
+      <div class="top"><h1>Hardware</h1><span class="banner">Prototype · mock data</span></div>
+      <div class="scroll"><div class="hw">
+        <p class="hint" style="margin:0">Each machine at the back is one graphics card. Its lights show how hard it's working. The beaker shows memory used across all your cards. The gauge shows the hottest card. The coil sparks as the cards work harder, and the radio has a meter for each one.</p>
+        <div class="rig" id="hwrig"></div>
+        <p class="note" style="margin:0">Prototype note: these are today's numbers. Screen readers read these, not the picture.</p>
+        <div class="hwstats" id="hwstats"></div>
+      </div></div>
+    </section>
+
+    <section class="view" id="v-prefs" hidden>
+      <div class="top"><h1>Settings</h1><span class="banner">Prototype · mock</span></div>
+      <div class="scroll"><div class="ident" id="prefs"></div></div>
+    </section>
+
+    <section class="view" id="v-ident" hidden>
+      <div class="top"><h1>Identity</h1><span class="banner">Prototype · proposals</span></div>
+      <div class="scroll"><div class="ident" id="ident"></div></div>
+    </section>
+
+    <section class="view" id="v-spec" hidden>
+      <div class="top"><h1>Example pictures</h1><span class="banner">Prototype · mock data</span></div>
+      <div class="scroll"><div class="spec" id="spec"></div></div>
+    </section>
+  </main>
+</div>
+
+<dialog class="drawer" id="drawer" aria-labelledby="dtitle">
+  <div class="dwrap">
+    <div class="dhead"><h2 id="dtitle">Your computer</h2><button class="btn sm" id="dclose">Close</button></div>
+    <div class="scroll" id="dbody"></div>
+  </div>
+</dialog>
+
+<details class="proto" open>
+  <summary>Prototype controls</summary>
+  <div class="body">
+    <fieldset><legend>Layer</legend>
+      <label><input type="checkbox" id="c-on" checked> Show model pictures</label>
+    </fieldset>
+    <fieldset><legend>Picture in chat</legend>
+      <label><input type="radio" name="c-place" value="tube" checked> In a tube on the header, wired to the model</label>
+      <label><input type="radio" name="c-place" value="bar"> In the model bar (small)</label>
+      <label><input type="radio" name="c-place" value="side"> Beside the chat (large)</label>
+    </fieldset>
+    <fieldset><legend>Machine opens as</legend>
+      <label><input type="radio" name="c-mach" value="drawer" checked> A drawer over the chat</label>
+      <label><input type="radio" name="c-mach" value="page"> Its own page</label>
+    </fieldset>
+    <fieldset><legend>Mockups to choose from</legend>
+      <label>First run <select id="c-default"><option value="on">On, with a note (chosen)</option><option value="card">Off, with a Meet card</option><option value="off">Off, switch in Settings</option></select></label>
+      <label>Mainframes show <select id="c-mlab"><option value="name">The model's name (chosen)</option><option value="none">No model</option><option value="picture">The model's picture</option></select></label>
+      <label>Server bench <select id="c-bench"><option value="lab">Lab bench (chosen)</option><option value="glasses">Glasses and tubes</option><option value="gauges">Row of gauges</option></select></label>
+    </fieldset>
+    <fieldset><legend>Look</legend>
+      <label>Theme <select id="c-theme"><option value="">Light Touch</option><option value="braun-t3">Braun T3</option><option value="teenage-engineering">Teenage Engineering</option><option value="one-dark-pro">One Dark Pro</option></select></label>
+      <label>Type <select id="c-type"><option value="doto">3 Doto dot-matrix (chosen)</option><option value="">Today: Young Serif + Nunito Sans</option><option value="space">1 Space Grotesk + Inter + Space Mono</option><option value="archivo">2 Archivo Expanded + IBM Plex Mono</option><option value="geist">4 Geist + Geist Mono</option></select></label>
+      <label><input type="checkbox" id="c-rm"> Reduced motion</label>
+    </fieldset>
+    <fieldset><legend>Situations</legend>
+      <label>Graphics cards <select id="c-gpus"><option>1</option><option selected>2</option><option>3</option><option>4</option></select></label>
+      <label><input type="checkbox" id="c-auto" checked> GPU load follows the chat</label>
+      <label>GPU load <input type="range" id="c-load" min="0" max="100" value="60" aria-label="GPU load"></label>
+      <label><input type="checkbox" id="c-busy"> An app is being answered right now</label>
+      <label><input type="checkbox" id="c-ext"> GLM was started by you, not Shoggoth</label>
+      <div class="pbtns"><button data-sim="opencode">opencode asks</button><button data-sim="Hermes">Hermes asks</button><button data-sim="Python script">Script asks</button><button id="c-tool">Cowork uses a tool</button><button id="c-reset">Reset</button></div>
+    </fieldset>
+  </div>
+</details>
+<div class="sr" aria-live="polite" id="live"></div>
+
+<script>
+// ---------------------------------------------------------------- mock data (what /ui/picker plus the two new fields would give)
+const GPU = 24, RAM = 64;
+const MODELS = [
+  {id:'LFM2.5-8B-A1B', name:'LFM2.5 8B', lineage:'LiquidAI/LFM2.5-8B-A1B', params:8, quant:'Q4_K_M', ctx:128, reasoning:false, tools:true, vision:false, gb:5.0, engine:'lemonade', tier:'Small', have:true},
+  {id:'Qwen3.6-35B-A3B-MTP-GGUF', name:'Qwen3.6 35B', lineage:'Qwen/Qwen3.6-35B-A3B', params:35, quant:'Q4_K_M', ctx:256, reasoning:true, tools:true, vision:true, gb:21.4, engine:'lemonade', tier:'Medium', have:true},
+  {id:'GLM-4.7-Flash-GGUF', name:'GLM-4.7 Flash', lineage:'zai-org/GLM-4.7-Flash', params:30, quant:'Q4_K_M', ctx:128, reasoning:true, tools:true, vision:false, gb:18.1, engine:'lemonade', tier:'Medium', have:true},
+  {id:'Qwen3.8-27B-GGUF', name:'Qwen3.8 27B', lineage:'Qwen/Qwen3.8-27B', params:27, quant:'Q5_K_M', ctx:256, reasoning:true, tools:true, vision:false, gb:19.6, engine:'lemonade', tier:'Medium', have:true},
+  {id:'Gemma-4-31B-it-MTP-GGUF', name:'Gemma 4 31B', lineage:'google/gemma-4-31B-it', params:31, quant:'Q4_K_M', ctx:128, reasoning:false, tools:true, vision:true, gb:19.2, engine:'lemonade', tier:'Medium', have:false},
+  {id:'IQ3_S', name:'Qwen3.8 Flash-Next', lineage:'ISTA-DASLab/Qwen3.8-Flash-Next', params:80, quant:'IQ3_S', ctx:128, reasoning:true, tools:true, vision:false, gb:54.8, engine:'strata', tier:'Large', have:true,
+   split:{gpu:21, ram:33.8, ssd:'experts read as needed'}},
+];
+const EXTRA = [
+  {id:'Qwen3-0.6B', name:'Qwen3 0.6B', lineage:'Qwen/Qwen3-0.6B', params:0.6, quant:'Q8_0', ctx:32, reasoning:true, tools:false, vision:false, gb:0.6, tier:'Small'},
+  {id:'Gemma-4-E4B', name:'Gemma 4 E4B', lineage:'google/gemma-4-E4B-it', params:4, quant:'Q4_K_M', ctx:128, reasoning:false, tools:true, vision:true, gb:3.1, tier:'Small'},
+  {id:'Qwen3.6-35B-Q8', name:'Qwen3.6 35B (Q8)', lineage:'Qwen/Qwen3.6-35B-A3B', params:35, quant:'Q8_0', ctx:256, reasoning:true, tools:true, vision:true, gb:37.1, tier:'Large'},
+];
+const M = Object.fromEntries([...MODELS, ...EXTRA].map(m => [m.id, m]));
+const ENG = {lemonade:'Lemonade', strata:'Strata'};
+
+// Each installed model gets its own body form and colour; a model keeps its form when another is deleted (the plan's archetype store).
+(function assignForms(){
+  const taken = new Set(), tones = new Set();
+  for (const m of MODELS.filter(m => m.have)) {
+    let f = hashStr(m.lineage + '|' + m.params) % 9;
+    while (taken.has(f)) f = (f + 1) % 9;
+    taken.add(f); m.form = f;
+    let t = hashStr(m.lineage) % 5;
+    while (tones.has(t) && tones.size < 5) t = (t + 1) % 5;
+    tones.add(t); m.tone = t;
+  }
+  M['Qwen3.6-35B-Q8'].form = M['Qwen3.6-35B-A3B-MTP-GGUF'].form;
+  M['Qwen3.6-35B-Q8'].tone = M['Qwen3.6-35B-A3B-MTP-GGUF'].tone;
+})();
+
+// ---------------------------------------------------------------- pictures
+const esc = s => String(s).replace(/[&<>"]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+const gcache = new Map();
+function grown(m){
+  const P = {seed:m.lineage, params:m.params, quant:m.quant, ctx:m.ctx, vision:m.vision, reasoning:m.reasoning, tools:m.tools, tone:m.tone ?? hashStr(m.lineage) % 5, form:m.form};
+  const k = JSON.stringify(P);
+  if (!gcache.has(k)) gcache.set(k, generate(P));
+  return gcache.get(k);
+}
+const tone = m => PAL[m.tone ?? hashStr(m.lineage) % 5].t;
+const eyesOf = m => +(grown(m).label.match(/with (\d+) eyes/) || [0, 0])[1];
+const skin = q => { const d = +(q.match(/\d/) || [4])[0]; return d >= 8 ? 'smooth skin (an exact, large copy)' : d >= 5 ? 'fine-grained skin (close to exact)' : d >= 4 ? 'slightly rough skin (smaller, a little less exact)' : 'rough skin (much smaller, less exact)'; };
+function parts(m){
+  const p = [`${eyesOf(m)} eyes: remembers about ${m.ctx}K tokens of a conversation`, `${m.params} billion parameters: its size`, `${skin(m.quant)}: ${m.quant.replace(/_K_M|_0|_S/, '')}`];
+  if (m.reasoning) p.push('an open brain: thinks before it answers');
+  if (m.vision) p.push('a lens: can look at pictures');
+  if (m.tools) p.push('hands holding pens: can use tools, such as web search');
+  return p;
+}
+const describe = m => `Picture of ${m.name}: ${parts(m).join('; ')}.`;
+function pic(m, {mood = 'idle', live = false, cls = '', crop = false} = {}){
+  if (!m) return '';
+  const g = grown(m);
+  const P = rs => rs.map(r => `<path d="${r.d}" fill="${r.c}" stroke="${r.c}" stroke-width=".7" stroke-linejoin="round"/>`).join('');
+  const eyes = g.eyes.map(e => `<g transform="${e.m}"><g class="zc-eye zc-f-${e.face}" style="animation-delay:${e.delay}"><circle cx=".5" cy=".5" r="${e.sr}" fill="${e.scl}" stroke="#0e0e12" stroke-width=".05"/><circle cx=".5" cy=".5" r="${e.ir}" fill="${e.ic}"/><g class="zc-pupil" style="animation-delay:${e.delay}"><ellipse cx=".5" cy=".5" rx="${e.prx}" ry="${e.pry}" fill="#0e0e12"/></g></g></g>`).join('');
+  const brain = g.hasBrain ? `<g class="zc-brain">${P(g.brainRuns)}${g.sparks.map(s => `<g transform="${s.m}"><rect class="zc-spark" width="1" height="1" fill="#f7d916" style="animation-delay:${s.delay}"/></g>`).join('')}</g>` : '';
+  const fl = live ? [g.fl1, g.fl2, g.fl3].map((f, i) => `<g class="zc-fl zc-fl${i + 1}">${P(f)}</g>`).join('') : '';
+  return `<svg viewBox="0 0 480 420" class="cr mood-${mood} ${live ? 'live' : 'still'} ${crop ? 'crop' : ''} ${cls}" role="img" aria-label="${esc(describe(m))}"><g class="zc-sway"><ellipse cx="${g.shadow.x}" cy="${g.shadow.y}" rx="${g.shadow.rx}" ry="${g.shadow.ry}" fill="#0e0e12" fill-opacity=".16"/><g class="zc-breathe"><g class="zc-body">${P(g.runs)}${eyes}${brain}</g></g>${fl}</g></svg>`;
+}
+// Small pictures are cropped to the creature (without its shadow), so a 40 px button shows the creature and not the empty floor around it.
+function cropAll(){
+  document.querySelectorAll('svg.cr.crop:not([data-vb])').forEach(svg => {
+    const b = svg.querySelector('.zc-breathe').getBBox();
+    if (!b.width) return;
+    const p = Math.max(b.width, b.height) * .04;
+    svg.setAttribute('viewBox', `${b.x - p} ${b.y - p} ${b.width + 2 * p} ${b.height + 2 * p}`);
+    svg.dataset.vb = 1;
+  });
+}
+const setMood = (svg, mood) => { if (svg) svg.setAttribute('class', svg.getAttribute('class').replace(/mood-\w+/, 'mood-' + mood)); };
+
+// ---------------------------------------------------------------- state (in the app: router.STATE, /ui/router, the chat stream events)
+let S;
+function reset(){
+  S = {view:'chat', slots:{lemonade:['GLM-4.7-Flash-GGUF'], strata:[]}, lcd:{lemonade:['Ready: GLM-4.7 Flash'], strata:['Stopped']},
+       active:'GLM-4.7-Flash-GGUF', mood:'idle', loading:null, waiting:null, ext:null, justIn:null, apps:{}, chatBusy:false, spec:'Qwen3.6-35B-A3B-MTP-GGUF', specQ:null};
+  document.getElementById('c-ext').checked = document.getElementById('c-busy').checked = false;
+}
+const $ = s => document.querySelector(s);
+const wait = ms => new Promise(r => setTimeout(r, ms));
+const announce = t => { $('#live').textContent = ''; setTimeout(() => $('#live').textContent = t, 30); };
+const appsBusy = () => Object.entries(S.apps).filter(([, s]) => s === 'thinking' || s === 'writing').map(([a]) => a);
+const engineBusy = e => (e === M[S.active]?.engine) && (S.chatBusy || S.busy || appsBusy().length > 0);
+const who = () => S.chatBusy ? 'your chat' : appsBusy()[0] || 'opencode';
+const layerOn = () => $('#c-on').checked;
+const machAs = () => document.querySelector('[name=c-mach]:checked').value;
+const lcd = (e, line) => { S.lcd[e] = [...S.lcd[e], line].slice(-3); renderMachine(); };
+
+// ---------------------------------------------------------------- load and unload (in the app: the same calls as the chat model picker and Free memory)
+async function load(id){
+  const m = M[id];
+  if (S.loading) return announce(`Wait for ${M[S.loading].name} to finish loading.`);
+  if (S.slots[m.engine].includes(id)) { S.active = id; paint(); return; }
+  const out = m.engine === 'strata' ? [...S.slots.lemonade.map(x => ['lemonade', x]), ...S.slots.strata.map(x => ['strata', x])]
+                                    : [...S.slots.strata.map(x => ['strata', x]), ...S.slots.lemonade.map(x => ['lemonade', x])];
+  for (const [e, x] of out) {
+    if (engineBusy(e)) { S.waiting = {id, engine:m.engine, why:`${ENG[e]} is answering ${who()} right now, so Shoggoth won't stop it. Try again when it finishes.`}; paint(); return; }
+    if (x === S.ext) { S.waiting = {id, engine:m.engine, why:`${M[x].name} was started by you, not Shoggoth, so Shoggoth leaves it alone. Unload it in ${ENG[e]}, or pick a model that fits beside it.`}; paint(); return; }
+  }
+  S.waiting = null; S.loading = id; S.mood = 'loading';
+  const t0 = Date.now();
+  for (const [e, x] of out) { lcd(m.engine, `Unloading ${M[x].name} to make room`); await eject(e, x, e === m.engine ? null : `Unloaded ${M[x].name} to make room for ${m.name}`); }
+  S.slots[m.engine].push(id); S.justIn = id; S.active = id;
+  const steps = m.engine === 'strata'
+    ? [['Starting Strata', 1400], [`Placing layers: graphics card ${m.split.gpu} GB, RAM ${m.split.ram} GB`, 2200], ['Reading experts from the SSD', 2200], ['Warming up', 1400]]
+    : [[`Asking Lemonade to load ${m.name}`, 700], [`Reading ${m.gb} GB into graphics memory`, 1300], ['Warming up', 600]];
+  for (const [t, ms] of steps) {
+    lcd(m.engine, m.engine === 'strata' ? `${t} · ${Math.round((Date.now() - t0) / 1000)} s` : t);
+    paint(); await wait(ms);
+  }
+  S.loading = null; S.mood = 'idle';
+  lcd(m.engine, `Ready: ${m.name}`);
+  paint();
+  announce(`${m.name} is ready.`);
+}
+async function eject(e, x, why){
+  document.querySelectorAll(`.seat[data-id="${CSS.escape(x)}"]`).forEach(el => el.classList.add('ejecting'));
+  await wait(380);
+  S.slots[e] = S.slots[e].filter(y => y !== x);
+  if (S.active === x) S.active = S.slots.lemonade[0] || S.slots.strata[0] || null;
+  lcd(e, why || (e === 'strata' ? 'Stopped' : 'Empty'));
+}
+async function unload(id){
+  const e = M[id].engine;
+  if (engineBusy(e)) { S.waiting = {id:null, engine:e, why:`${ENG[e]} is answering ${who()} right now. Unload it when it finishes.`}; paint(); return; }
+  lcd(e, `Unloading ${M[id].name}`);
+  await eject(e, id);
+  paint();
+  announce(`${M[id].name} unloaded. Its memory is free.`);
+}
+
+// ---------------------------------------------------------------- the machine (the same markup in the drawer and on the page)
+function gauge(label, used, of, unit = 'GB'){
+  const pc = Math.min(100, used / of * 100);
+  return `<div class="gauge"><div class="row"><span>${label}</span><b>${used.toFixed(1)} of ${of} ${unit}</b></div><div class="bar"><i class="${pc > 85 ? 'hot' : ''}" style="width:${pc}%"></i></div></div>`;
+}
+function seat(id){
+  const m = M[id], mine = S.ext !== id, loading = S.loading === id;
+  const cls = S.justIn === id ? 'seat inserting' : 'seat';
+  const act = loading ? '<span class="tag">Loading…</span>' : mine ? `<button class="btn sm" data-unload="${esc(id)}">Unload</button>` : '<span class="tag">Started by you</span>';
+  return `<div class="${cls}" data-id="${esc(id)}" style="--tone:${tone(m)}"><div class="th">${pic(m, {mood:loading ? 'loading' : 'idle', crop:true})}</div>
+    <div><b>${esc(m.name)}</b><small>${m.gb} GB · ${m.quant.replace(/_K_M|_0|_S/, '')}</small>${S.active === id && !loading ? '<br><span class="tag">Chat uses this</span>' : ''}${mine ? '' : '<br><small>Shoggoth didn\'t load this, so it won\'t unload it.</small>'}</div>${act}</div>`;
+}
+function waitBox(e){
+  const w = S.waiting;
+  if (!w || w.engine !== e) return '';
+  return `<div class="wait" role="alert"><div>${w.id ? `<b>${esc(M[w.id].name)}</b> is waiting. ` : ''}${esc(w.why)}</div><div class="acts">${w.id ? `<button class="btn sm" data-load="${esc(w.id)}">Try again</button>` : ''}<button class="btn sm ghost" data-cancel>Dismiss</button></div></div>`;
+}
+function bay(e){
+  const ids = S.slots[e];
+  const empty = e === 'strata' ? 'Empty. Large models go here.' : 'Empty. Load a model from the shelf.';
+  return `<div class="bay" data-bay="${e}">${ids.length ? ids.map(seat).join('') : `<p class="emptytxt">${empty}</p>`}</div>`;
+}
+function machineHTML(){
+  const lemUsed = S.slots.lemonade.reduce((a, x) => a + M[x].gb, 0);
+  const st = S.slots.strata[0] && M[S.slots.strata[0]];
+  const groups = ['Small', 'Medium', 'Large'].map(t => {
+    const ms = MODELS.filter(m => m.tier === t);
+    return ms.length ? `<div class="shelfrow"><h3>${t}</h3><div class="carts">${ms.map(cart).join('')}</div></div>` : '';
+  }).join('');
+  return `<div class="machine">
+    <div><h2>What's in memory</h2><p class="hint">Each slot is an engine. A model in a slot is loaded. Chat uses the one marked "Chat uses this".</p></div>
+    <div class="case"><div class="casehead"><b>This computer</b><span>Graphics card 24 GB · RAM 64 GB · SSD 2 TB</span></div>
+      <div class="slots">
+        <div class="slot"><div class="slothead"><b>Lemonade</b><span>Fast. Holds one model at a time.</span></div>
+          <div class="lcd" aria-label="Lemonade status">${S.lcd.lemonade.map(l => `<p>${esc(l)}</p>`).join('')}</div>
+          ${bay('lemonade')}${waitBox('lemonade')}
+          ${gauge('Graphics memory', lemUsed, GPU)}</div>
+        <div class="slot"><div class="slothead"><b>Strata</b><span>For very large models. Uses the whole machine: graphics card, RAM and SSD.</span></div>
+          <div class="lcd" aria-label="Strata status">${S.lcd.strata.map(l => `<p>${esc(l)}</p>`).join('')}</div>
+          ${bay('strata')}${waitBox('strata')}
+          <div class="trays">
+            <div class="tray"><span>Graphics card</span>${gauge('', st ? st.split.gpu : 0, GPU)}</div>
+            <div class="tray"><span>RAM</span>${gauge('', st ? st.split.ram : 0, RAM)}</div>
+            <div class="tray"><span>SSD</span><div class="gauge"><div class="row"><span>${st ? esc(st.split.ssd) : 'Not in use'}</span></div></div></div>
+          </div></div>
+      </div></div>
+    <div><h2>Your models</h2><p class="hint">Press Load, or drag a model into a slot. A Strata model needs all the memory, so loading one unloads Lemonade's first.</p></div>
+    <div class="shelf">${groups}</div></div>`;
+}
+function cart(m){
+  const inSlot = S.slots[m.engine]?.includes(m.id);
+  const fit = m.engine === 'strata' ? 'Takes about 2 minutes to start' : m.gb > 20 ? 'Close other big programs first' : '';
+  const btn = !m.have ? `<button class="btn sm" data-get="${esc(m.id)}">Get ${m.gb} GB</button>`
+    : inSlot ? '<button class="btn sm" disabled>In a slot</button>'
+    : `<button class="btn sm primary" data-load="${esc(m.id)}" ${S.loading ? 'disabled' : ''}>Load</button>`;
+  return `<div class="cart ${m.have ? '' : 'out'} ${inSlot ? 'in' : ''}" style="--tone:${tone(m)}" ${m.have && !inSlot ? `draggable="true" data-drag="${esc(m.id)}"` : ''}>
+    <div class="lab"></div><div class="th">${pic(m)}</div><b>${esc(m.name)}</b><small>${m.gb} GB · ${m.quant.replace(/_K_M|_0|_S/, '')} · ${ENG[m.engine]}</small>
+    <span class="fit">${m.have ? fit : 'Recommended, not downloaded'}</span>${btn}</div>`;
+}
+function renderMachine(){
+  const html = layerOn() ? machineHTML() : '<div class="machine"><p class="hint">Model pictures are off, so there\'s no Machine to show.</p></div>';
+  for (const host of [$('#dbody'), $('#mpage')]) if (host.offsetParent !== null || host === $('#dbody') && $('#drawer').open) host.innerHTML = html;
+  S.justIn = null;
+  cropAll();
+}
+
+// ---------------------------------------------------------------- the chat bar and the picture beside the chat
+const WORD = {idle:'Ready', thinking:'Thinking', answering:'Writing', loading:'Loading', working:'Using a tool', none:'No model'};
+let lastPic = null;
+function paintChat(){
+  const id = S.loading || S.active, m = M[id], mood = id ? S.mood : 'none';
+  $('#mpname').textContent = m ? m.name : 'None';
+  $('#mptier').textContent = m ? `${ENG[m.engine]} · ${m.tier}` : '';
+  $('#mdot').className = 'mdot ' + (S.loading ? 'busy' : m ? 'on' : '');
+  $('#mstate').textContent = S.loading ? S.lcd[m.engine].at(-1) : m ? (S.chatBusy ? WORD[S.mood] + '…' : `Ready on ${ENG[m.engine]}`) : 'No model loaded';
+  const on = layerOn(), place = document.querySelector('[name=c-place]:checked').value;
+  $('#chatbody').classList.toggle('side', on && place === 'side');
+  $('#v-chat .top').classList.toggle('tall', on && place === 'tube');
+  $('#pside').hidden = !(on && place === 'side');
+  const lamp = `<span class="lamp ${mood}">${WORD[mood]}</span>`;
+  const key = [on, place, id, S.loading === id].join('|');
+  if (key !== lastPic) {
+    lastPic = key;
+    $('#ptube').innerHTML = on && place === 'tube' ? `<button class="tbtn" data-open aria-label="Open the machine. ${m ? esc(describe(m)) : 'No model loaded'}">${tubeSVG(m, mood)}</button>${lamp}` : '';
+    $('#pbar').innerHTML = on && place === 'bar' ? `<button class="pbtn" data-open aria-label="Open the machine. ${m ? esc(m.name) : 'No model loaded'}">${m ? pic(m, {mood, live:true, crop:true}) : ''}</button>${lamp}` : '';
+    $('#pside').innerHTML = on && place === 'side' ? (m ? `<button class="pbig" data-open aria-label="Open the machine">${pic(m, {mood, live:true})}</button><b>${esc(m.name)}</b>${lamp}<button class="link" data-open>Swap model</button>`
+      : `<button class="pbig" data-open aria-label="Open the machine"></button><span class="empty">No model loaded</span><button class="link" data-open>Load one</button>`) : '';
+    cropAll();
+  } else {
+    document.querySelectorAll('#pbar .cr, #pside .cr, #ptube .cr, #ptube .vtube').forEach(s => setMood(s, mood));
+    document.querySelectorAll('#pbar .lamp, #pside .lamp, #ptube .lamp').forEach(l => { l.className = 'lamp ' + mood; l.textContent = WORD[mood]; });
+  }
+  drawHarness();
+}
+// The model module: a matte housing with a window, on a base plate with a speaker grille, an LED and a socket (Braun and Teenage
+// Engineering in spirit). Every colour except the creature's comes from the theme.
+const holes = (x0, y0, cols, rows, gap, r) => { let h = ''; for (let i = 0; i < cols; i++) for (let j = 0; j < rows; j++) h += `<circle cx="${x0 + i * gap}" cy="${y0 + j * gap}" r="${r}"/>`; return h; };
+const screw = (x, y) => `<circle cx="${x}" cy="${y}" r="2.6" fill="var(--surface)" stroke="var(--line)" stroke-width=".9"/><path d="M${x - 1.5} ${y + 1.1} L${x + 1.5} ${y - 1.1}" stroke="var(--muted)" stroke-width=".8"/>`;
+function tubeSVG(m, mood){
+  const tint = m ? tone(m) : 'var(--steel)';
+  const inner = m ? pic(m, {mood, live:true, crop:true}).replace('<svg ', '<svg x="50" y="11" width="200" height="50" ') : '';
+  const grooves = x => [7, 11, 15].map(d => `<rect x="${x + d}" y="16" width="1" height="40" rx=".5" fill="var(--line)"/>`).join('');
+  return `<svg class="vtube mood-${mood}" viewBox="0 0 300 98" width="300" height="98" aria-hidden="true">
+    <g filter="url(#kShadow)">
+      <rect x="4" y="66" width="292" height="29" rx="9" fill="url(#kMatte)" stroke="var(--line)" stroke-width="1"/>
+    </g>
+    <rect x="9" y="67.5" width="282" height="1" rx=".5" fill="var(--hi)"/>
+    ${screw(14, 80.5)}${screw(286, 80.5)}
+    <g fill="var(--text)" fill-opacity=".38">${holes(206, 74, 12, 3, 5.6, 1.25)}</g>
+    <circle class="ledglow" cx="174" cy="80.5" r="6" filter="url(#kSoft)"/>
+    <circle class="led" cx="174" cy="80.5" r="3.2" stroke="var(--line)" stroke-width=".8"/>
+    <text x="96" y="78.5" font-size="6" fill="var(--muted)" font-family="var(--mono)" letter-spacing=".12em">MODEL</text>
+    <text x="96" y="88" font-size="6" fill="var(--text)" font-family="var(--mono)" font-weight="700" letter-spacing=".12em">BAY 01</text>
+    <rect x="150" y="75" width="12" height="11" rx="2" fill="var(--surface-2)" stroke="var(--line)" stroke-width=".8"/><rect x="153" y="78" width="6" height="5" rx="1" fill="var(--lemon)"/>
+    <rect class="conn" x="26" y="84" width="30" height="10" rx="3" fill="var(--surface-2)" stroke="var(--line)" stroke-width=".9"/>
+    <circle cx="41" cy="89" r="2.6" fill="var(--text)" fill-opacity=".75"/>
+    ${[72, 222].map(x => `<rect x="${x}" y="54" width="7" height="13" rx="2" fill="url(#kMatteH)" stroke="var(--line)" stroke-width=".8"/>`).join('')}
+    <rect x="30" y="8" width="240" height="56" rx="28" fill="${tint}" fill-opacity=".14"/>
+    ${inner}
+    <circle class="tb-bub" cx="80" cy="56" r="2.2" fill="var(--surface)" fill-opacity=".9"/><circle class="tb-bub" cx="178" cy="58" r="1.7" fill="var(--surface)" fill-opacity=".9"/><circle class="tb-bub" cx="222" cy="55" r="2" fill="var(--surface)" fill-opacity=".9"/>
+    <rect x="30" y="8" width="240" height="56" rx="28" fill="url(#kGlass)"/>
+    <rect x="30" y="8" width="240" height="56" rx="28" fill="none" stroke="var(--line)" stroke-width="1.6"/>
+    <path d="M56 15.5 H244" stroke="#fff" stroke-opacity=".55" stroke-width="2.6" stroke-linecap="round"/>
+    <g filter="url(#kShadow)">
+      <rect x="12" y="12" width="26" height="48" rx="10" fill="url(#kMatteH)" stroke="var(--line)" stroke-width="1"/>
+      <rect x="262" y="12" width="26" height="48" rx="10" fill="url(#kMatteH)" stroke="var(--line)" stroke-width="1"/>
+    </g>${grooves(12)}${grooves(262)}
+  </svg>`;
+}
+// The cable: one round lead in the theme's text colour, a lemon collar where it meets the plug on the model picker.
+function harnessSVG(sx, sy, ex, ey){
+  const d = `M${sx} ${sy} C ${sx} ${sy + 18}, ${ex} ${ey - 30}, ${ex} ${ey - 10}`;
+  return `<path d="${d}" stroke="var(--text)" stroke-opacity=".85" stroke-width="4" fill="none" stroke-linecap="round"/>
+    <path d="${d}" stroke="var(--hi)" stroke-width="1" fill="none" transform="translate(-1,-.8)"/>
+    <path class="sig" d="${d}"/>
+    <rect x="${ex - 4}" y="${ey - 12}" width="8" height="5" rx="1.5" fill="var(--lemon)" stroke="var(--line)" stroke-width=".6"/>
+    <g filter="url(#kShadow)"><rect x="${ex - 9}" y="${ey - 7}" width="18" height="9" rx="3" fill="var(--surface-2)" stroke="var(--line)" stroke-width=".9"/></g>`;
+}
+function drawHarness(){
+  const h = $('#harness'), conn = $('#ptube .conn');
+  if (!conn || $('#v-chat').hidden) { h.innerHTML = ''; return; }
+  const o = $('#v-chat').getBoundingClientRect(), a = conn.getBoundingClientRect(), n = $('#mpname').getBoundingClientRect(), btn = $('#mpbtn').getBoundingClientRect();
+  h.innerHTML = harnessSVG(a.left + a.width / 2 - o.left, a.bottom - o.top - 2, n.left + n.width / 2 - o.left, btn.top - o.top + 2);
+  h.classList.toggle('flow', !!S.loading || S.mood === 'answering');
+}
+addEventListener('resize', () => drawHarness());
+function paintMeet(){
+  const v = $('#c-default').value, host = $('#meet'), m = M[S.active];
+  if (S.meetGone) { host.innerHTML = ''; return; }
+  if (v === 'card' && !layerOn()) host.innerHTML = `<div class="meet">${m ? `<div class="mpic">${pic(m, {live:true, crop:true})}</div>` : ''}<div><b>Meet your models</b>
+    <p>Shoggoth can draw each model as a creature. More eyes mean a longer memory. An open brain means it thinks before it answers. Hands mean it can use tools. You'll see it load, and watch it work.</p>
+    <div class="acts"><button class="btn sm primary" data-meet="on">Show model pictures</button><button class="btn sm ghost" data-meet="no">Not now</button></div>
+    <small>You can change this any time in Settings › Look.</small></div></div>`;
+  else if (v === 'on' && layerOn()) host.innerHTML = `<div class="meetnote">Model pictures are on. <button class="link" data-go="prefs">Turn them off in Settings › Look</button><button class="x" data-meet="no" aria-label="Dismiss">×</button></div>`;
+  else host.innerHTML = '';
+  cropAll();
+}
+function paintPrefs(){
+  $('#prefs').innerHTML = `<section class="panel2"><h2>Look</h2>
+    <div class="prow"><div><b>Show model pictures</b><p>Draws each model as a creature, beside the chat, in the Machine, and on the Server and Hardware pages. Turn it off for the plain look.</p></div>
+      <button class="sw2" role="switch" aria-checked="${layerOn()}" data-pref="on"><i></i></button></div>
+    <div class="prow"><div><b>Theme</b><p>Light Touch, Braun T3, Teenage Engineering, and the dark palettes.</p></div><span class="tag">Light Touch</span></div></section>`;
+}
+function picker(open){
+  const pop = $('#mpop');
+  pop.hidden = !open; $('#mpbtn').setAttribute('aria-expanded', open);
+  if (!open) return;
+  pop.innerHTML = MODELS.filter(m => m.have).map(m => `<button class="pkrow" data-load="${esc(m.id)}" role="option" aria-selected="${S.active === m.id}"><b>${esc(m.name)}</b><small>${ENG[m.engine]} · ${m.gb} GB</small></button>`).join('')
+    + (layerOn() ? '<div class="pkfoot"><button class="link" data-open>Open the machine</button></div>' : '');
+}
+
+// ---------------------------------------------------------------- server bench
+const APPS = ['opencode', 'Hermes', 'Python script'];
+function benchGlasses(m, mood){
+  const glasses = APPS.map((a, i) => {
+    const x = 250 + i * 160;
+    return `<g class="glass st-idle" data-app="${esc(a)}"><path class="tube" d="M150 96 C ${x - 60} 60, ${x} 40, ${x} 78"/>
+      <defs><clipPath id="gc${i}"><path d="M${x - 34} 86 L${x + 34} 86 L${x + 27} 168 L${x - 27} 168 Z"/></clipPath></defs>
+      <rect class="liq" clip-path="url(#gc${i})" x="${x - 36}" y="96" width="72" height="74" fill="var(--lemon)" opacity=".85"/>
+      <circle class="bub" cx="${x - 8}" cy="160" r="3.5" fill="var(--muted)"/><circle class="bub" cx="${x + 6}" cy="162" r="2.5" fill="var(--muted)"/><circle class="bub" cx="${x + 1}" cy="158" r="3" fill="var(--muted)"/>
+      <path d="M${x - 34} 86 L${x + 34} 86 L${x + 27} 168 L${x - 27} 168 Z" fill="none" stroke="var(--text)" stroke-opacity=".55" stroke-width="2.5" stroke-linejoin="round"/>
+      <text x="${x}" y="190" text-anchor="middle">${esc(a)}</text><text class="st" x="${x}" y="206" text-anchor="middle">IDLE</text></g>`;
+  }).join('');
+  return `<svg class="strip" viewBox="0 0 740 216" role="img" aria-label="Apps using ${m ? esc(m.name) : 'no model'}; the list below has the details">
+    <g transform="translate(0,22) scale(.36)">${m ? pic(m, {mood, live:true}).replace('<svg ', '<svg width="480" height="420" ') : ''}</g>${glasses}</svg>`;
+}
+// a row of Braun-style meters, one per app
+function benchGauges(m, mood){
+  const ms = APPS.map((a, i) => {
+    const x = 270 + i * 150;
+    return `<g class="glass st-idle" data-app="${esc(a)}"><path class="tube" d="M150 110 C ${x - 70} 110, ${x} 30, ${x} 40" style="stroke-width:3"/>
+      ${housing(x - 36, 40, 72, 132, 12)}
+      <rect x="${x - 11}" y="54" width="22" height="92" rx="5" fill="var(--surface-2)" stroke="var(--line)" stroke-width="1"/>
+      <rect class="liq" x="${x - 9}" y="56" width="18" height="88" rx="4" fill="var(--lemon)"/>
+      ${[0, 1, 2, 3, 4].map(k => `<line x1="${x + 14}" x2="${x + 20}" y1="${56 + k * 22}" y2="${56 + k * 22}" stroke="var(--text)" stroke-width="1"/>`).join('')}
+      <circle class="lamp2" cx="${x}" cy="159" r="4.5" stroke="var(--line)" stroke-width=".8"/>
+      <text x="${x}" y="194" text-anchor="middle">${esc(a)}</text><text class="st" x="${x}" y="210" text-anchor="middle">IDLE</text></g>`;
+  }).join('');
+  return `<svg class="strip" viewBox="0 0 740 216" role="img" aria-label="Apps using ${m ? esc(m.name) : 'no model'}; the list below has the details">
+    <g transform="translate(10,30) scale(.3)">${m ? pic(m, {mood, live:true}).replace('<svg ', '<svg width="480" height="420" ') : ''}</g>${ms}</svg>`;
+}
+// the Hardware page's look: the model's beaker on a table, wired to a flask for each app
+function benchLab(m, mood){
+  const tint = m ? tone(m) : 'var(--steel)';
+  const flasks = APPS.map((a, i) => {
+    const x = 300 + i * 150, fl = `M${x - 8} 66 V104 L${x - 36} 170 Q${x - 38} 178 ${x - 30} 178 H${x + 30} Q${x + 38} 178 ${x + 36} 170 L${x + 8} 104 V66 Z`;
+    return `<g class="glass st-idle" data-app="${esc(a)}">${contact(x, 76, 180)}
+      <path class="tube" d="M140 150 C ${x - 90} 150, ${x - 30} 40, ${x} 60" style="stroke-width:3.4"/>
+      <defs><clipPath id="lf${i}"><path d="${fl}"/></clipPath></defs>
+      <path d="${fl}" fill="var(--surface)" fill-opacity=".55"/>
+      <rect class="liq" clip-path="url(#lf${i})" x="${x - 40}" y="104" width="80" height="76" fill="url(#kAccent)"/>
+      <g clip-path="url(#lf${i})"><circle class="bub" cx="${x - 10}" cy="172" r="3" fill="#fff" fill-opacity=".8"/><circle class="bub" cx="${x + 8}" cy="174" r="2.2" fill="#fff" fill-opacity=".8"/><circle class="bub" cx="${x}" cy="170" r="2.6" fill="#fff" fill-opacity=".8"/></g>
+      <path d="${fl}" fill="url(#kGlassH)"/><path d="${fl}" fill="none" stroke="var(--line)" stroke-width="1.6" stroke-linejoin="round"/>
+      <rect x="${x - 12}" y="60" width="24" height="7" rx="3" fill="url(#kTorus)" stroke="var(--line)" stroke-width=".9"/>
+      <path d="M${x - 24} 168 L${x - 4} 112" stroke="#fff" stroke-opacity=".5" stroke-width="2.6" stroke-linecap="round"/>
+      <rect x="${x - 50}" y="194" width="18" height="15" rx="3" fill="var(--text)"/><text x="${x - 41}" y="205" text-anchor="middle" style="font:700 9px var(--mono);fill:var(--bg)">0${i + 1}</text>
+      <text x="${x - 26}" y="200" text-anchor="start" style="font:700 10px var(--mono);letter-spacing:.06em">${esc(a).toUpperCase()}</text><text class="st" x="${x - 26}" y="210.5" text-anchor="start">IDLE</text></g>`;
+  }).join('');
+  return `<svg class="strip" viewBox="0 0 740 216" role="img" aria-label="Apps using ${m ? esc(m.name) : 'no model'}; the list below has the details">
+    <rect x="4" y="178" width="732" height="10" rx="3" fill="url(#kTable)"/><rect x="4" y="186" width="732" height="28" rx="4" fill="url(#kTableFront)" stroke="var(--line)" stroke-width="1"/>
+    ${contact(80, 140, 180)}
+    <path d="M24 70 H136 V160 Q136 178 118 178 H42 Q24 178 24 160 Z" fill="${tint}" fill-opacity=".14"/>
+    ${m ? pic(m, {mood, live:true, crop:true}).replace('<svg ', '<svg x="34" y="88" width="92" height="86" ') : ''}
+    <path d="M24 70 H136 V160 Q136 178 118 178 H42 Q24 178 24 160 Z" fill="url(#kGlassH)"/><path d="M24 70 H136 V160 Q136 178 118 178 H42 Q24 178 24 160 Z" fill="none" stroke="var(--line)" stroke-width="1.6"/>
+    <rect x="18" y="64" width="124" height="7" rx="3" fill="url(#kTorus)" stroke="var(--line)" stroke-width=".9"/>
+    <text x="80" y="205" text-anchor="middle" style="font:700 10px var(--mono)">${m ? esc(m.name).toUpperCase() : 'NO MODEL'}</text>
+    ${flasks}</svg>`;
+}
+function paintBench(){
+  const bench = $('#bench');
+  if (!layerOn()) { bench.hidden = true; return; }
+  bench.hidden = false;
+  const m = M[S.active], any = appsBusy();
+  const mood = !m ? 'none' : Object.values(S.apps).includes('writing') ? 'answering' : any.length ? 'thinking' : 'idle';
+  const mode = $('#c-bench').value;
+  if (bench.dataset.k !== S.active + mode) {
+    bench.dataset.k = S.active + mode;
+    bench.innerHTML = `<h2>Being answered now</h2>${mode === 'gauges' ? benchGauges(m, mood) : mode === 'lab' ? benchLab(m, mood) : benchGlasses(m, mood)}`;
+    cropAll();
+  }
+  setMood(bench.querySelector('.cr'), mood);
+  bench.querySelectorAll('.glass').forEach(g => {
+    const s = S.apps[g.dataset.app] || 'idle';
+    g.setAttribute('class', 'glass st-' + s);
+    g.querySelector('text.st').textContent = {idle:'IDLE', thinking:'THINKING', writing:'WRITING', done:'DONE'}[s];
+  });
+}
+function logLine(text, cls = ''){
+  const d = document.createElement('div'); d.className = 'll ' + cls;
+  d.innerHTML = `<time>${new Date().toLocaleTimeString([], {hour12:false})}</time><span>${esc(text)}</span>`;
+  const box = $('#log'); box.append(d); while (box.children.length > 9) box.firstChild.remove();
+  S.logN = (S.logN || 0) + 1; $('#logn').textContent = `${S.logN} LINES`;
+}
+async function simApp(a){
+  if (!S.active) return announce('No model is loaded, so the app gets an error.');
+  if (S.apps[a] === 'thinking' || S.apps[a] === 'writing') return;
+  const row = document.createElement('tr');
+  row.innerHTML = `<td>${new Date().toLocaleTimeString()}</td><td>${esc(a)}</td><td>${esc(M[S.active].name)}</td><td>Thinking</td>`;
+  $('#reqs').prepend(row);
+  const t0 = performance.now(), mn = M[S.active].name;
+  logLine(`${a} → POST /v1/chat/completions · ${mn}`, 'in');
+  S.apps[a] = 'thinking'; paint(); await wait(1500);
+  logLine(`${a} · ${mn} thinking for ${((performance.now() - t0) / 1000).toFixed(1)} s, first token`);
+  S.apps[a] = 'writing'; row.cells[3].textContent = 'Writing'; paint(); await wait(2700);
+  logLine(`${a} ← 200 · 412 tokens in ${((performance.now() - t0) / 1000).toFixed(1)} s · 152 tok/s`, 'ok');
+  S.apps[a] = 'done'; row.cells[3].textContent = 'Done · 412 tokens'; paint(); await wait(1600);
+  S.apps[a] = 'idle'; paint();
+}
+
+// ---------------------------------------------------------------- hardware: the model wired into an apparatus (in the app: the numbers /ui/gpu already gives the Hardware page, per card)
+const CARDS = [{name:'RTX 4090', gb:24}, {name:'RTX 3090', gb:24}, {name:'RTX A4000', gb:16}, {name:'RTX 3060', gb:12}];
+const G = {cards:CARDS.map(() => ({vram:.4, util:2, temp:40})), power:38};
+const RM = () => document.documentElement.classList.contains('rm') || matchMedia('(prefers-reduced-motion: reduce)').matches;
+const cards = () => CARDS.slice(0, +$('#c-gpus').value);
+const capTotal = () => cards().reduce((a, c) => a + c.gb, 0);
+const agg = () => { const cs = G.cards.slice(0, cards().length);
+  return {vram:cs.reduce((a, c) => a + c.vram, 0), util:cs.reduce((a, c) => a + c.util, 0) / cs.length, temp:Math.max(...cs.map(c => c.temp))}; };
+// A model is split across the cards in use, in proportion to their memory (as llama.cpp does by default).
+function gpuTargets(){
+  const used = S.slots.lemonade.reduce((a, x) => a + M[x].gb, 0) + (S.slots.strata[0] ? M[S.slots.strata[0]].split.gpu : 0);
+  const writing = S.mood === 'answering' || Object.values(S.apps).includes('writing'), thinking = S.mood === 'thinking' || Object.values(S.apps).includes('thinking');
+  let util = S.loading ? 38 : writing ? 94 : thinking ? 72 : S.mood === 'working' ? 48 : 3;
+  if (!$('#c-auto').checked) util = +$('#c-load').value;
+  const cap = capTotal();
+  return cards().map((c, i) => { const u = util * (1 - i * .08); return {vram:Math.min(c.gb, .4 + used * c.gb / cap), util:u, temp:38 + u * .46}; });
+}
+setInterval(() => {
+  gpuTargets().forEach((t, i) => {
+    const g = G.cards[i];
+    g.vram += Math.sign(t.vram - g.vram) * Math.min(Math.abs(t.vram - g.vram), .4);
+    g.util += (Math.max(0, t.util + (t.util > 10 ? (Math.random() - .5) * 8 : 0)) - g.util) * .25;
+    g.temp += (t.temp - g.temp) * .03;
+  });
+  G.power += (35 + agg().util * 3.6 * cards().length - G.power) * .2;
+  if (S.view === 'hardware') paintHW();
+}, 110);
+// a lightning bolt by midpoint displacement
+function bolt(x1, y1, x2, y2, rough){
+  let pts = [[x1, y1], [x2, y2]];
+  for (let k = 0; k < 5; k++) {
+    const next = [pts[0]];
+    for (let i = 1; i < pts.length; i++) {
+      const [ax, ay] = pts[i - 1], [bx, by] = pts[i], len = Math.hypot(bx - ax, by - ay), d = (Math.random() - .5) * len * rough;
+      next.push([(ax + bx) / 2 + (ay - by) / len * d, (ay + by) / 2 + (bx - ax) / len * d], pts[i]);
+    }
+    pts = next;
+  }
+  return 'M' + pts.map(p => p[0].toFixed(1) + ' ' + p[1].toFixed(1)).join(' L');
+}
+const arc = (d, w) => `<path d="${d}" stroke="var(--lemon)" stroke-width="${w + 3.5}" stroke-opacity=".55" fill="none" filter="url(#kArc)"/><path d="${d}" stroke="var(--lemon-text)" stroke-width="${w}" fill="none" stroke-linecap="round"/>`;
+const TX = 730, TY = 192, AX = 976, AY = 150;   // the coil's top and the radio's aerial tip
+function sparks(u){
+  let s = '';
+  const n = Math.round(u / 13);
+  for (let i = 0; i < n; i++) {
+    const a = -Math.PI * (.04 + Math.random() * .6), r = 50 + Math.random() * (30 + u * .9);
+    s += arc(bolt(TX + Math.cos(a) * 52, TY + Math.sin(a) * 12, TX + Math.cos(a) * r, TY + Math.sin(a) * r * .8, .5), .9 + Math.random() * 1.2);
+  }
+  if (u > 78) s += arc(bolt(TX + 54, TY - 4, AX - 2, AY + 2, .32), 1.6);
+  let r = '';
+  const m = u > 35 ? Math.round((u - 35) / 12) : 0;
+  for (let i = 0; i < m; i++) { const a = Math.random() * Math.PI * 2, l = 8 + Math.random() * (6 + u * .18); r += arc(bolt(AX, AY, AX + Math.cos(a) * l, AY + Math.sin(a) * l, .6), .8); }
+  return {coil:s, radio:r};
+}
+const housing = (x, y, w, h, r) => `<g filter="url(#kShadow)"><rect x="${x}" y="${y}" width="${w}" height="${h}" rx="${r}" fill="url(#kMatte)" stroke="var(--line)" stroke-width="1.2"/></g><rect x="${x + r * .6}" y="${y + 1.5}" width="${w - r * 1.2}" height="1" fill="var(--hi)"/><rect x="${x + r * .6}" y="${y + h - 2.5}" width="${w - r * 1.2}" height="1.2" fill="#000" fill-opacity=".08"/>`;
+const hwLabel = (x, n, t, id) => `<rect x="${x}" y="427" width="20" height="16" rx="3" fill="var(--text)"/><text x="${x + 10}" y="439" font-size="10" text-anchor="middle" fill="var(--bg)" font-family="var(--mono)" font-weight="700">${n}</text>
+  <text x="${x + 28}" y="439" font-size="11.5" fill="var(--muted)" font-family="var(--mono)" letter-spacing=".1em">${t}</text><text id="${id}" x="${x + 28 + t.length * 8.2}" y="439" font-size="11.5" fill="var(--text)" font-family="var(--mono)" font-weight="700"></text>`;
+// The back row: one mainframe per graphics card, with a bank of lamps for its compute, a bar for its memory, and tape reels.
+// The cabinets are dark in every theme, so they sit back behind the pale instruments; only their lamps and memory bar take the
+// theme's accent.
+function framesSVG(){
+  const mlab = $('#c-mlab').value, m = M[S.active];
+  const cs = cards(), N = cs.length, gap = 20, W = Math.min(200, (940 - gap * (N - 1)) / N), x0 = 500 - (N * W + (N - 1) * gap) / 2;
+  // they stand on a dark raised platform: a slab with a vented front, on short feet
+  const px = x0 - 18, pw = N * W + (N - 1) * gap + 36;
+  const platform = `<g filter="url(#kShadow)"><rect x="${px}" y="322" width="${pw}" height="30" rx="5" fill="url(#kDark)" stroke="#111215" stroke-width="1.2"/></g>
+    <rect x="${px + 4}" y="323.5" width="${pw - 8}" height="1" fill="#fff" fill-opacity=".14"/>
+    <g fill="#0c0d0f">${Array.from({length:Math.floor((pw - 40) / 14)}, (_, k) => `<rect x="${px + 20 + k * 14}" y="333" width="8" height="10" rx="2"/>`).join('')}</g>
+    ${[px + 16, px + pw - 40].map(fx => `<rect x="${fx}" y="352" width="24" height="10" rx="2" fill="#1c1d21" stroke="#111215"/>`).join('')}`;
+  // the floor at the back of the room, which the platform's feet stand on
+  const floor = `<rect x="0" y="362" width="1000" height="168" fill="#000" fill-opacity=".06"/><rect x="0" y="361.5" width="1000" height="1" fill="#000" fill-opacity=".18"/>
+    <ellipse cx="${px + pw / 2}" cy="363" rx="${pw / 2 + 10}" ry="5" fill="#000" fill-opacity=".22"/>`;
+  // cables strung between neighbouring cabinets, and a bundle dropping off the platform to the floor
+  const links = cs.slice(1).map((_, i) => { const a = x0 + (i + 1) * W + i * gap - 3, b = a + gap + 6;
+    return `<path d="${sag(a, 236, b, 232, 22)}" stroke="#4a4d54" stroke-width="3" fill="none" stroke-linecap="round"/><path d="${sag(a, 252, b, 258, 30)}" stroke="#6b5a1e" stroke-width="2.4" fill="none" stroke-linecap="round"/>`; }).join('');
+  const drop = [[px + 30, '#3a3c42'], [px + 40, '#4a4d54'], [px + pw - 34, '#3a3c42']].map(([x, c], k) =>
+    `<path d="M${x} 350 C ${x} 372, ${x + (k < 2 ? -60 : 60)} 380, ${x + (k < 2 ? -140 - k * 20 : 150)} 384" stroke="${c}" stroke-width="3.2" fill="none" stroke-linecap="round"/>`).join('');
+  const frames = cs.map((c, i) => {
+    const x = x0 + i * (W + gap), cols = Math.floor((W - 24) / 11), rows = 5, lw = cols * 11 - 4, lx = x + (W - lw) / 2, rr = Math.min(24, W * .15);
+    const dy = mlab === 'none' || !m ? 0 : 50;
+    const lamps = Array.from({length:cols * rows}, (_, k) => `<rect class="lamp" x="${lx + (k % cols) * 11}" y="${84 + dy + Math.floor(k / cols) * 11}" width="7" height="7" rx="1.5"/>`).join('');
+    const reel = cx => `<g class="reel" style="transform-origin:${cx}px 200px"><circle cx="${cx}" cy="200" r="${rr}" fill="#2c2e33" stroke="#4a4d54" stroke-width="1.2"/>
+      ${[0, 120, 240].map(a => `<circle cx="${cx + Math.cos(a * Math.PI / 180) * rr * .55}" cy="${200 + Math.sin(a * Math.PI / 180) * rr * .55}" r="${rr * .22}" fill="#18191c" stroke="#4a4d54" stroke-width=".8"/>`).join('')}<circle cx="${cx}" cy="200" r="3" fill="#d9d6cb"/></g>`;
+    return `<g class="frame" data-card="${i}"><g filter="url(#kShadow)"><rect x="${x}" y="22" width="${W}" height="300" rx="12" fill="url(#kDark)" stroke="#111215" stroke-width="1.2"/></g>
+      <rect x="${x + 7}" y="23.5" width="${W - 14}" height="1" fill="#fff" fill-opacity=".1"/>
+      <rect x="${x + 8}" y="308" width="${W - 16}" height="10" rx="2" fill="#141518"/>
+      <text x="${lx}" y="44" font-size="10" fill="#ecE9df" font-family="var(--mono)" font-weight="700" letter-spacing=".08em">GPU ${i + 1}</text>
+      <text x="${lx + lw}" y="44" font-size="10" text-anchor="end" fill="#a7a49a" font-family="var(--mono)">${esc(c.name)}</text>
+      <rect x="${lx - 6}" y="${78 + dy}" width="${lw + 12}" height="${rows * 11 + 8}" rx="5" fill="#121316" stroke="#3a3c42" stroke-width=".8"/>
+      <g>${lamps}</g>
+      <rect x="${lx}" y="${52 + dy}" width="${lw}" height="6" rx="3" fill="#3a3c42"/><rect class="fmem" data-w="${lw}" x="${lx}" y="${52 + dy}" width="0" height="6" rx="3" fill="var(--lemon)"/>
+      <text class="fmemt" x="${lx}" y="${71 + dy}" font-size="9.5" fill="#a7a49a" font-family="var(--mono)"></text>
+      ${reel(x + W * .3)}${reel(x + W * .7)}
+      ${dy ? `<rect x="${lx - 6}" y="52" width="${lw + 12}" height="42" rx="5" fill="#0c0d0f" stroke="#3a3c42" stroke-width="1"/>
+        ${mlab === 'picture' ? `<rect x="${lx - 5}" y="53" width="${lw + 10}" height="40" rx="4" fill="url(#kCrt)"/>${pic(m, {crop:true}).replace('<svg ', `<svg x="${lx - 2}" y="55" width="46" height="36" `)}
+            <text x="${lx + 50}" y="70" font-size="10" fill="var(--lemon)" font-family="var(--mono)" font-weight="700">${esc(m.name).toUpperCase()}</text><text class="fmgb" x="${lx + 50}" y="84" font-size="8.5" fill="#a7a49a" font-family="var(--mono)"></text>`
+          : `<text x="${lx + 2}" y="66" font-size="8" fill="#a7a49a" font-family="var(--mono)" letter-spacing=".1em">MODEL ON THIS CARD</text>
+             <text x="${lx + 2}" y="81" font-size="11.5" fill="var(--lemon)" font-family="var(--mono)" font-weight="700">${esc(m.name).toUpperCase()}</text><text class="fmgb" x="${lx + lw}" y="81" text-anchor="end" font-size="8.5" fill="#a7a49a" font-family="var(--mono)"></text>`}
+        <rect x="${lx - 4}" y="54" width="${lw + 8}" height="1" fill="#fff" fill-opacity=".08"/>` : ''}
+      <g fill="#fff" fill-opacity=".14">${holes(x + 16, 240, Math.floor((W - 26) / 7), 6, 7, 1.3)}</g></g>`;
+  }).join('');
+  return floor + drop + platform + frames + links;
+}
+// Light falls from the top left. Recessed holes get a lit lower edge; everything on the table casts a soft contact shadow.
+const holesIn = (x0, y0, cols, rows, gap, r, op = .5) => `<g fill="var(--hi)">${holes(x0 + .5, y0 + .7, cols, rows, gap, r)}</g><g fill="var(--text)" fill-opacity="${op}">${holes(x0, y0, cols, rows, gap, r)}</g>`;
+const contact = (cx, w, y = 410) => `<ellipse cx="${cx}" cy="${y}" rx="${w / 2}" ry="4.5" fill="#000" fill-opacity=".28" filter="url(#kSoft)"/>`;
+const printed = 'stroke="var(--surface)" stroke-opacity=".75" stroke-width="2.4" paint-order="stroke" stroke-linejoin="round"';
+const MB = 384, MT = 124;   // the memory beaker's 0 % and 100 % marks
+// Wiring, as a hobbyist would do it: sagging leads in the theme's colours, clips, tape, a breadboard, probes in the glass.
+const wire = (d, c, w = 2.4) => `<path d="${d}" stroke="${c}" stroke-width="${w}" fill="none" stroke-linecap="round"/><path d="${d}" stroke="#fff" stroke-opacity=".3" stroke-width="${(w * .35).toFixed(2)}" fill="none" stroke-linecap="round" transform="translate(-.6,-.7)"/>`;
+const sag = (x1, y1, x2, y2, s) => `M${x1} ${y1} Q ${(x1 + x2) / 2} ${Math.max(y1, y2) + s} ${x2} ${y2}`;
+const croc = (x, y, c, flip = false) => `<g transform="translate(${x} ${y})${flip ? ' scale(-1 1)' : ''}"><rect x="-2" y="-3" width="11" height="6" rx="2" fill="${c}"/><path d="M9 -3 L15 -1.5 L9 0 M9 3 L15 1.5 L9 0" fill="var(--muted)" stroke="var(--muted)" stroke-width=".8" stroke-linejoin="round"/><path d="M10.5 -2.6 V2.6 M12.5 -2 V2" stroke="var(--surface)" stroke-width=".6"/></g>`;
+const plug = (x, y, c) => `<rect x="${x - 7}" y="${y - 2.5}" width="7" height="5" rx="1.5" fill="${c}"/><rect x="${x}" y="${y - 1.2}" width="4" height="2.4" rx="1" fill="var(--muted)"/>`;
+const tape = (x, y, a) => `<rect x="${x - 3}" y="${y - 5}" width="6" height="10" rx="1" fill="var(--surface-2)" stroke="var(--line)" stroke-width=".6" transform="rotate(${a} ${x} ${y})" opacity=".95"/>`;
+const C = {red:'var(--bad)', blk:'var(--text)', yel:'var(--lemon)', blu:'var(--lemon-text)', grn:'var(--leaf)', gry:'var(--muted)'};
+// electrodes standing in the beakers (drawn inside the glass, behind its front)
+function probes(){
+  return `<g><rect x="104" y="128" width="3.4" height="190" rx="1.7" fill="var(--muted)"/><rect x="104" y="128" width="1.2" height="190" fill="#fff" fill-opacity=".45"/>
+    <rect x="238" y="132" width="3.4" height="150" rx="1.7" fill="var(--muted)"/><rect x="238" y="132" width="1.2" height="150" fill="#fff" fill-opacity=".45"/></g>`;
+}
+function wiresBack(){
+  return [
+    // the model's electrodes: one lead loops over to the memory beaker's probe, one drops to the breadboard
+    wire(`M105 128 C 110 70, 300 40, 360 70 S 450 70, 453 96`, C.red, 2.6),
+    wire(`M240 132 C 250 110, 320 130, 330 230 S 360 380, 420 395 S 480 398, 494 392`, C.blk),
+    // breadboard to the gauge stem, wound round it, and on to the coil's base
+    wire(sag(552, 389, 586, 300, 30), C.yel),
+    wire(sag(598, 280, 676, 372, 40), C.yel),
+    wire(sag(548, 392, 668, 396, 26), C.blu, 2.2),
+    // coil base to the radio: a red and black pair with banana plugs
+    wire(sag(790, 380, 818, 372, 18), C.red), wire(sag(792, 392, 818, 388, 14), C.blk),
+    // the radio's lead running back along the table, taped down
+    wire(`M900 410 C 860 416, 760 414, 690 412`, C.gry, 2),
+  ].join('');
+}
+function wiresFront(){
+  const coil = Array.from({length:6}, (_, i) => `<path d="M585 ${262 + i * 5} Q 590 ${265 + i * 5} 595 ${262 + i * 5}" stroke="var(--lemon)" stroke-width="2.2" fill="none" stroke-linecap="round"/>`).join('');
+  return `${coil}
+    ${croc(98, 128, C.red)}${croc(246, 132, C.blk, true)}${croc(447, 96, C.red)}
+    ${plug(818, 372, C.red)}${plug(818, 388, C.blk)}
+    ${tape(330, 232, 90)}${tape(360, 70, 27)}${tape(760, 414, 0)}${tape(637, 369, 50)}
+    <!-- a loose lead hanging off the table's edge, its end stripped -->
+    ${wire(`M516 404 C 516 418, 506 424, 508 446`, C.grn, 2.2)}<path d="M508 446 L508 452" stroke="#c98b4a" stroke-width="1.6" stroke-linecap="round"/>`;
+}
+// a small breadboard on the table between the memory beaker and the gauge
+function breadboard(){
+  const hs = Array.from({length:11}, (_, i) => Array.from({length:3}, (_, j) => `<rect x="${494 + i * 5.2}" y="${389 + j * 4.4}" width="1.6" height="1.6" fill="var(--text)" fill-opacity=".35"/>`).join('')).join('');
+  return `<g filter="url(#kShadow)"><rect x="490" y="385" width="62" height="20" rx="2.5" fill="var(--surface)" stroke="var(--line)" stroke-width="1"/></g>
+    <rect x="490" y="394.5" width="62" height="1" fill="var(--line)"/>${hs}
+    <rect x="506" y="386.5" width="13" height="7" rx="1" fill="var(--text)"/>${[0, 1, 2].map(i => `<rect x="${507.5 + i * 4}" y="393.5" width="1.2" height="2" fill="var(--muted)"/>`).join('')}
+    <rect x="524" y="397" width="10" height="3.4" rx="1.6" fill="#d9c9a3"/><rect x="527" y="397" width="1" height="3.4" fill="var(--bad)"/><rect x="530" y="397" width="1" height="3.4" fill="var(--text)"/>
+    ${wire(`M496 397 Q 502 382 512 395`, C.yel, 1.4)}${wire(`M515 402 Q 528 390 541 401`, C.blu, 1.4)}${wire(`M498 402 Q 520 412 548 398`, C.red, 1.4)}
+    <circle id="hw-bbglow" cx="544" cy="390" r="5" fill="var(--lemon)" filter="url(#kSoft)" opacity=".2"/><circle id="hw-bbled" cx="544" cy="390" r="2.6" fill="var(--lemon)" stroke="var(--line)" stroke-width=".6"/>`;
+}
+function hwSVG(){
+  const m = M[S.active], cs = cards(), N = cs.length, tint = m ? tone(m) : 'var(--steel)';
+  // 02: the scale printed on the memory beaker, 0 to 100 %
+  const scale = Array.from({length:21}, (_, i) => { const y = MB - i * (MB - MT) / 20, big = i % 5 === 0;
+    return `<line x1="${big ? 446 : 454}" x2="462" y1="${y}" y2="${y}" stroke="var(--text)" stroke-width="${big ? 1.6 : 1.1}" ${printed}/>${big ? `<text x="442" y="${y + 3.6}" font-size="10.5" text-anchor="end" fill="var(--text)" font-family="var(--mono)" font-weight="700" ${printed}>${i * 5}</text>` : ''}`; }).join('')
+    + `<text x="458" y="${MT - 8}" font-size="10" text-anchor="end" fill="var(--text)" font-family="var(--mono)" font-weight="700" ${printed}>%</text>`;
+  const ticks = Array.from({length:17}, (_, i) => { const a = (-120 + i * 15) * Math.PI / 180, big = i % 4 === 0, r1 = big ? 50 : 55;
+    return `<line x1="${590 + Math.sin(a) * r1}" y1="${150 - Math.cos(a) * r1}" x2="${590 + Math.sin(a) * 61}" y2="${150 - Math.cos(a) * 61}" stroke="var(--text)" stroke-width="${big ? 2 : 1}" stroke-linecap="round"/>${big ? `<text x="${590 + Math.sin(a) * 38}" y="${154 - Math.cos(a) * 38}" font-size="11" text-anchor="middle" fill="var(--text)" font-family="var(--sans)" font-weight="600">${20 + i * 5}</text>` : ''}`; }).join('');
+  const red = (() => { const a1 = (-120 + 13 * 15) * Math.PI / 180, a2 = 120 * Math.PI / 180, r = 64;
+    return `<path d="M${590 + Math.sin(a1) * r} ${150 - Math.cos(a1) * r} A ${r} ${r} 0 0 1 ${590 + Math.sin(a2) * r} ${150 - Math.cos(a2) * r}" stroke="var(--bad)" stroke-width="3" fill="none" stroke-linecap="round"/>`; })();
+  const bubs = (x0, w, n, y) => Array.from({length:n}, (_, i) => `<circle class="hbub" cx="${x0 + (i * 37) % w}" cy="${y}" r="${1.6 + (i % 3) * .8}" fill="#fff" fill-opacity=".7" style="animation-delay:${-(i * .37 % 2.4).toFixed(2)}s;animation-duration:${(1.8 + (i % 4) * .35).toFixed(2)}s"/>`).join('');
+  // 04: one needle meter per card, each behind its own glass in a recessed window
+  const mw = (136 - (N - 1) * 6) / N;
+  const meters = cs.map((c, i) => { const x = 832 + i * (mw + 6), cx = x + mw / 2, r = Math.min(mw * .42, 30);
+    return `<rect x="${x}" y="290" width="${mw}" height="48" rx="6" fill="var(--surface)" stroke="var(--line)" stroke-width="1"/>
+      <rect x="${x + 1}" y="291" width="${mw - 2}" height="6" rx="5" fill="#000" fill-opacity=".1"/>
+      ${[-50, -25, 0, 25, 50].map(a => { const t = a * Math.PI / 180; return `<line x1="${cx + Math.sin(t) * r}" y1="${333 - Math.cos(t) * r}" x2="${cx + Math.sin(t) * (r - 4)}" y2="${333 - Math.cos(t) * (r - 4)}" stroke="${a === 50 ? 'var(--bad)' : 'var(--text)'}" stroke-width="1"/>`; }).join('')}
+      <g id="hw-m${i}" data-cx="${cx}"><path d="M${cx + 1} 335 L${cx + 1} ${336 - r}" stroke="#000" stroke-opacity=".18" stroke-width="2" stroke-linecap="round"/><path d="M${cx} 334 L${cx} ${334 - r + 2}" stroke="var(--lemon)" stroke-width="2" stroke-linecap="round"/></g><circle cx="${cx}" cy="334" r="2.4" fill="var(--text)"/>
+      <path d="M${x + 4} 293 L${x + mw * .55} 293 L${x + 4} 322 Z" fill="#fff" fill-opacity=".22"/>
+      <text x="${cx}" y="352" font-size="8.5" text-anchor="middle" fill="var(--muted)" font-family="var(--mono)">${i + 1}</text>`; }).join('');
+  const beaker = 'M62 160 H282 V364 Q282 384 262 384 H82 Q62 384 62 364 Z';
+  const tube = `M394 112 V380 Q394 394 408 394 H456 Q470 394 470 380 V112`;
+  return `<svg viewBox="0 0 1000 536" class="appar" role="img" aria-label="Graphics card">
+    ${framesSVG()}
+    <!-- a pane of tinted glass between the cards at the back and the instruments in front -->
+    <rect x="0" y="0" width="1000" height="536" fill="var(--veil)"/>
+    <rect x="0" y="0" width="1000" height="536" fill="url(#kVeil)"/>
+    <rect x="0" y="0" width="1000" height="1.5" fill="var(--hi)"/>
+    <g transform="translate(0,80)">
+    <!-- the table: a top surface and a front edge that carries the labels -->
+    <rect x="8" y="404" width="984" height="14" rx="3" fill="url(#kTable)"/>
+    <rect x="8" y="404" width="984" height="1" fill="var(--hi)"/>
+    <rect x="8" y="416" width="984" height="38" rx="4" fill="url(#kTableFront)" stroke="var(--line)" stroke-width="1"/>
+    <rect x="12" y="417.5" width="976" height="1" fill="var(--hi)"/>
+    ${contact(172, 280)}${contact(432, 116)}${contact(590, 70)}${contact(730, 140)}${contact(900, 168)}${contact(521, 66)}
+    ${wiresBack()}
+    <!-- 01 the model, in a fat beaker on a plinth -->
+    ${housing(36, 386, 272, 24, 8)}
+    <text x="52" y="402" font-size="10" fill="var(--text)" font-family="var(--mono)" font-weight="700" letter-spacing=".06em">${m ? esc(m.name).toUpperCase() : 'NO MODEL LOADED'}</text>
+    <text x="292" y="402" font-size="10" text-anchor="end" fill="var(--muted)" font-family="var(--mono)">${m ? `${m.gb} GB · ${ENG[m.engine].toUpperCase()}` : ''}</text>
+    ${contact(172, 236, 386)}
+    <clipPath id="hw-beaker"><path d="${beaker}"/></clipPath>
+    <path d="${beaker}" fill="var(--surface)" fill-opacity=".35"/>
+    <g clip-path="url(#hw-beaker)">
+      <rect x="62" y="160" width="220" height="224" fill="${tint}" fill-opacity=".08"/>
+      <rect x="62" y="206" width="220" height="180" fill="${tint}" fill-opacity=".17"/>
+      <ellipse cx="172" cy="206" rx="112" ry="4" fill="${tint}" fill-opacity=".35"/><path d="M62 204 Q66 207 72 207 M282 204 Q278 207 272 207" stroke="${tint}" stroke-opacity=".7" stroke-width="1.5" fill="none"/>
+      ${bubs(80, 190, 8, 380)}
+    </g>
+    ${probes()}
+    <g class="beaker">${m ? pic(m, {mood:S.mood, live:true, crop:true}).replace('<svg ', '<svg x="80" y="178" width="184" height="196" ') : ''}</g>
+    <rect x="64" y="374" width="216" height="9" rx="4" fill="#fff" fill-opacity=".22"/>
+    <path d="${beaker}" fill="url(#kGlassH)"/>
+    <path d="M67 162 V362 Q67 379 84 379 H260 Q277 379 277 362 V162" fill="none" stroke="#fff" stroke-opacity=".35" stroke-width="1.2"/>
+    <path d="${beaker}" fill="none" stroke="var(--line)" stroke-width="1.8"/>
+    <path d="M44 150 Q46 146 54 147 H286 Q293 147 293 153 Q293 159 286 159 H64 Q54 159 47 156 Z" fill="url(#kTorus)" stroke="var(--line)" stroke-width="1.1"/>
+    <path d="M80 178 V 356" stroke="#fff" stroke-opacity=".6" stroke-width="4" stroke-linecap="round"/><path d="M90 178 V 250" stroke="#fff" stroke-opacity=".3" stroke-width="1.5" stroke-linecap="round"/>
+    <path d="M272 176 V 360" stroke="#fff" stroke-opacity=".25" stroke-width="2" stroke-linecap="round"/>
+    <g stroke="var(--text)" stroke-width="1.1" ${printed.replace('2.4', '2')}>${[230, 270, 310, 350].map(y => `<line x1="248" x2="262" y1="${y}" y2="${y}"/><line x1="255" x2="262" y1="${y + 20}" y2="${y + 20}"/>`).join('')}</g>
+    <g font-size="8.5" fill="var(--text)" font-family="var(--mono)" text-anchor="end" ${printed.replace('2.4', '2')}>${[230, 270, 310, 350].map((y, i) => `<text x="244" y="${y + 3}">${400 - i * 100}</text>`).join('')}</g>
+    <rect x="300" y="391" width="10" height="13" rx="2.5" fill="var(--surface-2)" stroke="var(--line)" stroke-width=".9"/>
+    <path d="M310 397 C 346 397, 352 401, 380 401" stroke="var(--text)" stroke-opacity=".85" stroke-width="4" fill="none" stroke-linecap="round"/>
+    <rect x="376" y="397" width="8" height="8" rx="2" fill="var(--surface-2)" stroke="var(--line)" stroke-width=".8"/>
+    <!-- 02 graphics memory, all cards together: a graduated beaker with its scale printed on it -->
+    ${housing(380, 392, 104, 18, 8)}
+    <text id="hw-gb" x="432" y="404.5" font-size="9" text-anchor="middle" fill="var(--text)" font-family="var(--mono)" font-weight="700"></text>
+    <clipPath id="hw-tube"><path d="${tube} Z"/></clipPath>
+    <path d="${tube} Z" fill="var(--surface)" fill-opacity=".55"/>
+    <clipPath id="hw-clip"><rect id="hw-clipr" x="392" y="${MB}" width="80" height="0"/></clipPath>
+    <g clip-path="url(#hw-tube)"><g clip-path="url(#hw-clip)"><rect x="392" y="104" width="80" height="296" fill="url(#kAccent)"/>${bubs(400, 60, 14, 392)}</g></g>
+    <g clip-path="url(#hw-tube)"><ellipse id="hw-men" cx="432" cy="${MB}" rx="38" ry="3.2" fill="var(--lemon)" stroke="#fff" stroke-opacity=".5" stroke-width="1"/></g>
+    <rect x="452" y="96" width="3" height="270" rx="1.5" fill="var(--muted)"/><rect x="452" y="96" width="1" height="270" fill="#fff" fill-opacity=".45"/>
+    <rect x="396" y="386" width="72" height="7" rx="3" fill="#fff" fill-opacity=".2"/>
+    <path d="${tube} Z" fill="url(#kGlassH)"/>
+    <path d="M398 112 V378 Q398 390 410 390 H454 Q466 390 466 378 V112" fill="none" stroke="#fff" stroke-opacity=".35" stroke-width="1"/>
+    <path d="${tube}" fill="none" stroke="var(--line)" stroke-width="1.8"/>
+    <path d="M384 108 Q384 103 392 104 H472 Q478 104 478 109 Q478 114 472 114 H396 Q388 114 384 110 Z" fill="url(#kTorus)" stroke="var(--line)" stroke-width="1"/>
+    <path d="M404 126 V 372" stroke="#fff" stroke-opacity=".6" stroke-width="3.5" stroke-linecap="round"/>
+    ${scale}
+    <!-- 03 heat: the hottest card, a gauge on a stem -->
+    <rect x="586" y="226" width="8" height="178" rx="4" fill="url(#kMatteH)" stroke="var(--line)" stroke-width="1"/>
+    <rect x="581" y="226" width="18" height="10" rx="3" fill="url(#kTorus)" stroke="var(--line)" stroke-width=".9"/>
+    ${housing(558, 398, 64, 12, 5)}
+    <g filter="url(#kShadow)"><circle cx="590" cy="150" r="80" fill="url(#kBezel)" stroke="var(--line)" stroke-width="1.2"/></g>
+    <circle cx="590" cy="150" r="71" fill="none" stroke="url(#kBezelIn)" stroke-width="5"/>
+    <circle cx="590" cy="150" r="68" fill="var(--surface)"/><circle cx="590" cy="150" r="68" fill="url(#kRecess)"/>
+    ${red}${ticks}
+    <text x="590" y="192" font-size="10.5" text-anchor="middle" fill="var(--muted)" font-family="var(--mono)" letter-spacing=".1em">°C</text>
+    <g id="hw-needle"><path d="M592.5 170 L592.5 94" stroke="#000" stroke-opacity=".2" stroke-width="3.5" stroke-linecap="round" filter="url(#kSoft)"/><path d="M590 168 L590 92" stroke="var(--lemon)" stroke-width="3" stroke-linecap="round"/><circle cx="590" cy="168" r="4" fill="var(--lemon)"/></g>
+    <circle cx="590" cy="150" r="6.5" fill="url(#kTorus)" stroke="var(--line)" stroke-width="1"/>
+    <path d="M538 120 A 60 60 0 0 1 612 88 A 70 70 0 0 0 538 120 Z" fill="#fff" fill-opacity=".55"/>
+    <circle cx="590" cy="150" r="68" fill="url(#kDome)"/>
+    <!-- 04 compute: a coil -->
+    ${housing(664, 366, 132, 44, 12)}
+    ${holesIn(682, 380, 16, 3, 6.4, 1.4, .45)}
+    <rect x="712" y="208" width="36" height="158" rx="6" fill="url(#kMatteH)" stroke="var(--line)" stroke-width="1.2"/>
+    <g stroke="var(--text)" stroke-opacity=".35" stroke-width="1">${Array.from({length:36}, (_, i) => `<line x1="714" x2="746" y1="${214 + i * 4.2}" y2="${214 + i * 4.2}"/>`).join('')}</g>
+    <rect x="712" y="208" width="36" height="158" rx="6" fill="url(#kCyl)"/>
+    <ellipse cx="730" cy="360" rx="44" ry="7" fill="none" stroke="var(--line)" stroke-width="5"/><ellipse cx="730" cy="360" rx="44" ry="7" fill="none" stroke="url(#kTorus)" stroke-width="3.4"/>
+    <ellipse id="hw-halo" cx="${TX}" cy="${TY}" rx="96" ry="64" fill="url(#kArcGlow)" opacity="0"/>
+    <g filter="url(#kShadow)"><ellipse cx="${TX}" cy="${TY}" rx="60" ry="19" fill="url(#kTorus)" stroke="var(--line)" stroke-width="1.2"/></g>
+    <ellipse cx="${TX}" cy="${TY - 2}" rx="22" ry="5.5" fill="var(--text)" fill-opacity=".28"/><path d="M${TX - 22} ${TY - 2} A 22 5.5 0 0 0 ${TX + 22} ${TY - 2}" fill="none" stroke="var(--hi)" stroke-width="1.2"/>
+    <path d="M${TX - 46} ${TY - 7} Q ${TX - 20} ${TY - 17} ${TX + 18} ${TY - 15}" stroke="#fff" stroke-opacity=".7" stroke-width="2.4" fill="none" stroke-linecap="round"/>
+    <!-- 04 compute per card: the radio -->
+    <path d="M966 232 L970 196" stroke="url(#kMatteH)" stroke-width="5" stroke-linecap="round"/><path d="M966 232 L970 196" stroke="var(--line)" stroke-width="5" stroke-opacity=".5" fill="none" stroke-linecap="round" stroke-dasharray="0 36 0"/>
+    <path d="M970 196 L973 172" stroke="var(--muted)" stroke-width="3.6" stroke-linecap="round"/><path d="M973 172 L${AX} ${AY}" stroke="var(--muted)" stroke-width="2.4" stroke-linecap="round"/>
+    <circle cx="${AX}" cy="${AY}" r="4.5" fill="url(#kTorus)" stroke="var(--line)" stroke-width=".9"/>
+    ${housing(818, 228, 164, 182, 16)}
+    <circle cx="966" cy="234" r="6" fill="url(#kTorus)" stroke="var(--line)" stroke-width=".9"/>
+    ${holesIn(838, 246, 15, 4, 9, 2.2, .6)}
+    ${meters}
+    <circle id="hw-lamp" cx="844" cy="386" r="8" fill="var(--lemon)" filter="url(#kSoft)" opacity=".1"/>
+    <circle cx="844" cy="386" r="4.4" fill="var(--surface-2)" stroke="var(--line)" stroke-width=".8"/><circle cx="844" cy="386" r="3.2" fill="var(--lemon)"/><circle cx="843" cy="385" r="1.1" fill="#fff" fill-opacity=".85"/>
+    <text x="856" y="389.5" font-size="8.5" fill="var(--muted)" font-family="var(--mono)" letter-spacing=".12em">SIGNAL</text>
+    <g filter="url(#kShadow)"><circle cx="958" cy="386" r="10" fill="var(--line)"/></g>
+    <g stroke="var(--text)" stroke-opacity=".35" stroke-width=".8">${Array.from({length:24}, (_, i) => { const a = i * 15 * Math.PI / 180; return `<line x1="${958 + Math.cos(a) * 8.6}" y1="${386 + Math.sin(a) * 8.6}" x2="${958 + Math.cos(a) * 10}" y2="${386 + Math.sin(a) * 10}"/>`; }).join('')}</g>
+    <circle cx="958" cy="386" r="8" fill="url(#kTorus)"/><path d="M958 380 V385" stroke="var(--text)" stroke-width="1.5" stroke-linecap="round"/>
+    ${breadboard()}${wiresFront()}
+    <g id="hw-arcs"></g><g id="hw-rsp"></g>
+    ${hwLabel(40, '01', 'MODEL ', 'hw-v-model')}${hwLabel(372, '02', 'MEMORY ', 'hw-v-mem')}${hwLabel(548, '03', 'HEAT ', 'hw-v-heat')}${hwLabel(694, '04', 'COMPUTE ', 'hw-v-comp')}
+    </g>
+  </svg>`;
+}
+let hwKey = null, lastArc = -1;
+function paintHW(){
+  const host = $('#hwrig'), cs = cards(), cap = capTotal(), key = [S.active, S.loading, layerOn(), cs.length, $('#c-mlab').value].join('|'), A = agg();
+  if (!layerOn()) { host.innerHTML = '<p class="hint" style="padding:10px 14px;margin:0">Model pictures are off, so this page shows only the numbers below.</p>'; hwKey = key; }
+  else if (key !== hwKey) { hwKey = key; lastArc = -1; host.innerHTML = hwSVG(); cropAll(); }
+  if (layerOn()) {
+    const h = A.vram / cap * (MB - MT), y = MB - h, rm = RM();
+    $('#hw-clipr').setAttribute('y', y); $('#hw-clipr').setAttribute('height', h + 12); $('#hw-men').setAttribute('cy', y);
+    $('#hw-needle').setAttribute('transform', `rotate(${(Math.max(20, Math.min(100, A.temp)) - 60) * 3} 590 150)`);
+    $('#hw-lamp').setAttribute('opacity', (.05 + A.util / 105).toFixed(2));
+    $('#hw-halo').setAttribute('opacity', (A.util > 20 ? A.util / 180 : 0).toFixed(2));
+    $('#hw-v-model').textContent = S.active ? `${cs.length} ${cs.length > 1 ? 'cards' : 'card'}` : '';
+    $('#hw-v-mem').textContent = `${Math.round(A.vram / cap * 100)}%`; $('#hw-gb').textContent = `${A.vram.toFixed(1)} / ${cap} GB`; $('#hw-v-heat').textContent = `${Math.round(A.temp)}°C`; $('#hw-v-comp').textContent = `${Math.round(A.util)}%`;
+    const led = Math.random() < .15 + A.util / 110 ? 1 : .25; $('#hw-bbled').setAttribute('opacity', led); $('#hw-bbglow').setAttribute('opacity', led * A.util / 120);
+    host.querySelectorAll('.hbub').forEach((b, i) => b.style.display = i % 14 < 1 + A.util / 8 ? '' : 'none');
+    setMood(host.querySelector('.beaker .cr'), S.active ? S.mood : 'none');
+    cs.forEach((c, i) => {
+      const g = G.cards[i], f = host.querySelector(`.frame[data-card="${i}"]`);
+      const mt = $('#hw-m' + i); mt.setAttribute('transform', `rotate(${g.util - 50} ${mt.dataset.cx} 334)`);
+      const fm = f.querySelector('.fmem'); fm.setAttribute('width', (g.vram / c.gb * fm.dataset.w).toFixed(1));
+      f.querySelector('.fmemt').textContent = `MEM ${g.vram.toFixed(1)}/${c.gb} GB · ${Math.round(g.temp)}°C`;
+      const fg = f.querySelector('.fmgb'); if (fg) fg.textContent = `${Math.max(0, g.vram - .4).toFixed(1)} GB HERE`;
+      const lamps = f.querySelectorAll('.lamp'), on = Math.round(g.util / 100 * lamps.length);
+      if (!rm) lamps.forEach(l => l.classList.toggle('on', Math.random() < on / lamps.length));
+      else lamps.forEach((l, k) => l.classList.toggle('on', k < on));
+      f.querySelectorAll('.reel').forEach(r => { r.style.animationDuration = (14 - g.util / 8).toFixed(1) + 's'; r.style.animationPlayState = g.util < 5 ? 'paused' : 'running'; });
+    });
+    const bucket = Math.round(A.util / 10);
+    if (!rm || bucket !== lastArc) { lastArc = bucket; const s = sparks(A.util); $('#hw-arcs').innerHTML = s.coil; $('#hw-rsp').innerHTML = s.radio; }
+    host.querySelector('svg.appar').setAttribute('aria-label', `${cs.length} graphics ${cs.length > 1 ? 'cards' : 'card'}: memory ${A.vram.toFixed(1)} of ${cap} GB, hottest ${Math.round(A.temp)} degrees, compute ${Math.round(A.util)} percent`);
+  }
+  $('#hwstats').innerHTML = [['Graphics memory', `${A.vram.toFixed(1)} / ${cap} GB`], ['Utilisation', `${Math.round(A.util)}%`], ['Hottest card', `${Math.round(A.temp)}°C`], ['Power', `${Math.round(G.power)} W`]]
+    .map(([l, v]) => `<div><b class="num">${v}</b><span>${l}</span></div>`).join('');
+}
+
+// ---------------------------------------------------------------- identity: the name, the icon, the chat glyphs and the flavour text
+// Glyphs replace the emoji in chat: 24 px line drawings in the current text colour, like the app's other icons.
+const GLYPH = {
+  rise:     ['Loading', '🍋', '<path d="M3 18c1.5-1 3-1 4.5 0s3 1 4.5 0 3-1 4.5 0 3 1 4.5 0"/><path d="M6.5 14.5a5.5 5.5 0 0 1 11 0"/><path d="M10 11.5s.9-1.2 2-1.2 2 1.2 2 1.2-.9 1.2-2 1.2-2-1.2-2-1.2z"/>'],
+  eye:      ['Reading', '📖', '<path d="M2.5 12s3.5-6 9.5-6 9.5 6 9.5 6-3.5 6-9.5 6-9.5-6-9.5-6z"/><ellipse cx="12" cy="12" rx="1.5" ry="3.4" fill="currentColor"/>'],
+  dream:    ['Thinking', '🤔', '<path d="M3.5 15c2.4 2.6 5.2 3.8 8.5 3.8s6.1-1.2 8.5-3.8"/><path d="M6.5 17.6l-1 1.9M12 18.8V21M17.5 17.6l1 1.9"/><path d="M12.6 9.2a1.6 1.6 0 1 1-1.9-1.6 3.2 3.2 0 1 1 3.9 3.9"/>'],
+  thought:  ['Thought', '💭', '<path d="M3 9s1.5-2.4 4-2.4S11 9 11 9s-1.5 2.4-4 2.4S3 9 3 9z"/><path d="M13 7s1.5-2.4 4-2.4S21 7 21 7s-1.5 2.4-4 2.4S13 7 13 7z"/><path d="M8 17s1.5-2.4 4-2.4 4 2.4 4 2.4-1.5 2.4-4 2.4S8 17 8 17z"/><circle cx="7" cy="9" r=".9" fill="currentColor"/><circle cx="17" cy="7" r=".9" fill="currentColor"/><circle cx="12" cy="17" r=".9" fill="currentColor"/>'],
+  quill:    ['Writing', '✍️', '<path d="M4 21c0-4.5 2.6-6 4.6-6s3.2-1.8 2.2-3.6-3.4-1-2.8 1"/><path d="M12.5 15L20.5 3.5l-1.2 7.2z"/><path d="M14.6 12.4l2.4 1.2"/>'],
+  grasp:    ['Working', '🛠️', '<path d="M4.5 20.5c3.2-1.2 5.4-4.2 5.4-8.4s2-6.4 5-6.4 4.3 2.3 3.1 4.3-3.3 2.2-4.1.2"/><circle cx="7" cy="17.6" r=".9" fill="currentColor"/><circle cx="9.2" cy="13.6" r=".9" fill="currentColor"/><circle cx="10.6" cy="9.4" r=".9" fill="currentColor"/>'],
+  threshold:['Your OK', '🙋', '<path d="M5 21V5.5A2.5 2.5 0 0 1 7.5 3h9A2.5 2.5 0 0 1 19 5.5V21"/><path d="M3 21h18"/><path d="M12 21c0-3.8 3-4.8 3-7.6s-2.1-3.6-3-1.8"/>'],
+  edit:     ['Editing', '✏️', '<path d="M4 6.5h9M4 10.5h7M4 14.5h4.5"/><path d="M13 21c0-3.6 2.2-4.8 4.2-6.8s.9-4.8-2-3.8"/>'],
+  sigil:    ['Running a command', '⚡', '<circle cx="12" cy="12" r="9"/><path d="M8 9l3 3-3 3M13 15h3.5"/><path d="M12 3v1.6M12 19.4V21M3 12h1.6M19.4 12H21"/>'],
+  seek:     ['Searching', '🔎', '<path d="M5 12s2.5-4 7-4 7 4 7 4-2.5 4-7 4-7-4-7-4z"/><circle cx="12" cy="12" r="1.5" fill="currentColor"/><path d="M12 2.5v2.5M12 19v2.5M4 4.5l1.8 1.8M18.2 17.7L20 19.5M20 4.5l-1.8 1.8M5.8 17.7L4 19.5"/>'],
+  crypt:    ['Folder', '📁', '<path d="M4 9h16v10a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1z"/><path d="M3 9l2.2-4.5h13.6L21 9"/><path d="M8.6 14.5s1.4-1.8 3.4-1.8 3.4 1.8 3.4 1.8-1.4 1.8-3.4 1.8-3.4-1.8-3.4-1.8z"/>'],
+  tome:     ['Skill', '🧰', '<path d="M5 4.5h11a2 2 0 0 1 2 2V20H7a2 2 0 0 1-2-2z"/><path d="M5 18a2 2 0 0 1 2-2h11"/><path d="M11.5 7.2l2.3 4h-4.6z"/><circle cx="11.5" cy="9.9" r=".6" fill="currentColor"/>'],
+  orb:      ['Web search', '🌐', '<circle cx="12" cy="12" r="9"/><path d="M3.6 8.6h16.8M3.6 15.4h16.8"/><path d="M12 6.4s2.4 2.2 2.4 5.6-2.4 5.6-2.4 5.6-2.4-2.2-2.4-5.6S12 6.4 12 6.4z"/><circle cx="12" cy="12" r="1" fill="currentColor"/>'],
+  maw:      ['Making room', '🧹', '<path d="M3 9c3.2-3 14.8-3 18 0-3.2 7.4-14.8 7.4-18 0z"/><path d="M5.8 9.8l1.2 2.2 1.2-2.2 1.2 2.2 1.2-2.2 1.2 2.2 1.2-2.2 1.2 2.2 1.2-2.2 1.2 2.2 1.2-2.2"/>'],
+  severed:  ['Cut short', '✂️', '<path d="M4 21c2-4.2 2.4-7.4 5.2-9.4"/><path d="M10.4 9.6l2.4-2.4M9.6 6.2l4.6 4.6"/><path d="M15.4 8.2c2.2-1 4-3.2 4-5.2"/><circle cx="6.4" cy="16.6" r=".8" fill="currentColor"/>'],
+  omen:     ['Warning', '⚠️', '<path d="M12 3l9.5 17h-19z"/><path d="M8 15.2s1.6-2 4-2 4 2 4 2-1.6 2-4 2-4-2-4-2z"/><circle cx="12" cy="15.2" r=".9" fill="currentColor"/>'],
+  sealed:   ['Done', '✅', '<path d="M4 12.5c2.5 3 5 4.2 8 4.2s5.5-1.2 8-4.2"/><path d="M6.8 15.6l-1 1.8M17.2 15.6l1 1.8"/><path d="M9 8l2 2 4-4"/>'],
+};
+const glyph = (k, cls = '') => `<svg class="gl ${cls}" viewBox="0 0 24 24" aria-hidden="true">${GLYPH[k][2]}</svg>`;
+
+// Flavour lines. {model} is always the running model's name: the old ones are never named. {target} is what a tool works on.
+const FLAVOUR = {
+  loading: ['Dragging {model} up from the deep weights…', 'The vessel fills. {model} settles into the dark of the graphics card.', '{model} wakes slowly, and does not care for the light.',
+            'Unsealing {model}. Do not look directly at it.', 'The old shapes of {model} reassemble in memory.', 'Something vast is being poured into a space too small for it.'],
+  reading: ['{model} tastes your words, one by one.', 'Your message sinks beneath the black water.', 'Many eyes pass over what you wrote.',
+            '{model} is reading. It reads everything.', 'The sigils of your question are counted, and counted again.', 'Your words go down into a place without light.'],
+  thinking:['{model} turns your words over in the dark between the stars.', 'Something stirs in the weights.', 'Ph’nglui… the many eyes of {model} open, and it considers you.',
+            'Angles that should not meet are meeting.', 'In its sunken house, {model} waits dreaming of an answer.', 'The geometry is wrong, but it is working.',
+            '{model} has stopped blinking.', 'Far below, something counts in a base you do not know.', 'A thought older than language is taking shape.',
+            'Do not be alarmed by the sound. That is just {model} thinking.'],
+  writing: ['{model} speaks. Do not interrupt.', 'The answer seeps up through the cracks.', 'Words come, wet and patient.',
+            '{model} is shaping sounds a human throat could make.', 'It is choosing which of its truths you can bear.', 'Something on the other side is writing back.'],
+  seek:    ['{model} seeks “{target}”. It will find what it seeks.', 'Its eyes open in every corner of the folder at once.'],
+  eye:     ['{model} reaches into the archive and drags out {target}.', 'It reads {target}, and {target} cannot read it back.'],
+  sigil:   ['{model} speaks a word into the shell. The shell answers.', 'An incantation: {target}'],
+  edit:    ['{model} rewrites {target}. The old text does not resist.', 'Its tendrils move through {target}, rearranging.'],
+  crypt:   ['{model} pries open {target} and counts what lies within.'],
+  tome:    ['{model} consults a forbidden tome: {target}.'],
+  orb:     ['{model} peers out across the wide web of the waking world.', 'It gazes through the orb at “{target}”.'],
+  threshold:['{model} waits at the threshold. It needs your leave to cross.', 'It will not enter uninvited. It is asking.'],
+  maw:     ['{model} devours its oldest memories to make room.'],
+  severed: ['{model} was severed mid-thought. It ran out of room.'],
+  idle:    ['{model} is quiet now. It is not gone.', 'It sleeps with its eyes open.'],
+};
+const lastLine = {};
+function flavour(kind, v = {}){
+  const ls = FLAVOUR[kind] || [''];
+  let i = Math.floor(Math.random() * ls.length);
+  if (ls.length > 1 && i === lastLine[kind]) i = (i + 1) % ls.length;
+  lastLine[kind] = i;
+  return ls[i].replace(/\{model\}/g, v.model || 'The model').replace(/\{target\}/g, v.target || '');
+}
+
+// Three icon candidates, in fixed colours (an icon has to look the same on every desktop).
+const ICONS = {
+  eye: ['The eye', 'One slit-pupilled eye on a dark tile, three tendrils curling up from below. Reads at 16 px.',
+    `<rect x="2" y="2" width="60" height="60" rx="14" fill="#1d1d22"/><rect x="6" y="3" width="52" height="1.5" rx=".75" fill="#fff" fill-opacity=".15"/>
+     <path d="M10 30s9-14 22-14 22 14 22 14-9 14-22 14S10 30 10 30z" fill="#efe8d2"/><circle cx="32" cy="30" r="10" fill="#f7d916"/><ellipse cx="32" cy="30" rx="2.6" ry="8.6" fill="#0e0e12"/><circle cx="28.5" cy="26" r="2" fill="#fff" fill-opacity=".8"/>
+     <path d="M18 62c0-6 4-8 4-12M32 62c0-5 2-7 2-10M46 62c0-6-4-8-4-12" stroke="#7aa296" stroke-width="4" stroke-linecap="round" fill="none"/>`],
+  many: ['Many eyes', 'A dark blob with five eyes, on Zest’s old lemon tile. Existing users will know it.',
+    `<rect x="2" y="2" width="60" height="60" rx="14" fill="#f7d916"/>
+  <rect x="7" y="3.2" width="50" height="1.4" rx=".7" fill="#fff" fill-opacity=".45"/>
+  
+  <path d="M7 62 C 6 50 8 40 12 33 C 13 26 18 18 26 17 C 31 13 39 14 43 19 C 50 20 55 27 54 35 C 58 40 58 49 55 56 C 56 59 57 61 58 62 Z" fill="#1d1d22"/>
+  <path d="M12 47 C 6 47 4 42 6 38 C 7 36 9 37 8 39 C 7 42 9 44 12 43" fill="none" stroke="#1d1d22" stroke-width="3.2" stroke-linecap="round"/>
+  <path d="M53 44 C 59 43 61 38 59 34 C 58 32 56 33 57 35 C 58 38 56 40 53 40" fill="none" stroke="#1d1d22" stroke-width="3" stroke-linecap="round"/>
+  <path d="M30 17 C 29 11 32 7 36 8 C 38 8.5 38 10.5 36.5 10.5 C 34.5 10.5 33.5 12.5 34 16" fill="none" stroke="#1d1d22" stroke-width="2.8" stroke-linecap="round"/>
+  
+  <g fill="#efe8d2">
+    <ellipse cx="25" cy="32" rx="7.2" ry="6.4"/><ellipse cx="41.5" cy="27" rx="4.8" ry="4.4"/>
+    <ellipse cx="38" cy="43" rx="4" ry="3.6"/><ellipse cx="19.5" cy="47" rx="3" ry="2.7"/>
+    <ellipse cx="48" cy="38" rx="2.6" ry="2.4"/><ellipse cx="30" cy="51" rx="2.2" ry="2"/>
+  </g>
+  <g fill="#f7d916">
+    <circle cx="25.6" cy="32.4" r="4.4"/><circle cx="41.8" cy="27.4" r="3"/><circle cx="38.3" cy="43.3" r="2.4"/>
+  </g>
+  <g fill="#0e0e12">
+    <ellipse cx="25.6" cy="32.4" rx="1.3" ry="3.8"/><ellipse cx="41.8" cy="27.4" rx=".9" ry="2.6"/><ellipse cx="38.3" cy="43.3" rx=".75" ry="2.1"/>
+    <ellipse cx="19.7" cy="47.2" rx=".7" ry="1.9"/><ellipse cx="48.1" cy="38.2" rx=".6" ry="1.7"/><ellipse cx="30.1" cy="51.1" rx=".55" ry="1.4"/>
+  </g>
+  <g fill="#fff" fill-opacity=".85"><circle cx="23" cy="30" r="1.4"/><circle cx="40.3" cy="25.7" r=".9"/></g>`],
+  host: ['A grown host', 'A voxel creature grown from the name “Shoggoth”, by the same generator as the model pictures.', null],
+};
+function iconSVG(k, size){
+  if (k === 'host') {
+    const m = {name:'Shoggoth', lineage:'Shoggoth', params:12, quant:'Q8_0', ctx:64, reasoning:true, tools:true, vision:false, form:0, tone:0};
+    return `<svg viewBox="0 0 64 64" width="${size}" height="${size}" aria-hidden="true"><rect x="2" y="2" width="60" height="60" rx="14" fill="#1d1d22"/>${pic(m, {crop:true}).replace('<svg ', '<svg x="8" y="8" width="48" height="48" ')}</svg>`;
+  }
+  return `<svg viewBox="0 0 64 64" width="${size}" height="${size}" aria-hidden="true">${ICONS[k][2]}</svg>`;
+}
+function paintIdentity(){
+  const rows = Object.entries(GLYPH).map(([k, [name, old]]) => `<div class="glrow">${glyph(k, 'big')}<div><b>${name}</b><small>was ${old} · <code>${k}</code></small></div></div>`).join('');
+  const fl = Object.entries(FLAVOUR).map(([k, ls]) => `<details class="flav-set"><summary>${GLYPH[k] ? glyph(k) : glyph(k === 'loading' ? 'rise' : k === 'reading' ? 'eye' : k === 'thinking' ? 'dream' : k === 'writing' ? 'quill' : 'sealed')}<b>${k}</b><span>${ls.length} lines</span></summary><ul>${ls.map(l => `<li>${esc(l.replace(/\{model\}/g, '⟨model⟩').replace(/\{target\}/g, '⟨target⟩'))}</li>`).join('')}</ul></details>`).join('');
+  $('#ident').innerHTML = `
+    <section class="idsec"><h2>Name</h2><div class="wordmark">${iconSVG('many', 56)}<span>Shoggoth</span></div><p class="hint">Local models, many eyes.</p></section>
+    <section class="idsec"><h2>App icon: many eyes (chosen); the other candidates</h2><div class="icons">${Object.entries(ICONS).map(([k, [n, d]]) => `<div class="iconcard"><div class="sizes">${[128, 64, 32, 16].map(s => iconSVG(k, s)).join('')}</div>
+      <div class="sizes dark">${[64, 32, 16].map(s => iconSVG(k, s)).join('')}</div><b>${n}</b><p class="hint">${d}</p></div>`).join('')}</div></section>
+    <section class="idsec"><h2>Chat glyphs</h2><p class="hint">They're drawn in the text colour, so they follow the theme. Each one replaces an emoji the chat used.</p><div class="glgrid">${rows}</div></section>
+    <section class="idsec"><h2>Flavour text</h2><p class="hint">Each step gets one line under its plain word, and the line changes every few seconds. ⟨model⟩ is the running model's name. Screen readers hear only the plain word.</p>${fl}</section>`;
+}
+// a few Cowork steps, to see the glyphs and flavour in the chat
+async function coworkDemo(){
+  if (!S.active || S.loading || S.chatBusy) return;
+  const name = M[S.active].name, steps = [['seek', 'Searching files for “basil”', 'basil'], ['eye', 'Reading garden/notes.md', 'garden/notes.md'], ['sigil', 'Running ls ~/garden', 'ls ~/garden'], ['edit', 'Editing garden/notes.md', 'garden/notes.md']];
+  S.chatBusy = true; S.mood = 'working'; paintChat();
+  for (const [k, plain, target] of steps) {
+    const d = document.createElement('div'); d.className = 'tool';
+    d.innerHTML = `${glyph(k)}<div><b>${esc(plain)}</b><span class="flav">${esc(flavour(k, {model:name, target}))}</span></div>`;
+    $('#msgs').append(d); d.scrollIntoView({block:'end'}); await wait(1300);
+  }
+  const ask = document.createElement('div'); ask.className = 'tool ask';
+  ask.innerHTML = `${glyph('threshold')}<div><b>${esc(name)} wants to edit garden/notes.md</b><span class="flav">${esc(flavour('threshold', {model:name}))}</span><span class="acts"><button class="btn sm primary">Allow</button><button class="btn sm">Deny</button></span></div>`;
+  $('#msgs').append(ask); ask.scrollIntoView({block:'end'});
+  S.chatBusy = false; S.mood = 'idle'; paintChat();
+}
+
+// ---------------------------------------------------------------- example pictures
+function paintSpec(){
+  const base = M[S.spec], m = S.specQ ? {...base, quant:S.specQ} : base;
+  const all = [...MODELS, ...EXTRA];
+  $('#spec').innerHTML = `<div class="stage"><h2>${esc(m.name)}</h2>${pic(m, {mood:S.specMood || 'idle', live:true})}
+    <div class="seg" aria-label="Mood">${Object.keys(WORD).filter(k => k !== 'none').map(k => `<button class="btn sm" data-mood="${k}" aria-pressed="${(S.specMood || 'idle') === k}">${WORD[k]}</button>`).join('')}</div>
+    <div class="seg" aria-label="File size">${['Q2_K', 'Q4_K_M', 'Q8_0'].map(q => `<button class="btn sm" data-q="${q}" aria-pressed="${m.quant === q}">${q.replace(/_K_M|_0|_K/, '')}</button>`).join('')}</div>
+    <ul>${parts(m).map(p => `<li>${esc(p)}</li>`).join('')}</ul>
+    <p class="hint" style="font-size:12.5px;color:var(--faint);margin:0">The same model always grows the same picture. A smaller file of it (Q2, Q4) keeps the body and only roughens the skin.</p></div>
+    <div class="grid">${all.map(x => `<button class="sp" data-spec="${esc(x.id)}" aria-pressed="${x.id === S.spec}">${pic(x)}<b>${esc(x.name)}</b><small>${x.params}B · ${x.quant.replace(/_K_M|_0|_S/, '')} · ${x.ctx}K</small></button>`).join('')}</div>`;
+}
+
+// ---------------------------------------------------------------- wiring
+function go(v){
+  S.view = v;
+  for (const id of ['chat', 'machine', 'server', 'spec', 'hardware', 'ident', 'prefs']) $('#v-' + id).hidden = id !== v;
+  hwKey = null;
+  lastPic = null;
+  document.querySelectorAll('.nav [data-go]').forEach(b => b.dataset.go === v ? b.setAttribute('aria-current', 'page') : b.removeAttribute('aria-current'));
+  paint();
+}
+function openMachine(){
+  picker(false);
+  if (machAs() === 'page') go('machine'); else { $('#drawer').showModal(); renderMachine(); }
+}
+function paint(){
+  paintChat();
+  renderMachine();
+  if (S.view === 'server') paintBench();
+  if (S.view === 'spec') paintSpec();
+  if (S.view === 'ident') paintIdentity();
+  if (S.view === 'prefs') paintPrefs();
+  paintMeet();
+  cropAll();
+}
+document.addEventListener('click', e => {
+  const t = e.target.closest('button, [data-go]');
+  if (!t) { if (!e.target.closest('#mpop')) picker(false); return; }
+  if (t.dataset.go) return go(t.dataset.go);
+  if (t.dataset.meet) { if (t.dataset.meet === 'on') $('#c-on').checked = true; S.meetGone = true; lastPic = null; return paint(); }
+  if (t.dataset.pref) { $('#c-on').checked = !layerOn(); lastPic = null; $('#bench').dataset.k = ''; return paint(); }
+  if (t.id === 'mpbtn') return picker($('#mpop').hidden);
+  if (t.hasAttribute('data-open')) return openMachine();
+  if (t.dataset.load) { picker(false); return load(t.dataset.load); }
+  if (t.dataset.unload) return unload(t.dataset.unload);
+  if (t.hasAttribute('data-cancel')) { S.waiting = null; return paint(); }
+  if (t.dataset.get) return announce(`Here Shoggoth would start downloading ${M[t.dataset.get].name}, the same as Library > Get.`);
+  if (t.dataset.sim) return simApp(t.dataset.sim);
+  if (t.dataset.spec) { S.spec = t.dataset.spec; S.specQ = null; return paintSpec(); }
+  if (t.dataset.mood) { S.specMood = t.dataset.mood; return paintSpec(); }
+  if (t.dataset.q) { S.specQ = t.dataset.q; return paintSpec(); }
+  if (t.id === 'dclose') return $('#drawer').close();
+  if (t.id === 'c-reset') { reset(); $('#reqs').innerHTML = ''; lastPic = null; $('#bench').dataset.k = ''; return go('chat'); }
+  if (t.id === 'c-tool') return coworkDemo();
+});
+$('#composer').addEventListener('submit', async e => {
+  e.preventDefault();
+  const text = $('#say').value.trim();
+  if (!text || S.chatBusy) return;
+  if (!S.active && !S.loading) return openMachine();
+  $('#say').value = '';
+  const add = (cls, who, body) => { const d = document.createElement('div'); d.className = 'msg ' + cls; d.innerHTML = `<span class="who">${esc(who)}</span>${esc(body)}`; $('#msgs').append(d); d.scrollIntoView({block:'end'}); return d; };
+  add('me', 'You', text);
+  const name = M[S.active].name, reply = add('', name, '');
+  reply.insertAdjacentHTML('beforeend', '<div class="phase"><span class="ph"></span><b></b><span class="flav"></span></div>');
+  const ph = reply.querySelector('.phase');
+  const phase = (k, word, kind) => { ph.querySelector('.ph').innerHTML = glyph(k); ph.querySelector('b').textContent = word; ph.querySelector('.flav').textContent = flavour(kind, {model:name}); };
+  S.chatBusy = true;
+  S.mood = 'thinking'; paintChat(); phase('eye', 'Reading', 'reading'); await wait(1600);
+  phase('dream', 'Thinking', 'thinking'); await wait(2200); phase('dream', 'Thinking', 'thinking'); await wait(2200);
+  S.mood = 'answering'; paintChat(); phase('quill', 'Writing', 'writing');
+  const words = 'This is a stand-in reply. Watch the picture change while it writes. In Shoggoth the chat stream drives these moods, so the picture never gets ahead of the answer.'.split(' ');
+  const out = reply.appendChild(document.createTextNode(''));
+  for (const w of words) { out.data += (out.data ? ' ' : '') + w; await wait(70); }
+  ph.remove();
+  S.chatBusy = false; S.mood = 'idle'; paintChat();
+});
+// drag a model onto a slot: an extra, never the only way to load
+document.addEventListener('dragstart', e => { const c = e.target.closest('[data-drag]'); if (c) e.dataTransfer.setData('text/plain', c.dataset.drag); });
+document.addEventListener('dragover', e => { const b = e.target.closest('[data-bay]'); if (b) { e.preventDefault(); b.classList.add('drop'); } });
+document.addEventListener('dragleave', e => { const b = e.target.closest('[data-bay]'); if (b) b.classList.remove('drop'); });
+document.addEventListener('drop', e => {
+  const b = e.target.closest('[data-bay]'); if (!b) return;
+  e.preventDefault(); b.classList.remove('drop');
+  const id = e.dataTransfer.getData('text/plain');
+  if (!M[id]) return;
+  if (M[id].engine !== b.dataset.bay) return announce(`${M[id].name} runs on ${ENG[M[id].engine]}, so it goes in that slot.`);
+  load(id);
+});
+$('#drawer').addEventListener('close', () => $('#mpbtn').focus());
+$('#c-on').addEventListener('change', () => { lastPic = null; $('#bench').dataset.k = ''; paint(); });
+document.querySelectorAll('[name=c-place]').forEach(r => r.addEventListener('change', () => { lastPic = null; paint(); }));
+$('#c-theme').addEventListener('change', e => { e.target.value ? document.documentElement.dataset.theme = e.target.value : delete document.documentElement.dataset.theme; hwKey = null; });
+$('#c-type').addEventListener('change', e => { e.target.value ? document.documentElement.dataset.type = e.target.value : delete document.documentElement.dataset.type; lastPic = null; hwKey = null; $('#bench').dataset.k = ''; paint(); });
+$('#c-rm').addEventListener('change', e => document.documentElement.classList.toggle('rm', e.target.checked));
+$('#c-gpus').addEventListener('change', () => { hwKey = null; });
+$('#c-mlab').addEventListener('change', () => { hwKey = null; });
+$('#c-bench').addEventListener('change', () => { $('#bench').dataset.k = ''; paint(); });
+$('#c-default').addEventListener('change', e => { const v = e.target.value; $('#c-on').checked = v === 'on'; S.meetGone = false; lastPic = null; $('#bench').dataset.k = ''; paint(); });
+$('#c-load').addEventListener('input', () => { $('#c-auto').checked = false; });
+$('#c-busy').addEventListener('change', e => { S.busy = e.target.checked; if (!S.busy && S.waiting) S.waiting = null; paint(); });
+$('#c-ext').addEventListener('change', e => { S.ext = e.target.checked ? 'GLM-4.7-Flash-GGUF' : null; if (S.ext && !S.slots.lemonade.includes(S.ext)) S.slots.lemonade = [S.ext]; paint(); });
+
+document.documentElement.dataset.type = 'doto';
+reset();
+['shoggoth started on 127.0.0.1:13305 · gateway on /v1', 'lemonade 9.1 ready · 1 model loaded', 'strata found · 5 setups, none running'].forEach(t => logLine(t, 'sys'));
+$('#brand').insertAdjacentHTML('afterbegin', iconSVG('many', 32));
+go('chat');
+</script>
+</body>
+</html>

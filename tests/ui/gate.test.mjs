@@ -1,6 +1,6 @@
 // What the approval card warns about. Run: node tests/ui/gate.test.mjs
 import assert from "node:assert/strict";
-import { risksOf } from "../../zest/pi/zest-gate.js";
+import { risksOf } from "../../shoggoth/pi/zest-gate.js";
 
 const cases = [
   ["ls -la", []],
