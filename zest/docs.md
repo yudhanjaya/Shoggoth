@@ -32,7 +32,7 @@ flowchart LR
 
 ## Your first minutes
 
-The first time you open Zest it gets itself ready on one screen. It asks where your models should live (one click accepts the disk with the most room), then works through a short checklist by itself: it looks at your computer, gets the part that runs AI, and fits it to your graphics card. If you already have models or a setup, Zest finds them and skips what it doesn't need. Then you choose a first model (one suggestion per size: Small, Medium or Large) and press **Start chatting**.
+The first time you open Zest it gets itself ready on one screen. It asks where your models should live. One click accepts the disk with the most room. Then it works through a short checklist by itself. It looks at your computer, gets the part that runs AI, and fits it to your graphics card. If you already have models or a setup, Zest finds them and skips what it doesn't need. Then you choose a first model (one suggestion per size: Small, Medium or Large) and press **Start chatting**.
 
 If you pick the recommended model you will be chatting within minutes, depending on your connection.
 
@@ -147,7 +147,7 @@ Replies can also contain tables, lists, links, quotes and code blocks, shown nea
 
 ## Choosing and managing models
 
-Open **Library**. It lists every model on your computer in one place, whichever program runs it, grouped by size: **Small** (under 10 GB of graphics memory, ready in seconds), **Medium** (10 to 24 GB) and **Large** (for big computers; they take a couple of minutes to start).
+Open **Library**. It lists every model on your computer, whichever program runs it. Models are grouped by size. **Small** ones use under 10 GB of graphics memory and are ready in seconds. **Medium** ones use 10 to 24 GB. **Large** ones are for big computers and take a couple of minutes to start.
 
 - **Installed** is what you have. **Recommended for this computer** has the models I have tried and recommend on systems from 10 GB of VRAM to 26 GB of VRAM, and any Large model that will fit yours. **Everything** is the full list, with a filter for pictures, speech and sound.
 - **Get it** downloads a model in the background while you carry on. Every download shows together in one "Getting models" strip, and a model that needs something extra (the first Large model, for example) sets that up for you as part of the same step.
@@ -162,7 +162,7 @@ Open **Library**. It lists every model on your computer in one place, whichever 
 
 ## Large models
 
-Some models are far too big for a graphics card. Zest can still run them, by keeping part of the model in your RAM and on your SSD. They are slower than a model that fits, they need a lot of RAM (the Large group is meant for computers with about 64 GB) and plenty of disk, and they take a couple of minutes to start. They sit in the **Large** group of the Library, and you use them like any other model.
+Some models are far too big for a graphics card. Zest can still run them, by keeping part of the model in your RAM and on your SSD. They're slower than a model that fits, and they take a couple of minutes to start. They also need plenty of disk and a lot of RAM: the Large group is meant for computers with about 64 GB. They sit in the **Large** group of the Library, and you use them like any other model.
 
 - **Choosing one is the same as choosing any model.** Under **Recommended for this computer**, Zest looks at your RAM, graphics memory and free disk and suggests the best Large model that fits. **Get it** downloads it. The first time, Zest also sets up the program that runs large models for you: it downloads it, checks it against the checksum its authors publish, and fits it to your computer. There is nothing to configure. Choose the model in Chat and a card shows it starting.
 - **Memory is shared.** Only one big model runs at a time. When you pick a Large model, Zest frees whatever else was running first. Before it starts, Zest checks there is enough free memory and, if not, says how much is missing and which programs are using the most (with a **Start anyway** button). Picking a smaller model later frees the big one again, unless it is answering right now.
@@ -189,10 +189,10 @@ The program is [Strata](https://github.com/Niko1221/Strata). Its saved setups, a
 Everything in **Advanced** is optional.
 
 - **Hardware** shows your graphics cards filling up as models load, and lets you choose which to use.
-- **Engines** has a card for each program Zest uses to run models: [Lemonade](https://lemonade-server.ai) for small and medium models, Strata for Large ones, and any you add. Each card shows its version, whether it is running and who started it, an update check, and a Stop button for ones Zest started. Details specific to an engine are inside its card: which hardware each kind of model uses (CUDA, Vulkan, ROCm or the processor) for Lemonade, and saved setups, a link to a Strata on another computer and its installer for Strata. You can add your own engine by putting a folder with a `provider.yaml` file in the engines folder shown at the bottom of the page, then pressing **Reload**. Zest asks once before an engine you added runs a program. The repository's `docs/ENGINES.md` explains how, and `providers check <folder>` (run the AppImage with those words) tells you what to fix before you reload.
+- **Engines** has a card for each program Zest uses to run models: [Lemonade](https://lemonade-server.ai) for small and medium models, Strata for Large ones, and any you add. Each card shows its version, whether it is running and who started it, an update check, and a Stop button for ones Zest started. Each card also holds that engine's own details. Lemonade's shows which hardware each kind of model uses (CUDA, Vulkan, ROCm or the processor). Strata's has your saved setups, a link to a Strata on another computer, and its installer. You can add your own engine by putting a folder with a `provider.yaml` file in the engines folder shown at the bottom of the page, then pressing **Reload**. Zest asks once before an engine you added runs a program. The repository's `docs/ENGINES.md` explains how, and `providers check <folder>` (run the AppImage with those words) tells you what to fix before you reload.
 - **Engine settings** is every setting Lemonade has, searchable.
 - **Themes** changes how Zest looks. **Light Touch** is the default; **Braun T3** and **Teenage Engineering** are softer and bolder takes on the same idea, and the rest borrow colour schemes from popular code editors (Dracula, Nord, Monokai Pro, GitHub Light and more). Nothing moves when you switch, and your choice is remembered on this computer.
-- **Settings** (in the main menu, not under Advanced) is where you choose where your models live, how long large models stay in memory, and how much a chat remembers, and where **Check and update everything** is. Its **My own server** section is for the rare case where you run Lemonade yourself, for example as a system service: connect Zest to it there instead of using the one Zest starts.
+- **Settings** (in the main menu, not under Advanced) is where you choose where your models live, how long large models stay in memory, and how much a chat remembers. **Check and update everything** is there too. Its **My own server** section is for the rare case where you run Lemonade yourself, for example as a system service: connect Zest to it there instead of using the one Zest starts.
 
 ## Where things live, and privacy
 

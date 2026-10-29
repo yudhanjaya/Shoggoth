@@ -1354,7 +1354,7 @@ h3.themesec{font:600 12px var(--sans);letter-spacing:.08em;text-transform:upperc
 
     <!-- BACKENDS -->
     <section class="view" id="v-backends"><div class="pad"><div class="wrap">
-      <p class="lede">An <b>engine</b> is a program Zest uses to run models. Zest picks the right one for each model, starts it, and frees the memory when you switch, so you never need this page just to chat. It is here for when you want to look under the bonnet.</p>
+      <p class="lede">An <b>engine</b> is a program that runs models. Zest picks one for each model, starts it, and frees its memory when you switch. You don't need this page to chat. It's here if you want to look under the bonnet.</p>
       <div id="engcards"></div>
       <div id="pibox"></div>
       <div id="engadd"></div>
@@ -1403,7 +1403,7 @@ h3.themesec{font:600 12px var(--sans);letter-spacing:.08em;text-transform:upperc
 
     <!-- SETTINGS -->
     <section class="view" id="v-settings"><div class="pad"><div class="wrap">
-      <p class="lede">Every setting Lemonade, the engine that runs small and medium models, offers, in one place. Changes are saved straight to it as you make them. You rarely need this page. Settings for a single model are in the Library, on its card under <b>Settings</b>.</p>
+      <p class="lede">Every setting Lemonade offers. Lemonade runs your small and medium models. Changes save as you make them, and you'll rarely need this page. Settings for a single model are in the Library, on its card under <b>Settings</b>.</p>
       <div class="setbar"><input type="search" id="setq" placeholder="Search settings" aria-label="Search settings"><span class="chip" id="setcount"></span></div>
       <div id="settings"></div>
     </div></div></section>
@@ -2997,7 +2997,7 @@ function engineStep(){
         <label class="aechk" style="margin-left:auto"><input type="checkbox" data-act="autocheck" ${autoCheckOn() ? "checked" : ""}> Look for updates when Zest opens</label></div>
       ${upd}${progs}</div>`;
   }
-  const lead = `Lemonade is the engine that actually runs AI models on your own computer. Everything stays on this machine. Choose where it comes from:`;
+  const lead = `Lemonade is the engine that runs AI models on your computer. Everything stays on this machine. Choose where it comes from:`;
   return stepShell(1, "eng", "Lemonade, the engine", st.lemonade.reachable, chip, `<p class="lead">${lead}</p><div class="choices" role="radiogroup" aria-label="Which Lemonade">${built}${exist}</div>${panel}`);
 }
 
@@ -3316,7 +3316,7 @@ function renderPick(){
     <ol class="picklist">
       <li><b>Will it fit?</b> Zest's Library lists <b>Recommended for this computer</b> first, and hides anything that won't run comfortably in your free graphics memory. A model that doesn't fit will be slow or fail to start.</li>
       <li><b>What is it for?</b> Chat and writing, coding, tool use, or understanding pictures. The labels on each card say what a model is good at.</li>
-      <li><b>How much does it need to remember?</b> The context window is how much conversation the model can see. 128k tokens is a good threshold for usefulness in long chats and agentic work, and it is Zest's default.</li>
+      <li><b>How much does it need to remember?</b> The context window is how much conversation the model can see. 128k tokens is enough for long chats and agent work. It's Zest's default.</li>
     </ol>
     <h4>Benchmarks only tell you so much</h4>
     <p class="help2">A benchmark is a standard test, like an exam. It measures one narrow skill, so a high score tells you about that use case and nothing more. Many can be gamed: models can be trained on the questions, or tuned to look good on the test. Scores are often run on a different computer from yours, too. Use them to draw up a shortlist, then <b>try two or three models yourself, on your own questions. That is the best way to find out what works for you.</b></p>
@@ -3332,7 +3332,7 @@ const FAQ = [
   ["Is my data private?", "Yes. Zest and the models run on this computer. Your conversations are saved on this computer, in Zest's own folder, and are never sent anywhere. Zest only goes online to download a model you ask for, check for updates, fetch skills when you paste a link, or search the web when you allow the model to (it asks first, every time, and you can switch it off in the chat's Details panel). The <a href=\"#docs\" data-go=\"docs\">Docs</a> page explains where everything is kept."],
   ["Why is the first answer slow?", "The model has to be loaded into your computer's memory before it can answer. That takes a few seconds to a minute, depending on its size. After that, answers start right away."],
   ["How do I know which model to use?", "It depends on your computer and what you want to do. Start with <b>Recommended for this computer</b> in the Library, where I explain each recommendation. <b>Everything</b> shows the rest, with a note on whether each one will fit. <p><button class=\"btn\" type=\"button\" data-pick>Show me how to compare models</button></p>"],
-  ["What is the context window?", "It is how much of the conversation a model can see at once. Zest uses <b>128k</b> tokens (about 100,000 words) by default, which is a good threshold for usefulness in long chats and agentic work. You can change it for one model under <b>Details</b>, then <b>Settings for this model</b>. A bigger window needs more graphics memory."],
+  ["What is the context window?", "It is how much of the conversation a model can see at once. Zest uses <b>128k</b> tokens (about 100,000 words) by default. That's enough for long chats and agent work. You can change it for one model under <b>Details</b>, then <b>Settings for this model</b>. A bigger window needs more graphics memory."],
   ["How do I get more models?", "Open the <b>Library</b> and press <b>Get it</b> on any model. Models you already have somewhere else, or ones from Hugging Face, come in with <b>Add models</b>. Large models work the same way: Zest sets up whatever they need and starts them when you pick one."],
   ["Can other apps use my models?", "Yes. Open <b>Advanced</b>, then <b>Server</b>. Zest gives you an address and a key that you can paste into opencode, Hermes, or any chat app or coding assistant that works with an OpenAI-style server."],
   ["Answers are slow or the model won't start", "Close other programs that use your graphics card, such as games or video editors, and try again. If it still struggles, choose a smaller model in the Library. Models marked “Probably too big” often fail on this computer. Large models take a couple of minutes to start; the bar at the top of the chat shows how far along they are."]
@@ -3679,7 +3679,7 @@ const SET_META = {
   models_dir: {l:"Model storage folder", h:"Where downloaded models are kept. “auto” follows your Hugging Face cache settings."},
   extra_models_dir: {l:"Extra models folder", h:"A folder Lemonade searches for GGUF files to import."},
   max_loaded_models: {l:"Models loaded at once", h:"How many models of each type can stay in memory together."},
-  ctx_size: {l:"Default context window", h:"Used when a model has no context size of its own. Zest sets 128k (131,072) for its own Lemonade, a good threshold for usefulness in long chats and agentic work. -1 sizes it automatically."},
+  ctx_size: {l:"Default context window", h:"Used when a model has no context size of its own. Zest sets 128k (131,072) for its own Lemonade, which is enough for long chats and agent work. -1 sizes it automatically."},
   auto_evict: {l:"Unload models automatically when memory is low"},
   auto_evict_threshold_pct: {l:"Memory threshold for unloading", h:"A fraction, for example 0.9 means 90% full."},
   default_model_source: {l:"Where to download models from", opts:["huggingface","modelscope"]},
