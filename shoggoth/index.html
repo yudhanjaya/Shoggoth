@@ -110,6 +110,41 @@ main{position:relative}
 .picnote[hidden]{display:none}.picnote .x{border:0;background:none;font-size:16px;color:var(--faint);min-width:32px;min-height:32px}
 @media (prefers-reduced-motion:reduce){.vtube *,.harness *{animation:none!important;transition:none!important}}
 @media (max-width:900px){.ptube,.harness{display:none!important}.top.tall{min-height:68px}}
+/* ---------- the Machine ---------- */
+dialog.mcdlg{margin:0 0 0 auto;height:100dvh;max-height:none;width:min(760px,100vw);padding:0;border:0;border-left:1px solid var(--line);background:var(--bg);color:var(--text);box-shadow:-20px 0 50px rgba(0,0,0,.18)}
+dialog.mcdlg[open]{animation:mcIn .28s var(--ease)}
+dialog.mcdlg::backdrop{background:rgba(20,18,10,.22)}
+@keyframes mcIn{from{transform:translateX(40px);opacity:0}}
+.mcwrap{height:100%;display:flex;flex-direction:column}.mcscroll{overflow:auto;flex:1}
+.mctop{display:flex;align-items:center;gap:10px;padding:14px 18px 14px 26px;border-bottom:1px solid var(--line-soft)}.mctop h2{font:800 26px/1.1 var(--serif);margin:0;flex:1}
+.mc{container-type:inline-size;display:grid;gap:20px;padding:22px 26px 60px}.mc h2{font:800 22px/1.2 var(--serif);margin:0}.mc .help{margin:2px 0 0}
+.mccase{border-radius:18px;padding:16px;background:linear-gradient(var(--surface-2),color-mix(in srgb,var(--surface-2) 85%,var(--edge)));border:1px solid var(--line);box-shadow:inset 0 1px 0 var(--hi),0 2px 0 var(--edge),0 10px 24px var(--sh)}
+.mccasehead{display:flex;align-items:baseline;gap:10px;flex-wrap:wrap;padding:0 4px 12px}.mccasehead b{font-size:15px}.mccasehead span{font-size:12.5px;color:var(--muted)}
+.mcslots{display:grid;gap:14px;grid-template-columns:1fr}
+@container (min-width:640px){.mcslots{grid-template-columns:repeat(auto-fit,minmax(0,1fr))}}
+.mcslot{border-radius:14px;background:var(--surface);border:1px solid var(--line-soft);padding:12px;display:grid;gap:10px;align-content:start;box-shadow:0 1px 0 var(--hi)}
+.mchead{display:flex;align-items:baseline;gap:8px;flex-wrap:wrap}.mchead b{font-size:14.5px}.mchead span{font-size:12px;color:var(--faint)}
+.mclcd{background:#1c1f1a;color:#d8e6a8;font:900 13px/1.5 var(--serif);letter-spacing:.03em;border-radius:8px;padding:7px 10px;min-height:44px;box-shadow:inset 0 2px 4px rgba(0,0,0,.35)}
+.mclcd p{margin:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.mclcd p:not(:last-child){opacity:.55}
+.mcbay{position:relative;border-radius:12px;min-height:110px;background:var(--well);box-shadow:inset 0 3px 8px var(--sh);padding:10px;display:grid;gap:8px;align-content:center}
+.mcbay::before{content:"";position:absolute;left:18px;right:18px;top:6px;height:4px;border-radius:3px;background:color-mix(in srgb,var(--text) 22%,transparent)}
+.mcbay.drop{outline:2.5px dashed var(--lemon-text);outline-offset:-4px}.mcempty{text-align:center;font-size:13px;color:var(--faint);margin:0}
+.mcseat{display:grid;grid-template-columns:auto 1fr auto;align-items:center;gap:12px;background:var(--surface);border-radius:10px;padding:6px 10px 6px 6px;border-top:5px solid var(--tone);box-shadow:0 2px 0 var(--edge)}
+.mcseat .th{width:84px;height:72px;display:grid;place-items:center;overflow:hidden}.mcseat .th svg{width:80px;height:68px}
+.mcseat b{font-size:14px;display:block;line-height:1.25}.mcseat small{font-size:12px;color:var(--muted)}.mcseat .tag{margin-top:3px}
+.tag{display:inline-block;font-size:11.5px;font-weight:700;padding:1px 8px;border-radius:999px;background:var(--surface-2);border:1px solid var(--line);color:var(--muted)}
+.inserting{animation:mcSlide .55s var(--ease) both}@keyframes mcSlide{from{transform:translateY(-34px);opacity:0}to{transform:none;opacity:1}}
+.mcg{display:grid;gap:3px;font-size:12px;color:var(--muted)}.mcg .row{display:flex;justify-content:space-between;gap:8px}.mcg .row b{color:var(--text);font-weight:600;font-variant-numeric:tabular-nums}
+.mcg .bar{height:8px;border-radius:5px;background:var(--surface-2);box-shadow:inset 0 1px 2px var(--sh);overflow:hidden}.mcg .bar i{display:block;height:100%;background:var(--leaf);border-radius:5px;transition:width .6s var(--ease)}.mcg .bar i.hot{background:var(--warn)}
+.mctrays{display:grid;gap:6px}.mctrays .tray{display:grid;grid-template-columns:96px 1fr;gap:8px;align-items:center;font-size:12px;color:var(--muted)}
+.mcwait{display:grid;gap:8px;border:1px solid var(--warn-line);background:var(--warn-bg);border-radius:10px;padding:10px 12px;font-size:13.5px}.mcwait .acts{display:flex;gap:8px;flex-wrap:wrap}
+.mcshelf{display:grid;gap:14px}.mcrow h3{font-size:12.5px;font-weight:700;color:var(--muted);margin:0 0 8px;text-transform:uppercase;letter-spacing:.06em}
+.mccarts{display:flex;flex-wrap:wrap;gap:12px}
+.mccart{width:158px;display:grid;gap:4px;background:var(--surface);border:1px solid var(--line);border-radius:12px 12px 10px 10px;padding:0 0 10px;box-shadow:0 2px 0 var(--edge),0 4px 10px var(--sh);overflow:hidden;clip-path:polygon(0 0,34% 0,38% 7px,62% 7px,66% 0,100% 0,100% 100%,0 100%)}
+.mccart[draggable=true]{cursor:grab}.mccart .lab{height:10px;background:var(--tone)}.mccart .th{height:104px;display:grid;place-items:center;overflow:hidden}.mccart .th svg{width:124px;height:108px}
+.mccart b,.mccart small,.mccart .mcfit,.mccart .btn{margin:0 10px}.mccart b{font-size:13.5px;line-height:1.25}.mccart small{font-size:11.5px;color:var(--muted)}
+.mccart .mcfit{font-size:11.5px;color:var(--warn);min-height:16px}.mccart .btn{margin-top:4px;min-height:36px}.mccart.in{opacity:.5}
+@media (prefers-reduced-motion:reduce){dialog.mcdlg[open],.inserting{animation:none}}
 /* ---------- shell ---------- */
 .app{display:grid;grid-template-columns:var(--rail) 1fr;height:100dvh}
 .rail{display:flex;flex-direction:column;gap:4px;padding:20px 14px;border-right:1px solid var(--line-soft);background:var(--bg);overflow-y:auto}
@@ -1344,6 +1379,10 @@ h3.themesec{font:600 12px var(--sans);letter-spacing:.08em;text-transform:upperc
     </header>
 
     <svg class="harness" id="harness" aria-hidden="true"></svg>
+    <dialog class="mcdlg" id="mcdlg" aria-labelledby="mctitle">
+      <div class="mcwrap"><div class="mctop"><h2 id="mctitle">Your computer</h2><button class="btn" type="button" id="mcclose">Close</button></div>
+      <div class="mcscroll" id="mcbody"></div><div class="sr" aria-live="polite" id="mclive"></div></div>
+    </dialog>
 
     <!-- CHAT -->
     <section class="view chat" id="v-chat">
@@ -1749,6 +1788,7 @@ async function tick(){
   else if(!S.models.length) { await loadModels(); if(S.view === "models") renderModels(); }
   renderStatus();
   if(S.view === "hardware") renderHardware();
+  if($("#mcdlg").open) mcRefresh();
   if(S.view === "models") updateModelBadges();
   syncModelSelect();
 }
@@ -3992,8 +4032,125 @@ document.addEventListener("click", e => {
   const sw = e.target.closest("#picsw");
   if(sw){ store.set("shoggoth.pictures", !picturesOn()); sw.setAttribute("aria-checked", picturesOn()); store.set("shoggoth.picturesNoted", true); hdrPaint(); }
 });
-/* Until the Machine drawer exists, the picture opens the model picker. */
-var openMachine = () => $("#mbpick").click();
+/* ======================= the Machine ======================= */
+/* A drawer over the chat: one slot per engine, and your models as cartridges to load into them. Every action is one the app
+   already has (load = the model picker's load, unload = Free memory); it shows the server's state and never runs ahead of it. */
+const MC = {provs: [], wait: null, justIn: null, t0: 0};
+async function mcRefresh(){
+  try{ MC.provs = (await api("/ui/providers")).providers || []; }catch{}
+  try{ S.ms = await api("/ui/model"); }catch{}
+  if(!S.pk.busy && Date.now() - S.pk.t > 4000) await pkLoad(true);
+  mcPaint();
+}
+function openMachine(){
+  pkOpen(false);
+  if(!picturesOn()) return;
+  const d = $("#mcdlg"); if(!d.open) d.showModal();
+  mcPaint(); mcRefresh();
+}
+const mcEngOf = id => (pkFind(id) || {}).engine;
+const mcGb = mb => (mb / 1024).toFixed(1);
+function mcGauge(label, used, of){
+  const pc = of ? Math.min(100, used / of * 100) : 0;
+  return `<div class="mcg"><div class="row"><span>${esc(label)}</span><b>${used.toFixed(1)} of ${of.toFixed(0)} GB</b></div><div class="bar"><i class="${pc > 85 ? "hot" : ""}" style="width:${pc}%"></i></div></div>`;
+}
+/* What an engine's processes hold on the graphics cards, in GB. */
+function mcVram(eng){
+  let n = 0;
+  for(const g of S.gpus || []) for(const p of g.procs || []) if(eng === "lemonade" ? isLemonadeProc(p) : new RegExp(eng, "i").test(p.name || "")) n += (p.mem_mb || 0);
+  return n / 1024;
+}
+const mcTotalVram = () => (S.gpus || []).reduce((a, g) => a + (g.mem_total_mb || 0), 0) / 1024;
+function mcSeat(m, eng){
+  const ms = S.ms || {}, loading = ms.loading === m.id || S.loadingModel === m.id, mine = ms.loaded === m.id || loading;
+  const q = String(m.quant || "").replace(/^UD-/, "").replace(/_K_[MSL]|_K_XL|_0$|_[SM]$/, "");
+  const act = loading ? '<span class="tag">Loading…</span>' : mine ? `<button class="btn" type="button" data-mcunload="${esc(m.id)}">Unload</button>` : '<span class="tag">Started by you</span>';
+  return `<div class="mcseat${MC.justIn === m.id ? " inserting" : ""}" style="--tone:${crTone(m)}"><div class="th">${crPic(m, {mood: loading ? "loading" : "idle", crop: true, label: false})}</div>
+    <div><b>${esc(m.title)}</b><small>${m.size_gb ? m.size_gb + " GB · " : ""}${esc(q)}</small>${cwBarModel() === m.id && !loading ? '<br><span class="tag">Chat uses this</span>' : ""}${mine ? "" : `<br><small>Shoggoth didn't load this, so it won't unload it.</small>`}</div>${act}</div>`;
+}
+function mcLcd(eng, seated){
+  const ms = S.ms || {}, id = ms.loading || S.loadingModel, p = MC.provs.find(x => x.id === eng) || {};
+  if(id && mcEngOf(id) === eng){
+    const secs = Math.round((Date.now() - (MC.t0 || Date.now())) / 1000);
+    return [`Loading ${(pkFind(id) || {}).title || friendly(id)}`, (ms.step || "Getting it ready") + (eng === "strata" && secs > 3 ? ` · ${secs} s` : "")];
+  }
+  if(seated.length) return seated.map(m => "Ready: " + m.title);
+  return [(p.running || []).length ? "Running. Nothing loaded." : "Stopped. It starts when a model needs it."];
+}
+function mcSlot(p){
+  const eng = p.id, seated = pkModels().filter(m => m.engine === eng && (m.live || (S.ms || {}).loading === m.id || S.loadingModel === m.id));
+  const lines = mcLcd(eng, seated), w = MC.wait && MC.wait.engine === eng ? MC.wait : null;
+  const used = mcVram(eng), total = mcTotalVram();
+  const big = eng === "strata", ram = (S.pk.machine || {}).ram_gb;
+  const blurb = big ? "For very large models. Uses the whole machine: graphics card, RAM and SSD." : (p.capabilities || []).includes("multi_model") ? "Fast. Holds one model of each kind at a time." : "Runs models for chat.";
+  return `<div class="mcslot"><div class="mchead"><b>${esc(p.name)}</b><span>${esc(blurb)}</span></div>
+    <div class="mclcd" aria-label="${esc(p.name)} status">${lines.map(l => `<p>${esc(l)}</p>`).join("")}</div>
+    <div class="mcbay" data-mcbay="${esc(eng)}">${seated.length ? seated.map(m => mcSeat(m, eng)).join("") : `<p class="mcempty">Empty. ${big ? "Large models go here." : "Load a model from the shelf."}</p>`}</div>
+    ${w ? `<div class="mcwait" role="alert"><div>${w.id ? `<b>${esc((pkFind(w.id) || {}).title || w.id)}</b> is waiting. ` : ""}${esc(w.why)}</div><div class="acts">${w.id ? `<button class="btn" type="button" data-mcload="${esc(w.id)}">Try again</button>` : ""}<button class="btn ghost" type="button" data-mcdismiss>Dismiss</button></div></div>` : ""}
+    ${total ? (big ? `<div class="mctrays"><div class="tray"><span>Graphics card</span>${mcGauge("", used, total)}</div>${ram ? `<div class="tray"><span>RAM</span><div class="mcg"><div class="row"><span>${esc(String(ram))} GB in this computer</span></div></div></div>` : ""}<div class="tray"><span>SSD</span><div class="mcg"><div class="row"><span>${seated.length ? "Read as needed" : "Not in use"}</span></div></div></div></div>` : mcGauge("Graphics memory", used, total)) : ""}
+  </div>`;
+}
+function mcCart(m){
+  const ms = S.ms || {}, inSlot = m.live || ms.loading === m.id || S.loadingModel === m.id;
+  const q = String(m.quant || "").replace(/^UD-/, "").replace(/_K_[MSL]|_K_XL|_0$|_[SM]$/, "");
+  const fit = m.fit === "no" ? "Too big for this computer" : m.engine === "strata" ? "Takes a couple of minutes to start" : m.fit === "tight" ? "Close other big programs first" : "";
+  const btn = inSlot ? '<button class="btn" type="button" disabled>In a slot</button>' : `<button class="btn primary" type="button" data-mcload="${esc(m.id)}" ${S.loadingModel || m.fit === "no" ? "disabled" : ""}>Load</button>`;
+  return `<div class="mccart${inSlot ? " in" : ""}" style="--tone:${crTone(m)}" ${inSlot ? "" : `draggable="true" data-mcdrag="${esc(m.id)}"`}>
+    <div class="lab"></div><div class="th">${crPic(m, {label: false})}</div><b>${esc(m.title)}</b><small>${m.size_gb ? m.size_gb + " GB · " : ""}${esc(q)} · ${esc(m.engine_name || m.engine)}</small>
+    <span class="mcfit">${esc(fit)}</span>${btn}</div>`;
+}
+function mcPaint(){
+  const body = $("#mcbody"); if(!body || !$("#mcdlg").open) return;
+  const m = S.pk.machine || {}, gpus = (S.gpus || []).map(g => shortName(g.name)).join(" + ");
+  const provs = MC.provs.filter(p => p.installed !== false && pkModels().some(x => x.engine === p.id));
+  const tiers = [["small", "Small"], ["medium", "Medium"], ["large", "Large"], ["", "Other"]];
+  const shelf = tiers.map(([t, label]) => { const ms = pkModels().filter(x => (x.tier || "") === t); return ms.length ? `<div class="mcrow"><h3>${label}</h3><div class="mccarts">${ms.map(mcCart).join("")}</div></div>` : ""; }).join("");
+  body.innerHTML = `<div class="mc"><div><h2>What's in memory</h2><p class="help">Each slot is an engine. A model in a slot is loaded. Chat uses the one marked "Chat uses this".</p></div>
+    <div class="mccase"><div class="mccasehead"><b>This computer</b><span>${esc([gpus, m.ram_gb ? m.ram_gb + " GB RAM" : ""].filter(Boolean).join(" · "))}</span></div>
+      <div class="mcslots">${provs.length ? provs.map(mcSlot).join("") : '<p class="help">No engines yet.</p>'}</div></div>
+    <div><h2>Your models</h2><p class="help">Press Load, or drag a model into its slot. A Strata model needs all the memory, so loading one unloads Lemonade's first.</p></div>
+    <div class="mcshelf">${shelf || '<p class="help">No models yet. <a href="#models" data-go="models">Get one in the Library.</a></p>'}</div></div>`;
+  MC.justIn = null; crCrop(body);
+}
+async function mcLoad(id){
+  const m = pkFind(id); if(!m || S.loadingModel) return;
+  MC.wait = null; MC.t0 = Date.now(); MC.justIn = id;
+  S.model = id; store.set("shoggoth.model", id);
+  S.loadingModel = id; loadWatch(true); mcPaint(); cwModelBar();
+  try{
+    if(CW.id && !(cwFind(CW.id) || {}).isJob){ const cid = CW.id; await api("/ui/cowork/model", {method: "POST", body: JSON.stringify({id: cid, model: id})}); }
+    await api("/ui/model/load", {method: "POST", headers: {"Content-Type": "application/json"}, body: JSON.stringify({model: id})});
+    $("#mclive").textContent = m.title + " is ready.";
+  }catch(err){ MC.wait = {id, engine: m.engine, why: err.message}; }
+  S.loadingModel = null; loadWatch(false);
+  await Promise.all([loadModels(), pollServer(), pkLoad(true)]); renderStatus(); cwModelBar(); mcRefresh();
+}
+async function mcUnload(id){
+  const m = pkFind(id) || {};
+  try{ await api("/ui/model/unload", {method: "POST", body: JSON.stringify({model: id})}); $("#mclive").textContent = (m.title || id) + " unloaded. Its memory is free."; }
+  catch(err){ MC.wait = {id: null, engine: m.engine, why: err.message}; }
+  await Promise.all([loadModels(), pollServer(), pkLoad(true)]); renderStatus(); cwModelBar(); mcRefresh();
+}
+document.addEventListener("click", e => {
+  if(e.target.closest(".mcopen")) return openMachine();
+  const l = e.target.closest("[data-mcload]"); if(l) return mcLoad(l.dataset.mcload);
+  const u = e.target.closest("[data-mcunload]"); if(u) return mcUnload(u.dataset.mcunload);
+  if(e.target.closest("[data-mcdismiss]")){ MC.wait = null; mcPaint(); }
+  if(e.target.closest("#mcclose")) $("#mcdlg").close();
+  if(e.target.closest("#mcdlg [data-go]")) $("#mcdlg").close();
+});
+/* dragging a model into its slot: an extra, never the only way to load */
+document.addEventListener("dragstart", e => { const c = e.target.closest && e.target.closest("[data-mcdrag]"); if(c) e.dataTransfer.setData("text/plain", c.dataset.mcdrag); });
+document.addEventListener("dragover", e => { const b = e.target.closest && e.target.closest("[data-mcbay]"); if(b){ e.preventDefault(); b.classList.add("drop"); } });
+document.addEventListener("dragleave", e => { const b = e.target.closest && e.target.closest("[data-mcbay]"); if(b) b.classList.remove("drop"); });
+document.addEventListener("drop", e => {
+  const b = e.target.closest && e.target.closest("[data-mcbay]"); if(!b) return;
+  e.preventDefault(); b.classList.remove("drop");
+  const id = e.dataTransfer.getData("text/plain"), m = pkFind(id); if(!m) return;
+  if(m.engine !== b.dataset.mcbay){ $("#mclive").textContent = `${m.title} runs on ${m.engine_name || m.engine}, so it goes in that slot.`; return; }
+  mcLoad(id);
+});
+$("#mcdlg").addEventListener("close", () => $("#mbpick").focus());
 
 /* ======================= creatures ======================= */
 /* Each model grows a voxel creature from its card: eyes for how much it remembers, skin grain for its quant, an open brain if it
@@ -4788,7 +4945,7 @@ const BAR_CTX = [8192, 16384, 32768, 65536, 131072, 262144];
 S.pk = {models: [], t: 0, busy: false}; S.loadSteps = []; S.loadStart = 0; S.loadPoll = null;
 async function pkLoad(fresh){
   if(S.pk.busy) return; S.pk.busy = true;
-  try{ const d = await api("/ui/picker" + (fresh ? "?fresh=1" : "")); S.pk.models = d.models || []; S.pk.t = Date.now(); }catch{}
+  try{ const d = await api("/ui/picker" + (fresh ? "?fresh=1" : "")); S.pk.models = d.models || []; S.pk.machine = d.machine || null; S.pk.t = Date.now(); }catch{}
   S.pk.busy = false; cwModelBar();
 }
 const pkModels = () => S.pk.models.length ? S.pk.models : chatModels().map(m => ({id: m.id, title: friendly(m), tier: "", tier_label: "Other", fit: "fits", live: S.loaded === m.id, start: "", engine_name: "", ctx: 0, ctx_fixed: false, size_gb: 0}));
@@ -4820,8 +4977,8 @@ function pkRender(){
     }).join("");
   }
   if(!html) html = '<div class="pkhead"><span>No model downloaded yet. Open the Library to get one.</span></div>';
-  const foot = [ms.loaded ? '<button type="button" class="btn ghost" data-pk="free">Free memory</button>' : "", ms.loaded && ms.loaded === cur ? '<button type="button" class="btn ghost" data-pk="again" title="Load it again, so settings you saved for this model take effect">Load it again</button>' : ""].join("");
-  pop.innerHTML = html + (foot ? `<div class="pkfoot">${foot}</div>` : "");
+  const foot = [picturesOn() ? '<button type="button" class="btn ghost mcopen">Open the machine</button>' : "", ms.loaded ? '<button type="button" class="btn ghost" data-pk="free">Free memory</button>' : "", ms.loaded && ms.loaded === cur ? '<button type="button" class="btn ghost" data-pk="again" title="Load it again, so settings you saved for this model take effect">Load it again</button>' : ""].join("");
+  pop.innerHTML = html + (foot.replace(/<[^>]*>/g, "").trim() ? `<div class="pkfoot">${foot}</div>` : "");
 }
 function pkOpen(open){
   const pop = $("#mbpop"), btn = $("#mbpick");
