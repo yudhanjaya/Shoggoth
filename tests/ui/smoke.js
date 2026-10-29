@@ -60,6 +60,12 @@ const w = dom.window, wait = ms => new Promise(r => setTimeout(r, ms));
   for (const v of ["backends", "prefs", "models"]) { w.eval(`show(${JSON.stringify(v)})`); await wait(300); w.document.querySelectorAll(`#v-${v} details`).forEach(d => (d.open = true)); await wait(200); }
   const add = w.document.getElementById("libadd"); if (add) add.click();
   await wait(300);
+  // the Hardware bench draws one mainframe per card, for one card and for four
+  for (const n of [1, 4]) {
+    w.eval(`S.gpus = Array.from({length: ${n}}, (_, i) => ({key: "g" + i, name: "NVIDIA GeForce RTX 4090", mem_total_mb: 24576, mem_used_mb: 9000, util: 40, temp: 55, power: 200, procs: [], models: [{model: "Qwen3.6 35B", mem_mb: 9000}]})); show("hardware"); hwPaint();`);
+    const frames = w.document.querySelectorAll("#hwrig .hwframe").length;
+    if (frames !== n) problems.push(`hardware bench: ${frames} mainframes for ${n} cards`);
+  }
   // and every page again with model pictures turned off (Settings > Look)
   w.localStorage.setItem("shoggoth.pictures", "false");
   for (const v of views) { try { w.eval(`show(${JSON.stringify(v)})`); } catch (e) { problems.push(`pictures off, show(${v}): ${e.message}`); } await wait(60); }

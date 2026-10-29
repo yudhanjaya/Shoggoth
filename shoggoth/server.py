@@ -237,7 +237,7 @@ class Handler(BaseHTTPRequestHandler):
         elif p == "/ui/vendor/mermaid.js":
             self.send_vendor("mermaid.min.js")
         elif p == "/ui/gpu":
-            self.send_json({"gpus": hardware.all_gpus(), "t": time.time()})
+            self.send_json({"gpus": library.models_on_cards(hardware.all_gpus()), "t": time.time()})
         elif p == "/ui/info":
             self.send_json(self._info())
         elif p == "/ui/backends":

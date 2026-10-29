@@ -39,6 +39,25 @@ class Card(unittest.TestCase):
         self.assertEqual(library.fnv("qwen"), 919884438)                                   # the same number as the page's hashStr("qwen")
 
 
+class ModelsOnCards(unittest.TestCase):
+    def setUp(self):
+        self._cmd, self._map = library._cmdline, library._file_map
+        library._file_map = lambda: {"/m/qwen/Q-IQ3_S-00001-of-00002.gguf": {"title": "Qwen3.8 Flash-Next", "ids": {"strata": "q"}},
+                                     "Gemma-Q4.gguf": {"title": "Gemma 4", "ids": {"lemonade": "gemma"}}}
+
+    def tearDown(self):
+        library._cmdline, library._file_map = self._cmd, self._map
+
+    def test_a_process_is_named_by_the_model_file_it_runs(self):
+        library._cmdline = lambda pid: {1: ["strata", "--serve", "--native", "/m/qwen/Q-IQ3_S-00001-of-00002.gguf"],
+                                        2: ["llama-server", "-m", "/elsewhere/Gemma-Q4.gguf"], 3: ["python3"]}.get(pid, [])
+        gpus = [{"procs": [{"pid": 1, "name": "strata", "mem_mb": 9000}, {"pid": 2, "name": "llama-server", "mem_mb": 4000},
+                           {"pid": 3, "name": "python3", "mem_mb": 300}, {"pid": None, "name": "[no data]", "mem_mb": 200}]}]
+        got = library.models_on_cards(gpus)[0]["models"]
+        self.assertEqual([(m["model"], m["engine"], m["mem_mb"]) for m in got],
+                         [("Qwen3.8 Flash-Next", "strata", 9000), ("Gemma 4", "lemonade", 4000), (None, "python3", 300)])
+
+
 class Creatures(unittest.TestCase):
     def setUp(self):
         self.tmp = tempfile.mkdtemp()

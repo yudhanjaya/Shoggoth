@@ -27,6 +27,7 @@
   --ease:cubic-bezier(.2,.7,.2,1);
   --rail:232px;
   --warn-bg:#fff8ec; --warn-line:#e6c9a0; --ok-line:#b9dcc4; --bad-line:#e8b9b5; --think-bg:#fdf6c8; --think-dot:#d9c44a;
+  --veil:color-mix(in srgb,#141820 12%,transparent);
   --edge:#d4d0c2; --hi:rgba(255,255,255,.85); --sh:rgba(60,50,30,.14); --well:#fbf9f2;
 }
 *{box-sizing:border-box}
@@ -145,6 +146,14 @@ dialog.mcdlg::backdrop{background:rgba(20,18,10,.22)}
 .mccart b,.mccart small,.mccart .mcfit,.mccart .btn{margin:0 10px}.mccart b{font-size:13.5px;line-height:1.25}.mccart small{font-size:11.5px;color:var(--muted)}
 .mccart .mcfit{font-size:11.5px;color:var(--warn);min-height:16px}.mccart .btn{margin-top:4px;min-height:36px}.mccart.in{opacity:.5}
 @media (prefers-reduced-motion:reduce){dialog.mcdlg[open],.inserting{animation:none}}
+/* ---------- the Hardware bench ---------- */
+.rig{border-radius:18px;border:1px solid var(--line-soft);background:radial-gradient(ellipse at 50% 10%,color-mix(in srgb,var(--surface) 80%,#fff),var(--surface-2) 70%);padding:10px 10px 0;overflow:hidden;margin:0 0 20px}
+.rig[hidden]{display:none}.rig svg.appar{width:100%;height:auto;display:block}
+.rig .appar text{font-family:"Doto",monospace!important;font-weight:900!important;letter-spacing:.04em}
+.hbub{animation:hwRise 2s linear infinite}@keyframes hwRise{from{transform:translateY(0)}to{transform:translateY(-290px)}}
+.hwlamp{fill:#2e3035}.hwlamp.on{fill:var(--lemon)}
+.reel{transform-box:view-box;animation:spin 8s linear infinite}@keyframes spin{to{transform:rotate(360deg)}}
+@media (prefers-reduced-motion:reduce){.rig *{animation:none!important}}
 /* ---------- shell ---------- */
 .app{display:grid;grid-template-columns:var(--rail) 1fr;height:100dvh}
 .rail{display:flex;flex-direction:column;gap:4px;padding:20px 14px;border-right:1px solid var(--line-soft);background:var(--bg);overflow-y:auto}
@@ -1156,55 +1165,55 @@ svg.gl{width:1.2em;height:1.2em;vertical-align:-.25em;stroke:currentColor;fill:n
 .cwpick span{display:block;font-size:12.5px;color:var(--muted);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 [data-theme="braun-t3"]{--muted:#4a4a42;--bg:#e9e6dc;--surface:#f4f1e8;--surface-2:#e2dfd4;--line:#cfcbbd;--line-soft:#d9d5c8;--faint:#58584f;--edge:#b9b5a6;--hi:rgba(255,255,255,.7);--sh:rgba(60,50,30,.25);--well:#f2efe6;--wk:#8a8470;--upw:60%;--warn-bg:#f6ead2;--think-bg:#efe6b0}
 [data-theme="teenage-engineering"]{--bg:#e9e7df;--surface:#f5f3ec;--surface-2:#cfd3cf;--line:#1a1a17;--line-soft:#1a1a17;--text:#1a1a17;--muted:#3e3e38;--faint:#55554d;--lemon:#ffd400;--lemon-wash:rgba(255,212,0,.35);--leaf:#1b7a3a}
-[data-theme="one-dark-pro"]{color-scheme:dark;--bg:#282c34;--surface:#2c313a;--surface-2:#21252b;--line:#3e4451;--line-soft:color-mix(in srgb,#3e4451 65%,#282c34);
+[data-theme="one-dark-pro"]{color-scheme:dark;--veil:color-mix(in srgb,#05070a 42%,transparent);--bg:#282c34;--surface:#2c313a;--surface-2:#21252b;--line:#3e4451;--line-soft:color-mix(in srgb,#3e4451 65%,#282c34);
   --text:#bcc2cd;--muted:color-mix(in srgb,#7f848e 25%,#bcc2cd);--faint:color-mix(in srgb,#7f848e 25%,#bcc2cd);
   --lemon:#61afef;--lemon-ink:#14181f;--lemon-wash:color-mix(in srgb,#61afef 20%,#282c34);--lemon-text:color-mix(in srgb,#61afef 45%,#bcc2cd);
   --leaf:color-mix(in srgb,#98c379 50%,#bcc2cd);--warn:color-mix(in srgb,#f3bd72 70%,#bcc2cd);--bad:#ff8f94;--hl:color-mix(in srgb,#61afef 45%,#282c34);--link:var(--lemon-text);--steel:#7f848e;--well:color-mix(in srgb,#282c34 82%,var(--wk));
   --warn-bg:color-mix(in srgb,#e0a458 14%,#282c34);--warn-line:color-mix(in srgb,#e0a458 45%,#282c34);--ok-line:color-mix(in srgb,#98c379 45%,#282c34);--bad-line:color-mix(in srgb,#f07178 45%,#282c34);--think-bg:color-mix(in srgb,#61afef 22%,#282c34);--think-dot:#61afef;
   --hi:rgba(255,255,255,.07);--sh:rgba(0,0,0,.45);--wk:#000;--upw:10%;}
-[data-theme="dracula"]{color-scheme:dark;--bg:#282a36;--surface:#343746;--surface-2:#21222c;--line:#44475a;--line-soft:color-mix(in srgb,#44475a 65%,#282a36);
+[data-theme="dracula"]{color-scheme:dark;--veil:color-mix(in srgb,#05070a 42%,transparent);--bg:#282a36;--surface:#343746;--surface-2:#21222c;--line:#44475a;--line-soft:color-mix(in srgb,#44475a 65%,#282a36);
   --text:#f8f8f2;--muted:color-mix(in srgb,#8f9bd0 25%,#f8f8f2);--faint:color-mix(in srgb,#8f9bd0 25%,#f8f8f2);
   --lemon:#bd93f9;--lemon-ink:#1b1530;--lemon-wash:color-mix(in srgb,#bd93f9 20%,#282a36);--lemon-text:color-mix(in srgb,#bd93f9 45%,#f8f8f2);
   --leaf:color-mix(in srgb,#50fa7b 50%,#f8f8f2);--warn:color-mix(in srgb,#f3bd72 70%,#f8f8f2);--bad:#ff8f94;--hl:color-mix(in srgb,#bd93f9 45%,#282a36);--link:var(--lemon-text);--steel:#8f9bd0;--well:color-mix(in srgb,#282a36 82%,var(--wk));
   --warn-bg:color-mix(in srgb,#e0a458 14%,#282a36);--warn-line:color-mix(in srgb,#e0a458 45%,#282a36);--ok-line:color-mix(in srgb,#50fa7b 45%,#282a36);--bad-line:color-mix(in srgb,#f07178 45%,#282a36);--think-bg:color-mix(in srgb,#bd93f9 22%,#282a36);--think-dot:#bd93f9;
   --hi:rgba(255,255,255,.07);--sh:rgba(0,0,0,.45);--wk:#000;--upw:10%;}
-[data-theme="monokai-pro"]{color-scheme:dark;--bg:#2d2a2e;--surface:#403e41;--surface-2:#221f22;--line:#5b595c;--line-soft:color-mix(in srgb,#5b595c 65%,#2d2a2e);
+[data-theme="monokai-pro"]{color-scheme:dark;--veil:color-mix(in srgb,#05070a 42%,transparent);--bg:#2d2a2e;--surface:#403e41;--surface-2:#221f22;--line:#5b595c;--line-soft:color-mix(in srgb,#5b595c 65%,#2d2a2e);
   --text:#fcfcfa;--muted:color-mix(in srgb,#a09fa0 25%,#fcfcfa);--faint:color-mix(in srgb,#a09fa0 25%,#fcfcfa);
   --lemon:#ffd866;--lemon-ink:#2d2a2e;--lemon-wash:color-mix(in srgb,#ffd866 20%,#2d2a2e);--lemon-text:color-mix(in srgb,#ffd866 45%,#fcfcfa);
   --leaf:color-mix(in srgb,#a9dc76 50%,#fcfcfa);--warn:color-mix(in srgb,#f3bd72 70%,#fcfcfa);--bad:#ff8f94;--hl:color-mix(in srgb,#ffd866 45%,#2d2a2e);--link:var(--lemon-text);--steel:#a09fa0;--well:color-mix(in srgb,#2d2a2e 82%,var(--wk));
   --warn-bg:color-mix(in srgb,#e0a458 14%,#2d2a2e);--warn-line:color-mix(in srgb,#e0a458 45%,#2d2a2e);--ok-line:color-mix(in srgb,#a9dc76 45%,#2d2a2e);--bad-line:color-mix(in srgb,#f07178 45%,#2d2a2e);--think-bg:color-mix(in srgb,#ffd866 22%,#2d2a2e);--think-dot:#ffd866;
   --hi:rgba(255,255,255,.07);--sh:rgba(0,0,0,.45);--wk:#000;--upw:10%;}
-[data-theme="night-owl"]{color-scheme:dark;--bg:#011627;--surface:#0b2942;--surface-2:#01111d;--line:#1d3b53;--line-soft:color-mix(in srgb,#1d3b53 65%,#011627);
+[data-theme="night-owl"]{color-scheme:dark;--veil:color-mix(in srgb,#05070a 42%,transparent);--bg:#011627;--surface:#0b2942;--surface-2:#01111d;--line:#1d3b53;--line-soft:color-mix(in srgb,#1d3b53 65%,#011627);
   --text:#d6deeb;--muted:color-mix(in srgb,#7791a0 25%,#d6deeb);--faint:color-mix(in srgb,#7791a0 25%,#d6deeb);
   --lemon:#82aaff;--lemon-ink:#011627;--lemon-wash:color-mix(in srgb,#82aaff 20%,#011627);--lemon-text:color-mix(in srgb,#82aaff 45%,#d6deeb);
   --leaf:color-mix(in srgb,#addb67 50%,#d6deeb);--warn:color-mix(in srgb,#f3bd72 70%,#d6deeb);--bad:#ff8f94;--hl:color-mix(in srgb,#82aaff 45%,#011627);--link:var(--lemon-text);--steel:#7791a0;--well:color-mix(in srgb,#011627 82%,var(--wk));
   --warn-bg:color-mix(in srgb,#e0a458 14%,#011627);--warn-line:color-mix(in srgb,#e0a458 45%,#011627);--ok-line:color-mix(in srgb,#addb67 45%,#011627);--bad-line:color-mix(in srgb,#f07178 45%,#011627);--think-bg:color-mix(in srgb,#82aaff 22%,#011627);--think-dot:#82aaff;
   --hi:rgba(255,255,255,.07);--sh:rgba(0,0,0,.45);--wk:#000;--upw:10%;}
-[data-theme="synthwave-84"]{color-scheme:dark;--bg:#262335;--surface:#34294f;--surface-2:#1e1a2c;--line:#495495;--line-soft:color-mix(in srgb,#495495 65%,#262335);
+[data-theme="synthwave-84"]{color-scheme:dark;--veil:color-mix(in srgb,#05070a 42%,transparent);--bg:#262335;--surface:#34294f;--surface-2:#1e1a2c;--line:#495495;--line-soft:color-mix(in srgb,#495495 65%,#262335);
   --text:#ffffff;--muted:color-mix(in srgb,#a3a9d9 25%,#ffffff);--faint:color-mix(in srgb,#a3a9d9 25%,#ffffff);
   --lemon:#ff7edb;--lemon-ink:#241b2f;--lemon-wash:color-mix(in srgb,#ff7edb 20%,#262335);--lemon-text:color-mix(in srgb,#ff7edb 45%,#ffffff);
   --leaf:color-mix(in srgb,#72f1b8 50%,#ffffff);--warn:color-mix(in srgb,#f3bd72 70%,#ffffff);--bad:#ff8f94;--hl:color-mix(in srgb,#ff7edb 45%,#262335);--link:var(--lemon-text);--steel:#a3a9d9;--well:color-mix(in srgb,#262335 82%,var(--wk));
   --warn-bg:color-mix(in srgb,#e0a458 14%,#262335);--warn-line:color-mix(in srgb,#e0a458 45%,#262335);--ok-line:color-mix(in srgb,#72f1b8 45%,#262335);--bad-line:color-mix(in srgb,#f07178 45%,#262335);--think-bg:color-mix(in srgb,#ff7edb 22%,#262335);--think-dot:#ff7edb;
   --hi:rgba(255,255,255,.07);--sh:rgba(0,0,0,.45);--wk:#000;--upw:10%;--tg:0 0 8px #ff7edb,0 0 2px #fff;}
-[data-theme="cobalt2"]{color-scheme:dark;--bg:#193549;--surface:#1f4662;--surface-2:#15232d;--line:#0d3a58;--line-soft:color-mix(in srgb,#0d3a58 65%,#193549);
+[data-theme="cobalt2"]{color-scheme:dark;--veil:color-mix(in srgb,#05070a 42%,transparent);--bg:#193549;--surface:#1f4662;--surface-2:#15232d;--line:#0d3a58;--line-soft:color-mix(in srgb,#0d3a58 65%,#193549);
   --text:#ffffff;--muted:color-mix(in srgb,#9bb5c8 25%,#ffffff);--faint:color-mix(in srgb,#9bb5c8 25%,#ffffff);
   --lemon:#ffc600;--lemon-ink:#193549;--lemon-wash:color-mix(in srgb,#ffc600 20%,#193549);--lemon-text:color-mix(in srgb,#ffc600 45%,#ffffff);
   --leaf:color-mix(in srgb,#3ad900 50%,#ffffff);--warn:color-mix(in srgb,#f3bd72 70%,#ffffff);--bad:#ff8f94;--hl:color-mix(in srgb,#ffc600 45%,#193549);--link:var(--lemon-text);--steel:#9bb5c8;--well:color-mix(in srgb,#193549 82%,var(--wk));
   --warn-bg:color-mix(in srgb,#e0a458 14%,#193549);--warn-line:color-mix(in srgb,#e0a458 45%,#193549);--ok-line:color-mix(in srgb,#3ad900 45%,#193549);--bad-line:color-mix(in srgb,#f07178 45%,#193549);--think-bg:color-mix(in srgb,#ffc600 22%,#193549);--think-dot:#ffc600;
   --hi:rgba(255,255,255,.07);--sh:rgba(0,0,0,.45);--wk:#000;--upw:10%;}
-[data-theme="nord"]{color-scheme:dark;--bg:#2e3440;--surface:#3b4252;--surface-2:#272c36;--line:#4c566a;--line-soft:color-mix(in srgb,#4c566a 65%,#2e3440);
+[data-theme="nord"]{color-scheme:dark;--veil:color-mix(in srgb,#05070a 42%,transparent);--bg:#2e3440;--surface:#3b4252;--surface-2:#272c36;--line:#4c566a;--line-soft:color-mix(in srgb,#4c566a 65%,#2e3440);
   --text:#d8dee9;--muted:color-mix(in srgb,#8f9bb3 25%,#d8dee9);--faint:color-mix(in srgb,#8f9bb3 25%,#d8dee9);
   --lemon:#88c0d0;--lemon-ink:#2e3440;--lemon-wash:color-mix(in srgb,#88c0d0 20%,#2e3440);--lemon-text:color-mix(in srgb,#88c0d0 45%,#d8dee9);
   --leaf:color-mix(in srgb,#a3be8c 50%,#d8dee9);--warn:color-mix(in srgb,#f3bd72 70%,#d8dee9);--bad:#ff8f94;--hl:color-mix(in srgb,#88c0d0 45%,#2e3440);--link:var(--lemon-text);--steel:#8f9bb3;--well:color-mix(in srgb,#2e3440 82%,var(--wk));
   --warn-bg:color-mix(in srgb,#e0a458 14%,#2e3440);--warn-line:color-mix(in srgb,#e0a458 45%,#2e3440);--ok-line:color-mix(in srgb,#a3be8c 45%,#2e3440);--bad-line:color-mix(in srgb,#f07178 45%,#2e3440);--think-bg:color-mix(in srgb,#88c0d0 22%,#2e3440);--think-dot:#88c0d0;
   --hi:rgba(255,255,255,.07);--sh:rgba(0,0,0,.45);--wk:#000;--upw:10%;}
-[data-theme="gruvbox-dark"]{color-scheme:dark;--bg:#282828;--surface:#3c3836;--surface-2:#1d2021;--line:#504945;--line-soft:color-mix(in srgb,#504945 65%,#282828);
+[data-theme="gruvbox-dark"]{color-scheme:dark;--veil:color-mix(in srgb,#05070a 42%,transparent);--bg:#282828;--surface:#3c3836;--surface-2:#1d2021;--line:#504945;--line-soft:color-mix(in srgb,#504945 65%,#282828);
   --text:#ebdbb2;--muted:color-mix(in srgb,#a89984 25%,#ebdbb2);--faint:color-mix(in srgb,#a89984 25%,#ebdbb2);
   --lemon:#fabd2f;--lemon-ink:#282828;--lemon-wash:color-mix(in srgb,#fabd2f 20%,#282828);--lemon-text:color-mix(in srgb,#fabd2f 45%,#ebdbb2);
   --leaf:color-mix(in srgb,#b8bb26 50%,#ebdbb2);--warn:color-mix(in srgb,#f3bd72 70%,#ebdbb2);--bad:#ff8f94;--hl:color-mix(in srgb,#fabd2f 45%,#282828);--link:var(--lemon-text);--steel:#a89984;--well:color-mix(in srgb,#282828 82%,var(--wk));
   --warn-bg:color-mix(in srgb,#e0a458 14%,#282828);--warn-line:color-mix(in srgb,#e0a458 45%,#282828);--ok-line:color-mix(in srgb,#b8bb26 45%,#282828);--bad-line:color-mix(in srgb,#f07178 45%,#282828);--think-bg:color-mix(in srgb,#fabd2f 22%,#282828);--think-dot:#fabd2f;
   --hi:rgba(255,255,255,.07);--sh:rgba(0,0,0,.45);--wk:#000;--upw:10%;}
-[data-theme="github-dark"]{color-scheme:dark;--bg:#0d1117;--surface:#161b22;--surface-2:#010409;--line:#30363d;--line-soft:color-mix(in srgb,#30363d 65%,#0d1117);
+[data-theme="github-dark"]{color-scheme:dark;--veil:color-mix(in srgb,#05070a 42%,transparent);--bg:#0d1117;--surface:#161b22;--surface-2:#010409;--line:#30363d;--line-soft:color-mix(in srgb,#30363d 65%,#0d1117);
   --text:#e6edf3;--muted:color-mix(in srgb,#8b949e 25%,#e6edf3);--faint:color-mix(in srgb,#8b949e 25%,#e6edf3);
   --lemon:#1f6feb;--lemon-ink:#ffffff;--lemon-wash:color-mix(in srgb,#1f6feb 20%,#0d1117);--lemon-text:color-mix(in srgb,#1f6feb 45%,#e6edf3);
   --leaf:color-mix(in srgb,#3fb950 50%,#e6edf3);--warn:color-mix(in srgb,#f3bd72 70%,#e6edf3);--bad:#ff8f94;--hl:color-mix(in srgb,#1f6feb 45%,#0d1117);--link:var(--lemon-text);--steel:#8b949e;--well:color-mix(in srgb,#0d1117 82%,var(--wk));
@@ -1216,7 +1225,7 @@ svg.gl{width:1.2em;height:1.2em;vertical-align:-.25em;stroke:currentColor;fill:n
   --leaf:color-mix(in srgb,#1a7f37 75%,#000);--warn:#9a4a00;--bad:#b3261e;--hl:color-mix(in srgb,#0969da 45%,#ffffff);--link:var(--lemon-text);--steel:#59636e;--well:color-mix(in srgb,#ffffff 82%,var(--wk));
   --warn-bg:color-mix(in srgb,#9a4a00 14%,#ffffff);--warn-line:color-mix(in srgb,#9a4a00 45%,#ffffff);--ok-line:color-mix(in srgb,#1a7f37 45%,#ffffff);--bad-line:color-mix(in srgb,#b3261e 45%,#ffffff);--think-bg:color-mix(in srgb,#0969da 22%,#ffffff);--think-dot:#0969da;
   --hi:rgba(255,255,255,.07);--sh:rgba(0,0,0,.45);--wk:#000;--upw:10%;--hi:rgba(255,255,255,.8);--sh:rgba(31,35,40,.2);--upw:60%;--kp:100%;--wk:color-mix(in srgb,#1f2328 35%,#fff);}
-[data-theme="catppuccin-mocha"]{color-scheme:dark;--bg:#1e1e2e;--surface:#313244;--surface-2:#181825;--line:#45475a;--line-soft:color-mix(in srgb,#45475a 65%,#1e1e2e);
+[data-theme="catppuccin-mocha"]{color-scheme:dark;--veil:color-mix(in srgb,#05070a 42%,transparent);--bg:#1e1e2e;--surface:#313244;--surface-2:#181825;--line:#45475a;--line-soft:color-mix(in srgb,#45475a 65%,#1e1e2e);
   --text:#cdd6f4;--muted:color-mix(in srgb,#a6adc8 25%,#cdd6f4);--faint:color-mix(in srgb,#a6adc8 25%,#cdd6f4);
   --lemon:#cba6f7;--lemon-ink:#1e1e2e;--lemon-wash:color-mix(in srgb,#cba6f7 20%,#1e1e2e);--lemon-text:color-mix(in srgb,#cba6f7 45%,#cdd6f4);
   --leaf:color-mix(in srgb,#a6e3a1 50%,#cdd6f4);--warn:color-mix(in srgb,#f3bd72 70%,#cdd6f4);--bad:#ff8f94;--hl:color-mix(in srgb,#cba6f7 45%,#1e1e2e);--link:var(--lemon-text);--steel:#a6adc8;--well:color-mix(in srgb,#1e1e2e 82%,var(--wk));
@@ -1491,6 +1500,8 @@ h3.themesec{font:600 12px var(--sans);letter-spacing:.08em;text-transform:upperc
     <section class="view" id="v-specimens"><div class="pad"><div class="wrap" id="specimens"></div></div></section>
     <section class="view" id="v-hardware"><div class="pad"><div class="wrap">
       <p class="lede">Watch your graphics memory fill as models load. If you have more than one card, choose which ones Shoggoth uses and in what order. Changes apply the next time a model loads.</p>
+      <p class="help" id="hwintro" hidden>Each machine at the back is one graphics card. Its lights show how hard it's working. The beaker shows memory used across all your cards. The gauge shows the hottest card. The coil sparks as the cards work harder, and the radio has a meter for each one.</p>
+      <div class="rig" id="hwrig" hidden></div>
       <div class="applybar" id="applybar" hidden></div>
       <div class="gpus" id="gpus"></div>
       <div class="panel"><h3>Engine</h3><dl class="kv" id="engine"></dl></div>
@@ -4598,6 +4609,322 @@ document.addEventListener("click", e => {
   renderSpecimens();
 });
 
+/* ======================= the Hardware bench ======================= */
+/* With model pictures on, the Hardware page gets a lab bench above its numbers: one dark mainframe per graphics card at the back
+   (lamps for its compute, its memory, the model on it), behind a pane of tinted glass; in front, the loaded model in a beaker, a
+   beaker for memory across all cards, a gauge for the hottest card, and a coil and radio that spark with compute (the radio has a
+   meter per card), wired together by hand. Everything is drawn from /ui/gpu, eased between its readings. */
+const HW = {cards: [], key: "", lastArc: -1, power: 0};
+const hwCardsNow = () => (S.gpus || []).slice(0, 4).map(g => { const top = (g.models || []).find(x => x.model) || {};
+  return {key: g.key, name: shortName(g.name), gb: Math.round((g.mem_total_mb || 0) / 1024), vram: (g.mem_used_mb || 0) / 1024, util: g.util || 0, temp: g.temp || 0,
+          power: g.power || 0, model: top.model || "", modelGb: (top.mem_mb || 0) / 1024}; });
+const hwCap = () => HW.cards.reduce((a, c) => a + c.gb, 0) || 1;
+const hwAgg = () => { const cs = HW.cards; if(!cs.length) return {vram: 0, util: 0, temp: 0};
+  return {vram: cs.reduce((a, c) => a + c.cur.vram, 0), util: cs.reduce((a, c) => a + c.cur.util, 0) / cs.length, temp: Math.max(...cs.map(c => c.cur.temp))}; };
+const hwModel = () => pkFind((S.ms || {}).loaded) || null;
+const hwMood = m => !m ? "none" : cwBarModel() === m.id ? (chatMood().mood === "none" ? "idle" : chatMood().mood) : "idle";
+const hwShort = (t, n) => { t = String(t || ""); return t.length > n ? t.slice(0, Math.max(1, n - 1)) + "…" : t; };
+const hwRM = () => matchMedia("(prefers-reduced-motion: reduce)").matches;
+/* ease the drawing toward the latest readings, while the page is in view */
+setInterval(() => {
+  if(S.view !== "hardware" || document.hidden || !picturesOn() || !HW.cards.length) return;
+  const now = hwCardsNow();
+  HW.cards.forEach((c, i) => {
+    const t = now[i]; if(!t) return;
+    Object.assign(c, {name: t.name, gb: t.gb, model: t.model, modelGb: t.modelGb});
+    c.cur.vram += Math.sign(t.vram - c.cur.vram) * Math.min(Math.abs(t.vram - c.cur.vram), .4);
+    c.cur.util += (t.util - c.cur.util) * .25; c.cur.temp += (t.temp - c.cur.temp) * .05;
+  });
+  HW.power = now.reduce((a, c) => a + c.power, 0);
+  hwPaint();
+}, 110);
+function hwBolt(x1, y1, x2, y2, rough){
+  let pts = [[x1, y1], [x2, y2]];
+  for (let k = 0; k < 5; k++) {
+    const next = [pts[0]];
+    for (let i = 1; i < pts.length; i++) {
+      const [ax, ay] = pts[i - 1], [bx, by] = pts[i], len = Math.hypot(bx - ax, by - ay), d = (Math.random() - .5) * len * rough;
+      next.push([(ax + bx) / 2 + (ay - by) / len * d, (ay + by) / 2 + (bx - ax) / len * d], pts[i]);
+    }
+    pts = next;
+  }
+  return 'M' + pts.map(p => p[0].toFixed(1) + ' ' + p[1].toFixed(1)).join(' L');
+}
+const hwArc = (d, w) => `<path d="${d}" stroke="var(--lemon)" stroke-width="${w + 3.5}" stroke-opacity=".55" fill="none" filter="url(#kArc)"/><path d="${d}" stroke="var(--lemon-text)" stroke-width="${w}" fill="none" stroke-linecap="round"/>`;
+const HW_TX = 730, HW_TY = 192, HW_AX = 976, HW_AY = 150;   // the coil's top and the radio's aerial tip
+function hwSparks(u){
+  let s = '';
+  const n = Math.round(u / 13);
+  for (let i = 0; i < n; i++) {
+    const a = -Math.PI * (.04 + Math.random() * .6), r = 50 + Math.random() * (30 + u * .9);
+    s += hwArc(hwBolt(HW_TX + Math.cos(a) * 52, HW_TY + Math.sin(a) * 12, HW_TX + Math.cos(a) * r, HW_TY + Math.sin(a) * r * .8, .5), .9 + Math.random() * 1.2);
+  }
+  if (u > 78) s += hwArc(hwBolt(HW_TX + 54, HW_TY - 4, HW_AX - 2, HW_AY + 2, .32), 1.6);
+  let r = '';
+  const m = u > 35 ? Math.round((u - 35) / 12) : 0;
+  for (let i = 0; i < m; i++) { const a = Math.random() * Math.PI * 2, l = 8 + Math.random() * (6 + u * .18); r += hwArc(hwBolt(HW_AX, HW_AY, HW_AX + Math.cos(a) * l, HW_AY + Math.sin(a) * l, .6), .8); }
+  return {coil:s, radio:r};
+}
+const hwHousing = (x, y, w, h, r) => `<g filter="url(#kShadow)"><rect x="${x}" y="${y}" width="${w}" height="${h}" rx="${r}" fill="url(#kMatte)" stroke="var(--line)" stroke-width="1.2"/></g><rect x="${x + r * .6}" y="${y + 1.5}" width="${w - r * 1.2}" height="1" fill="var(--hi)"/><rect x="${x + r * .6}" y="${y + h - 2.5}" width="${w - r * 1.2}" height="1.2" fill="#000" fill-opacity=".08"/>`;
+const hwLabel = (x, n, t, id) => `<rect x="${x}" y="427" width="20" height="16" rx="3" fill="var(--text)"/><text x="${x + 10}" y="439" font-size="10" text-anchor="middle" fill="var(--bg)" font-family="var(--mono)" font-weight="700">${n}</text>
+  <text x="${x + 28}" y="439" font-size="11.5" fill="var(--muted)" font-family="var(--mono)" letter-spacing=".1em">${t}</text><text id="${id}" x="${x + 28 + t.length * 8.2}" y="439" font-size="11.5" fill="var(--text)" font-family="var(--mono)" font-weight="700"></text>`;
+// The back row: one mainframe per graphics card, with a bank of lamps for its compute, a bar for its memory, and tape reels.
+// The cabinets are dark in every theme, so they sit back behind the pale instruments; only their lamps and memory bar take the
+// theme's accent.
+function hwFrames(){
+  const cs = HW.cards, N = cs.length, gap = 20, W = Math.min(200, (940 - gap * (N - 1)) / N), x0 = 500 - (N * W + (N - 1) * gap) / 2;
+  // they stand on a dark raised platform: a slab with a vented front, on short feet
+  const px = x0 - 18, pw = N * W + (N - 1) * gap + 36;
+  const platform = `<g filter="url(#kShadow)"><rect x="${px}" y="322" width="${pw}" height="30" rx="5" fill="url(#kDark)" stroke="#111215" stroke-width="1.2"/></g>
+    <rect x="${px + 4}" y="323.5" width="${pw - 8}" height="1" fill="#fff" fill-opacity=".14"/>
+    <g fill="#0c0d0f">${Array.from({length:Math.floor((pw - 40) / 14)}, (_, k) => `<rect x="${px + 20 + k * 14}" y="333" width="8" height="10" rx="2"/>`).join('')}</g>
+    ${[px + 16, px + pw - 40].map(fx => `<rect x="${fx}" y="352" width="24" height="10" rx="2" fill="#1c1d21" stroke="#111215"/>`).join('')}`;
+  // the floor at the back of the room, which the platform's feet stand on
+  const floor = `<rect x="0" y="362" width="1000" height="168" fill="#000" fill-opacity=".06"/><rect x="0" y="361.5" width="1000" height="1" fill="#000" fill-opacity=".18"/>
+    <ellipse cx="${px + pw / 2}" cy="363" rx="${pw / 2 + 10}" ry="5" fill="#000" fill-opacity=".22"/>`;
+  // cables strung between neighbouring cabinets, and a bundle dropping off the platform to the floor
+  const links = cs.slice(1).map((_, i) => { const a = x0 + (i + 1) * W + i * gap - 3, b = a + gap + 6;
+    return `<path d="${hwSag(a, 236, b, 232, 22)}" stroke="#4a4d54" stroke-width="3" fill="none" stroke-linecap="round"/><path d="${hwSag(a, 252, b, 258, 30)}" stroke="#6b5a1e" stroke-width="2.4" fill="none" stroke-linecap="round"/>`; }).join('');
+  const drop = [[px + 30, '#3a3c42'], [px + 40, '#4a4d54'], [px + pw - 34, '#3a3c42']].map(([x, c], k) =>
+    `<path d="M${x} 350 C ${x} 372, ${x + (k < 2 ? -60 : 60)} 380, ${x + (k < 2 ? -140 - k * 20 : 150)} 384" stroke="${c}" stroke-width="3.2" fill="none" stroke-linecap="round"/>`).join('');
+  const frames = cs.map((c, i) => {
+    const x = x0 + i * (W + gap), cols = Math.floor((W - 24) / 11), rows = 5, lw = cols * 11 - 4, lx = x + (W - lw) / 2, rr = Math.min(24, W * .15);
+    const dy = c.model ? 50 : 0;
+    const lamps = Array.from({length:cols * rows}, (_, k) => `<rect class="hwlamp" x="${lx + (k % cols) * 11}" y="${84 + dy + Math.floor(k / cols) * 11}" width="7" height="7" rx="1.5"/>`).join('');
+    const reel = cx => `<g class="reel" style="transform-origin:${cx}px 200px"><circle cx="${cx}" cy="200" r="${rr}" fill="#2c2e33" stroke="#4a4d54" stroke-width="1.2"/>
+      ${[0, 120, 240].map(a => `<circle cx="${cx + Math.cos(a * Math.PI / 180) * rr * .55}" cy="${200 + Math.sin(a * Math.PI / 180) * rr * .55}" r="${rr * .22}" fill="#18191c" stroke="#4a4d54" stroke-width=".8"/>`).join('')}<circle cx="${cx}" cy="200" r="3" fill="#d9d6cb"/></g>`;
+    return `<g class="hwframe" data-card="${i}"><g filter="url(#kShadow)"><rect x="${x}" y="22" width="${W}" height="300" rx="12" fill="url(#kDark)" stroke="#111215" stroke-width="1.2"/></g>
+      <rect x="${x + 7}" y="23.5" width="${W - 14}" height="1" fill="#fff" fill-opacity=".1"/>
+      <rect x="${x + 8}" y="308" width="${W - 16}" height="10" rx="2" fill="#141518"/>
+      <text x="${lx}" y="44" font-size="10" fill="#ecE9df" font-family="var(--mono)" font-weight="700" letter-spacing=".08em">GPU ${i + 1}</text>
+      <text x="${lx + lw}" y="44" font-size="10" text-anchor="end" fill="#a7a49a" font-family="var(--mono)">${esc(c.name)}</text>
+      <rect x="${lx - 6}" y="${78 + dy}" width="${lw + 12}" height="${rows * 11 + 8}" rx="5" fill="#121316" stroke="#3a3c42" stroke-width=".8"/>
+      <g>${lamps}</g>
+      <rect x="${lx}" y="${52 + dy}" width="${lw}" height="6" rx="3" fill="#3a3c42"/><rect class="fmem" data-w="${lw}" x="${lx}" y="${52 + dy}" width="0" height="6" rx="3" fill="var(--lemon)"/>
+      <text class="fmemt" x="${lx}" y="${71 + dy}" font-size="9.5" fill="#a7a49a" font-family="var(--mono)"></text>
+      ${reel(x + W * .3)}${reel(x + W * .7)}
+      ${dy ? `<rect x="${lx - 6}" y="52" width="${lw + 12}" height="42" rx="5" fill="#0c0d0f" stroke="#3a3c42" stroke-width="1"/>
+        ${`<text x="${lx + 2}" y="66" font-size="8" fill="#a7a49a" font-family="var(--mono)" letter-spacing=".1em">MODEL ON THIS CARD</text>
+             <text x="${lx + 2}" y="81" font-size="11.5" fill="var(--lemon)" font-family="var(--mono)" font-weight="700">${esc(hwShort(c.model, Math.floor(lw / 7.6))).toUpperCase()}</text><text class="fmgb" x="${lx + lw}" y="66" text-anchor="end" font-size="8.5" fill="#a7a49a" font-family="var(--mono)"></text>`}
+        <rect x="${lx - 4}" y="54" width="${lw + 8}" height="1" fill="#fff" fill-opacity=".08"/>` : ''}
+      <g fill="#fff" fill-opacity=".14">${holesSvg(x + 16, 240, Math.floor((W - 26) / 7), 6, 7, 1.3)}</g></g>`;
+  }).join('');
+  return floor + drop + platform + frames + links;
+}
+// Light falls from the top left. Recessed holes get a lit lower edge; everything on the table casts a soft contact shadow.
+const hwHolesIn = (x0, y0, cols, rows, gap, r, op = .5) => `<g fill="var(--hi)">${holesSvg(x0 + .5, y0 + .7, cols, rows, gap, r)}</g><g fill="var(--text)" fill-opacity="${op}">${holesSvg(x0, y0, cols, rows, gap, r)}</g>`;
+const hwContact = (cx, w, y = 410) => `<ellipse cx="${cx}" cy="${y}" rx="${w / 2}" ry="4.5" fill="#000" fill-opacity=".28" filter="url(#kSoft)"/>`;
+const HW_PRINTED = 'stroke="var(--surface)" stroke-opacity=".75" stroke-width="2.4" paint-order="stroke" stroke-linejoin="round"';
+const HW_MB = 384, HW_MT = 124;   // the memory beaker's 0 % and 100 % marks
+// Wiring, as a hobbyist would do it: sagging leads in the theme's colours, clips, tape, a breadboard, probes in the glass.
+const hwWire = (d, c, w = 2.4) => `<path d="${d}" stroke="${c}" stroke-width="${w}" fill="none" stroke-linecap="round"/><path d="${d}" stroke="#fff" stroke-opacity=".3" stroke-width="${(w * .35).toFixed(2)}" fill="none" stroke-linecap="round" transform="translate(-.6,-.7)"/>`;
+const hwSag = (x1, y1, x2, y2, s) => `M${x1} ${y1} Q ${(x1 + x2) / 2} ${Math.max(y1, y2) + s} ${x2} ${y2}`;
+const hwCroc = (x, y, c, flip = false) => `<g transform="translate(${x} ${y})${flip ? ' scale(-1 1)' : ''}"><rect x="-2" y="-3" width="11" height="6" rx="2" fill="${c}"/><path d="M9 -3 L15 -1.5 L9 0 M9 3 L15 1.5 L9 0" fill="var(--muted)" stroke="var(--muted)" stroke-width=".8" stroke-linejoin="round"/><path d="M10.5 -2.6 V2.6 M12.5 -2 V2" stroke="var(--surface)" stroke-width=".6"/></g>`;
+const hwPlug = (x, y, c) => `<rect x="${x - 7}" y="${y - 2.5}" width="7" height="5" rx="1.5" fill="${c}"/><rect x="${x}" y="${y - 1.2}" width="4" height="2.4" rx="1" fill="var(--muted)"/>`;
+const hwTape = (x, y, a) => `<rect x="${x - 3}" y="${y - 5}" width="6" height="10" rx="1" fill="var(--surface-2)" stroke="var(--line)" stroke-width=".6" transform="rotate(${a} ${x} ${y})" opacity=".95"/>`;
+const HW_C = {red:'var(--bad)', blk:'var(--text)', yel:'var(--lemon)', blu:'var(--lemon-text)', grn:'var(--leaf)', gry:'var(--muted)'};
+// electrodes standing in the beakers (drawn inside the glass, behind its front)
+function hwProbes(){
+  return `<g><rect x="104" y="128" width="3.4" height="190" rx="1.7" fill="var(--muted)"/><rect x="104" y="128" width="1.2" height="190" fill="#fff" fill-opacity=".45"/>
+    <rect x="238" y="132" width="3.4" height="150" rx="1.7" fill="var(--muted)"/><rect x="238" y="132" width="1.2" height="150" fill="#fff" fill-opacity=".45"/></g>`;
+}
+function hwWiresBack(){
+  return [
+    // the model's electrodes: one lead loops over to the memory beaker's probe, one drops to the breadboard
+    hwWire(`M105 128 C 110 70, 300 40, 360 70 S 450 70, 453 96`, HW_C.red, 2.6),
+    hwWire(`M240 132 C 250 110, 320 130, 330 230 S 360 380, 420 395 S 480 398, 494 392`, HW_C.blk),
+    // breadboard to the gauge stem, wound round it, and on to the coil's base
+    hwWire(hwSag(552, 389, 586, 300, 30), HW_C.yel),
+    hwWire(hwSag(598, 280, 676, 372, 40), HW_C.yel),
+    hwWire(hwSag(548, 392, 668, 396, 26), HW_C.blu, 2.2),
+    // coil base to the radio: a red and black pair with banana plugs
+    hwWire(hwSag(790, 380, 818, 372, 18), HW_C.red), hwWire(hwSag(792, 392, 818, 388, 14), HW_C.blk),
+    // the radio's lead running back along the table, taped down
+    hwWire(`M900 410 C 860 416, 760 414, 690 412`, HW_C.gry, 2),
+  ].join('');
+}
+function hwWiresFront(){
+  const coil = Array.from({length:6}, (_, i) => `<path d="M585 ${262 + i * 5} Q 590 ${265 + i * 5} 595 ${262 + i * 5}" stroke="var(--lemon)" stroke-width="2.2" fill="none" stroke-linecap="round"/>`).join('');
+  return `${coil}
+    ${hwCroc(98, 128, HW_C.red)}${hwCroc(246, 132, HW_C.blk, true)}${hwCroc(447, 96, HW_C.red)}
+    ${hwPlug(818, 372, HW_C.red)}${hwPlug(818, 388, HW_C.blk)}
+    ${hwTape(330, 232, 90)}${hwTape(360, 70, 27)}${hwTape(760, 414, 0)}${hwTape(637, 369, 50)}
+    <!-- a loose lead hanging off the table's edge, its end stripped -->
+    ${hwWire(`M516 404 C 516 418, 506 424, 508 446`, HW_C.grn, 2.2)}<path d="M508 446 L508 452" stroke="#c98b4a" stroke-width="1.6" stroke-linecap="round"/>`;
+}
+// a small breadboard on the table between the memory beaker and the gauge
+function hwBreadboard(){
+  const hs = Array.from({length:11}, (_, i) => Array.from({length:3}, (_, j) => `<rect x="${494 + i * 5.2}" y="${389 + j * 4.4}" width="1.6" height="1.6" fill="var(--text)" fill-opacity=".35"/>`).join('')).join('');
+  return `<g filter="url(#kShadow)"><rect x="490" y="385" width="62" height="20" rx="2.5" fill="var(--surface)" stroke="var(--line)" stroke-width="1"/></g>
+    <rect x="490" y="394.5" width="62" height="1" fill="var(--line)"/>${hs}
+    <rect x="506" y="386.5" width="13" height="7" rx="1" fill="var(--text)"/>${[0, 1, 2].map(i => `<rect x="${507.5 + i * 4}" y="393.5" width="1.2" height="2" fill="var(--muted)"/>`).join('')}
+    <rect x="524" y="397" width="10" height="3.4" rx="1.6" fill="#d9c9a3"/><rect x="527" y="397" width="1" height="3.4" fill="var(--bad)"/><rect x="530" y="397" width="1" height="3.4" fill="var(--text)"/>
+    ${hwWire(`M496 397 Q 502 382 512 395`, HW_C.yel, 1.4)}${hwWire(`M515 402 Q 528 390 541 401`, HW_C.blu, 1.4)}${hwWire(`M498 402 Q 520 412 548 398`, HW_C.red, 1.4)}
+    <circle id="hw-bbglow" cx="544" cy="390" r="5" fill="var(--lemon)" filter="url(#kSoft)" opacity=".2"/><circle id="hw-bbled" cx="544" cy="390" r="2.6" fill="var(--lemon)" stroke="var(--line)" stroke-width=".6"/>`;
+}
+function hwSVG(){
+  const m = hwModel(), cs = HW.cards, N = cs.length, tint = m ? crTone(m) : 'var(--steel)';
+  // 02: the scale printed on the memory beaker, 0 to 100 %
+  const scale = Array.from({length:21}, (_, i) => { const y = HW_MB - i * (HW_MB - HW_MT) / 20, big = i % 5 === 0;
+    return `<line x1="${big ? 446 : 454}" x2="462" y1="${y}" y2="${y}" stroke="var(--text)" stroke-width="${big ? 1.6 : 1.1}" ${HW_PRINTED}/>${big ? `<text x="442" y="${y + 3.6}" font-size="10.5" text-anchor="end" fill="var(--text)" font-family="var(--mono)" font-weight="700" ${HW_PRINTED}>${i * 5}</text>` : ''}`; }).join('')
+    + `<text x="458" y="${HW_MT - 8}" font-size="10" text-anchor="end" fill="var(--text)" font-family="var(--mono)" font-weight="700" ${HW_PRINTED}>%</text>`;
+  const ticks = Array.from({length:17}, (_, i) => { const a = (-120 + i * 15) * Math.PI / 180, big = i % 4 === 0, r1 = big ? 50 : 55;
+    return `<line x1="${590 + Math.sin(a) * r1}" y1="${150 - Math.cos(a) * r1}" x2="${590 + Math.sin(a) * 61}" y2="${150 - Math.cos(a) * 61}" stroke="var(--text)" stroke-width="${big ? 2 : 1}" stroke-linecap="round"/>${big ? `<text x="${590 + Math.sin(a) * 38}" y="${154 - Math.cos(a) * 38}" font-size="11" text-anchor="middle" fill="var(--text)" font-family="var(--sans)" font-weight="600">${20 + i * 5}</text>` : ''}`; }).join('');
+  const red = (() => { const a1 = (-120 + 13 * 15) * Math.PI / 180, a2 = 120 * Math.PI / 180, r = 64;
+    return `<path d="M${590 + Math.sin(a1) * r} ${150 - Math.cos(a1) * r} A ${r} ${r} 0 0 1 ${590 + Math.sin(a2) * r} ${150 - Math.cos(a2) * r}" stroke="var(--bad)" stroke-width="3" fill="none" stroke-linecap="round"/>`; })();
+  const bubs = (x0, w, n, y) => Array.from({length:n}, (_, i) => `<circle class="hbub" cx="${x0 + (i * 37) % w}" cy="${y}" r="${1.6 + (i % 3) * .8}" fill="#fff" fill-opacity=".7" style="animation-delay:${-(i * .37 % 2.4).toFixed(2)}s;animation-duration:${(1.8 + (i % 4) * .35).toFixed(2)}s"/>`).join('');
+  // 04: one needle meter per card, each behind its own glass in a recessed window
+  const mw = (136 - (N - 1) * 6) / N;
+  const meters = cs.map((c, i) => { const x = 832 + i * (mw + 6), cx = x + mw / 2, r = Math.min(mw * .42, 30);
+    return `<rect x="${x}" y="290" width="${mw}" height="48" rx="6" fill="var(--surface)" stroke="var(--line)" stroke-width="1"/>
+      <rect x="${x + 1}" y="291" width="${mw - 2}" height="6" rx="5" fill="#000" fill-opacity=".1"/>
+      ${[-50, -25, 0, 25, 50].map(a => { const t = a * Math.PI / 180; return `<line x1="${cx + Math.sin(t) * r}" y1="${333 - Math.cos(t) * r}" x2="${cx + Math.sin(t) * (r - 4)}" y2="${333 - Math.cos(t) * (r - 4)}" stroke="${a === 50 ? 'var(--bad)' : 'var(--text)'}" stroke-width="1"/>`; }).join('')}
+      <g id="hw-m${i}" data-cx="${cx}"><path d="M${cx + 1} 335 L${cx + 1} ${336 - r}" stroke="#000" stroke-opacity=".18" stroke-width="2" stroke-linecap="round"/><path d="M${cx} 334 L${cx} ${334 - r + 2}" stroke="var(--lemon)" stroke-width="2" stroke-linecap="round"/></g><circle cx="${cx}" cy="334" r="2.4" fill="var(--text)"/>
+      <path d="M${x + 4} 293 L${x + mw * .55} 293 L${x + 4} 322 Z" fill="#fff" fill-opacity=".22"/>
+      <text x="${cx}" y="352" font-size="8.5" text-anchor="middle" fill="var(--muted)" font-family="var(--mono)">${i + 1}</text>`; }).join('');
+  const beaker = 'M62 160 H282 V364 Q282 384 262 384 H82 Q62 384 62 364 Z';
+  const tube = `M394 112 V380 Q394 394 408 394 H456 Q470 394 470 380 V112`;
+  return `<svg viewBox="0 0 1000 536" class="appar" role="img" aria-label="Graphics cards">
+    ${hwFrames()}
+    <!-- a pane of tinted glass between the cards at the back and the instruments in front -->
+    <rect x="0" y="0" width="1000" height="536" fill="var(--veil)"/>
+    <rect x="0" y="0" width="1000" height="536" fill="url(#kVeil)"/>
+    <rect x="0" y="0" width="1000" height="1.5" fill="var(--hi)"/>
+    <g transform="translate(0,80)">
+    <!-- the table: a top surface and a front edge that carries the labels -->
+    <rect x="8" y="404" width="984" height="14" rx="3" fill="url(#kTable)"/>
+    <rect x="8" y="404" width="984" height="1" fill="var(--hi)"/>
+    <rect x="8" y="416" width="984" height="38" rx="4" fill="url(#kTableFront)" stroke="var(--line)" stroke-width="1"/>
+    <rect x="12" y="417.5" width="976" height="1" fill="var(--hi)"/>
+    ${hwContact(172, 280)}${hwContact(432, 116)}${hwContact(590, 70)}${hwContact(730, 140)}${hwContact(900, 168)}${hwContact(521, 66)}
+    ${hwWiresBack()}
+    <!-- 01 the model, in a fat beaker on a plinth -->
+    ${hwHousing(36, 386, 272, 24, 8)}
+    <text x="52" y="402" font-size="10" fill="var(--text)" font-family="var(--mono)" font-weight="700" letter-spacing=".06em">${m ? esc(hwShort(m.title, 17)).toUpperCase() : 'NO MODEL LOADED'}</text>
+    <text x="292" y="402" font-size="10" text-anchor="end" fill="var(--muted)" font-family="var(--mono)">${m ? `${m.size_gb ? m.size_gb + ' GB · ' : ''}${esc(m.engine_name || m.engine).toUpperCase()}` : ''}</text>
+    ${hwContact(172, 236, 386)}
+    <clipPath id="hw-beaker"><path d="${beaker}"/></clipPath>
+    <path d="${beaker}" fill="var(--surface)" fill-opacity=".35"/>
+    <g clip-path="url(#hw-beaker)">
+      <rect x="62" y="160" width="220" height="224" fill="${tint}" fill-opacity=".08"/>
+      <rect x="62" y="206" width="220" height="180" fill="${tint}" fill-opacity=".17"/>
+      <ellipse cx="172" cy="206" rx="112" ry="4" fill="${tint}" fill-opacity=".35"/><path d="M62 204 Q66 207 72 207 M282 204 Q278 207 272 207" stroke="${tint}" stroke-opacity=".7" stroke-width="1.5" fill="none"/>
+      ${bubs(80, 190, 8, 380)}
+    </g>
+    ${hwProbes()}
+    <g class="beaker">${m ? crPic(m, {mood:hwMood(m), live:true, crop:true, label:false}).replace('<svg ', '<svg x="80" y="178" width="184" height="196" ') : ''}</g>
+    <rect x="64" y="374" width="216" height="9" rx="4" fill="#fff" fill-opacity=".22"/>
+    <path d="${beaker}" fill="url(#kGlassH)"/>
+    <path d="M67 162 V362 Q67 379 84 379 H260 Q277 379 277 362 V162" fill="none" stroke="#fff" stroke-opacity=".35" stroke-width="1.2"/>
+    <path d="${beaker}" fill="none" stroke="var(--line)" stroke-width="1.8"/>
+    <path d="M44 150 Q46 146 54 147 H286 Q293 147 293 153 Q293 159 286 159 H64 Q54 159 47 156 Z" fill="url(#kTorus)" stroke="var(--line)" stroke-width="1.1"/>
+    <path d="M80 178 V 356" stroke="#fff" stroke-opacity=".6" stroke-width="4" stroke-linecap="round"/><path d="M90 178 V 250" stroke="#fff" stroke-opacity=".3" stroke-width="1.5" stroke-linecap="round"/>
+    <path d="M272 176 V 360" stroke="#fff" stroke-opacity=".25" stroke-width="2" stroke-linecap="round"/>
+    <g stroke="var(--text)" stroke-width="1.1" ${HW_PRINTED.replace('2.4', '2')}>${[230, 270, 310, 350].map(y => `<line x1="248" x2="262" y1="${y}" y2="${y}"/><line x1="255" x2="262" y1="${y + 20}" y2="${y + 20}"/>`).join('')}</g>
+    <g font-size="8.5" fill="var(--text)" font-family="var(--mono)" text-anchor="end" ${HW_PRINTED.replace('2.4', '2')}>${[230, 270, 310, 350].map((y, i) => `<text x="244" y="${y + 3}">${400 - i * 100}</text>`).join('')}</g>
+    <rect x="300" y="391" width="10" height="13" rx="2.5" fill="var(--surface-2)" stroke="var(--line)" stroke-width=".9"/>
+    <path d="M310 397 C 346 397, 352 401, 380 401" stroke="var(--text)" stroke-opacity=".85" stroke-width="4" fill="none" stroke-linecap="round"/>
+    <rect x="376" y="397" width="8" height="8" rx="2" fill="var(--surface-2)" stroke="var(--line)" stroke-width=".8"/>
+    <!-- 02 graphics memory, all cards together: a graduated beaker with its scale printed on it -->
+    ${hwHousing(380, 392, 104, 18, 8)}
+    <text id="hw-gb" x="432" y="404.5" font-size="9" text-anchor="middle" fill="var(--text)" font-family="var(--mono)" font-weight="700"></text>
+    <clipPath id="hw-tube"><path d="${tube} Z"/></clipPath>
+    <path d="${tube} Z" fill="var(--surface)" fill-opacity=".55"/>
+    <clipPath id="hw-clip"><rect id="hw-clipr" x="392" y="${HW_MB}" width="80" height="0"/></clipPath>
+    <g clip-path="url(#hw-tube)"><g clip-path="url(#hw-clip)"><rect x="392" y="104" width="80" height="296" fill="url(#kAccent)"/>${bubs(400, 60, 14, 392)}</g></g>
+    <g clip-path="url(#hw-tube)"><ellipse id="hw-men" cx="432" cy="${HW_MB}" rx="38" ry="3.2" fill="var(--lemon)" stroke="#fff" stroke-opacity=".5" stroke-width="1"/></g>
+    <rect x="452" y="96" width="3" height="270" rx="1.5" fill="var(--muted)"/><rect x="452" y="96" width="1" height="270" fill="#fff" fill-opacity=".45"/>
+    <rect x="396" y="386" width="72" height="7" rx="3" fill="#fff" fill-opacity=".2"/>
+    <path d="${tube} Z" fill="url(#kGlassH)"/>
+    <path d="M398 112 V378 Q398 390 410 390 H454 Q466 390 466 378 V112" fill="none" stroke="#fff" stroke-opacity=".35" stroke-width="1"/>
+    <path d="${tube}" fill="none" stroke="var(--line)" stroke-width="1.8"/>
+    <path d="M384 108 Q384 103 392 104 H472 Q478 104 478 109 Q478 114 472 114 H396 Q388 114 384 110 Z" fill="url(#kTorus)" stroke="var(--line)" stroke-width="1"/>
+    <path d="M404 126 V 372" stroke="#fff" stroke-opacity=".6" stroke-width="3.5" stroke-linecap="round"/>
+    ${scale}
+    <!-- 03 heat: the hottest card, a gauge on a stem -->
+    <rect x="586" y="226" width="8" height="178" rx="4" fill="url(#kMatteH)" stroke="var(--line)" stroke-width="1"/>
+    <rect x="581" y="226" width="18" height="10" rx="3" fill="url(#kTorus)" stroke="var(--line)" stroke-width=".9"/>
+    ${hwHousing(558, 398, 64, 12, 5)}
+    <g filter="url(#kShadow)"><circle cx="590" cy="150" r="80" fill="url(#kBezel)" stroke="var(--line)" stroke-width="1.2"/></g>
+    <circle cx="590" cy="150" r="71" fill="none" stroke="url(#kBezelIn)" stroke-width="5"/>
+    <circle cx="590" cy="150" r="68" fill="var(--surface)"/><circle cx="590" cy="150" r="68" fill="url(#kRecess)"/>
+    ${red}${ticks}
+    <text x="590" y="192" font-size="10.5" text-anchor="middle" fill="var(--muted)" font-family="var(--mono)" letter-spacing=".1em">°C</text>
+    <g id="hw-needle"><path d="M592.5 170 L592.5 94" stroke="#000" stroke-opacity=".2" stroke-width="3.5" stroke-linecap="round" filter="url(#kSoft)"/><path d="M590 168 L590 92" stroke="var(--lemon)" stroke-width="3" stroke-linecap="round"/><circle cx="590" cy="168" r="4" fill="var(--lemon)"/></g>
+    <circle cx="590" cy="150" r="6.5" fill="url(#kTorus)" stroke="var(--line)" stroke-width="1"/>
+    <path d="M538 120 A 60 60 0 0 1 612 88 A 70 70 0 0 0 538 120 Z" fill="#fff" fill-opacity=".55"/>
+    <circle cx="590" cy="150" r="68" fill="url(#kDome)"/>
+    <!-- 04 compute: a coil -->
+    ${hwHousing(664, 366, 132, 44, 12)}
+    ${hwHolesIn(682, 380, 16, 3, 6.4, 1.4, .45)}
+    <rect x="712" y="208" width="36" height="158" rx="6" fill="url(#kMatteH)" stroke="var(--line)" stroke-width="1.2"/>
+    <g stroke="var(--text)" stroke-opacity=".35" stroke-width="1">${Array.from({length:36}, (_, i) => `<line x1="714" x2="746" y1="${214 + i * 4.2}" y2="${214 + i * 4.2}"/>`).join('')}</g>
+    <rect x="712" y="208" width="36" height="158" rx="6" fill="url(#kCyl)"/>
+    <ellipse cx="730" cy="360" rx="44" ry="7" fill="none" stroke="var(--line)" stroke-width="5"/><ellipse cx="730" cy="360" rx="44" ry="7" fill="none" stroke="url(#kTorus)" stroke-width="3.4"/>
+    <ellipse id="hw-halo" cx="${HW_TX}" cy="${HW_TY}" rx="96" ry="64" fill="url(#kArcGlow)" opacity="0"/>
+    <g filter="url(#kShadow)"><ellipse cx="${HW_TX}" cy="${HW_TY}" rx="60" ry="19" fill="url(#kTorus)" stroke="var(--line)" stroke-width="1.2"/></g>
+    <ellipse cx="${HW_TX}" cy="${HW_TY - 2}" rx="22" ry="5.5" fill="var(--text)" fill-opacity=".28"/><path d="M${HW_TX - 22} ${HW_TY - 2} A 22 5.5 0 0 0 ${HW_TX + 22} ${HW_TY - 2}" fill="none" stroke="var(--hi)" stroke-width="1.2"/>
+    <path d="M${HW_TX - 46} ${HW_TY - 7} Q ${HW_TX - 20} ${HW_TY - 17} ${HW_TX + 18} ${HW_TY - 15}" stroke="#fff" stroke-opacity=".7" stroke-width="2.4" fill="none" stroke-linecap="round"/>
+    <!-- 04 compute per card: the radio -->
+    <path d="M966 232 L970 196" stroke="url(#kMatteH)" stroke-width="5" stroke-linecap="round"/><path d="M966 232 L970 196" stroke="var(--line)" stroke-width="5" stroke-opacity=".5" fill="none" stroke-linecap="round" stroke-dasharray="0 36 0"/>
+    <path d="M970 196 L973 172" stroke="var(--muted)" stroke-width="3.6" stroke-linecap="round"/><path d="M973 172 L${HW_AX} ${HW_AY}" stroke="var(--muted)" stroke-width="2.4" stroke-linecap="round"/>
+    <circle cx="${HW_AX}" cy="${HW_AY}" r="4.5" fill="url(#kTorus)" stroke="var(--line)" stroke-width=".9"/>
+    ${hwHousing(818, 228, 164, 182, 16)}
+    <circle cx="966" cy="234" r="6" fill="url(#kTorus)" stroke="var(--line)" stroke-width=".9"/>
+    ${hwHolesIn(838, 246, 15, 4, 9, 2.2, .6)}
+    ${meters}
+    <circle id="hw-lamp" cx="844" cy="386" r="8" fill="var(--lemon)" filter="url(#kSoft)" opacity=".1"/>
+    <circle cx="844" cy="386" r="4.4" fill="var(--surface-2)" stroke="var(--line)" stroke-width=".8"/><circle cx="844" cy="386" r="3.2" fill="var(--lemon)"/><circle cx="843" cy="385" r="1.1" fill="#fff" fill-opacity=".85"/>
+    <text x="856" y="389.5" font-size="8.5" fill="var(--muted)" font-family="var(--mono)" letter-spacing=".12em">SIGNAL</text>
+    <g filter="url(#kShadow)"><circle cx="958" cy="386" r="10" fill="var(--line)"/></g>
+    <g stroke="var(--text)" stroke-opacity=".35" stroke-width=".8">${Array.from({length:24}, (_, i) => { const a = i * 15 * Math.PI / 180; return `<line x1="${958 + Math.cos(a) * 8.6}" y1="${386 + Math.sin(a) * 8.6}" x2="${958 + Math.cos(a) * 10}" y2="${386 + Math.sin(a) * 10}"/>`; }).join('')}</g>
+    <circle cx="958" cy="386" r="8" fill="url(#kTorus)"/><path d="M958 380 V385" stroke="var(--text)" stroke-width="1.5" stroke-linecap="round"/>
+    ${hwBreadboard()}${hwWiresFront()}
+    <g id="hw-arcs"></g><g id="hw-rsp"></g>
+    ${hwLabel(40, '01', 'MODEL ', 'hw-v-model')}${hwLabel(372, '02', 'MEMORY ', 'hw-v-mem')}${hwLabel(548, '03', 'HEAT ', 'hw-v-heat')}${hwLabel(694, '04', 'COMPUTE ', 'hw-v-comp')}
+    </g>
+  </svg>`;
+}
+function hwPaint(){
+  const host = $("#hwrig"); if(!host) return;
+  host.hidden = $("#hwintro").hidden = !picturesOn() || !(S.gpus || []).length;
+  if(host.hidden) return;
+  const now = hwCardsNow(), m = hwModel();
+  const key = [now.map(c => c.key + c.model).join(","), m && m.id].join("|");
+  if(key !== HW.key){
+    const old = HW.cards;
+    HW.cards = now.map((c, i) => ({...c, cur: (old[i] && old[i].key === c.key) ? old[i].cur : {vram: c.vram, util: c.util, temp: c.temp}}));
+    HW.key = key; HW.lastArc = -1; host.innerHTML = hwSVG(); crCrop(host);
+  }
+  const cs = HW.cards, cap = hwCap(), A = hwAgg(), rm = hwRM();
+  const h = A.vram / cap * (HW_MB - HW_MT), y = HW_MB - h;
+  host.querySelector("#hw-clipr").setAttribute("y", y); host.querySelector("#hw-clipr").setAttribute("height", h + 12); host.querySelector("#hw-men").setAttribute("cy", y);
+  host.querySelector("#hw-needle").setAttribute("transform", `rotate(${(Math.max(20, Math.min(100, A.temp)) - 60) * 3} 590 150)`);
+  host.querySelector("#hw-lamp").setAttribute("opacity", (.05 + A.util / 105).toFixed(2));
+  host.querySelector("#hw-halo").setAttribute("opacity", (A.util > 20 ? A.util / 180 : 0).toFixed(2));
+  host.querySelector("#hw-v-model").textContent = `${cs.length} ${cs.length > 1 ? "cards" : "card"}`;
+  host.querySelector("#hw-v-mem").textContent = `${Math.round(A.vram / cap * 100)}%`; host.querySelector("#hw-gb").textContent = `${A.vram.toFixed(1)} / ${cap} GB`;
+  host.querySelector("#hw-v-heat").textContent = `${Math.round(A.temp)}°C`; host.querySelector("#hw-v-comp").textContent = `${Math.round(A.util)}%`;
+  const led = rm ? (A.util > 20 ? 1 : .25) : Math.random() < .15 + A.util / 110 ? 1 : .25;
+  host.querySelector("#hw-bbled").setAttribute("opacity", led); host.querySelector("#hw-bbglow").setAttribute("opacity", led * A.util / 120);
+  host.querySelectorAll(".hbub").forEach((b, i) => b.style.display = i % 14 < 1 + A.util / 8 ? "" : "none");
+  crMood(host.querySelector(".beaker .cr"), hwMood(m));
+  cs.forEach((c, i) => {
+    const f = host.querySelector(`.hwframe[data-card="${i}"]`); if(!f) return;
+    const mt = host.querySelector("#hw-m" + i); mt.setAttribute("transform", `rotate(${c.cur.util - 50} ${mt.dataset.cx} 334)`);
+    const fm = f.querySelector(".fmem"); fm.setAttribute("width", (Math.min(1, c.cur.vram / (c.gb || 1)) * fm.dataset.w).toFixed(1));
+    f.querySelector(".fmemt").textContent = `MEM ${c.cur.vram.toFixed(1)}/${c.gb} GB · ${Math.round(c.cur.temp)}°C`;
+    const fg = f.querySelector(".fmgb"); if(fg) fg.textContent = `${c.modelGb.toFixed(1)} GB HERE`;
+    const lamps = f.querySelectorAll(".hwlamp"), on = Math.round(c.cur.util / 100 * lamps.length);
+    if(!rm) lamps.forEach(l => l.classList.toggle("on", Math.random() < on / lamps.length));
+    else lamps.forEach((l, k) => l.classList.toggle("on", k < on));
+    f.querySelectorAll(".reel").forEach(r => { r.style.animationDuration = (14 - c.cur.util / 8).toFixed(1) + "s"; r.style.animationPlayState = c.cur.util < 5 ? "paused" : "running"; });
+  });
+  const bucket = Math.round(A.util / 10);
+  if(!rm || bucket !== HW.lastArc){ HW.lastArc = bucket; const s = hwSparks(A.util); host.querySelector("#hw-arcs").innerHTML = s.coil; host.querySelector("#hw-rsp").innerHTML = s.radio; }
+  host.querySelector("svg.appar").setAttribute("aria-label", `${cs.length} graphics ${cs.length > 1 ? "cards" : "card"}: memory ${A.vram.toFixed(1)} of ${cap} GB, hottest ${Math.round(A.temp)} degrees, compute ${Math.round(A.util)} percent`);
+}
+
 /* ======================= hardware ======================= */
 function wavePath(){ return "M0,0 q15,-7 30,0 t30,0 t30,0 t30,0 t30,0 t30,0 t30,0 t30,0 V280 H0 Z"; }
 function sparkPath(h){
@@ -4634,6 +4961,7 @@ function liveHTML(d, active){
 function tankY(d){ const g = gpuFor(d); return g ? 240 * (1 - Math.min(1, g.mem_used_mb / g.mem_total_mb)) : 240; }
 let hwSig = "";
 function renderHardware(){
+  hwPaint();
   const devs = allDevices(), {sel, order} = deviceOrder(), auto = !S.draft && !savedIds().length;
   const sig = JSON.stringify([order, sel, auto, !!S.info?.devices_assumed]);
   const host = $("#gpus");

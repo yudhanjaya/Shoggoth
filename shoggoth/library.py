@@ -491,6 +491,58 @@ def picker(max_age=8):
     return res
 
 
+_files = {"t": 0, "v": None}
+
+
+def _file_map():
+    """{real path or file name: catalog entry} for every model file in the library, kept for half a minute."""
+    if _files["v"] is not None and time.time() - _files["t"] < 30:
+        return _files["v"]
+    out = {}
+    try:
+        for e in catalog(registry.default(), hardware.machine()):
+            for f in e.get("files") or []:
+                out[os.path.realpath(f)] = e
+                out.setdefault(os.path.basename(f), e)
+    except Exception:
+        pass
+    _files.update(t=time.time(), v=out)
+    return out
+
+
+def _cmdline(pid):
+    """A process's arguments, or [] when they can't be read."""
+    try:
+        with open("/proc/%d/cmdline" % int(pid or 0), "rb") as f:
+            return [a.decode("utf8", "replace") for a in f.read().split(b"\0") if a]
+    except (OSError, ValueError, TypeError):
+        return []
+
+
+def models_on_cards(gpus):
+    """Adds `models` to each card: [{model, id, engine, mem_mb}], the library models whose engines hold memory there. A process's
+    command line names its model file (llama-server's -m, Strata's --native ...); one that names none is listed by engine."""
+    fmap = None
+    for g in gpus:
+        seen = {}
+        for p in g.get("procs") or []:
+            if str(p.get("name") or "").startswith("["):              # nvidia-smi's "[no data]": nothing to name
+                continue
+            args = _cmdline(p.get("pid"))
+            if fmap is None:
+                fmap = _file_map()
+            e = next((fmap.get(os.path.realpath(a)) or fmap.get(os.path.basename(a)) for a in args if a.lower().endswith(".gguf")
+                      and (fmap.get(os.path.realpath(a)) or fmap.get(os.path.basename(a)))), None)
+            name = str(p.get("name") or "")
+            engine = "lemonade" if re.search(r"llama-server|sd-server|whisper|lemond|stable-diffusion|ggml-rpc", name, re.I) else name.lower()
+            key = (e or {}).get("title") or engine
+            cur = seen.setdefault(key, {"model": (e or {}).get("title"), "id": next(iter(((e or {}).get("ids") or {}).values()), None),
+                                        "engine": engine, "mem_mb": 0})
+            cur["mem_mb"] += p.get("mem_mb") or 0
+        g["models"] = sorted(seen.values(), key=lambda x: -x["mem_mb"])
+    return gpus
+
+
 def lemonade_accepts(path):
     """Can Lemonade run this file? Used so an imported folder never shows it a model it would list but fail to load."""
     h = gguf.read_header(path)
