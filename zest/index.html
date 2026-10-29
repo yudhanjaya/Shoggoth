@@ -2119,23 +2119,20 @@ function cardHTML(m, extra){
   </article>`;
 }
 
-/* ======================= my picks ======================= */
-// Written from my own testing: a generation-ship design exercise that needs web searches for physics and engineering.
-const PICKS = [
-  {tier: "Start here: small and fast", blurb: "Runs on almost any computer.", items: [
-    {id: "LFM2.5-8B-A1B", label: "Best small model", take: "Very fast, runs on almost anything, and calls tools well. Its answers are short and to the point. Give it web search in a harness such as OpenChamber and it is the smartest small model I have used. Think of it as a stand-in for a cloud “flash” model."}]},
-  {tier: "My general pick", blurb: "The one I would install first if your computer can hold it.", items: [
-    {id: "Qwen3.6-35B-A3B-MTP-GGUF", label: "Best all-rounder", take: "Very fast and competent at everyday tasks. It sometimes mangles complex code, but you can run it again and again until it gets there. It does well at research, tweaking system settings and scripts, and at agent work (better than GLM). A good in-editor helper for small functions. Its writing style is not to everyone's taste."}]},
-  {tier: "If Qwen 3.6 won't run", blurb: "A fallback, with a warning.", items: [
-    {id: "GLM-4.7-Flash-GGUF", label: "Only if you can't run Qwen 3.6", take: "Fast, but a confident bluffer: it makes things up often, so I would not trust it to write code. It improves a lot when you give it skills in a harness like OpenCode or Hermes, but pick it only if Qwen 3.6 is out of reach."}]},
-  {tier: "Bigger and slower: dense models", blurb: "Good answers, but slower than the models above because every part of them works on every word.", note: "On a computer with a big graphics card and plenty of RAM, the Large models are faster than these.", items: [
-    {id: "Gemma-4-31B-it-MTP-GGUF", label: "Clear and concise", take: "I like the style: clear, concise and competent. It is simply slow next to the mixture-of-experts models."},
-    {id: "Qwen3.8-27B-GGUF", label: "A thinker", take: "Competent, but it ruminates and refines its answers before it replies, and can think for ages unless you tell it to keep its thinking and answers short."}]}
-];
-function pickCards(it){
-  const m = S.models.find(x => x.id === it.id) || (it.alt || []).map(a => S.models.find(x => x.id === a)).find(Boolean);
-  if(!m) return "";
-  return cardHTML(m, `<p class="pickhead"><span class="chip lem">${esc(it.label)}</span></p><p class="take">${esc(it.take)}</p>`);
+/* ======================= my picks: zest/recommendations/*.yaml (edit those files, not this code) ======================= */
+const RECS = {d: null};
+async function loadRecs(){ try{ RECS.d = await api("/ui/recommendations"); }catch{} }
+const recModels = () => ((RECS.d || {}).models) || {recommended: [], first_run: [], strata: []};
+const recAllTools = () => (((RECS.d || {}).tools || {}).tools) || [];
+const recTools = place => recAllTools().filter(t => t.show.includes(place));
+const recPlace = place => ((((RECS.d || {}).tools || {}).places || {})[place]) || {title: "", blurb: ""};
+const recModel = it => [it.id, ...(it.also || [])].map(id => S.models.find(x => x.id === id)).find(Boolean);   // the engine's listing of a recommended model
+const recPick = id => recModels().recommended.find(i => i.id === id || (i.also || []).includes(id));
+const recLinks = t => t.links.length ? `<div class="links">${t.links.map(l => l.url.startsWith("#") ? `<a href="${esc(l.url)}" data-go="${esc(l.url.slice(1))}">${esc(l.label)}</a>` : `<a href="${esc(l.url)}" target="_blank" rel="noopener noreferrer">${esc(l.label)}</a>`).join("")}</div>` : "";
+const recToolCard = t => `<article class="card engcard"><div class="ctop"><h3>${esc(t.name)}</h3>${t.badge ? `<span class="chip lem">${esc(t.badge)}</span>` : ""}</div>${t.take ? `<p class="take">${inline(t.take)}</p>` : ""}${recLinks(t)}</article>`;
+function recProblems(){                  // a mistake in the files is said where the recommendations show, with the line to fix
+  const p = (RECS.d || {}).problems || [];
+  return p.length ? `<div class="note-warn" style="margin-top:12px"><b>Some recommendations were skipped.</b> Run <span class="mono">python3 zest/server.py recommendations check</span> for the full list.<br>${p.slice(0, 5).map(esc).join("<br>")}</div>` : "";
 }
 /* ======================= the Library: one list, whichever engine runs a model ======================= */
 const LIB = {d: null, t: 0, busy: false, tab: store.get("zest.libtab", "installed"), kind: "all", q: "", notNow: false, picked: ""};
@@ -2143,9 +2140,10 @@ const LIB_TIERS = [["small", "Small models", "Under 10 GB of graphics memory. Th
   ["large", "Large models", "For big computers. They take a couple of minutes to start."], ["other", "Pictures, speech and sound", ""]];
 const LIB_TABS = [["installed", "Installed"], ["recommended", "Recommended for this computer"], ["everything", "Everything"]];
 const LIB_KINDS = [["all", "All kinds"], ["chat", "Chat"], ["vision", "Sees pictures"], ["image", "Makes images"], ["audio", "Speech and sound"]];
-const LIB_TIPS = `<section class="picktier"><div class="tierhead"><h3>Make any model better: a harness and skills</h3><p>A model gets much more useful when it can search the web and follow skills.</p></div>
-    <div class="engrid"><article class="card engcard"><div class="ctop"><h3>OpenChamber</h3><span class="chip lem">My pick</span></div><p class="take">The app I recommend for working with your models. Connect it through the Server page. I find Unsloth Desktop laggy at the moment, and Hermes more complex than most people need.</p><div class="links"><a href="https://github.com/openchamber/openchamber" target="_blank" rel="noopener noreferrer">OpenChamber on GitHub</a></div></article>
-    <article class="card engcard"><div class="ctop"><h3>obra/superpowers</h3><span class="chip lem">Skills</span></div><p class="take">Give your models a few skills, especially this set, and most of them turn into a very good daily driver. A trimmed copy already comes with Zest: switch it on under <a href="#skills" data-go="skills">Skills</a>.</p><div class="links"><a href="https://github.com/obra/superpowers" target="_blank" rel="noopener noreferrer">obra/superpowers on GitHub</a></div></article></div></section>`;
+function libTips(){
+  const ts = recTools("library"), pl = recPlace("library");
+  return ts.length ? `<section class="picktier"><div class="tierhead"><h3>${esc(pl.title)}</h3>${pl.blurb ? `<p>${esc(pl.blurb)}</p>` : ""}</div><div class="engrid">${ts.map(recToolCard).join("")}</div></section>` : "";
+}
 const libTier = gb => !gb ? "medium" : gb < 10 ? "small" : gb <= 24 ? "medium" : "large";
 const isChatModel = m => m.recipe === "llamacpp" && !(m.labels || []).some(l => /embed|rerank/.test(l));
 async function libLoad(fresh){
@@ -2155,7 +2153,7 @@ async function libLoad(fresh){
 }
 /* while the first-run screen is up, keep the Large-model download state fresh */
 async function strRefreshWelcome(){ if(S.view !== "welcome") return; try{ STR.d = await api("/ui/strata"); }catch{} renderWelcome(); setTimeout(strRefreshWelcome, 3000); }
-function libShow(){ renderModels(); libLoad(); strRefresh(); pkLoad(true); }
+function libShow(){ renderModels(); libLoad(); strRefresh(); pkLoad(true); loadRecs().then(() => { if(S.view === "models") renderModels(); }); }
 function libFilters(){
   $("#filters").innerHTML = LIB_TABS.map(([k, l]) => `<button type="button" data-tab="${k}" aria-pressed="${LIB.tab === k}">${l}</button>`).join("") +
     (LIB.tab === "everything" ? `<select id="libkind" aria-label="Kind of model">${LIB_KINDS.map(([k, l]) => `<option value="${k}" ${LIB.kind === k ? "selected" : ""}>${l}</option>`).join("")}</select>` : "") +
@@ -2240,18 +2238,17 @@ function libInstalled(){
 }
 function libRecommended(){
   const q = LIB.q.toLowerCase(), by = {small: [], medium: [], large: []}, have = new Set(((LIB.d || {}).models || []).map(e => (e.ids || {}).lemonade).filter(Boolean));
-  for(const g of PICKS) for(const it of g.items){
-    const m = S.models.find(x => x.id === it.id) || (it.alt || []).map(a => S.models.find(x => x.id === a)).find(Boolean);
+  for(const it of recModels().recommended){
+    const m = recModel(it);
     if(!m || !libMatch(m, q) || ((fitInfo(m) || {}).cls === "over" && !m.downloaded)) continue;
-    by[libTier(m.size)].push(cardHTML(m, `<p class="pickhead"><span class="chip lem">${esc(it.label)}</span></p><p class="take">${esc(it.take)}</p>`).replace("</article>", libUnder(m) + "</article>"));
+    by[libTier(m.size)].push(cardHTML(m, `<p class="pickhead"><span class="chip lem">${esc(it.label)}</span></p>${it.take ? `<p class="take">${inline(it.take)}</p>` : ""}`).replace("</article>", libUnder(m) + "</article>"));
   }
   for(const o of bigOptions().filter(o => o.fit !== "no" && !bigHave(o))){
     if(q && !o.title.toLowerCase().includes(q) && !o.model.toLowerCase().includes(q)) continue;
     by.large.push(getBigCard(o));
   }
-  const tips = LIB_TIPS;
   const html = LIB_TIERS.slice(0, 3).map(t => libSection(t, by[t[0]])).join("");
-  return (html || `<div class="empty-note">Zest is still looking at your computer…</div>`) + (q ? "" : tips);
+  return (html || `<div class="empty-note">Zest is still looking at your computer…</div>`) + (q ? "" : libTips()) + recProblems();
 }
 function libEverything(){
   const q = LIB.q.toLowerCase(), by = {small: [], medium: [], large: [], other: []};
@@ -2850,14 +2847,6 @@ function stepShell(n, key, title, doneFlag, chipHTML, body){
 
 /* ======================= first-run welcome ======================= */
 const inSetup = () => S.view === "prefs" || S.view === "welcome";
-function tierModels(){
-  // A fixed set, whatever the hardware: people with less memory can pick something else under "See every model".
-  const tiers = [["Quick", ["LFM2.5-8B-A1B"]],
-                 ["Balanced", ["Qwen3.6-35B-A3B-MTP-GGUF", "Gemma-4-26B-A4B-it-GGUF"]],
-                 ["Thorough", ["Qwen3.6-27B-MTP-GGUF", "Gemma-4-31B-it-MTP-GGUF"]]];
-  const blurb = {Quick: "Answers fast and keeps it short and to the point. Runs on almost any computer.", Balanced: "My general pick: fast, and good at everyday tasks, research and simple code.", Thorough: "Clear, careful writing, but slower than the others."};
-  return tiers.flatMap(([tier, ids]) => ids.map(id => S.models.find(m => m.id === id && m.recipe === "llamacpp" && m.size)).filter(Boolean).map(m => ({m, tier, blurb: blurb[tier]})));
-}
 /* ---- the first-run screen: Zest gets itself ready, and asks one question */
 const W = {auto: {}, go: false};
 function wLibAct(a){                     // the folder question's buttons (the Library uses the same ones)
@@ -2919,11 +2908,16 @@ function wRowHTML(r){
 /* the first model: one suggestion per size, whichever the computer can take */
 function wFirstModels(){
   const out = [], fits = m => (fitInfo(m) || {}).cls !== "over", pick = ids => ids.map(id => S.models.find(m => m.id === id && m.recipe === "llamacpp" && m.size)).find(m => m && fits(m));
-  const small = pick(["LFM2.5-8B-A1B"]), medium = pick(["Qwen3.6-35B-A3B-MTP-GGUF", "Gemma-4-26B-A4B-it-GGUF", "Gemma-4-31B-it-MTP-GGUF"]);
-  if(small) out.push({tier: "Small", m: small, blurb: "Answers fast and keeps it short. Runs on almost any computer.", start: "Ready in seconds"});
-  if(medium) out.push({tier: "Medium", m: medium, blurb: "My general pick: fast, and good at everyday tasks, research and simple code.", start: "Ready in seconds", rec: true});
-  const big = (((STR.rec || {}).options) || []).find(o => o.model === (STR.rec || {}).pick);
-  if(big) out.push({tier: "Large", big, blurb: "The most capable, for a big computer. It takes a couple of minutes to start.", start: "About 2 minutes to start"});
+  const TIER = {small: "Small", medium: "Medium", large: "Large"};
+  for(const f of recModels().first_run){
+    if(f.engine === "strata"){
+      const big = (((STR.rec || {}).options) || []).find(o => o.model === (STR.rec || {}).pick);
+      if(big) out.push({tier: TIER[f.size], big, blurb: f.blurb, start: f.start, rec: f.recommended});
+      continue;
+    }
+    const m = pick(f.models);
+    if(m) out.push({tier: TIER[f.size], m, blurb: f.blurb, start: f.start, rec: f.recommended});
+  }
   if(!out.some(o => o.rec) && out[0]) out[0].rec = true;
   return out;
 }
@@ -3047,11 +3041,19 @@ function engCard(p){
     run.length ? run.map(r => `<span><b>Running</b> · ${r.owner === "zest" ? "started by Zest" : "started by you"}${r.port ? ", port " + r.port : ""}</span>`).join("") : `<span>Not running right now. Zest starts it when a model needs it.</span>`].join("");
   const cons = p.consent ? `<div class="note-warn"><b>This engine wants to ${p.consent.will.map(esc).join(" and ")}.</b>${p.consent.code ? " It also runs its own Python code inside Zest." : ""}${p.consent.unsafe_install ? " Its installer has no checksum to check." : ""}<details style="margin-top:6px"><summary>Exactly what it will run</summary><div class="mono mid">${p.consent.commands.map(c => esc(c.where) + ": " + esc((c.command || []).join(" "))).join("<br>")}</div></details><div class="erow" style="margin-top:8px"><button class="btn primary" data-eng="approve" data-id="${esc(p.id)}">Allow it</button></div></div>` : "";
   return `<section class="panel engine" data-pid="${esc(p.id)}"><div class="ehead"><h3>${esc(p.name)}</h3><span class="chip">${esc(ENG_TIER[p.tier] || p.tier || "Engine")}</span><span class="chip ${p.trusted ? "" : "lem"}">${p.trusted ? "Built in" : "Added by you"}</span></div>
-    <p class="help" style="margin:0">${esc(p.summary || "")}</p>
+    <p class="help" style="margin:0">${esc(p.summary || "")}</p>${engToolLinks(p)}
     <div class="estat">${stat}</div>${(p.problems || []).length ? `<div class="note-warn">${p.problems.map(esc).join("<br>")}</div>` : ""}${cons}
     ${p.approved ? engUpdateRow(p) : ""}
     ${zestRuns ? `<div class="erow"><button class="btn" data-eng="stop" data-id="${esc(p.id)}">Stop it</button><span class="help" style="margin:0">Frees the memory it is using. It starts again when a model needs it.</span></div>` : ""}
     ${more ? `<details class="engmore" data-part="${esc(p.id)}"><summary>${more}</summary><div class="engslot" data-slot="${esc(p.id)}"></div></details>` : ""}</section>`;
+}
+function engToolLinks(p){                // links for an engine from tools.yaml (`provider: <its id>`)
+  const t = recAllTools().find(t => t.kind === "engine" && t.provider === p.id);
+  return t ? recLinks(t) : "";
+}
+function engMore(){                      // engines from tools.yaml that aren't set up here: what they are and where to get them
+  const have = new Set(((ENG.d || {}).providers || []).map(p => p.id)), ts = recTools("engines").filter(t => !have.has(t.provider || t.id)), pl = recPlace("engines");
+  return ts.length ? `<section class="panel engine"><div class="ehead"><h3>${esc(pl.title || "More engines")}</h3></div>${pl.blurb ? `<p class="help" style="margin:0">${esc(pl.blurb)}</p>` : ""}<div class="engrid">${ts.map(recToolCard).join("")}</div></section>` : "";
 }
 function engMount(){                     // the engine-specific parts live in a holding area and move into their card
   const hold = $("#engparts");
@@ -3072,7 +3074,7 @@ function renderEngines(){
   host.innerHTML = d.providers.map(engCard).join("");
   engMount();
   document.querySelectorAll("#engcards details.engmore").forEach(x => { if(open.has(x.dataset.part)) x.open = true; });
-  $("#engadd").innerHTML = `<section class="panel engine"><div class="ehead"><h3>Add an engine</h3></div>
+  $("#engadd").innerHTML = engMore() + `<section class="panel engine"><div class="ehead"><h3>Add an engine</h3></div>
     <p class="help" style="margin:0">An engine is a folder with a <span class="mono">provider.yaml</span> file in it that says how to start the program, where to reach it and which models it can run. Put the folder in <span class="mono" style="overflow-wrap:anywhere">${esc(d.user_folder || "")}</span>, then press Reload. Zest asks before it lets an added engine run a program.</p>
     <p class="help" style="margin:0">In a terminal, <span class="mono">Zest-*.AppImage providers new my-engine</span> makes a starting folder, and <span class="mono">providers check &lt;folder&gt;</span> tells you what to fix before you press Reload. The guide is <span class="mono">docs/ENGINES.md</span> in the Zest repository.</p>
     <div class="erow"><button class="btn" data-eng="reload">Reload engines</button></div>
@@ -3308,19 +3310,6 @@ $("#fsuse").addEventListener("click", () => { $("#fsdlg").close(); if(FS.cb) FS.
 
 
 /* ======================= how do I choose a model ======================= */
-const PICK_SITES = [
-  ["Luke's Dev Lab", "https://lukesdevlab.com/", "Speed and agent tests of local models on real hardware: how fast they decode, how they handle long prompts, and whether they finish real tasks."],
-  ["Artificial Analysis", "https://artificialanalysis.ai/", "Compares models on overall quality, speed and price side by side. Good for a quick overall ranking."],
-  ["LMArena", "https://lmarena.ai/", "People vote blind between two answers. It shows which models people actually prefer for everyday chat."],
-  ["Aider leaderboards", "https://aider.chat/docs/leaderboards/", "How well models edit code in real projects. Look here if you want a coding helper."],
-  ["Berkeley Function-Calling Leaderboard", "https://gorilla.cs.berkeley.edu/leaderboard.html", "How reliably models call tools and functions. This matters when you give a model web search or other tools."],
-  ["SWE-bench", "https://www.swebench.com/", "Whether a model can fix real bugs from GitHub projects. A tough test for coding agents."],
-  ["LiveBench", "https://livebench.ai/#/", "Reasoning, maths, coding and language questions that are refreshed often, so models can't simply have memorised the answers."],
-  ["BenchLM", "https://benchlm.ai/", "Collects benchmark scores for many models in one place, so you can compare them side by side."],
-  ["LLM Stats", "https://llm-stats.com/benchmarks", "Lists the benchmarks themselves and which models lead on each, with an explanation of what every test measures."],
-  ["r/LocalLLaMA", "https://www.reddit.com/r/LocalLLaMA/", "People running models at home share what works on real computers. Good for first impressions of a new release."],
-  ["Level1Techs forum: Deep Machine Learning / AI", "https://forum.level1techs.com/c/high-performance-computing/deep-machine-learning-ai/155", "Enthusiasts and engineers discussing hardware and local AI setups, with real-world speeds and troubleshooting."]
-];
 function renderPick(){
   $("#pickbody").innerHTML = `
     <h4>Start with three questions</h4>
@@ -3331,8 +3320,8 @@ function renderPick(){
     </ol>
     <h4>Benchmarks only tell you so much</h4>
     <p class="help2">A benchmark is a standard test, like an exam. It measures one narrow skill, so a high score tells you about that use case and nothing more. Many can be gamed: models can be trained on the questions, or tuned to look good on the test. Scores are often run on a different computer from yours, too. Use them to draw up a shortlist, then <b>try two or three models yourself, on your own questions. That is the best way to find out what works for you.</b></p>
-    <h4>Places to compare models</h4>
-    <ul class="picksites">${PICK_SITES.map(([n, u, d]) => `<li><a href="${u}" target="_blank" rel="noopener noreferrer">${esc(n)}</a><span>${esc(d)}</span></li>`).join("")}</ul>
+    <h4>${esc(recPlace("guides").title || "Places to compare models")}</h4>
+    <ul class="picksites">${recTools("guides").filter(t => t.links.length).map(t => `<li><a href="${esc(t.links[0].url)}" target="_blank" rel="noopener noreferrer">${esc(t.name)}</a><span>${inline(t.take)}</span></li>`).join("")}</ul>
     <p class="help2">These links open in your browser, and only when you click them. Zest doesn't contact these sites by itself.</p>`;
 }
 document.addEventListener("click", e => { if(e.target.closest("[data-pick]")){ e.preventDefault(); renderPick(); $("#pickdlg").showModal(); } });
@@ -3499,22 +3488,29 @@ function srvShow(){
 function exModel(){ const m = chatModels()[0]; return m ? m.id : "your-model-name"; }
 function snippet(tab, mask){
   const g = SRV.g, key = mask && !SRV.showKey ? "zest-••••••••••••" : g.key, url = g.url, model = exModel();
-  if(tab === "opencode") return JSON.stringify({"$schema": "https://opencode.ai/config.json", provider: {zest: {npm: "@ai-sdk/openai-compatible", name: "Zest", options: {baseURL: url, apiKey: key}, models: {[model]: {name: friendly(model)}}}}}, null, 2);
+  const app = recAllTools().find(t => t.id === tab && t.connect && t.connect.json);       // a config file from tools.yaml
+  if(app) return JSON.stringify(recFill(app.connect.json, {base_url: url, key, model, model_name: friendly(model)}), null, 2);
   if(tab === "curl") return `curl ${url}/chat/completions \\\n  -H "Authorization: Bearer ${key}" \\\n  -H "Content-Type: application/json" \\\n  -d '{"model": "${model}", "messages": [{"role": "user", "content": "Hello!"}]}'`;
   if(tab === "python") return `from openai import OpenAI\n\nclient = OpenAI(base_url="${url}", api_key="${key}")\nreply = client.chat.completions.create(\n    model="${model}",\n    messages=[{"role": "user", "content": "Hello!"}],\n)\nprint(reply.choices[0].message.content)`;
   return "";
 }
+/* "{base_url}", "{key}", "{model}" and "{model_name}" in a config from tools.yaml, in names as well as values */
+const recFill = (v, vals) => typeof v === "string" ? v.replace(/\{(base_url|key|model|model_name)\}/g, (_, k) => vals[k])
+  : Array.isArray(v) ? v.map(x => recFill(x, vals))
+  : v && typeof v === "object" ? Object.fromEntries(Object.entries(v).map(([k, x]) => [recFill(k, vals), recFill(x, vals)])) : v;
 function copyRow(label, value, id, secret){
   return `<div class="crow2"><span class="cl">${label}</span><code id="${id}" class="cv ${secret && !SRV.showKey ? "secret" : ""}">${esc(secret && !SRV.showKey ? "•".repeat(Math.min(24, value.length)) : value)}</code>${secret ? `<button class="btn" type="button" data-sact="togglekey">${SRV.showKey ? "Hide" : "Show"}</button>` : ""}<button class="btn" type="button" data-sact="copy" data-val="${esc(value)}">Copy</button></div>`;
 }
 function srvBuild(){
   const g = SRV.g; if(!g) return; SRV.built = true;
-  const tabs = [["opencode", "opencode"], ["hermes", "Hermes"], ["other", "Other apps"]];
+  const apps = recTools("server"), tabs = [...apps.map(t => [t.id, t.name]), ["other", "Other apps"]];     // apps from tools.yaml, then any app
+  if(!tabs.some(([k]) => k === SRV.tab)) SRV.tab = tabs[0][0];
+  const app = apps.find(t => t.id === SRV.tab), FIELD = {base_url: ["Base URL", g.url, "v1"], key: ["API key", g.key, "v2", true], model: ["Model", exModel(), "v3"]};
   let tabBody;
-  if(SRV.tab === "hermes") tabBody = `<p class="help2">In Hermes, choose a custom OpenAI-compatible endpoint and enter these three values.</p>${copyRow("Base URL", g.url, "v1")}${copyRow("API key", g.key, "v2", true)}${copyRow("Model", exModel(), "v3")}`;
+  if(app && app.connect.json) tabBody = `${app.connect.help ? `<p class="help2">${inline(app.connect.help)}</p>` : ""}<pre class="snip"><code>${esc(snippet(app.id, true))}</code></pre><button class="btn" type="button" data-sact="copy" data-val="${esc(snippet(app.id))}">Copy config</button>`;
+  else if(app) tabBody = `${app.connect.help ? `<p class="help2">${inline(app.connect.help)}</p>` : ""}${app.connect.fields.map(f => copyRow(...FIELD[f])).join("")}`;
   else if(SRV.tab === "other") tabBody = `<p class="help2">Almost every chat app, coding assistant and agent has a place for these three values, often called “OpenAI-compatible” or “custom provider”.</p>${copyRow("Base URL", g.url, "v1")}${copyRow("API key", g.key, "v2", true)}${copyRow("Model", exModel(), "v3")}
       <details class="codebox"><summary>Show me as code</summary><div class="codetabs">${["curl", "python"].map(t => `<button type="button" class="chiptab" data-sact="code" data-t="${t}" aria-pressed="${SRV.code === t || (!SRV.code && t === "curl")}">${t}</button>`).join("")}</div><pre class="snip"><code>${esc(snippet(SRV.code || "curl", true))}</code></pre><button class="btn" type="button" data-sact="copy" data-val="${esc(snippet(SRV.code || "curl"))}">Copy code</button></details>`;
-  else tabBody = `<p class="help2">Save this as <span class="mono">opencode.json</span> in your project, or add the <span class="mono">zest</span> part to your existing config.</p><pre class="snip"><code>${esc(snippet("opencode", true))}</code></pre><button class="btn" type="button" data-sact="copy" data-val="${esc(snippet("opencode"))}">Copy config</button>`;
   $("#server").innerHTML = `
     <div class="hero srvhero"><h2>Share your models with <span class="hl">other apps</span></h2>
       <p>Zest can lend the models on this computer to other programs, such as opencode, Hermes, or any chat app or coding assistant. Paste the address and key below into the other app and it works as if it were talking to an online service, except nothing leaves your machine.</p></div>
@@ -3523,7 +3519,7 @@ function srvBuild(){
       <div class="connhead"><h3>Connect an app</h3>
         <button class="sw" type="button" role="switch" aria-checked="${g.enabled}" data-sact="enabled"><i></i>${g.enabled ? "Sharing is on" : "Sharing is off"}</button></div>
       ${g.enabled ? `${copyRow("Address", g.url, "va")}${copyRow("Key", g.key, "vk", true)}
-      <div class="tabs" role="tablist">${tabs.map(([k, l]) => `<button type="button" role="tab" class="chiptab" data-sact="tab" data-t="${k}" aria-pressed="${SRV.tab === k}">${l}</button>`).join("")}</div>
+      <div class="tabs" role="tablist">${tabs.map(([k, l]) => `<button type="button" role="tab" class="chiptab" data-sact="tab" data-t="${esc(k)}" aria-pressed="${SRV.tab === k}">${esc(l)}</button>`).join("")}</div>
       <div class="tabbody">${tabBody}</div>
       <p class="help2">These setup steps were written from each app's documentation and may need a small tweak. If an app can't connect, the <b>Requests</b> list below shows what it tried.</p>`
       : `<p class="help2">No other app can reach your models while this is off. Zest itself keeps working.</p>`}
@@ -4010,7 +4006,7 @@ setInterval(() => fetch("/ui/ping", {method:"POST"}).catch(() => {}), 5000); fet
 
 /* ======================= boot ======================= */
 (async function boot(){
-  await Promise.all([loadModels(), pollGpu(), pollServer(), pollDownloads()]);
+  await Promise.all([loadModels(), pollGpu(), pollServer(), pollDownloads(), loadRecs()]);
   try{ SU.st = await api("/ui/setup"); S.bk = (await api("/ui/backends")).recipes; }catch{}
   if(!S.convs.length || !conv()) { if(S.convs.length) S.cur = S.convs[0].id; else { const c = {id:uid(), title:"New chat", messages:[], system:"", created:Date.now()}; S.convs.push(c); S.cur = c.id; } }
   renderConvs(); syncModelSelect(); renderStatus(); setSendState();
@@ -4183,7 +4179,7 @@ function pkRender(){
   for(const t of ["small", "medium", "large", ""]){
     if(!by[t]) continue;
     html += `<div class="pkhead" role="presentation"><b>${PK_TIER[t][0]}</b><span>${PK_TIER[t][1]}</span></div>` + by[t].map(m => {
-      const pi = (typeof PICKS !== "undefined" ? PICKS.flatMap(g => g.items).find(i => i.id === m.id) : null), no = m.fit === "no";
+      const pi = recPick(m.id), no = m.fit === "no";
       return `<button type="button" class="pkrow" role="option" data-id="${esc(m.id)}" aria-selected="${m.id === cur}" ${no ? 'aria-disabled="true"' : ""}><span class="pkdot ${m.live ? "on" : ""}" aria-hidden="true"></span><span class="pkmain"><b>${esc(m.title)}${pi ? ` <span class="chip">${esc(pi.label)}</span>` : ""}</b><span class="pkmeta">${pkNote(m)}</span></span><span class="pkeng">${esc(m.engine_name)}</span></button>`;
     }).join("");
   }

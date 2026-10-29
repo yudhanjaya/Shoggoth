@@ -121,16 +121,22 @@ class Provider(provbase.GenericProvider):
         # Strata splits a model across graphics card, RAM and SSD: its need is the figure for that size, not the file size.
         n = strata.need_gb(entry.get("quant") or "") if entry.get("architecture") == "qwen4exp" else None
         if n is None and entry.get("architecture") == "deepseek41":
-            n = 46.0
+            n = (self._deepseek() or {}).get("need_gb")
         return n if n is not None else round(entry.get("size_bytes", 0) / 1e9 * 0.7, 1)
+
+    @staticmethod
+    def _deepseek():
+        """DeepSeek V4.1's entry in Zest's list of big models (recommendations/models.yaml), or None."""
+        return next((e for e in strata.catalog() if e["family"] == "deepseek41"), None)
 
     def fit(self, entry, machine):
         need = self.need_gb(entry)
         if not machine.get("gpus"):
             return "no", "Strata needs a graphics card."
         budget = machine.get("ram_gb", 0) + machine.get("vram_gb", 0)
-        if entry.get("architecture") == "deepseek41" and machine.get("best_gpu_gb", 0) < 12:
-            return "no", "Needs a graphics card with 12 GB or more."
+        vram = (self._deepseek() or {}).get("min_vram_gb", 0) if entry.get("architecture") == "deepseek41" else 0
+        if vram and machine.get("best_gpu_gb", 0) < vram:
+            return "no", "Needs a graphics card with %d GB or more." % vram
         if need <= budget * 0.85 - 6:
             return "fits", ""
         if need <= budget * 0.95 - 2:
