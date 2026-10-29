@@ -232,6 +232,10 @@ def ensure_loaded(model, s=None):
     The page is told, so it can say "Loading the model" instead of sitting silent. Raises ValueError when it can't be done."""
     if not model:
         return
+    try:
+        router.held()                      # a tune has the graphics cards, even for a model that is loaded
+    except provbase.ProviderError as e:
+        raise ValueError(str(e))
     want = want_ctx(model)
     isl, cur = loaded_state(model)
     if isl and (not cur or cur >= want or router.fixed_ctx(model)):

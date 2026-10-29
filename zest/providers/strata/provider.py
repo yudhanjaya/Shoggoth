@@ -30,10 +30,10 @@ class Provider(provbase.GenericProvider):
 
     def ensure(self, model_id, progress, opts=None):
         try:
-            strata.ensure(strata.PREFIX + model_id, on_line=progress)
+            m = strata.ensure(strata.PREFIX + model_id, on_line=progress)
         except ValueError as e:
             raise provbase.ProviderError(str(e))
-        return self.endpoint(model_id)
+        return {"base_url": m["url"].rstrip("/") + "/v1", "key": m.get("key", ""), "model": m["bare"], "ctx": m["ctx"]}
 
     def stop(self, model_id=None):
         r = strata.zest_server()
@@ -42,10 +42,12 @@ class Provider(provbase.GenericProvider):
         return strata.stop(r["url"])
 
     def is_running(self):
-        return any(r["state"] in ("ready", "loading") for r in strata.running())
+        # only what holds this computer's memory: a Strata on another computer you saved the address of doesn't
+        return any(r["state"] in ("ready", "loading") and r["source"] != "saved" for r in strata.running())
 
     def loaded(self, model_id):
-        return (True, strata.find_model(strata.PREFIX + model_id)["ctx"]) if strata.is_live(strata.PREFIX + model_id) else (False, 0)
+        m = strata.find_model(strata.PREFIX + model_id)
+        return (True, m["ctx"]) if m and not m.get("dormant") else (False, 0)
 
     def max_ctx(self, model_id):
         return self.loaded(model_id)[1] or (strata.find_model(strata.PREFIX + model_id) or {}).get("ctx", 0)
@@ -68,7 +70,7 @@ class Provider(provbase.GenericProvider):
 
     def owned_instance(self):
         r = strata.zest_server()
-        return r["url"] if r and r["state"] == "ready" else None
+        return r["url"] if r else None                     # loading counts: one still loading when Zest quits is stopped too
 
     def idle_minutes(self):
         return int(strata._settings().get("idle_minutes") or 0)

@@ -994,6 +994,17 @@ def watchdog(srv, grace):
             return
 
 
+def _strata_make_room():
+    """Before Strata loads a model (also from the Models page, which doesn't go through the router): free memory the way the router
+    does, so nothing that is answering is cut off and nothing somebody else loaded is unloaded."""
+    p = router.get("strata")
+    if p:
+        try:
+            router.make_room(p, lambda t: None)
+        except provbase.ProviderError as e:
+            raise RuntimeError(str(e))
+
+
 def main():
     args = [a for a in sys.argv[1:] if a != "--app"]            # the AppImage adds --app; `Zest.AppImage providers check <folder>` is the tool for engine authors
     if args[:1] == ["providers"]:
@@ -1040,7 +1051,7 @@ def main():
     agent.recover()
     piup.on_installed.append(agent.restart_idle)
     strata.on_change.append(agent.restart_idle)
-    strata.before_launch.append(lambda: lem.healthy() and lem.request("POST", "/v1/unload", {}, timeout=60))
+    strata.before_launch.append(_strata_make_room)
     threading.Thread(target=agent.reaper, daemon=True).start()
     threading.Thread(target=router.watch, daemon=True).start()
     s = store.load()

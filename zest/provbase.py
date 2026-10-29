@@ -268,6 +268,11 @@ class Base:
     def stop(self, model_id=None):
         raise NotImplementedError
 
+    def make_way(self):
+        """Free this provider's memory for another engine (the router's memory arbiter asks). Returns (ok, message); not ok when what holds
+        the memory is somebody else's. Default: stop()."""
+        return self.stop()
+
     def endpoint(self, model_id=None):
         raise NotImplementedError
 
@@ -295,6 +300,7 @@ class GenericProvider(Base):
         self._port = None
         self._owned = False             # did Zest start the process now serving?
         self._pid = None                # its process number (kept across restarts of Zest, so what Zest started is still Zest's)
+        self._t = None                  # when that process began: a later process given the same number is not Zest's
         self._files = {}                # model name -> its file, learned as the library asks for names (models.serve: file)
 
     # -- helpers
@@ -305,14 +311,14 @@ class GenericProvider(Base):
         rec = self.ctx.settings(self.id).get("started") or {}
         pid, port = rec.get("pid"), rec.get("port")
         if pid and port and _start_time(int(pid)) == rec.get("t") and port_open(int(port)):
-            self._pid, self._port, self._owned = int(pid), int(port), True
+            self._pid, self._port, self._owned, self._t = int(pid), int(port), True, rec.get("t")
         elif rec:
             self.ctx.remember(self.id, started=None)             # it has gone
 
     def _alive(self):
         if self._proc is not None:
             return self._proc.poll() is None
-        return bool(self._pid) and _start_time(self._pid) is not None
+        return bool(self._pid) and self._t is not None and _start_time(self._pid) == self._t
 
     def _vals(self, **extra):
         v = {"bin": self.binary() or "", "host": "127.0.0.1", "port": self._port, "library": self.ctx.library, "data": self.ctx.data}
@@ -443,8 +449,8 @@ class GenericProvider(Base):
             cmd = fill(run["start"], **self._vals(model=model_id, model_file=self._files.get(model_id, ""), port=free, context=ctx))
             progress("Starting %s…" % self.name)
             self._proc = subprocess.Popen(cmd, stdin=subprocess.DEVNULL, stdout=subprocess.DEVNULL, stderr=subprocess.STDOUT, start_new_session=True)
-            self._owned, self._pid = True, self._proc.pid
-            self.ctx.remember(self.id, started={"pid": self._pid, "port": free, "t": _start_time(self._pid)})
+            self._owned, self._pid, self._t = True, self._proc.pid, _start_time(self._proc.pid)
+            self.ctx.remember(self.id, started={"pid": self._pid, "port": free, "t": self._t})
             deadline = time.time() + float((run.get("ready") or {}).get("timeout", 120))
             while time.time() < deadline:
                 if self._proc.poll() is not None:
@@ -482,13 +488,14 @@ class GenericProvider(Base):
             try:
                 if run.get("stop"):
                     subprocess.run(fill(run["stop"], **self._vals()), capture_output=True, timeout=60, stdin=subprocess.DEVNULL)
-                self._end(signal.SIGTERM)
-                if not self._wait_gone(grace):
-                    self._end(signal.SIGKILL)
-                    self._wait_gone(5)
+                if self._alive():                                    # never signal a number the system has since given to another program
+                    self._end(signal.SIGTERM)
+                    if not self._wait_gone(grace):
+                        self._end(signal.SIGKILL)
+                        self._wait_gone(5)
             except (OSError, subprocess.SubprocessError):
                 pass
-            self._proc, self._owned, self._pid = None, False, None
+            self._proc, self._owned, self._pid, self._t = None, False, None, None
             self.ctx.remember(self.id, started=None)
             return True, ""
 
@@ -508,7 +515,7 @@ class GenericProvider(Base):
             if self._proc is not None:
                 if self._proc.poll() is not None:
                     return True
-            elif _start_time(self._pid) is None:
+            elif _start_time(self._pid) != self._t:
                 return True
             time.sleep(0.1)
         return False

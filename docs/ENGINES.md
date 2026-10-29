@@ -92,6 +92,7 @@ Add a `provider.py` next to the YAML with `class Provider(provbase.GenericProvid
 - `model_id(entry)`, `can_run(entry)`, `need_gb(entry)`, `fit(entry, machine)`, `library_models()`, `model_folders()`: how library models map onto your engine.
 - `install(progress)`, `update_check()`, `update(progress)`, `update_status()`: keeping it current.
 - `activity()`, `owned_instance()`, `idle_minutes()`: so Zest can stop it when idle, and only if it started it.
+- `make_way()`: free memory for another engine. Defaults to `stop()`; return `(False, why)` when what holds the memory isn't Zest's.
 - `tune_plan()`, `tune_run()`: Advanced > Tuning.
 
 A step an engine can't do raises `NotImplementedError` and Zest shows it as unavailable. A `provider.py` runs inside Zest with your permissions, so Zest names that in the box you must allow.

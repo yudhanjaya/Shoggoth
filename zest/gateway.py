@@ -146,6 +146,11 @@ class Recorder:
         with self.lock:
             return sum(1 for r in self.items if r["state"] in ("waiting", "thinking", "answering"))
 
+    def models_in_flight(self):
+        """The models of requests an engine is working on now (sent on, and not finished)."""
+        with self.lock:
+            return {r["model"] for r in self.items if r.get("sent") and r["state"] in ("waiting", "thinking", "answering")}
+
     def activity(self):
         """Requests being written right now, with a rough speed. Characters stand in for tokens (about four to one),
         so the figure is marked as approximate wherever it is shown."""
@@ -164,6 +169,18 @@ class Recorder:
 
 
 REC = Recorder()
+
+
+def _provider_busy(pid):
+    """Is an app's request being answered by provider `pid`? The router asks before it stops an engine to make room."""
+    for model in REC.models_in_flight():
+        p, _ = router.resolve(model)
+        if p is not None and p.id == pid:
+            return True
+    return False
+
+
+router.busy_checks.append(_provider_busy)
 
 
 class Tap:
@@ -265,32 +282,33 @@ class Tap:
 
 # ---------------------------------------------------------------- forwarding
 def _route(path, body):
-    """Where a request should go: (host, port, key, path, body, error). Requests for a model another engine serves are sent there
+    """Where a request should go: (scheme, host, port, key, path, body, error). Requests for a model another engine serves are sent there
     (starting it, and freeing what would fight it, first); everything else goes to the default engine as it always did."""
     host, port = lem.target()
     key = lem.key()
     model, _ = describe(body)
     if not model or not INFER.match(norm(path)):
-        return host, port, key, path, body, None
+        return "http", host, port, key, path, body, None
     provider, mid = router.resolve(model)
     if provider is None or not router.known(model):
-        return host, port, key, path, body, None                      # not a chat model Zest knows: the default engine decides
+        return "http", host, port, key, path, body, None              # not a chat model Zest knows: the default engine decides
     try:
-        ep = router.activate(model)
+        ep = router.route(model)
     except provbase.ProviderError as e:
-        return host, port, key, path, body, str(e)
+        return "http", host, port, key, path, body, str(e)
     if provider is router.default_provider() or not ep.get("base_url"):
-        return host, port, key, path, body, None
+        return "http", host, port, key, path, body, None
     u = urlparse(ep["base_url"])
     p = norm(path)
     out_path = u.path.rstrip("/") + p[len("/v1"):] + (("?" + urlparse(path).query) if urlparse(path).query else "")
     try:
         o = json.loads(body)
-        o["model"] = mid                                              # the engine knows the model by its own name
+        o["model"] = ep.get("model") or mid                           # the engine knows the model by its own name
         body = json.dumps(o).encode()
     except (ValueError, TypeError):
         pass
-    return u.hostname, u.port, ep.get("key") or "", out_path, body, None
+    scheme = "https" if u.scheme == "https" else "http"
+    return scheme, u.hostname, u.port or (443 if scheme == "https" else 80), ep.get("key") or "", out_path, body, None
 
 
 def _models_for_apps(h):
@@ -308,7 +326,7 @@ def relay(h, method, path, body, rec=None, capture=False, merge_models=False):
     """Send the request to whichever engine serves the model and stream the answer back through handler `h`."""
     if merge_models and method == "GET" and re.match(r"^/v1/models/?$", norm(path)) and _models_for_apps(h):
         return
-    host, port, key, path, body, error = _route(path, body)
+    scheme, host, port, key, path, body, error = _route(path, body)
     if error:
         if rec:
             rec["error"] = error
@@ -317,16 +335,19 @@ def relay(h, method, path, body, rec=None, capture=False, merge_models=False):
     headers = {k: v for k, v in h.headers.items() if k.lower() in ("content-type", "accept")}
     if key:
         headers["Authorization"] = "Bearer " + key
-    conn = http.client.HTTPConnection(host, port, timeout=900)
+    conn = (http.client.HTTPSConnection if scheme == "https" else http.client.HTTPConnection)(host, port, timeout=900)
     tap = Tap(rec, capture) if rec else None
+    if rec:
+        rec["sent"] = True                     # from here the engine is working on it (the router won't stop it to make room)
     try:
         conn.request(method, path, body=body, headers=headers)
         resp = conn.getresponse()
-    except OSError as e:
+    except (OSError, http.client.HTTPException) as e:
+        who = "Lemonade" if (host, port) == lem.target() else "The model's engine"
         if rec:
-            rec["error"] = "Lemonade is unreachable"
+            rec["error"] = "%s is unreachable" % who
             tap.finish(502)
-        return h.send_json({"error": {"message": f"Lemonade is unreachable: {e}"}}, 502)
+        return h.send_json({"error": {"message": f"{who} is unreachable: {e}"}}, 502)
     h.send_response(resp.status)
     for name in ("Content-Type", "Cache-Control"):
         if resp.getheader(name):
