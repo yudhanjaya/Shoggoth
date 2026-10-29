@@ -19,7 +19,7 @@ import piup
 import store
 import strata
 
-REPO = "yudhanjaya/Zest"
+REPO = "yudhanjaya/Shoggoth"
 UPD = {"state": "idle", "bytes": 0, "total": 0, "version": None, "error": None, "path": None}
 ALL = {"state": "idle", "items": {}, "error": None}
 _lock = threading.Lock()

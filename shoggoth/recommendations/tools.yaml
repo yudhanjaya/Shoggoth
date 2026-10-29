@@ -101,7 +101,7 @@ tools:
     kind: engine
     take: >-
       The engine underneath most local AI. Shoggoth comes with a ready example: run
-      `providers new llama-server --from llama-server` and follow [the ten-minute guide](https://github.com/yudhanjaya/Zest/blob/main/docs/ENGINES.md).
+      `providers new llama-server --from llama-server` and follow [the ten-minute guide](https://github.com/yudhanjaya/Shoggoth/blob/main/docs/ENGINES.md).
     links: [{label: llama.cpp on GitHub, url: "https://github.com/ggml-org/llama.cpp"}]
     show: [engines]
 
