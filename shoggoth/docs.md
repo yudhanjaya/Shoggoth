@@ -54,14 +54,14 @@ The **Hardware** and **Server** pages use the same creatures, on a lab bench. Do
 
 ## Chatting
 
-Open **Chat** and type. The bar under the title shows which model will answer and whether it is in memory. Press **Load** to load it ahead of time, or just send a message and Shoggoth loads it first.
+Open **Chat** and type. The bar under the title shows which model will answer and whether it is in memory. Choose a model there to get it ready, or just send a message and Shoggoth loads it first.
 
 Models are loaded into your graphics memory (primarily) and your RAM.
 
-The first answer takes a little longer; subsequent answers arrive much faster. **Unload** frees your graphics memory. While the model works, a small strip under the reply shows what it is doing: reading your message, thinking, writing or using a tool. It also shows loading, and waiting for your OK, when those happen. A line in italics under the strip says the same thing in a more unsettling way. Its thinking appears above the reply and folds away when it is done.
+The first answer takes a little longer; subsequent answers arrive much faster. **Free memory** in the same bar frees your graphics memory. While the model works, a small strip under the reply shows what it is doing: reading your message, thinking, writing or using a tool. It also shows loading, and waiting for your OK, when those happen. A line in italics under the strip says the same thing in a more unsettling way. Its thinking appears above the reply and folds away when it is done.
 
 - Your conversations are listed on the left, with any jobs they started nested underneath. Click one to carry on where you left off, even after closing Shoggoth. To delete one, hover over it and press the cross.
-- Speed: the pill at the top shows how fast the model is writing, in tokens per second. You can think of tokens as being roughly analagous to words. Anything above about 5 is comfortable to read, but you should ideally run faster models.
+- Speed: the pill at the top shows how fast the model is writing, in tokens per second. You can think of tokens as being roughly analogous to words. Anything above about 5 is comfortable to read, but you should ideally run faster models.
 - How it thought: some models think before they answer. A small *How it thought* fold shows that thinking if you are curious.
 - Adding a note: if an answer is taking a while, you can type again. Your note is passed along when the AI is ready for it. Press **Stop** to cancel what it is doing.
 - The side panel (top right) has three tabs. **Jobs** shows background jobs, **Changes** shows what a job changed, and **Details** shows the folder, how careful it is, which model is answering, how full its memory is, and which skills are on.
@@ -171,7 +171,7 @@ Open **Library**. It lists every model on your computer, whichever program runs 
 
 - Will it fit? Shoggoth compares a model's size with the memory that is free on your graphics card right now, and marks it comfortable, snug or too big.
 - For working in a folder, pick a model that handles tools well. Look for tool-calling in its description. The recommended ones lean that way. Models that are very small can still chat well but often fumble tools.
-- Memory (the context window): this is how much the AI can keep in mind at once. Shoggoth sets a roomy 128k by default. Working in a folder can use a lot of it, because the AI reads files. The Details panel shows how full it is, with a **Make room** button that tidies the older part of the conversation. The context menu in the chat's model bar changes the size.
+- Memory (the context window): this is how much the AI can keep in mind at once. Shoggoth sets a roomy 128k by default. Working in a folder can use a lot of it, because the AI reads files. The Details panel shows how full it is, with a **Make room** button that tidies the older part of the conversation. The **Memory** menu in the chat's model bar changes the size.
 - **Settings for one model** (the **Settings** button on its card) let you change which devices it uses, backend options and more. The defaults are fine for nearly everyone. Chat always loads a model with the context size in its model bar.
 
 ## Large models
@@ -182,7 +182,7 @@ Some models are far too big for a graphics card. Shoggoth can still run them, by
 - **Memory is shared.** Only one big model runs at a time. When you pick a Large model, Shoggoth frees whatever else was running first. Before it starts, Shoggoth checks there is enough free memory and, if not, says how much is missing and which programs are using the most (with a **Start anyway** button). Picking a smaller model later frees the big one again, unless it is answering right now.
 - **It frees itself.** A large model Shoggoth started is stopped after 20 idle minutes, and the next chat starts it again. Change this under **Memory** in **Settings**, or set 0 to keep it ready.
 - **Updates come with everything else.** **Check and update everything** in Settings includes the large-model program. If the one Shoggoth started is running, Shoggoth stops it, updates it and starts it again when a chat needs it.
-- **If you already run one yourself.** If you have already installed that program, or already have a big model running (started in a terminal, by its own app, or by hand), Shoggoth finds it and lists those models in the Library with no setup. Shoggoth never stops, restarts or updates one you started yourself, and won't start a second big model beside it. It has a **Stop** button (with a confirmation) only when you ask for one.
+- **If you already run one yourself.** If you have already installed that program, or already have a big model running (started in a terminal, by its own app, or by hand), Shoggoth finds it and lists those models in the Library with no setup. When it has been idle, it frees its model's memory; Shoggoth keeps listing the model, and your next message wakes it. Shoggoth never stops, restarts or updates one you started yourself, and won't start a second big model beside it. It has a **Stop** button (with a confirmation) only when you ask for one.
 
 The program is [Strata](https://github.com/Niko1221/Strata). Its saved setups, a way to connect to one on another computer, and its installer are all under **Advanced > Engines**.
 
@@ -226,7 +226,7 @@ Shoggoth goes online only to: download models you ask for, check for Shoggoth, e
 
 **The answer never starts, or it is very slow.** The model may still be loading, or it may be too big for your graphics card. Close games and other heavy programs, or pick a smaller model in the **Library**.
 
-**The model seems to have very little memory.** Look at the bar under the chat's title: it shows how much context the model has. Pick 128k from the context menu there and Shoggoth reloads the model, which takes a moment.
+**The model seems to have very little memory.** Look at the bar under the chat's title: it shows how much context the model has. Pick 128k from the **Memory** menu there and Shoggoth reloads the model, which takes a moment.
 
 **It printed something that looks like code instead of doing the task.** The model did not manage to use its tools. Try asking again more simply, or switch to a stronger model in the Details panel.
 
