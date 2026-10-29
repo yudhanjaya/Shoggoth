@@ -2,7 +2,7 @@
 
 Zest becomes **Shoggoth**. Each model gets a procedurally grown creature (a voxel "host"), and the app shows what models do through pictures of physical things. The model sits in a glass module on the chat header. The Machine is a drawer of slots. The Hardware and Server pages become lab benches. Chat steps get drawn glyphs and Lovecraftian flavour text, the type changes to Doto, Inter and JetBrains Mono, and everything is restyled in a Braun / Teenage Engineering manner from the theme's own colours.
 
-This document is the spec. Everything in it is decided unless section 14 says otherwise.
+This document is the spec. Everything in it is decided unless section 14 says otherwise. **Status: built** on the `shoggoth` branch (PR "Shoggoth"); what remains is the docs rewrite with new screenshots, the repository rename, and the AppImage and AUR release.
 
 **How to use it.** Read section 0 first. The clickable reference is `docs/plans/prototypes/host.html`. Open it in a browser; it uses mock data. Its "Prototype controls" panel (bottom left) holds the options considered; each one marked "(chosen)" and every default is what this spec describes. Where the prototype and this text disagree, the text wins. Ready-made assets are in `docs/plans/assets/` (section 13).
 
