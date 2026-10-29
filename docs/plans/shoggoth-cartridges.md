@@ -1,233 +1,280 @@
-# Plan: the host and its cartridges
+# Shoggoth: build spec
 
-A visual layer that explains what Zest does with models: each model is a procedurally grown creature (a "shoggoth", called **the host** in the app), each model file is a **cartridge**, and loading a model is pushing a cartridge into a picture of your computer. It is a layer **over** today's chat and Server pages. It does not replace them, and nothing changes for anyone who leaves it off.
+Zest becomes **Shoggoth**. Each model gets a procedurally grown creature (a voxel "host"), and the app shows what models do through pictures of physical things. The model sits in a glass module on the chat header. The Machine is a drawer of slots. The Hardware and Server pages become lab benches. Chat steps get drawn glyphs and Lovecraftian flavour text, the type changes to Doto, Inter and JetBrains Mono, and everything is restyled in a Braun / Teenage Engineering manner from the theme's own colours.
 
-Status: **a plan for review, with a clickable prototype. Nothing in the app is built.** Section 10 lists what's decided and what's still open.
+This document is the spec. Everything in it is decided unless section 14 says otherwise.
 
-Prototype: open `docs/plans/prototypes/host.html` in a browser. It uses mock data and doesn't talk to Zest. Its controls (bottom left) switch the layer on and off, move the chat picture, open the Machine as a drawer or a page, change the theme, turn on reduced motion, and set up the situations Zest refuses (a busy engine, a model you started yourself). `creature.js` next to it is the voxel generator with the three changes in section 5.
+**How to use it.** Read section 0 first. The clickable reference is `docs/plans/prototypes/host.html`. Open it in a browser; it uses mock data. Its "Prototype controls" panel (bottom left) holds the options considered; each one marked "(chosen)" and every default is what this spec describes. Where the prototype and this text disagree, the text wins. Ready-made assets are in `docs/plans/assets/` (section 13).
 
-**Words:** the app is renamed **Shoggoth** (section 11). Inside it, the picture layer still uses plain words: model, slot, Load, Unload. "Host" and "cartridge" stay this plan's working names and never appear in the app.
+---
 
-Sources: the concept plates in `Zest Table.pdf`; `Claude outputs/DESIGN.md` and `zest-table-design.zip` (the earlier full-redesign handoff, with a deterministic generator in `tools/creature-generate.js`); ui-ux-pro-max guidance (reduced motion, motion budget, loading feedback, state not colour alone, accessible names). The skill's design-system output (a dark OLED documentation style) was ignored: it fights Zest's warm light themes and DESIGN.md's light-only rule.
+## 0. Build brief
 
-## 1. Why this, and why loading first
+**Where.** Work on the `shoggoth` branch. It already has the wording cleanup (`0336a9e`) and this plan with the prototype and assets. Commit after each stage below, with a clear message ending in the attribution line the session asks for. **Don't push or open a PR until the user says so.** The user files it as one PR, unless they ask for a split.
 
-Loading is the most confusing moment in Zest today. People wait without knowing why. They don't see that picking a Strata model stops Lemonade's, that one big model takes the whole machine, or that "Free memory" means anything. The router already knows all of this (`router.STATE`, `make_room`, the `zest_loading_step` messages). It just has nowhere visual to say it. A machine with bays and cartridges shows these rules plainly:
+**Order of work.** Each stage leaves the app working and the tests green:
+
+1. **Rename** Zest to Shoggoth, with the fallbacks in section 9. This is mechanical and touches nearly every file, so do it first and alone.
+2. **Type, glyphs and flavour:** embed the fonts (section 8), swap emoji for glyphs (section 7), and add the flavour loader and chat lines (section 7).
+3. **Creature module:** port the generator, add the picker fields and the per-machine creature store, and make a hidden `#specimens` page (section 5).
+4. **Chat header module** and the first-run note and Settings switch (sections 3A and 3E).
+5. **The Machine drawer** (section 3B).
+6. **Hardware bench** (section 3C), including the per-card model data (section 4).
+7. **Server bench and log screen** (section 3D).
+8. **Packaging:** the icon, desktop file and AppImage name (section 9). Then a reduced-motion, keyboard and theme pass, and README screenshots.
+
+**Constraints the codebase already follows. Keep them.**
+- **Server:** stdlib Python only. YAML is read through `zest/_vendor` (the folder becomes `shoggoth/_vendor`). No new runtime dependencies.
+- **Front end:** one file, `index.html`. No frameworks and no CDN: nothing loads from the internet. Fonts are embedded as base64 `woff2` `@font-face` rules, like today.
+- **Colours:** every colour comes from theme tokens (`--surface`, `--surface-2`, `--line`, `--text`, `--muted`, `--faint`, `--lemon`, `--lemon-text`, `--leaf`, `--warn`, `--bad`, `--steel`, `--hi`, `--sh`, `--edge`, `--well`), except the creature's own palette, the icon, and the dark mainframes (section 6).
+- **Plain words:** short, crisp sentences in all UI text. Buttons say Load and Unload; an engine is a slot. "Host" and "cartridge" are this spec's working names and never appear in the UI. "Shoggoth" is the app's name.
+- **The layer mirrors the app.** Every action is an existing action (Load = the picker's load, Unload = Free memory). Pictures show the router's real state and never run ahead of the server.
+- **No new polling.** Reuse `tick()` (every 2.5 s: `pollGpu`, `pollServer`), the Server page's own poll, and the chat stream events.
+- **Stream events:** the `zest_loading`, `zest_loading_step` and `zest_loaded` event names are a wire format that other apps can receive, so they keep their names.
+
+**Tests that must pass:**
+```bash
+python3 -m unittest discover tests
+```
+```bash
+cd tests/ui && node smoke.js && node --test gate.test.mjs
+```
+Add the tests listed in section 11.
+
+**Done means:**
+- Every stage is built and committed, and all tests pass, including the new ones.
+- The prototype's chosen look matches the app in Light Touch, Braun T3, Teenage Engineering and one dark theme.
+- Reduced motion and keyboard-only use both work.
+- An existing Zest install upgrades without losing settings, models or chats.
+
+**File map:**
+
+| Area | Files |
+| --- | --- |
+| UI, all pages | `zest/index.html` |
+| Model picker data | `zest/library.py` (`picker()`) |
+| Settings store | `zest/store.py` |
+| Loads, unloads, ownership | `zest/router.py`, `zest/providers/*` |
+| GPU numbers | `zest/hardware.py` (`all_gpus()`), `/ui/gpu` in `zest/server.py` |
+| Requests for the Server page | `zest/gateway.py` (`Recorder`), `/ui/server` |
+| Recommendations-style YAML loader | `zest/recs.py`, `zest/recommendations/` |
+| Packaging | `packaging/` (AppRun, `build-appimage.sh`, `zest.desktop`, `zest.svg`/`.png`, `aur/`) |
+| In-app guide | `zest/docs.md` |
+| Reference | `docs/plans/prototypes/host.html`, `creature.js`; `docs/plans/assets/` |
+
+---
+
+## 1. Why
+
+Loading is the most confusing moment in the app. People wait without knowing why. They don't see that a Strata model stops Lemonade's, that a big model takes the whole machine, or that "Free memory" means anything. The router already knows all of this (`router.STATE`, `make_room`, the loading step lines). The pictures give it somewhere to show:
 
 | What is true | What you see |
 | --- | --- |
-| A model file on disk | A cartridge on the shelf, labelled with name, size and quant. Its coloured edge is the host's skin tone. |
-| A model in memory | The cartridge seated in a bay, and its host awake at the table. |
-| Loading (seconds for Lemonade, minutes for Strata) | The cartridge slides in, the host's eyes stay shut, and the bay's LCD prints the router's real step lines. |
-| Making room (`make_room` stops another engine) | The other cartridge ejects first, then the new one goes in. |
-| Something is answering, so Zest won't stop it | The busy cartridge's lamp is lit and the new cartridge waits beside the slot, with the router's sentence: "Strata is answering right now…" |
-| Graphics memory and RAM | The bay's fill gauge, from `/ui/gpu` and the machine's RAM. |
-| Engines | Bays. Lemonade is the small fast bay. Strata is the big bay that spans the graphics card, RAM and SSD (drawn as three stacked trays). |
-| An app using a model through the Server | A glass on the bench, fed by a tube from the host, that fills while the app is answered. |
-| Context window, quant, reasoning, vision, tool calling | Eyes, skin grain, an exposed brain, a lens, hands holding pens (the "model card, drawn" plate). |
+| A model in memory | Its creature in the glass module on the chat header, and seated in its engine's slot in the Machine |
+| Loading | The creature's eyes stay shut, and the slot's status line prints the router's real steps (with elapsed time for Strata) |
+| Making room | The other model leaves its slot first, then the new one goes in |
+| Something is answering, so the app won't stop it | The load waits beside the slot with the router's sentence |
+| Graphics memory, heat, compute | The Hardware bench: a memory beaker, a heat gauge, a coil and a radio, with one mainframe per card |
+| An app using a model through the Server | A flask on the Server bench that bubbles while thinking and fills while writing |
+| The model card | The creature itself: eyes for context, skin grain for quant, a brain for reasoning, a lens for vision, hands for tools, size for parameters |
 
 ## 2. Principles
 
-1. **Additive, with an off switch.** One switch: **Settings › Look › Show model pictures**, on by default since decision 10, with a one-time note in chat saying where to turn it off. When it is off, the page's markup and behaviour are exactly today's. The UI smoke test runs both ways to prove it.
-2. **A mirror, never a second controller.** Every action in the layer is an existing action: Load calls the same load as the chat model picker, Unload the same "Free memory", and so on. It shows the router's real state and never makes up its own: no success animation before the server confirms, no eject before the engine reports it stopped.
-3. **Plain words only (decided).** The metaphor is visual. Buttons say Load and Unload; an engine is a slot. Every anatomy part has a plain caption ("8 eyes: remembers about 128K tokens of a conversation"). No "host" or "cartridge" anywhere in the app. (The app's own name is now Shoggoth; see section 11.)
-4. **Warm, matte, a little uncanny; never cute, never horror.** The host never moves its mouth, only its eyes (the "four moods" plate). No gore, no jump scares.
-5. **Works with every theme.** The creature's own palette is fixed. Everything around it (the module, cables, instruments, panels, LCDs and slots) uses the theme's colour tokens (`--surface`, `--surface-2`, `--line`, `--text`, `--muted`, `--hi`), so it reads in Light Touch, Braun T3, Teenage Engineering and the dark palettes. In the Teenage Engineering theme, `--line` is black, which gives its hard outlines for free.
-6. **Braun and Teenage Engineering, not steampunk.** Matte housings, generous corner radii, perforated speaker grilles, a recessed socket, small screws, clean round gauges and mono uppercase labels with numbered chips (01, 02…). No wood, brass or copper. The theme's accent (`--lemon`) is used sparingly, as Braun uses its yellow second hand: gauge needles, the memory liquid, plug collars, a key on the module, and the arcs.
+1. **On by default, with an off switch.** Settings › Look › **Show model pictures** is on for new and existing installs. A one-time note in chat says where to turn it off (section 3E). With it off, the app looks as it did, but with the new name, type and glyphs.
+2. **A mirror, never a second controller** (section 0).
+3. **Plain words** (section 0). Every creature part has a plain caption: "9 eyes: remembers about 256K tokens of a conversation".
+4. **Uncanny, never gory.** The creature never moves its mouth, only its eyes. There are no jump scares. The flavour text can be dark, but never gory.
+5. **Colours from the theme** (section 0), with three exceptions: the creature, the icon and the mainframes.
+6. **Braun and Teenage Engineering, not steampunk.** Matte housings, generous radii, perforated grilles, recessed sockets, small screws, clean round gauges, mono labels with numbered chips (01, 02…). There's no wood, brass or copper. The accent (`--lemon`) is used sparingly, like Braun's yellow second hand.
+7. **One light, from the top left.** Housings are lit along the top and shaded along the bottom. Objects cast soft contact shadows on the surface they stand on.
 
-## 3. The three surfaces
+## 3. Surfaces
 
-### A. The host beside the chat (small, always optional)
-- **New option (prototype default): a tube on the header.** The picture sits in a glass tube on a circuit board, on the header row next to the page title ("Chat"). A cable runs from the module's socket down into a plug on the model picker, right above the model's name.
-  - Drawn as a Braun/TE module: a glass window between matte, grooved end caps, sitting on a base plate with a speaker grille, an LED, a small accent key, "MODEL / BAY 01" in mono, and a recessed socket. The cable is one round lead in the text colour with an accent collar at the plug.
-  - The header grows from 68 to 112 px while this placement is on (you approved a taller header), which makes room for a tube about 300 by 98 px.
-  - The board's LED and the status word next to the tube show the mood. Bubbles rise in the tube while the model thinks or writes, and a signal runs along the harness while it loads or writes. All of this is off under reduced motion.
-  - The harness is drawn from the real positions of the board and the picker, so it follows the name when the model changes. Below 900 px wide the tube and harness are hidden.
-- A portrait of about 112 px beside the chat and Cowork model bar. It sits in a slot reserved in the header, so the message column never moves (no layout shift).
-- Moods come from the real request lifecycle that the page already receives:
-  - `idle`: listening.
-  - `thinking`: sent, before the first token, and during reasoning tokens.
-  - `answering`: tokens streaming.
-  - `loading`: between `zest_loading` and `zest_loaded`.
-  - `working`: Cowork running a tool.
-- A lamp with a word next to it mirrors the mood (LISTEN, THINK, SPEAK, WORK), so the state never relies on colour or motion alone.
-- Clicking the portrait (a real `<button>`) opens the Machine.
-- Below 768 px wide it collapses to the lamp and word.
+### A. The chat header module
+- **Where:** a glass module on the header row, right of the page title ("Chat"), about 96 px from it. It's an SVG of about 300 × 98 px. The header grows from 68 to **112 px** while pictures are on. The model bar below keeps its height.
+- **Look** (the prototype's `tubeSVG`):
+  - A rounded glass window holds the creature, tinted with its colour.
+  - The window sits between two matte, grooved end caps, on short posts.
+  - Under it is a base plate with two screws, "MODEL / BAY 01" in mono, a small accent key, a status LED with a soft glow, a perforated grille, and a recessed socket at the bottom left.
+- **Cable:** one round lead in `--text`, from the socket down to a plug sitting on the model picker's top edge, right above the model's name, with an accent collar.
+  - It's drawn in an absolutely positioned SVG over the header and model bar, from the real positions of the socket and the name.
+  - It's redrawn when the model or window size changes.
+- **Moods** come from events the page already receives:
 
-### B. The Machine (where cartridges are swapped)
-- A drawer over the chat (a modal `<dialog>` from the right), opened from the picture or from a new "Open the machine" link at the bottom of the model picker. Closing it returns focus to where you were.
-- **The cabinet:** one bay per engine, from `/ui/providers` and `/ui/router`, each with a fill gauge for memory and an LCD line.
-  - Lemonade's bay can hold `max_loaded` cartridges.
-  - Strata's bay is the tall one with three trays.
-- **The shelf:** your cartridges, from `/ui/picker`: downloaded models, grouped Small, Medium and Large, each with its fit note ("Close other big programs first").
-  - Recommended but not downloaded models (from `models.yaml`) sit on the shelf greyed out, with **Get n GB**.
-- **Load:** press the model's Load button, or drag it into a slot (drag is an extra, never the only way, per WCAG 2.5.7).
-  - The cartridge animates in only after the load request is accepted.
-  - The LCD prints the router's step text, then the host wakes.
-  - Strata's wait is long, so the LCD shows the elapsed time and "You can keep chatting with another model meanwhile" where that's true.
-- **Unload:** the same as Free memory. A model Zest didn't load (yours) has no Unload. It says "Started by you" instead, matching the router's ownership rules.
-- **Refusals** are shown, not hidden: a busy engine, a tune in progress (`router.holds`), not enough memory. Each shows the server's sentence and the cartridge stays on the shelf.
+| Mood | When | LED and status word |
+| --- | --- | --- |
+| `idle` | ready | `--leaf`, READY |
+| `thinking` | sent, before the first token, and during reasoning | `--lemon`, THINKING |
+| `answering` | answer tokens streaming | `--lemon`, WRITING |
+| `loading` | `zest_loading` to `zest_loaded`, or `/ui/router` says a load is running | `--warn`, LOADING |
+| `working` | Cowork running a tool | `--lemon-text`, USING A TOOL |
+| `none` | no model loaded | `--steel`, NO MODEL |
 
-### C. The bench on the Server page (an extra strip, the list stays)
-- With the layer on, a strip above the existing requests list shows one glass per app that is being answered now, from the gateway snapshot `srvPaint()` already polls.
-  - Pale bubbles while it thinks, lemon fill while it writes, empty when idle.
-  - The app's name and state word sit under each glass.
-- The connect panel, request list and log are untouched. The strip is decorative with one `aria-label`; the list stays the accessible source of truth.
+- **Motion:**
+  - **Bubbles:** they rise in the glass while thinking, answering or working.
+  - **Cable signal:** a dashed accent line runs along the cable while loading or answering.
+  - **Creature:** it breathes, blinks and glances, and shuts its eyes while loading (the generator's CSS).
+- **Click** (it's a real `<button>`): opens the Machine drawer. Its accessible name is "Open the machine. Picture of <model>: <parts>."
+- **Below 900 px wide:** the module and cable are hidden, and the header goes back to 68 px.
+- **Page titles:** Doto at 52 px weight 900 on every page (section 8), so the title balances the module.
 
-### D. The Hardware page: the model wired into an apparatus
-- With the layer on, a bench sits above the Hardware page's existing numbers, which stay unchanged and remain the accessible record. It is driven only by what `/ui/gpu` already reports per card (memory, utilisation, temperature, power), at the page's existing poll rate. It handles 1 to 4 graphics cards.
-  - **Back row, one mainframe per card:**
-    - Each shows "GPU n" and the card's name, plus a memory bar with that card's memory and temperature.
-    - A bank of lamps lights in proportion to the card's compute, flickering while it works.
-    - Two tape reels spin faster as the card works harder and stop when it idles.
-    - The cabinets share the width, up to 200 px each. They stand on a dark raised platform, a slab with a vented front on short feet, which rests on a faint floor line at the back of the room with a soft shadow. Each cabinet has a recessed kick plate where it meets the platform.
-    - **The cabinets are dark in every theme** (near-black matte housings, dark lamp panels, light lettering). Only the lit lamps and the memory bar take the theme's accent. This is what separates back from front on light themes, where pale cabinets and pale instruments ran together. It is the one exception to principle 5's "everything from the theme".
-  - **A pane of tinted glass** sits between the back row and the instruments: a dark veil (`--veil`, 12 % on light themes, 42 % on dark ones), a faint diagonal sheen, and a highlight along its top edge.
-  - **01 Model:** the loaded model in a fat glass beaker, drawn large so the creature is easy to see. It sits on a plinth that shows the name, size and engine, with a cable from the plinth's socket to the memory beaker.
-  - **02 Graphics memory:** a graduated beaker for all cards together, with a 0–100 % scale printed on the glass (ticks every 5 %, numbers every 25 %). Its foot reads "22.2 / 48 GB". It fills with the accent colour and bubbles harder as compute rises.
-  - **03 Heat:** a round gauge on a stem showing the hottest card, 20 to 100 °C, with a thin red arc from 85 °C and an accent needle.
+### B. The Machine drawer
+- **Opening and closing:**
+  - A modal `<dialog>` slides in from the right, `min(760px, 100vw)` wide.
+  - It opens from the header module, and from a new "Open the machine" link at the bottom of the model picker.
+  - Esc and Close shut it, and focus returns to the model picker.
+- **This computer:** a matte case listing the graphics card(s), RAM and SSD. It holds **one slot per engine**, from `/ui/providers` and `/ui/router`.
+  - **Lemonade:** "Fast. Holds one model at a time." (Or `max_loaded` models, from Lemonade's settings.)
+  - **Strata:** "For very large models. Uses the whole machine: graphics card, RAM and SSD." Three trays show how its model is split across graphics card, RAM and SSD.
+  - Each slot has a dark status display (the router's lines, newest last, the older ones dimmed), a recessed bay holding the seated model, and a memory gauge with numbers.
+- **Seated model:** a strip with its creature (cropped), name, size and quant, a "Chat uses this" tag on the active one, and **Unload**.
+  - A model the app didn't load says "Started by you" and has no Unload ("Shoggoth didn't load this, so it won't unload it."). This matches the router's ownership rules.
+- **Your models shelf:** cartridge-shaped cards (a notch on top and a coloured strip in the creature's tone), grouped Small, Medium and Large.
+  - Each card shows the creature, name, size, quant and engine, a fit note ("Close other big programs first", "Takes about 2 minutes to start"), and **Load**.
+  - Recommended models you haven't downloaded (from `models.yaml`) sit greyed out with **Get N GB**, which does the same as the Library's Get.
+- **Loading:**
+  - Press Load. Dragging a card into its engine's slot does the same, but is never the only way.
+  - The card slides into the slot only after the server accepts the request.
+  - The status line prints the router's step text. Strata steps add the elapsed seconds.
+  - Making room shows "Unloading <model> to make room" and the other slot's "Unloaded <model> to make room for <model>".
+  - One `aria-live` line announces "<model> is ready."
+- **Refusals stay visible:** a busy engine, a tune running (`router.holds`), or a model you started.
+  - A warning box beside the slot gives the router's sentence, with **Try again** and **Dismiss**.
+  - Example: "Strata is answering opencode right now, so Shoggoth won't stop it. Try again when it finishes."
+
+### C. The Hardware page: the lab bench
+- **Placement:** with pictures on, a bench sits above the page's existing numbers, which stay as they are and remain what screen readers use.
+  - The intro reads: "Each machine at the back is one graphics card. Its lights show how hard it's working. The beaker shows memory used across all your cards. The gauge shows the hottest card. The coil sparks as the cards work harder, and the radio has a meter for each one."
+  - The bench is one SVG, viewBox about 1000 × 536. It handles **1 to 4 cards**.
+- **Back row, one mainframe per card:**
+  - **Size and placement:** each cabinet is up to 200 px wide, sharing the row. They stand on a dark raised platform (a vented slab on short feet), which rests on a faint floor line at the back with a soft shadow.
+  - **Colour:** the cabinets are **dark in every theme**: near-black matte, dark panels, light lettering. Only lit lamps and the memory bar take the accent. This is what separates back from front on light themes.
+  - **Top screen:** "GPU n" and the card's name, then "MODEL ON THIS CARD", the model's name, and "N GB HERE" (from the per-card model data, section 4).
+  - **Below it:** a memory bar with "MEM used/total GB · temp °C".
+  - **Lamps:** a 5-row bank lit in proportion to the card's use, flickering while it works.
+  - **Tape reels:** they spin faster with use and stop when idle.
+  - **Cables:** strung between neighbouring cabinets, and a bundle drops from the platform to the floor.
+- **Tinted glass:** a pane between the back row and the bench. It's a `--veil` fill (12 % dark on light themes, 42 % on dark ones), with a faint diagonal sheen and a highlight on its top edge.
+- **The table:** a top surface and a front edge, from theme tokens. Every object casts a soft contact shadow. The front edge carries the numbered label row.
+- **Instruments:**
+  - **01 Model:** the active model in a fat glass beaker, drawn large (about 190 px).
+    - The beaker is half-filled with liquid in the creature's tint.
+    - It has an electrode, wall thickness, a rolled lip, enamel 100–400 ml marks, and a heavier base.
+    - It stands on a plinth reading "<MODEL NAME>" and "<size> GB · <ENGINE>", with a socket.
+  - **02 Memory:** a graduated beaker for all cards together, with **0–100 % printed on the glass** (ticks every 5 %, numbers every 25 %, a "%" mark).
+    - It fills with the accent colour and has a curved surface (meniscus).
+    - Bubbles rise faster with compute.
+    - Its foot reads "used / total GB".
+  - **03 Heat:** a round gauge for the **hottest card**, 20–100 °C, with a red arc from 85 °C.
+    - It has a chamfered bezel, a recessed face, a glass dome with a crescent highlight, and an accent needle with a soft shadow.
+    - It sits on a stem with a collar, on a foot.
   - **04 Compute:**
-    - A coil on a perforated base for overall compute: more and longer arcs as it rises, and above about 80 % an arc jumps to the radio's aerial.
-    - A pocket radio with one needle meter per card (numbered 1 to 4), a signal light that brightens with overall compute, and sparks at its aerial.
-  - A numbered label row on the table's front edge gives each instrument's live value.
-- **Wiring, as a hobbyist would do it.** This is where the mad science comes in: neat, well-made instruments joined up a little haphazardly. Every wire uses a theme colour (`--bad`, `--text`, `--lemon`, `--lemon-text`, `--leaf`, `--muted`), with a thin highlight so it reads as insulated lead.
-  - Electrodes stand in both beakers. Crocodile clips on their tops lead off in a long red loop from the model's beaker to the memory beaker's probe, and a black lead drops to a breadboard.
-  - **The breadboard:** sits on the table between the memory beaker and the gauge, with a chip, a resistor, jumper wires, and an LED that flickers with compute.
-  - **The other leads:** a yellow lead wound round the gauge's stem, a blue lead to the coil's base, a red and black pair with banana plugs into the radio's side, and a grey lead back along the table.
-  - **Loose ends:** tape strips holding cables down, and a green lead hanging off the table's front edge with a stripped copper end.
-  - **At the back:** cables are strung between neighbouring mainframes, and a bundle drops off their platform to the floor.
-  - **Layering:** wires on the table are drawn behind the instruments, so they show through the glass. The clips, plugs, tape and the hanging lead are drawn in front.
-- **Skeuomorphic detail.** One light source, from the top left, and still every colour from the theme:
-  - **The table:** everything stands on a tabletop with a lit front edge, and each object casts a soft contact shadow. Housings are lit along the top and shaded along the bottom.
-  - **The glass:** wall thickness (a second, inner outline), a heavier base, a curved liquid surface with a meniscus, a rolled lip, specular streaks, and scales printed in enamel. Printed marks carry a thin halo in the surface colour, so they read over liquid, glass or a dark cabinet behind.
-  - **The gauge:** a chamfered bezel, a recessed face, a glass dome with a crescent highlight, a needle with a soft shadow, and a collar on its stem.
-  - **The coil:** a true torus with its hole, a rounded and shaded winding, and a primary ring at its base.
-  - **The radio:**
-    - Grille holes that are recessed, with a lit lower edge.
-    - Meter windows set in, each behind its own glass, with needles that cast a shadow.
-    - A signal lamp with a lens and a knurled knob.
-    - A telescopic aerial on a swivel.
-- Under reduced motion the reels stop and the bubbles stop. The lamps light in order instead of flickering, and the arcs are redrawn only when compute changes by about 10 %.
-- In the prototype a model is split across the cards in proportion to their memory, as llama.cpp does by default. The real page reads each card's own numbers.
+    - **The coil:** a perforated base, a shaded winding, a primary ring and a torus top. Arcs grow in number and length with average compute. Above about 80 % an arc jumps to the radio's aerial.
+    - **The radio:** a Braun T3-style pocket radio with a recessed hole grille, **one needle meter per card** (numbered, each behind its own glass), a signal lamp that brightens with compute, a knurled knob, and a telescopic aerial that sparks.
+  - **Label row:** `01 MODEL <n> cards`, `02 MEMORY <n>%`, `03 HEAT <n>°C`, `04 COMPUTE <n>%`.
+- **Wiring, as a hobbyist would:** neat instruments, joined up a little haphazardly, in theme colours (`--bad`, `--text`, `--lemon`, `--lemon-text`, `--leaf`, `--muted`), each with a thin highlight.
+  - **Probes:** electrodes stand in both beakers, with crocodile clips.
+    - A long red loop runs from the model beaker's probe to the memory beaker's probe.
+    - A black lead drops to a breadboard.
+  - **Breadboard:** between the memory beaker and the gauge, with a chip, a resistor, jumpers, and an LED that flickers with compute.
+  - **Other leads:**
+    - A yellow lead is wound around the gauge stem and runs on to the coil base.
+    - A blue lead runs from the breadboard to the coil.
+    - A red and black pair with banana plugs goes into the radio's side.
+    - A grey lead runs back along the table.
+  - **Loose ends:** tape strips, and a green lead hanging off the table's front edge with a stripped copper end.
+  - **Layering:** table wires are drawn behind the instruments, so they show through the glass. Clips, plugs, tape and the hanging lead are drawn in front.
+- **Text on the bench** is Doto weight 900 (section 8).
+- **The data:**
+  - **Per card:** `/ui/gpu` gives memory, use, temperature and power at the existing 2.5 s tick. Ease toward new values between polls, using CSS transitions or a light `requestAnimationFrame` ease, while the page is visible.
+  - **Arcs:** redraw them while the page is visible, at most about every 110 ms.
 
-**Later:** host portraits on Library cards (lazy, only cards on screen, greyed when not downloaded).
+### D. The Server page: lab bench and log screen
+- **Bench strip** above the request list, with pictures on.
+  - On a short table, the active model sits in a small beaker on the left.
+  - It's cabled to **one Erlenmeyer flask per app** that's being answered now, or was in the last few seconds.
+  - **What each flask shows:**
+    - It bubbles while the request is `thinking`.
+    - It fills, and its cable carries a flowing signal, while the request is `answering`.
+    - It stays full briefly after `done`, then drains.
+  - A numbered plate on the table's front gives each app's name and state ("01 OPENCODE / WRITING").
+  - The data is the gateway snapshot `/ui/server` already returns: per request `app`, `model`, `state` (`waiting`, `thinking`, `answering`, `done`, `error`), `t0`, `t_think`, `t_write`, `t_end`, `tokens_out`.
+- **Log screen** (new): a dark recessed panel above the request list, in Doto. The header reads "LOG" with a line count. It shows the newest 9 lines:
+  - start-up lines (grey), such as "shoggoth started on 127.0.0.1:13305 · gateway on /v1";
+  - "<app> → POST <path> · <model>" when a request arrives (light);
+  - "<app> · <model> thinking for N s, first token" on the first token (grey);
+  - "<app> ← 200 · N tokens in N s · N tok/s" when done (accent), or the error in `--bad`.
 
-## 4. Data: almost all of it exists already
+  Derive these on the client from state changes between polls of `/ui/server`. No new endpoint is needed. Start-up lines come from data the page already has (the version, port and engine states).
+- **The request list:** stays as it is, set in Doto, and remains the accessible record.
 
-| Needed | From |
+### E. First run and the switch
+- **Settings › Look › Show model pictures:** a switch, on by default. The description reads "Draws each model as a creature, beside the chat, in the Machine, and on the Server and Hardware pages. Turn it off for the plain look."
+  - It's stored in browser storage as `shoggoth.pictures` (default `true`), like the theme.
+- **One-time note:** at the top of the chat, "Model pictures are on. Turn them off in Settings › Look". It has a link, and a × that dismisses it for good (`shoggoth.picturesNoted`).
+
+### F. Specimens (developer page)
+- **What it is:** a hidden `#specimens` page, like the prototype's Example pictures.
+  - It shows every installed and recommended model's creature, with a live stage, mood buttons, the Q2/Q4/Q8 comparison and the part captions.
+  - It's useful for checking the generator, and is not linked from the rail.
+
+**Later, not in this build:** creature portraits on Library cards (lazy, only cards on screen, greyed when not downloaded).
+
+## 4. Data and server work
+
+| Needed | How |
 | --- | --- |
-| Model card (name, ctx, vision, tools, reasoning, size, live, engine, tier, fit) | `/ui/picker` (already has these). |
-| Quant and parameter count | **Add two fields to `library.picker()`**: `quant` (the catalog has it) and `params` (parsed from the name: `4B`, `0.6B`, `8x7B`; else estimated from size and quant, snapped to common sizes, as DESIGN.md 8.5 says). |
-| Loading state and steps | Chat stream events `zest_loading`, `zest_loading_step`, `zest_loaded`; `/ui/router` `state` for loads started elsewhere. |
-| Memory | `/ui/gpu` (per-GPU VRAM), `/ui/library` machine RAM. |
-| Apps being answered | The gateway snapshot the Server page polls. |
-| Which body each model gets | **Small store addition**: a per-machine archetype assignment, so five installed models show five different body forms and deleting one never changes the others (DESIGN.md 8.5, item 4). |
-| The switch | `store` (so the AppImage window remembers it), read once at boot. |
-
-No new polling while the layer is off. While it is on, it reuses the existing polls (`pollServer`, the picker, the Server timer) and adds no timers of its own. Motion is CSS.
+| Model card | `/ui/picker` already has `id`, `title`, `ctx`, `vision`, `tools`, `reasoning`, `size_gb`, `engine`, `tier`, `live`, `fit`. |
+| **Quant, parameters, lineage** | Add three fields to `library.picker()`. **`quant`:** from the file name or catalog (`Q4_K_M`, `IQ3_S`, `Q8_0`); default `Q4_K_M`. **`params`:** billions, parsed from the name (`35B`, `0.6B`, `8x7B` → 56); otherwise estimated from size and quant, snapped to common sizes. **`lineage`:** the Hugging Face `org/repo` with the quant and `GGUF` stripped; otherwise the model id. Q4 and Q8 of one model share a lineage, so they share a body. |
+| **Creature per model** | A per-machine store in `store.py` settings: `creatures: {lineage: {form, tone}}`. On first sight of a lineage, take the hash's form (`hashStr(lineage + "|" + params) % 9`) and tone (`hashStr(lineage) % 5`). If the form is taken by another installed model, step to the next free one (forms 0–8), and do the same for tone (0–4). Never reassign: deleting a model doesn't change the others. Expose it in `/ui/picker` as `form` and `tone`. |
+| Loading state and steps | Chat stream events, plus `/ui/router` `state` for loads started elsewhere. |
+| Slots | `/ui/providers` (engines, running state, owner) and `/ui/router` (what's loaded where). |
+| **Which model is on which card** | Add `models: [{model, engine, mem_mb}]` to each card in `/ui/gpu`. For each process in the card's `procs`, read `/proc/<pid>/cmdline`. If it's a `llama-server`-style process, take its `-m` / `--model` path and match it to a library model by file path. Otherwise match the process to an engine by name (`isLemonadeProc`'s pattern, or Strata's process). If no model matches, report the engine with `model: null`, and the mainframe shows the engine's name. |
+| Memory, heat, compute | `/ui/gpu`, as today: `mem_used_mb`, `mem_total_mb`, `util`, `temp`, `power`, `procs`. |
+| Apps being answered | The `/ui/server` snapshot (section 3D). |
+| Flavour lines | `flavour.yaml` (section 7), served from `/ui/recommendations` or a new `/ui/flavour`. |
+| The switch and note | Browser storage (section 3E). |
 
 ## 5. The creature
 
-- **Seed from lineage, not file.** Use the Hugging Face `org/repo` with the quant and "GGUF" stripped, so Q4 and Q8 of one model share a body and differ only in skin grain. Fall back to the model id.
-- **The model card, drawn:**
-  - context length → eyes (each doubling adds one);
-  - quant → skin grain (Q8 smooth, Q2 rough);
-  - reasoning → brain;
-  - vision → lens;
-  - tool calling → hands with pens;
-  - parameter count → body size.
-- The generator is deterministic and cached by its inputs, so it never regenerates on re-render. At most one animated host per view; shelf and Library portraits are static.
-- `role="img"` with a label read off the card, for example: "Picture of Qwen3.6 35B: 9 eyes: remembers about 256K tokens of a conversation; an open brain: thinks before it answers; hands holding pens: can use tools."
-- **Art direction: voxels (decided),** from the generator in the zip. The prototype's copy makes three changes the real port should keep:
-  1. `form` picks the body form, so each installed model gets its own (the archetype store). Installed models also get distinct colours.
-  2. The extra row of small eyes is off. With it, 128K and 256K models both showed 14 eyes, which breaks "more eyes, longer memory".
-  3. Skin grain draws from its own random stream. Before this, Q4 and Q8 of one model grew different bodies. Now the body, legs and brain match and only the grain changes; one or two eyes may still shift.
+- **Generator:** port `docs/plans/prototypes/creature.js` into `index.html`. It's the voxel generator from the original design handoff, with three changes that must be kept:
+  1. **`form`** picks the body form (0–8), from the creature store, so each installed model gets its own. Installed models also get distinct tones.
+  2. **No extra row of small eyes.** It's off unless `eyeRow` is set, so the eye count tracks context: `3 + round(log2(ctx_k / 4))`.
+  3. **Skin grain uses its own random stream,** so Q4 and Q8 of a model keep the same body and differ only in grain.
+- **Inputs:** `{seed: lineage, params, quant, ctx (K tokens), vision, reasoning, tools, tone, form}`.
+  - **Mapping:** context sets the eyes, quant the skin grain (Q8 smooth, Q2 rough), reasoning an open brain, vision a lens, tools hands holding pens, and parameters the body size.
+- **Rendering:** use the prototype's `pic()`.
+  - Paths are batched per colour. Eyes and sparks are decals placed by matrix.
+  - Mood classes are `mood-idle`, `-thinking`, `-answering`, `-loading`, `-working` and `-none`.
+  - Animation runs only on `.live` pictures.
+- **Cropping:** small pictures are cropped to the creature without its shadow (`cropAll()`, using `getBBox` on `.zc-breathe`).
+- **Caching:** cache by input, so a re-render never regenerates. At most one live creature per view; the rest are still.
+- **Accessibility:** `role="img"` with `aria-label` "Picture of <name>: <parts>", for example "9 eyes: remembers about 256K tokens of a conversation; an open brain: thinks before it answers; hands holding pens: can use tools, such as web search".
 
-## 6. Interaction and motion rules (from ui-ux-pro-max)
+## 6. Visual system
 
-- `prefers-reduced-motion: reduce` turns every ambient animation off and shows static poses. The cartridge moves straight to its place.
-- **Motion budget:** one ambient loop per view (the host breathing). Everything else moves only in response to an event: insert, eject, a mood change.
-- **Feedback matches the wait.** A load under about one second shows no animation, just the result. Seconds get the insert slide. Minutes get step lines plus elapsed time.
-- **Never colour alone:** every lamp has a word, every gauge a number.
-- All controls are native `<button>` and `<input>` elements, with 44 px minimum targets, Zest's existing focus ring and full keyboard use. The Machine is a `<dialog>` with focus kept inside and returned when it closes.
-- One `aria-live="polite"` line announces "Qwen3.6 35B is ready" once per load, not per animation frame.
+- **Paint servers:** shared gradients and filters live once in a hidden `<svg><defs>`. Use the prototype's set: `kGlass`, `kGlassH`, `kMatte`, `kMatteH`, `kAccent`, `kTorus`, `kBezel`, `kBezelIn`, `kRecess`, `kDome`, `kCyl`, `kTable`, `kTableFront`, `kArcGlow`, `kCrt`, `kDark`, `kVeil`, `kShadow`, `kSoft`, `kArc`.
+  - Theme colours enter through `style="stop-color:var(--…)"`.
+- **Helpers to port:**
+  - `housing()`: a matte box with a lit top and a shaded bottom.
+  - `holes()` and `holesIn()`: grilles with recessed holes.
+  - `contact()`: soft contact shadows.
+  - `wire()`, `sag()`, `croc()`, `plug()`, `tape()`: wiring.
+  - `bolt()` and `sparks()`: arcs.
+- **Printed marks on glass:** `--text` with a 2.4 px `--surface` halo (`paint-order: stroke`), so they read over liquid, glass or a dark cabinet.
+- **The three colour exceptions:**
+  - **The creature:** its five palettes.
+  - **The icon:** fixed colours.
+  - **The mainframes:** `#2f3136` → `#1c1d21`, with `#0c0d0f` panels and `#e9e6dc` / `#a7a49a` lettering; lamps and bars use `--lemon`.
+- **New token:** `--veil`. It's `color-mix(in srgb, #141820 12%, transparent)` in light themes and `color-mix(in srgb, #05070a 42%, transparent)` in dark ones.
 
-## 7. How we know it doesn't disrupt anything
+## 7. Glyphs and flavour text
 
-- UI smoke test (`tests/ui/smoke.js`) runs every page with the layer off **and** on. Off must produce the same DOM as today.
-- No requests or timers added while off (checked in the smoke run's request log).
-- Generator test in node: same input, byte-identical SVG; Q4 and Q8 share the body; five sample models give five forms.
-- Manual pass on the real app: a Lemonade load, a Strata start (slow path), a refusal (busy), keyboard-only, reduced motion, one dark theme.
-
-## 8. Phases (each one ships behind the switch)
-
-1. **Decisions:** the open questions below.
-2. **Creature module:** generator, model adapter (seed, params, quant), archetype store, the two picker fields, and a hidden specimen sheet (`#specimens`) that shows the sample models. Tests.
-3. **Host beside the chat:** portrait, moods, lamp, the Settings switch.
-4. **The Machine:** bays, gauges, shelf, insert and eject wired to existing load and unload, refusals, the Strata slow path.
-5. **Server bench strip, and the Hardware apparatus.**
-6. **Library portraits;** accessibility and reduced-motion pass; screenshots for the README.
-
-Rough size: phase 2 is the largest single piece (the generator port and adapter). Phases 3 and 5 are small; phase 4 is medium.
-
-## 9. Out of scope
-
-The full "Zest at the table" redesign in DESIGN.md (new rail, the table replacing chat, the whiteboard replacing Cowork) is not part of this. This layer could be its first step, but nothing here commits to it. Also out: cross-machine creature matching, a "try any name" field, mobile-specific design.
-
-## 10. Decisions and open questions
-
-Decided (29 October 2026):
-1. **Art:** voxels, from the existing generator (section 5).
-2. **Words:** plain words for the layer's controls (section 2, principle 3), but the app itself is now named Shoggoth, which replaces the earlier "no shoggoth in the UI" (section 11).
-3. **Where the Machine opens:** a drawer over the chat, so your conversation stays in view. The prototype still has the page version for comparison; the app builds only the drawer.
-4. **The bigger redesign:** this layer should grow into DESIGN.md's table later. So the picture, the slot and the model card are built as reusable parts, not as chat-only markup.
-5. **Rename:** Zest becomes Shoggoth, fully, with fallbacks for existing installs (section 11).
-6. **App icon:** many eyes, on Zest's old lemon tile (section 11).
-7. **Chat glyphs:** custom drawn glyphs replace every emoji in chat (section 11).
-8. **Flavour text:** full cosmic horror, always on, with the plain word kept beside it. Mythos names are never used: the running model's name stands in (section 11).
-
-Decided from mockups (29 October 2026; the prototype's "Mockups to choose from" controls still show every option):
-9. **The picture in chat:** the tube on the header, cabled to the model picker (section 3A). The header is 112 px while the layer is on.
-10. **First run:** pictures start **on**, with a small dismissible note at the top of the chat: "Model pictures are on. Turn them off in Settings › Look." The switch is in Settings › Look. This replaces principle 1's "off by default".
-11. **Mainframes:** each card's cabinet shows a small screen at its top: "MODEL ON THIS CARD", the model's name, and how many GB of it are on that card. The lamps and memory bar move down to make room.
-12. **Server bench:** the lab bench, matching the Hardware page. The model sits in a beaker on a table, cabled to one Erlenmeyer flask per app, which bubbles while the app's request is thinking and fills while it is written. A numbered plate on the table's front gives each app's name and state.
-
-13. **Type:** Doto, a dot-matrix face, for titles and for every screen. Inter for body text, JetBrains Mono for small labels (section 12).
-
-Still open:
-1. **The Doto screens:** sign-off on how the Hardware apparatus, the Server bench and the log look set in Doto (section 12).
-
-## 11. Shoggoth: the name, the icon, the glyphs and the flavour
-
-Decided 29 October 2026. The prototype's Identity page shows all of it, and its chat and "Cowork uses a tool" button show it in use.
-
-### The rename, in full, with fallbacks
-Zest appears about 700 times across the code, docs and packaging. Everything moves to Shoggoth, and existing installs keep working:
-
-| What | Becomes | Fallback |
-| --- | --- | --- |
-| The name in the UI, window title, README, docs, `docs.md`, the recommendations files' comments and text | Shoggoth | — |
-| Python package folder `zest/`, entry `zest/server.py`, the CLI | `shoggoth/`, `shoggoth/server.py`, a `shoggoth` command | a `zest` command that prints a one-line notice and runs `shoggoth` |
-| 19 `ZEST_*` environment variables (`ZEST_DATA_DIR`, `ZEST_PORT`, `ZEST_AUTH`…) | `SHOGGOTH_*` | each `ZEST_*` is still read when its `SHOGGOTH_*` is unset |
-| Data and config folders `~/.local/share/zest`, `~/.config/zest` | `…/shoggoth` | moved on first run if the new one doesn't exist, with a note in the log; if the move fails, the old folder is used in place |
-| Browser storage keys (`zest-*`) and stored settings such as Lemonade's `loaded_by_zest` | `shoggoth-*`, `loaded_by_shoggoth` | read the old key once, write the new one |
-| The `zest` provider in the opencode connect snippet, and the model owner name the gateway reports | `shoggoth` | the gateway still answers requests that name `zest` |
-| AppImage, `zest.desktop`, `zest.svg`/`.png`, the AUR package | `Shoggoth-x86_64.AppImage`, `shoggoth.desktop`, the new icon, an AUR `shoggoth` package with `provides`/`replaces: zest` | — |
-| The GitHub repository | renamed by you; GitHub redirects the old URLs, and the docs' links are updated | — |
-
-Tests cover the fallbacks: an old env var, an old data folder that gets moved, and an old storage key.
-
-### The icon
-**Chosen: many eyes.** A dark blob with five eyes of different sizes, on Zest's old lemon tile, so existing users recognise it. It is drawn in fixed colours, because an icon must look the same on every desktop. It is also the brand mark beside the name in the rail, and it becomes `shoggoth.svg` and `.png` in packaging.
-- When it is drawn for real, check that it reads as a creature and not a skull at 16 and 32 px. A lumpier outline, an eye breaking the silhouette, or a tendril or two would help.
-- The candidates not chosen: the eye (one slit-pupilled eye on a dark tile) and a grown voxel host.
-
-### Chat glyphs
-Seventeen 24 px line drawings replace the emoji, drawn in the text colour so they follow the theme, at the same stroke as the app's other icons. Eyes, tendrils, a maw and sigils, sinister without gore:
+**Glyphs.** Seventeen 24 px line drawings replace every emoji in chat. They're drawn in `currentColor` at stroke width 1.6, so they follow the theme. They're in `docs/plans/assets/glyphs/*.svg` and in the prototype's `GLYPH`. Inline them as `<svg class="gl">`.
 
 | Emoji | Glyph | Where |
 | --- | --- | --- |
-| 🍋 Loading | `rise`: an eye surfacing from water | Cowork's step diagram |
+| 🍋 Loading | `rise`: an eye surfacing from water | Cowork step diagram |
 | 📖 Reading | `eye`: a slit-pupilled eye | step diagram, reading a file |
 | 🤔 Thinking | `dream`: a closed, lashed eye under a spiral | step diagram, the thinking block |
 | 💭 Thought | `thought`: three small eyes | a finished thinking block |
@@ -235,31 +282,149 @@ Seventeen 24 px line drawings replace the emoji, drawn in the text colour so the
 | 🛠️ Working | `grasp`: a suckered tendril | step diagram, a tool being prepared |
 | 🙋 Your OK | `threshold`: a doorway with a tendril at it | step diagram, approval cards |
 | ✏️ Edit | `edit`: lines with a tendril tip | editing a file |
-| ⚡ Command | `sigil`: a prompt inside a ringed sigil | running a command |
+| ⚡ Command | `sigil`: a prompt in a ringed sigil | running a command |
 | 🔎 Search | `seek`: a radiant eye | grep and find |
 | 📁 Folder | `crypt`: a lidded casket with an eye | listing a folder, "Working in…" |
 | 🧰 Skill | `tome`: a book with a sigil | using a skill |
-| 🌐 Web | `orb`: an eye inside a globe | web search, its errors |
+| 🌐 Web | `orb`: an eye inside a globe | web search and its errors |
 | 🧹 Tidying | `maw`: a toothed maw | compaction |
 | ✂️ Cut short | `severed`: a cut tendril | an answer that ran out of room |
 | ⚠️ Warning, ✅ Done | `omen`, `sealed` | the search test and other notes |
 
-### Flavour text
-- **Where:** under each step's plain word in chat (Reading, Thinking, Writing, Loading) and on each tool card ("Searching files for “basil”"), one italic line in the serif. It changes every few seconds while a step lasts, never repeating the line just shown.
-- **Tone:** full cosmic horror, never gory. Examples: "Ph’nglui… the many eyes of Qwen3.6 35B open, and it considers you." "Angles that should not meet are meeting." "GLM-4.7 Flash rewrites garden/notes.md. The old text does not resist."
-- **Names:** no mythos names, ever. Wherever a line would name an old one, it names the running model: `{model}` is filled in with the model's name, and `{target}` with what a tool is working on.
-- **Always on,** for everyone. The plain word stays beside it, so meaning never depends on the flavour. Only the plain word goes to the screen reader's live region; the flavour line changes too often to announce.
-- **Editable:** the lines ship in a YAML file (`flavour.yaml`), read and checked by the same loader as the recommendations, so you can add lines without touching code. There are 16 sets: loading, reading, thinking, writing, one per tool, the approval wait, making room, cut short and idle.
+The emoji are in `index.html` (`CW_STEPS`, `CW_EMOJI`, the thinking block, the compaction, cut-short and search notes, the approval card, the folder hero) and in `docs.md`. The ⚡ on the Tuning page's Speed step is not chat; swap it too, for `sigil`.
 
-## 12. Type: Doto, Inter, JetBrains Mono
+**Flavour text:**
+- **Where:**
+  - Under each step's plain word in chat: Loading, Reading, Thinking and Writing, inside the reply while it runs.
+  - On each Cowork tool card, under the plain line ("Searching files for “basil”").
+  - It's one italic line in JetBrains Mono, `--muted`.
+- **Changing:** a new line every few seconds while a step lasts (about 2.2 s), never repeating the one just shown.
+- **Names:** `{model}` is always the running model's name. Never name a mythos figure. `{target}` is what a tool works on.
+- **Screen readers:** only the plain word goes to the live region. The flavour line is `aria-hidden`.
+- **The lines:** they live in `docs/plans/assets/flavour.yaml`, which has 17 sets: loading, reading, thinking, writing, the tool sets (`grasp`, `quill`, `seek`, `eye`, `sigil`, `edit`, `crypt`, `tome`, `orb`), `threshold`, `maw`, `severed`, `idle`.
+  - Ship it as `shoggoth/recommendations/flavour.yaml` (user copy in `<data>/recommendations/flavour.yaml`).
+  - Validate it with the same `recs.py` checks: known sets, non-empty strings, only `{model}` and `{target}` as placeholders.
+  - `recommendations check` should cover it.
 
-Decided 29 October 2026, from four Teenage Engineering-style pairings mocked up in the prototype (its Type control still offers today's fonts for comparison). Doto, Inter and JetBrains Mono are all under the SIL Open Font License, so they can be embedded in `index.html` as base64 `woff2`, the way the app carries its fonts today. Subset them to Latin to keep the page small.
+## 8. Type
 
-- **Titles:** Doto at weight 900, 52 px for the page title ("Chat", "Server"), and Doto for the wordmark and section headings. This is the "larger, more proportionate" title, sized for the 112 px header.
-- **Body:** Inter, for messages, help text and controls.
-- **Labels:** JetBrains Mono for small mono labels outside the screens. The flavour text is JetBrains Mono italic.
-- **Screens are Doto.** Everything shown inside a visual pane is set in Doto at weight 900, as if on a dot-matrix display:
-  - **Hardware:** the mainframe screens, the instrument numbers and printed scales, the plinth and foot labels, and the numbered label row.
-  - **Server:** the lab bench plates, a new log screen, and the request list.
-  - **The log screen** is a dark recessed panel above the request list, showing the gateway's lines as they happen (request in, first token, done with tokens and speed) in light, grey and accent colours.
-  - Small Doto (under about 11 px) smudges, so these screens set it at 12 px or more where they can. The bench plates and mainframe captions are the ones to check at real size.
+- **Fonts:** `docs/plans/assets/fonts/` has the Latin-subset `woff2` files and their licences (`OFL-*.txt`, SIL Open Font License 1.1): Doto (variable 100–900), Inter (variable 300–800, upright and italic), JetBrains Mono (400–700, upright and italic). `fonts.css` there has the `@font-face` rules.
+  - Embed them in `index.html` as base64, replacing Young Serif and Nunito Sans. JetBrains Mono upright is already embedded; add its italic.
+  - Update the font comment at the top of `index.html`.
+- **Roles:**
+  - `--serif` (the display role) is Doto, `--sans` is Inter, and `--mono` is JetBrains Mono.
+  - Page titles: Doto 900, 52 px, letter-spacing 0. The wordmark and section headings: Doto 800.
+  - Flavour text: JetBrains Mono italic, 13 px.
+- **Screens are Doto 900:**
+  - Everything inside the Hardware bench SVG, the Server bench, the log screen and the request list.
+  - Keep Doto at 12 px or more where possible. Small Doto smudges, so check the bench plates and mainframe captions at real size.
+
+## 9. The rename and packaging
+
+Zest appears about 700 times across code, docs and packaging. Everything moves to Shoggoth, and existing installs keep working:
+
+| What | Becomes | Fallback |
+| --- | --- | --- |
+| The name in the UI, window title, README, `docs.md`, `docs/*.md`, recommendation file comments and text | Shoggoth | — |
+| `zest/` package folder, `zest/server.py`, the CLI | `shoggoth/`, `shoggoth/server.py`, a `shoggoth` command | a `zest` command that prints a one-line notice and runs `shoggoth` |
+| 19 `ZEST_*` environment variables (`ZEST_APP_GRACE`, `ZEST_APPROVAL`, `ZEST_AUTH`, `ZEST_CONFIG_DIR`, `ZEST_DATA_DIR`, `ZEST_FOLDERS`, `ZEST_HOST`, `ZEST_INJECT`, `ZEST_LEMONADE_DIR`, `ZEST_PI`, `ZEST_PI_TARGET`, `ZEST_PORT`, `ZEST_PRESET`, `ZEST_SEARCH`, `ZEST_SEARCH_KEY`, `ZEST_STRATA`, `ZEST_TOKEN`, and any others found) | `SHOGGOTH_*` | each `ZEST_*` is still read when its `SHOGGOTH_*` is unset |
+| Data and config folders `~/.local/share/zest`, `~/.config/zest` | `…/shoggoth` | moved on first run if the new one doesn't exist, with a note in the log. If the move fails, the old folder is used in place. |
+| Browser storage keys (`zest.*`) | `shoggoth.*` | read the old key once and write the new one |
+| Stored settings such as Lemonade's `loaded_by_zest` | `loaded_by_shoggoth` | read the old name once |
+| The `zest` provider in the opencode connect snippet, and the model owner name the gateway reports | `shoggoth` | the gateway still answers requests that name `zest` |
+| Stream event names `zest_loading`, `zest_loading_step`, `zest_loaded` | unchanged | — (a wire format other apps may see) |
+| AppImage, `zest.desktop`, `zest.svg`/`.png`, the AUR package | `Shoggoth-x86_64.AppImage`, `shoggoth.desktop`, the new icon, an AUR `shoggoth` package with `provides`/`replaces: zest` | — |
+| Copy that leans on the lemon ("What shall we squeeze today?", "the lemon fills…") | new copy in the same plain voice; the empty-chat line becomes something with the new voice | — |
+| The GitHub repository | renamed by the user; GitHub redirects old URLs, and the docs' links are updated | — |
+
+**Icon:** many eyes on the old lemon tile. It's final in `docs/plans/assets/icon/shoggoth.svg`, with PNGs at 16, 24, 32, 48, 64, 128, 256 and 512.
+- **Packaging:** use these for `packaging/shoggoth.svg`, `packaging/shoggoth.png`, the AppImage and the desktop file.
+- **Favicon:** the app's favicon and the brand mark beside the name in the rail use the same SVG.
+- **Checked:** it reads as a creature, not a skull, at 16 and 32 px.
+
+Tests cover the fallbacks: an old env var, an old data folder that gets moved, an old storage key, and the `zest` command.
+
+## 10. Motion and accessibility
+
+- **Reduced motion:** `prefers-reduced-motion: reduce` stops every ambient animation. That covers breathing, blinking, bubbles, reels, flickering lamps and the cable signal.
+  - Lamps then light in order, and arcs are redrawn only when compute changes by about 10 %.
+  - The Machine's cards move straight to their place.
+- **Motion budget:** one ambient loop per view (the creature breathing). Everything else moves in response to an event.
+- **Feedback matches the wait:**
+  - A load under about 1 s shows no animation.
+  - Seconds get the slide-in.
+  - Minutes get step lines with elapsed time.
+- **Never colour alone:** every lamp has a word, and every gauge a number.
+- **Controls:** all are native `<button>` and `<input>` elements, with 44 px targets, the existing focus ring, and full keyboard use. The drawer keeps focus inside and returns it on close.
+- **Pictures:** the decorative SVGs are `aria-hidden` or carry one summary label. The lists and numbers stay the accessible source of truth.
+
+## 11. Tests to add
+
+- **Generator (node):**
+  - The same input gives byte-identical output.
+  - Q4 and Q8 of one lineage have the same body voxels.
+  - Five sample models get five forms through the store.
+  - The eye count matches the context formula.
+- **Picker and store:**
+  - `quant`, `params` and `lineage` parse for the sample names (`Qwen3.6-35B-A3B-MTP-GGUF`, `LFM2.5-8B-A1B`, `Qwen3-0.6B`, `Mixtral-8x7B`).
+  - Creature assignment is stable across restarts and after deleting a model.
+- **`/ui/gpu` per-card models:** a process whose command line has `-m <path>` maps to the right library model, and unknown processes fall back to the engine name.
+- **Flavour YAML:** the shipped file has no problems, a bad placeholder is reported with its location, and a user copy wins.
+- **Rename fallbacks:** section 9.
+- **UI smoke** (`tests/ui/smoke.js`):
+  - Every page opens with pictures on and off, with no script errors.
+  - The Hardware page renders with 1 and 4 recorded cards. Add `/ui/gpu` recordings to `tests/ui/api.json`.
+  - No emoji are left in chat UI strings.
+
+## 12. Decisions log
+
+All decisions were made 29 October 2026, with the user, from the prototype:
+
+1. **Art:** voxel creatures, from the original generator.
+2. **Words:** plain words for controls. The app is named Shoggoth, and "host" and "cartridge" never appear in the UI.
+3. **The Machine:** a drawer over the chat, not a page.
+4. **Later redesign:** build reusable parts, so this can grow into the full "at the table" redesign later.
+5. **Rename:** full, with fallbacks.
+6. **Icon:** many eyes, on the lemon tile.
+7. **Chat emoji:** custom drawn glyphs replace them all.
+8. **Flavour text:** full cosmic horror, always on, with the plain word kept. The running model's name replaces any mythos name.
+9. **Picture in chat:** the glass module on the header, cabled to the model picker. The header is 112 px.
+10. **First run:** pictures on by default, with a one-time note.
+11. **Mainframes:** they show the model's name and the GB of it on each card.
+12. **Server bench:** the lab bench, like Hardware.
+13. **Type:** Doto for titles and screens, Inter for body, JetBrains Mono for labels and flavour.
+14. **Doto screens:** approved as shown in the prototype.
+15. **Style:** Braun/TE skeuomorphism from theme tokens, not steampunk. Mainframes are dark in every theme, behind a tinted glass pane.
+16. **Hardware details:**
+    - The model in a fat beaker.
+    - Memory as a beaker with a 0–100 % scale printed on the glass.
+    - A heat gauge for the hottest card.
+    - A coil and a radio with a meter per card.
+    - Hobbyist wiring, a breadboard, and a table with contact shadows.
+17. **UI text:** short, plain sentences. The app's existing copy was audited and cleaned (`0336a9e`).
+
+## 13. Assets
+
+| File | What |
+| --- | --- |
+| `docs/plans/prototypes/host.html` | Clickable prototype of everything, with mock data. Its "(chosen)" options and defaults are the spec. |
+| `docs/plans/prototypes/creature.js` | The voxel generator, with the three changes (section 5). |
+| `docs/plans/assets/icon/shoggoth.svg`, `shoggoth-{16…512}.png` | Final icon. |
+| `docs/plans/assets/glyphs/*.svg` | The 17 chat glyphs. |
+| `docs/plans/assets/flavour.yaml` | The flavour lines: 17 sets. |
+| `docs/plans/assets/fonts/` | Doto, Inter and JetBrains Mono (Latin `woff2`), their OFL licences, and `fonts.css`. |
+
+Not needed for this build: the original design handoff (`Zest Table.pdf`, `Claude outputs/DESIGN.md`, `zest-table-design.zip`). The generator from it is already in `creature.js`. Those files describe the later "at the table" redesign.
+
+## 14. Still open
+
+- **The GitHub repository rename** is the user's to do, whenever they choose. Code and docs should not depend on the new URL until then.
+- Nothing else. If something comes up during the build that this spec doesn't settle, ask the user rather than guess.
+
+## 15. Out of scope
+
+- The full "at the table" redesign (a new rail, the table replacing chat, the whiteboard replacing Cowork).
+- Creature portraits on Library cards.
+- Cross-machine creature matching.
+- A "try any name" generator field.
+- Mobile-specific layouts.

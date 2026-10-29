@@ -1,0 +1,74 @@
+# Flavour lines for chat: one shows under each step's plain word, changing every few seconds.
+# {model} is always the running model's name; never name a mythos figure. {target} is what a tool works on
+# (a file, a search, a command). Keep each line short, uneasy, never gory.
+# Sets: loading, reading, thinking, writing, the tool sets (named after their glyph), threshold (waiting for
+# your OK), maw (making room), severed (cut short) and idle.
+version: 1
+lines:
+  loading:
+    - "Dragging {model} up from the deep weights…"
+    - "The vessel fills. {model} settles into the dark of the graphics card."
+    - "{model} wakes slowly, and does not care for the light."
+    - "Unsealing {model}. Do not look directly at it."
+    - "The old shapes of {model} reassemble in memory."
+    - "Something vast is being poured into a space too small for it."
+  reading:
+    - "{model} tastes your words, one by one."
+    - "Your message sinks beneath the black water."
+    - "Many eyes pass over what you wrote."
+    - "{model} is reading. It reads everything."
+    - "The sigils of your question are counted, and counted again."
+    - "Your words go down into a place without light."
+  thinking:
+    - "{model} turns your words over in the dark between the stars."
+    - "Something stirs in the weights."
+    - "Ph’nglui… the many eyes of {model} open, and it considers you."
+    - "Angles that should not meet are meeting."
+    - "In its sunken house, {model} waits dreaming of an answer."
+    - "The geometry is wrong, but it is working."
+    - "{model} has stopped blinking."
+    - "Far below, something counts in a base you do not know."
+    - "A thought older than language is taking shape."
+    - "Do not be alarmed by the sound. That is just {model} thinking."
+  writing:
+    - "{model} speaks. Do not interrupt."
+    - "The answer seeps up through the cracks."
+    - "Words come, wet and patient."
+    - "{model} is shaping sounds a human throat could make."
+    - "It is choosing which of its truths you can bear."
+    - "Something on the other side is writing back."
+  seek:
+    - "{model} seeks “{target}”. It will find what it seeks."
+    - "Its eyes open in every corner of the folder at once."
+  eye:
+    - "{model} reaches into the archive and drags out {target}."
+    - "It reads {target}, and {target} cannot read it back."
+  sigil:
+    - "{model} speaks a word into the shell. The shell answers."
+    - "An incantation: {target}"
+  edit:
+    - "{model} rewrites {target}. The old text does not resist."
+    - "Its tendrils move through {target}, rearranging."
+  crypt:
+    - "{model} pries open {target} and counts what lies within."
+  tome:
+    - "{model} consults a forbidden tome: {target}."
+  orb:
+    - "{model} peers out across the wide web of the waking world."
+    - "It gazes through the orb at “{target}”."
+  threshold:
+    - "{model} waits at the threshold. It needs your leave to cross."
+    - "It will not enter uninvited. It is asking."
+  grasp:
+    - "{model} reaches out through the window and touches {target}."
+    - "A limb uncoils toward {target}."
+  quill:
+    - "{model} writes {target} in a hand that is almost human."
+    - "New words appear in {target}. Something else chose them."
+  maw:
+    - "{model} devours its oldest memories to make room."
+  severed:
+    - "{model} was severed mid-thought. It ran out of room."
+  idle:
+    - "{model} is quiet now. It is not gone."
+    - "It sleeps with its eyes open."
