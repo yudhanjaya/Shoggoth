@@ -182,6 +182,11 @@ def _discover():
             mods = (m.get("architecture") or {}).get("input_modalities") or []
             if m.get("id"):
                 models.append({"id": m["id"], "ctx": int((m.get("meta") or {}).get("n_ctx") or 0), "vision": "image" in mods})
+        if not models and status == 200:
+            # Strata frees its model's memory when idle and loads it again on the next request: it lists nothing then, but its health still names it
+            h = _health(u)
+            if h and h.get("model") and not h.get("loaded"):
+                models.append({"id": h["model"], "ctx": int(h.get("max_context") or 0), "vision": bool(h.get("images")), "asleep": True})
         # Shoggoth's own is the one `strata launch` runs on the port Shoggoth started it on, from the preset Shoggoth started (when Strata says
         # which): a server of yours that later takes the same port is still yours.
         ours = bool(owned) and r["port"] == owned and r["source"] == "launch" and (not r.get("profile") or not mine or r["profile"] == mine)
@@ -222,7 +227,7 @@ def models():
     for r in live:
         for m in r["models"]:
             out.append({"id": PREFIX + m["id"], "tools": True, "reasoning": True, "vision": m["vision"], "ctx": m["ctx"] or 32768,
-                        "provider": _provider(r["url"]), "url": r["url"], "key": r["key"], "bare": m["id"]})
+                        "provider": _provider(r["url"]), "url": r["url"], "key": r["key"], "bare": m["id"], "asleep": bool(m.get("asleep"))})
     have = {m["id"] for m in out}
     ports = {r["port"] for r in running() if r["state"] in ("ready", "loading")}
     if binary():
@@ -259,7 +264,7 @@ def find_model(name):
 
 def is_live(name):
     m = find_model(name)
-    return bool(m) and not m.get("dormant")
+    return bool(m) and not m.get("dormant") and not m.get("asleep")
 
 
 def summary():

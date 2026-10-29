@@ -78,6 +78,22 @@ class StrataOwnership(Patch):
         self.assertEqual(strata_provider.Provider.owned_instance(None), "http://127.0.0.1:8080")    # still loading: stopped on quit too
 
 
+    def test_a_strata_that_freed_its_memory_still_offers_its_model(self):
+        strata._save(lambda s: s["owned"].update({"preset": "", "port": 0}))
+        self.patch(strata, "_json", lambda args, timeout=20: {"running": [{"url": "http://127.0.0.1:8080", "name": "Q", "port": 8080, "state": "ready"}]} if "--status" in args else {})
+        self.patch(strata, "_show_key", lambda: "")
+        self.patch(strata, "_http_json", lambda u, key="", timeout=3: (200, {"data": []}))
+        self.patch(strata, "_health", lambda u: {"service": "strata", "model": "qwen3.8-flash-next-iq3_s", "loaded": False, "max_context": 131072, "images": True})
+        out = strata._discover()
+        self.assertEqual(out[0]["models"], [{"id": "qwen3.8-flash-next-iq3_s", "ctx": 131072, "vision": True, "asleep": True}])
+        self.patch(strata, "running", lambda: out)
+        self.patch(strata, "binary", lambda: "")
+        m = strata.models()[0]
+        self.assertEqual((m["id"], m["asleep"]), ("strata/qwen3.8-flash-next-iq3_s", True))
+        self.assertFalse(strata.is_live(m["id"]))                                    # offered, but not counted as in memory
+        self.assertEqual(strata_provider.Provider.loaded(None, "qwen3.8-flash-next-iq3_s"), (False, 0))
+
+
 class StrataNames(Patch):
     LIVE = {"id": "strata/served-name", "url": "http://127.0.0.1:8080", "key": "", "ctx": 131072, "bare": "served-name", "vision": False}
     DORMANT = {"id": "strata/qwen3.8-flash-next-iq3_s", "url": "http://127.0.0.1:8080", "key": "", "ctx": 131072, "bare": "qwen3.8-flash-next-iq3_s",

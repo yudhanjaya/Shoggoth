@@ -47,14 +47,15 @@ class Provider(provbase.GenericProvider):
 
     def loaded(self, model_id):
         m = strata.find_model(strata.PREFIX + model_id)
-        return (True, m["ctx"]) if m and not m.get("dormant") else (False, 0)
+        return (True, m["ctx"]) if m and not m.get("dormant") and not m.get("asleep") else (False, 0)
 
     def max_ctx(self, model_id):
         return self.loaded(model_id)[1] or (strata.find_model(strata.PREFIX + model_id) or {}).get("ctx", 0)
 
     def chat_models(self):
-        """Every Strata model that is running now, and the setups Shoggoth made that aren't (they start when a chat needs them)."""
-        return [{"id": m["bare"], "tools": True, "reasoning": True, "vision": m["vision"], "ctx": m["ctx"], "live": not m.get("dormant"),
+        """Every Strata model that is running now (an asleep one wakes on the next message), and the setups Shoggoth made that aren't
+        (they start when a chat needs them)."""
+        return [{"id": m["bare"], "tools": True, "reasoning": True, "vision": m["vision"], "ctx": m["ctx"], "live": not m.get("dormant") and not m.get("asleep"),
                  "pi_provider": m["provider"], "pi_url": m["url"].rstrip("/") + "/v1", "pi_key": m.get("key") or ""} for m in strata.models()]
 
     def busy(self):
