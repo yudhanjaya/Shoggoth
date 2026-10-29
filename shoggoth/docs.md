@@ -16,10 +16,10 @@ Four things work together. You only ever see Shoggoth, but it helps to know who 
 
 ```mermaid
 flowchart LR
-    you["You"] --> zest["Shoggoth: the window you are looking at"]
-    zest --> pi["Pi: the helper that reads files and runs steps"]
+    you["You"] --> app["Shoggoth: the window you are looking at"]
+    app --> pi["Pi: the helper that reads files and runs steps"]
     pi --> eng["An engine: runs the model"]
-    zest --> eng
+    app --> eng
     eng --> model[("The model: the AI itself")]
 ```
 
@@ -37,6 +37,20 @@ The first time you open Shoggoth it gets itself ready on one screen. It asks whe
 If you pick the recommended model you will be chatting within minutes, depending on your connection.
 
 You can see the first-run screen again any time: go to **Help**, then **Run the welcome steps again**.
+
+## Model pictures
+
+Shoggoth draws every model as a creature. Each one is made from the model itself, so the same model always looks the same:
+
+- **Eyes** show how much it remembers (its context window). More eyes, more memory.
+- **Size** shows how many parameters it has.
+- **Skin** shows how tightly it is compressed. Rougher skin is smaller and a little less exact.
+- **Hands holding pens** mean it can use tools.
+- Models from the same family share a body shape and colour.
+
+The creature for the chat's model sits in a glass tube at the top of the Chat page, wired to the model bar. It wakes up when the model is loading, thinking or writing. Click the tube (or **Open the machine** in the model menu) to open **the Machine**: a drawer with one slot for each engine and a shelf of every model you have. Load and unload models there if you like seeing what is in memory.
+
+The **Hardware** and **Server** pages use the same creatures, on a lab bench. Don't like them? Turn them off under **Settings › Look**. Everything still works the same way.
 
 ## Chatting
 
@@ -182,13 +196,13 @@ The program is [Strata](https://github.com/Niko1221/Strata). Its saved setups, a
 
 ## Using your models in other apps
 
-**Advanced**, then **Server**, gives you an address and a key to paste into other tools (coding assistants, chat apps, anything that talks to an OpenAI-style server). The same page shows live what those apps are asking for. It only listens on this computer unless you turn on sharing.
+**Advanced**, then **Server**, gives you an address and a key to paste into other tools (coding assistants, chat apps, anything that talks to an OpenAI-style server). The same page shows live what those apps are asking for: the model sits in a jar on a bench, and each app's request is a flask that bubbles while the model thinks and fills as it writes. **Send a test message** shows one. It only listens on this computer unless you turn on sharing.
 
 ## Under the bonnet
 
 Everything in **Advanced** is optional.
 
-- **Hardware** shows your graphics cards filling up as models load, and lets you choose which to use.
+- **Hardware** is a lab bench. Each machine at the back is one graphics card, with lights for how hard it is working and the name of the model on it. The beaker shows memory used across all your cards, the gauge shows the hottest card, and the coil and radio show how hard they compute. Below the bench you choose which cards Shoggoth uses, and in what order.
 - **Engines** has a card for each program Shoggoth uses to run models: [Lemonade](https://lemonade-server.ai) for small and medium models, Strata for Large ones, and any you add. Each card shows its version, whether it is running and who started it, an update check, and a Stop button for ones Shoggoth started. Each card also holds that engine's own details. Lemonade's shows which hardware each kind of model uses (CUDA, Vulkan, ROCm or the processor). Strata's has your saved setups, a link to a Strata on another computer, and its installer. You can add your own engine by putting a folder with a `provider.yaml` file in the engines folder shown at the bottom of the page, then pressing **Reload**. Shoggoth asks once before an engine you added runs a program. The repository's `docs/ENGINES.md` explains how, and `providers check <folder>` (run the AppImage with those words) tells you what to fix before you reload.
 - **Engine settings** is every setting Lemonade has, searchable.
 - **Themes** changes how Shoggoth looks. **Light Touch** is the default; **Braun T3** and **Teenage Engineering** are softer and bolder takes on the same idea, and the rest borrow colour schemes from popular code editors (Dracula, Nord, Monokai Pro, GitHub Light and more). Nothing moves when you switch, and your choice is remembered on this computer.
@@ -205,6 +219,8 @@ Everything stays on your computer.
 - **Settings and keys** are in `~/.config/shoggoth/`.
 
 Shoggoth goes online only to: download models you ask for, check for Shoggoth, engine and Pi updates (you can turn that off), and fetch skills when you paste a link. Pi runs offline and sends nothing anywhere. To start from scratch, delete `~/.config/shoggoth` and `~/.local/share/shoggoth`.
+
+**Coming from Zest?** Shoggoth used to be called Zest. The first time it starts, it moves `~/.config/zest` and `~/.local/share/zest` to the new names, and keeps your chats, skills, settings and keys. Apps that use a `zest-` key keep working.
 
 ## When something goes wrong
 

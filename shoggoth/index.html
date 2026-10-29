@@ -1668,7 +1668,7 @@ const ICON = {
   sliders:'<svg class="i" viewBox="0 0 24 24" style="width:18px;height:18px"><path d="M4 7h9M17 7h3M4 17h3M11 17h9"/><circle cx="15" cy="7" r="2"/><circle cx="9" cy="17" r="2"/></svg>',
   bolt:'<svg class="i" viewBox="0 0 24 24" style="width:16px;height:16px"><path d="M13 2L4 14h7l-1 8 9-12h-7z"/></svg>'
 };
-const AVATAR = '<div class="avatar" aria-hidden="true"><svg viewBox="0 0 64 64"><path d="M 12.49 46.19 Q 12.55 44.39 14.99 41.68 C 12.39 30.92 18.75 22.23 22.99 19.58 C 27.23 16.93 37.83 15.03 46.36 22.08 Q 49.86 21.07 51.51 21.81 Q 51.45 23.61 49.01 26.32 C 51.61 37.08 45.25 45.77 41.01 48.42 C 36.77 51.07 26.17 52.97 17.64 45.92 Q 14.14 46.93 12.49 46.19 Z" fill="#f7d916" stroke="#1a1a17" stroke-width="2.4" stroke-linejoin="round"/><path d="M 16.74 34.10 C 17.16 29.12 20.87 25.62 24.26 23.51" fill="none" stroke="#fffdf7" stroke-width="2.6" stroke-linecap="round" opacity=".85"/><path d="M50.5 22C48.5 14 53.5 8 61.5 7C62.5 14.5 58.5 21 50.5 22Z" fill="#2f9e55" stroke="#1a1a17" stroke-width="2" stroke-linejoin="round"/><path d="M52 20.5C55 16.5 58 12 60 8.5" stroke="#1a1a17" stroke-width="1.3" stroke-linecap="round" fill="none" opacity=".6"/></svg></div>';
+const AVATAR = '<div class="avatar" aria-hidden="true"><svg viewBox="0 0 64 64"><rect x="2" y="2" width="60" height="60" rx="14" fill="#f7d916"/><rect x="7" y="3.2" width="50" height="1.4" rx=".7" fill="#fff" fill-opacity=".45"/><path d="M7 62 C 6 50 8 40 12 33 C 13 26 18 18 26 17 C 31 13 39 14 43 19 C 50 20 55 27 54 35 C 58 40 58 49 55 56 C 56 59 57 61 58 62 Z" fill="#1d1d22"/><path d="M12 47 C 6 47 4 42 6 38 C 7 36 9 37 8 39 C 7 42 9 44 12 43" fill="none" stroke="#1d1d22" stroke-width="3.2" stroke-linecap="round"/><path d="M53 44 C 59 43 61 38 59 34 C 58 32 56 33 57 35 C 58 38 56 40 53 40" fill="none" stroke="#1d1d22" stroke-width="3" stroke-linecap="round"/><path d="M30 17 C 29 11 32 7 36 8 C 38 8.5 38 10.5 36.5 10.5 C 34.5 10.5 33.5 12.5 34 16" fill="none" stroke="#1d1d22" stroke-width="2.8" stroke-linecap="round"/><g fill="#efe8d2"><ellipse cx="25" cy="32" rx="7.2" ry="6.4"/><ellipse cx="41.5" cy="27" rx="4.8" ry="4.4"/><ellipse cx="38" cy="43" rx="4" ry="3.6"/><ellipse cx="19.5" cy="47" rx="3" ry="2.7"/><ellipse cx="48" cy="38" rx="2.6" ry="2.4"/><ellipse cx="30" cy="51" rx="2.2" ry="2"/></g><g fill="#f7d916"><circle cx="25.6" cy="32.4" r="4.4"/><circle cx="41.8" cy="27.4" r="3"/><circle cx="38.3" cy="43.3" r="2.4"/></g><g fill="#0e0e12"><ellipse cx="25.6" cy="32.4" rx="1.3" ry="3.8"/><ellipse cx="41.8" cy="27.4" rx=".9" ry="2.6"/><ellipse cx="38.3" cy="43.3" rx=".75" ry="2.1"/><ellipse cx="19.7" cy="47.2" rx=".7" ry="1.9"/><ellipse cx="48.1" cy="38.2" rx=".6" ry="1.7"/><ellipse cx="30.1" cy="51.1" rx=".55" ry="1.4"/></g><g fill="#fff" fill-opacity=".85"><circle cx="23" cy="30" r="1.4"/><circle cx="40.3" cy="25.7" r=".9"/></g></svg></div>';
 
 let toastT;
 function toast(msg){ const t = $("#toast"); t.textContent = msg; t.classList.add("show"); clearTimeout(toastT); toastT = setTimeout(()=>t.classList.remove("show"), 3200); }
@@ -3661,7 +3661,8 @@ function srvShow(){
   clearInterval(SRV.timer); SRV.timer = setInterval(() => { if(S.view !== "server"){ clearInterval(SRV.timer); clearInterval(SRV.fast); return; } if(!document.hidden) srvFetch(); }, 1000);
   clearInterval(SRV.fast); SRV.fast = setInterval(() => { if(S.view === "server" && !document.hidden) srvPaint(); }, 300);
 }
-function exModel(){ const m = chatModels()[0]; return m ? m.id : "your-model-name"; }
+/* the model in memory when there is one, so the test button and the samples don't make the engine load another */
+function exModel(){ const ms = chatModels(), live = (S.ms || {}).loaded || [S.loaded].find(id => id && ms.some(m => m.id === id)); return live || (ms[0] ? ms[0].id : "your-model-name"); }
 function snippet(tab, mask){
   const g = SRV.g, key = mask && !SRV.showKey ? "••••••••••••••••" : g.key, url = g.url, model = exModel();
   const app = recAllTools().find(t => t.id === tab && t.connect && t.connect.json);       // a config file from tools.yaml
@@ -3737,13 +3738,14 @@ function srvBuild(){
 const appLabel = a => a === "Shoggoth" ? "Shoggoth chat" : a;
 function stateWord(r){ return {waiting: "Reading the question", thinking: "Thinking", answering: "Writing", done: "Done", error: "Didn't work"}[r.state]; }
 const wordsOf = chars => Math.max(0, Math.round((chars || 0) / 5.5));
+const wordsTxt = chars => { const n = wordsOf(chars); return n.toLocaleString() + (n === 1 ? " word" : " words"); };
 function nowDetail(r, now){
   const end = r.t_end || now;
   if(r.state === "waiting") return `${(now - r.t0).toFixed(1)} s so far`;
-  if(r.state === "thinking") return `Thought for ${(now - (r.t_think || r.t0)).toFixed(1)} s, about ${wordsOf(r.think_chars).toLocaleString()} words`;
-  if(r.state === "answering") return `Writing for ${(now - (r.t_write || r.t0)).toFixed(1)} s, about ${wordsOf(r.out_chars).toLocaleString()} words so far`;
+  if(r.state === "thinking") return `Thought for ${(now - (r.t_think || r.t0)).toFixed(1)} s, about ${wordsTxt(r.think_chars)}`;
+  if(r.state === "answering") return `Writing for ${(now - (r.t_write || r.t0)).toFixed(1)} s, about ${wordsTxt(r.out_chars)} so far`;
   if(r.state === "error") return r.status === 401 ? "The key was wrong" : "That request didn't work";
-  return `Finished in ${(end - r.t0).toFixed(1)} s, about ${wordsOf(r.out_chars).toLocaleString()} words`;
+  return `Finished in ${(end - r.t0).toFixed(1)} s, about ${wordsTxt(r.out_chars)}`;
 }
 function glassSVG(r){
   const lvl = r.state === "thinking" ? Math.min(.3, .08 + r.think_chars / 2500) : r.state === "answering" ? .3 + Math.min(.62, r.out_chars / 1800) : r.state === "done" ? 1 : r.state === "error" ? .12 : .06;
@@ -3896,7 +3898,7 @@ $("#server").addEventListener("click", async e => {
   if(a === "test"){
     b.disabled = true;
     try{
-      const r = await fetch(g.url + "/chat/completions", {method:"POST", headers:{"Content-Type":"application/json", "Authorization":"Bearer " + g.key, "X-Zest-App":"Test button"},
+      const r = await fetch(g.url + "/chat/completions", {method:"POST", headers:{"Content-Type":"application/json", "Authorization":"Bearer " + g.key, "X-Shoggoth-App":"Test button"},
         body: JSON.stringify({model: exModel(), stream: true, max_tokens: 60, messages:[{role:"user", content:"Say hello in one short sentence."}]})});
       if(!r.ok) throw new Error((await r.text()).slice(0, 200));
       const rd = r.body.getReader(); while(!(await rd.read()).done){}
@@ -4149,7 +4151,9 @@ function mcVram(eng){
 }
 const mcTotalVram = () => (S.gpus || []).reduce((a, g) => a + (g.mem_total_mb || 0), 0) / 1024;
 function mcSeat(m, eng){
-  const ms = S.ms || {}, loading = ms.loading === m.id || S.loadingModel === m.id, mine = ms.loaded === m.id || loading;
+  const ms = S.ms || {}, loading = ms.loading === m.id || S.loadingModel === m.id, p = MC.provs.find(x => x.id === eng) || {};
+  /* Lemonade can hold models Shoggoth loaded into a Lemonade you run; any other engine is Shoggoth's only if Shoggoth started it */
+  const mine = loading || (ms.loaded === m.id && (eng === "lemonade" || (p.running || []).some(r => r.owner === "zest")));
   const q = String(m.quant || "").replace(/^UD-/, "").replace(/_K_[MSL]|_K_XL|_0$|_[SM]$/, "");
   const act = loading ? '<span class="tag">Loading…</span>' : mine ? `<button class="btn" type="button" data-mcunload="${esc(m.id)}">Unload</button>` : '<span class="tag">Started by you</span>';
   return `<div class="mcseat${MC.justIn === m.id ? " inserting" : ""}" style="--tone:${crTone(m)}"><div class="th">${crPic(m, {mood: loading ? "loading" : "idle", crop: true, label: false})}</div>
@@ -5494,7 +5498,7 @@ function cwOpenWith(id, text){
   cwClose(); CW.id = id; CW.cursor = -1; cwReset(); CW.mode = (CW.tasks.find(t => t.id === id) || {}).mode || "ask";
   cwEl("cwinput").value = ""; cwGrow(); cwFolderBtn(); cwRenderTasks(); cwRenderSide(); cwSetTitle(text.slice(0, 60));
   cwSetRunning(true);
-  cwSend({type: "prompt", message: text}).catch(e => toast(e.message));
+  cwSend({type: "prompt", message: text}).catch(e => { cwSetRunning(false); cwNote(e.message, true); });
   cwConnect();
 }
 function cwPickFolder(){
@@ -6209,7 +6213,9 @@ document.addEventListener("keydown", e => { if(e.key === "Escape"){ cwEl("cwfpop
 cwEl("cwform").addEventListener("submit", e => { e.preventDefault(); cwSubmit(cwEl("cwinput").value); });
 cwEl("cwinput").addEventListener("input", cwGrow);
 cwEl("cwinput").addEventListener("keydown", e => { if(e.key === "Enter" && !e.shiftKey && !e.isComposing){ e.preventDefault(); cwSubmit(cwEl("cwinput").value); } });
-cwEl("cwstop").addEventListener("click", () => cwSend({type: "abort"}).catch(err => toast(err.message)));
+/* nothing to abort when the run never started on the server: clear the strip anyway */
+cwEl("cwstop").addEventListener("click", () => cwSend({type: "abort"}).catch(err => toast(err.message))
+  .finally(async () => { await cwLoad(); if(CW.running && !(cwFind(CW.id) || {}).running) cwSetRunning(false); }));
 cwEl("cwnew").addEventListener("click", cwNew);
 cwEl("cwtasks").addEventListener("click", e => { if(e.target.id === "cwolder") show("chat"); });
 cwEl("cwfolderbtn").addEventListener("click", cwPickFolder);
