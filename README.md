@@ -1,13 +1,13 @@
 # Shoggoth
 
-[![Release](https://img.shields.io/github/v/release/yudhanjaya/Zest)](https://github.com/yudhanjaya/Zest/releases)
-[![Downloads](https://img.shields.io/github/downloads/yudhanjaya/Zest/total.svg)](https://github.com/yudhanjaya/Zest/releases)
-[![License: MIT](https://img.shields.io/github/license/yudhanjaya/Zest)](LICENSE)
+[![Release](https://img.shields.io/github/v/release/yudhanjaya/Shoggoth)](https://github.com/yudhanjaya/Shoggoth/releases)
+[![Downloads](https://img.shields.io/github/downloads/yudhanjaya/Shoggoth/total.svg)](https://github.com/yudhanjaya/Shoggoth/releases)
+[![License: MIT](https://img.shields.io/github/license/yudhanjaya/Shoggoth)](LICENSE)
 ![Platform](https://img.shields.io/badge/platform-Linux%20x86__64-blue)
-![Code size](https://img.shields.io/github/languages/code-size/yudhanjaya/Zest)
-[![Last commit](https://img.shields.io/github/last-commit/yudhanjaya/Zest)](https://github.com/yudhanjaya/Zest/commits/main)
-[![Open issues](https://img.shields.io/github/issues/yudhanjaya/Zest)](https://github.com/yudhanjaya/Zest/issues)
-[![Stars](https://img.shields.io/github/stars/yudhanjaya/Zest?style=social)](https://github.com/yudhanjaya/Zest)
+![Code size](https://img.shields.io/github/languages/code-size/yudhanjaya/Shoggoth)
+[![Last commit](https://img.shields.io/github/last-commit/yudhanjaya/Shoggoth)](https://github.com/yudhanjaya/Shoggoth/commits/main)
+[![Open issues](https://img.shields.io/github/issues/yudhanjaya/Shoggoth)](https://github.com/yudhanjaya/Shoggoth/issues)
+[![Stars](https://img.shields.io/github/stars/yudhanjaya/Shoggoth?style=social)](https://github.com/yudhanjaya/Shoggoth)
 
 **Run AI models on your own computer, and put them to work, with one download.** Shoggoth is a friendly interface for open-source engines that run language models locally ([Lemonade](https://lemonade-server.ai) for small and medium models, [Strata](https://github.com/Niko1221/Strata) for very large ones) and for [Pi](https://pi.dev), a coding-agent harness. You never have to choose an engine: Shoggoth picks and starts the right one for the model you choose. The Shoggoth AppImage **includes Lemonade and Pi**, and sets up Strata the first time you want a large model. Linux-only for now.
 
@@ -309,7 +309,7 @@ Shoggoth and Lemonade do contact the following services:
 Python 3, standard library only (developed on 3.12):
 
 ```bash
-git clone https://github.com/yudhanjaya/Zest.git
+git clone https://github.com/yudhanjaya/Shoggoth.git
 cd Shoggoth
 python3 shoggoth/server.py
 ```
