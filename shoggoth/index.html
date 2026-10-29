@@ -4149,7 +4149,9 @@ function mcVram(eng){
 }
 const mcTotalVram = () => (S.gpus || []).reduce((a, g) => a + (g.mem_total_mb || 0), 0) / 1024;
 function mcSeat(m, eng){
-  const ms = S.ms || {}, loading = ms.loading === m.id || S.loadingModel === m.id, mine = ms.loaded === m.id || loading;
+  const ms = S.ms || {}, loading = ms.loading === m.id || S.loadingModel === m.id, p = MC.provs.find(x => x.id === eng) || {};
+  /* Lemonade can hold models Shoggoth loaded into a Lemonade you run; any other engine is Shoggoth's only if Shoggoth started it */
+  const mine = loading || (ms.loaded === m.id && (eng === "lemonade" || (p.running || []).some(r => r.owner === "zest")));
   const q = String(m.quant || "").replace(/^UD-/, "").replace(/_K_[MSL]|_K_XL|_0$|_[SM]$/, "");
   const act = loading ? '<span class="tag">Loading…</span>' : mine ? `<button class="btn" type="button" data-mcunload="${esc(m.id)}">Unload</button>` : '<span class="tag">Started by you</span>';
   return `<div class="mcseat${MC.justIn === m.id ? " inserting" : ""}" style="--tone:${crTone(m)}"><div class="th">${crPic(m, {mood: loading ? "loading" : "idle", crop: true, label: false})}</div>

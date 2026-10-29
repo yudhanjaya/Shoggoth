@@ -58,6 +58,19 @@ class ModelsOnCards(unittest.TestCase):
                          [("Qwen3.8 Flash-Next", "strata", 9000), ("Gemma 4", "lemonade", 4000), (None, "python3", 300)])
 
 
+class ModelsOnCardsFallback(ModelsOnCards):
+    def test_a_file_not_in_the_library_yet_falls_back_to_the_engines_loaded_model(self):
+        library._file_map = lambda: {}
+        library._cmdline = lambda pid: ["strata", "--native", "/m/unknown.gguf"]
+        real = library._live_on
+        library._live_on = lambda engine: {"title": "Qwen3.8 Flash-Next", "ids": {engine: "q"}} if engine == "strata" else None
+        try:
+            got = library.models_on_cards([{"procs": [{"pid": 1, "name": "strata", "mem_mb": 9000}]}])[0]["models"]
+        finally:
+            library._live_on = real
+        self.assertEqual(got[0]["model"], "Qwen3.8 Flash-Next")
+
+
 class Creatures(unittest.TestCase):
     def setUp(self):
         self.tmp = tempfile.mkdtemp()

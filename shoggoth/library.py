@@ -504,8 +504,9 @@ def _file_map():
             for f in e.get("files") or []:
                 out[os.path.realpath(f)] = e
                 out.setdefault(os.path.basename(f), e)
-    except Exception:
-        pass
+    except Exception as e:                      # the cards are still listed, by engine; try again next time
+        print("Couldn't read the library to name the models on each card: %s" % e, flush=True)
+        return out
     _files.update(t=time.time(), v=out)
     return out
 
@@ -517,6 +518,21 @@ def _cmdline(pid):
             return [a.decode("utf8", "replace") for a in f.read().split(b"\0") if a]
     except (OSError, ValueError, TypeError):
         return []
+
+
+def _live_on(engine):
+    """When a process's model file isn't in the library yet (an engine's own list not read yet), the one model that engine
+    says is loaded, as {title, ids}; None when it has none or several."""
+    try:
+        import router
+        live = [m for m in router.chat_models() if m.get("live") and m.get("engine") == engine]
+        if len(live) != 1:
+            return None
+        mid = live[0]["id"]
+        title = next((x["title"] for x in (picker().get("models") or []) if x["id"] == mid or x["id"].endswith("/" + mid) or mid.endswith("/" + x["id"])), mid)
+        return {"title": title, "ids": {engine: live[0]["id"]}}
+    except Exception:
+        return None
 
 
 def models_on_cards(gpus):
@@ -535,6 +551,8 @@ def models_on_cards(gpus):
                       and (fmap.get(os.path.realpath(a)) or fmap.get(os.path.basename(a)))), None)
             name = str(p.get("name") or "")
             engine = "lemonade" if re.search(r"llama-server|sd-server|whisper|lemond|stable-diffusion|ggml-rpc", name, re.I) else name.lower()
+            if not e:
+                e = _live_on(engine)
             key = (e or {}).get("title") or engine
             cur = seen.setdefault(key, {"model": (e or {}).get("title"), "id": next(iter(((e or {}).get("ids") or {}).values()), None),
                                         "engine": engine, "mem_mb": 0})
