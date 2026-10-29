@@ -13,11 +13,13 @@
 
 The idea is to provide a user interface that people who aren't necessarily steeped in technical know-how can still navigate to get open-weights models running on their own hardware, and then do real work with them: chat, draw diagrams, write documents, or let a model read and change the files in a folder while they watch. Download Shoggoth, and you're good to go.
 
+Shoggoth used to be called Zest. Every model it runs gets drawn as a many-eyed creature in a glass tube, wired into a bench of lab equipment. The pictures carry real information (more eyes means more context, rougher skin means heavier compression), and you can turn them off.
+
 ![Shoggoth working in a folder](docs/screenshots/work-tools.png)
 
 *Chat, working in a folder: it read the code, fixed a bug with a one-line change (shown as a diff) and ran the tests again, step by step.*
 
-**Contents:** [What you can do](#what-you-can-do-with-shoggoth) · [Install and run](#install-and-run) · [Finding your way around](#finding-your-way-around) · [Your first conversation](#your-first-conversation) · [Choosing and managing models](#choosing-and-managing-models) · [Skills](#skills) · [Use your models in other apps](#use-your-models-in-other-apps) · [Keeping everything up to date](#keeping-everything-up-to-date) · [Advanced tools](#advanced-tools) · [Themes](#themes) · [Your data and privacy](#your-data-and-privacy) · [For developers](#for-developers)
+**Contents:** [What you can do](#what-you-can-do-with-shoggoth) · [Install and run](#install-and-run) · [Finding your way around](#finding-your-way-around) · [Your first conversation](#your-first-conversation) · [Model pictures](#model-pictures) · [Choosing and managing models](#choosing-and-managing-models) · [Skills](#skills) · [Use your models in other apps](#use-your-models-in-other-apps) · [Keeping everything up to date](#keeping-everything-up-to-date) · [Advanced tools](#advanced-tools) · [Themes](#themes) · [Your data and privacy](#your-data-and-privacy) · [For developers](#for-developers)
 
 ## What you can do with Shoggoth
 
@@ -27,6 +29,7 @@ The idea is to provide a user interface that people who aren't necessarily steep
 - **Draw diagrams and write documents.** Ask for a picture or a README and get one, shown right in the chat.
 - **Teach it new tricks with skills.** Short instruction sheets that make small models far more dependable. Add more by pasting a link.
 - **Pick and manage models.** Shoggoth tells you which ones will run comfortably on your computer and downloads them for you.
+- **See what your models are.** Each model is drawn as a creature built from its own numbers, and the Hardware and Server pages show your graphics cards and the apps using them as a working lab bench.
 - **Make it look the way you like.** Fifteen themes, from soft plastic to Dracula and Nord, under **Advanced > Themes**.
 - **Use your models in other apps.** Shoggoth can share them with tools such as opencode or any app that talks to an OpenAI-style server.
 
@@ -92,9 +95,9 @@ For bigger work, press **Start a job…**. Say what should get done and how Shog
 
 ### Chat
 
-Replies stream in as they are written. The bar under the title shows which model answers, how much context it has (128k by default) and whether it is in memory, with **Load**, **Unload** and **Reload**. A reasoning model's thinking appears live above its answer and folds away when it is done. Markdown and code blocks come with copy buttons, and a small strip shows what the model is doing: 📖 reading, 🤔 thinking, ✍️ writing, 🛠️ working.
+Replies stream in as they are written. The bar under the title shows which model answers, how much context it has (128k by default) and whether it is in memory, with **Load**, **Unload** and **Reload**. A reasoning model's thinking appears live above its answer and folds away when it is done. Markdown and code blocks come with copy buttons. A small strip shows what the model is doing (reading, thinking, writing, working, waiting for your OK), and a line in italics under it says the same thing in a more unsettling way, always naming the model that is running.
 
-![Chat](docs/screenshots/chat.png)
+![Chat: the model's answer after it fixed a bug, with the model in its tube at the top](docs/screenshots/chat.png)
 
 ### Working in a folder
 
@@ -103,6 +106,22 @@ Every chat works in a folder (your home folder unless you choose one) and can re
 ![Shoggoth asking before it runs a command](docs/screenshots/work-approve.png)
 
 ![Reading the code, a diff of the fix, and the tests run again](docs/screenshots/work-tools.png)
+
+## Model pictures
+
+Shoggoth draws every model as a creature, made from the model itself, so the same model always looks the same:
+
+- **Eyes**: how much it remembers (its context window). More eyes, more memory.
+- **Size**: how many parameters it has.
+- **Skin**: how tightly it is compressed. Rougher skin is smaller and a little less exact.
+- **Hands holding pens**: it can use tools.
+- **Shape and colour**: models from the same family share them.
+
+The chat's model sits in a glass tube at the top of the Chat page, wired to the model bar. It stirs while the model loads, thinks and writes. Click the tube (or **Open the machine** in the model menu) to open **the Machine**: a drawer with one slot per engine, showing what is in memory, and a shelf of every model you have. You can load and unload from there.
+
+![The Machine: one slot per engine, with the Large model loaded in Strata's slot](docs/screenshots/machine.png)
+
+The **Hardware** and **Server** pages put the same creatures on a lab bench (see [Advanced tools](#advanced-tools) and [Use your models in other apps](#use-your-models-in-other-apps)). If you'd rather not see them, switch off **Show model pictures** under **Settings › Look**. Nothing else changes.
 
 ## Choosing and managing models
 
@@ -171,13 +190,13 @@ Some models are far too big for a graphics card. Shoggoth runs them anyway, thro
 
 ![Server](docs/screenshots/server.png)
 
-*Address, key and copy-paste setup for opencode, Hermes and any OpenAI-compatible app. The key is hidden until you press **Show**, including in the code samples. While an app is working you see a card with a glass that fills as it writes, a pill timeline of the last minute, and a request list. The Lemonade activity log is at the bottom of the same page.*
+*The lab bench on the Server page, just after **Send a test message**: the loaded model in its jar, a flask for the request, and the card underneath saying how long it took.*
 
-The same page shows what those apps are doing:
+At the top of the page are the address, the key (hidden until you press **Show**, including in the code samples) and copy-paste setup for opencode, Hermes and any OpenAI-compatible app. Below that, the page shows what those apps are doing:
 
-- **Right now.** A card for each request that is running, with the app's name, a glass that bubbles while the model thinks and fills with lemon as the answer is written, and a line such as "Thought for 7.2 s, about 415 words". With **Show what models are saying** on, each card also quotes the line the model is on. The count of requests today sits underneath.
-- **The last minute.** One lane per app, with a pill for each request split into reading the question (grey), thinking (dotted) and writing the answer (lemon), so you can see who was waiting for whom.
-- **Requests.** A list with the app, the model, how long it took and whether it worked, filtered by app. Shoggoth labels each app from the `User-Agent` it sends (for example "Hermes agent" or "opencode"), or from an `X-Zest-App` header if the app sets one.
+- **Right now.** A lab bench: the model in its jar, piped to a flask for each request that is running. The flask bubbles while the model thinks and fills as the answer is written. A card for each request gives the app's name and a line such as "Thought for 7.2 s, about 415 words". **Send a test message** sends one to the model that is in memory. With **Show what models are saying** on, each card also quotes the line the model is on. The count of requests today sits underneath.
+- **The last minute.** One lane per app, with a pill for each request split into reading the question (grey), thinking (dotted) and writing the answer (yellow), so you can see who was waiting for whom.
+- **Requests.** A list with the app, the model, how long it took and whether it worked, filtered by app. Shoggoth labels each app from the `User-Agent` it sends (for example "Hermes agent" or "opencode"), or from an `X-Shoggoth-App` header if the app sets one (`X-Zest-App` still works).
 - **Show what models are saying** is off by default. When on, you can open a request to read the question and answer. The text is held in memory only and is gone when Shoggoth closes.
 
 Other apps never talk to Shoggoth's own page. Shoggoth opens a second, much smaller door on its own port (13308) that serves only the chat-style `/v1` endpoints (models, chat, completions, embeddings, responses, audio, images, reranking, and loading or unloading a model). It **always asks for the key**, and pulling, deleting, installing or changing settings are not reachable through it. It listens on this computer only. **Other devices on my network** turns on listening on your local network; anyone there who has the key can then use your models, and the traffic is not encrypted, so use it on a network you trust. **Make a new key** invalidates the old one at once.
@@ -215,15 +234,15 @@ Everything under **Advanced** is optional.
 ![The Advanced menu: Server, Hardware, Engines, Engine settings, Tuning and Themes](docs/screenshots/advanced.png)
 
 - **Advanced > Server** lets other apps use your models (see below), with a live picture of what they ask for. The address and key to paste into those apps are at the top, and the Lemonade **activity log** (filter and follow mode) sits at the bottom of the same page.
-- **Advanced > Hardware** shows every device llama.cpp can see as a live VRAM tank with utilisation, temperature, power, a short history, and which processes are holding its memory. Pick which devices to use and put them in order, then apply.
+- **Advanced > Hardware** is a lab bench. Each machine at the back is one graphics card: its lights show how hard it is working, and its screen names the model on it. The beaker shows memory used across all your cards, the gauge shows the hottest card, the coil sparks as the cards work harder, and the radio has a meter for each card. Below the bench, every device llama.cpp can see is listed with its memory, load, temperature and the processes holding it. Pick which devices to use, put them in order, and apply.
 - **Advanced > Engines** has one card for each engine Shoggoth can use (Lemonade for small and medium models, Strata for large ones, and any you add): what it is, its version, whether it is running and who started it, **Check for updates** and **Update**, and **Stop it** for one Shoggoth started (never one you started yourself). Inside each card, collapsed, are the details specific to it: for Lemonade, every kind of model it runs (llama.cpp, Whisper.cpp, StableDiffusion.cpp and more) with the hardware each can use (CUDA, Vulkan, ROCm, CPU), which you can choose per kind or install; for Strata, your saved setups, connections to a Strata on another computer, and installing it. Below the cards, **The agent helper** (Pi) and **Add an engine**: put a folder with a `provider.yaml` file in the engines folder shown there and press Reload. Shoggoth asks once before an engine you added runs a program, and lists any folder it couldn't load with the line to fix. [docs/ENGINES.md](docs/ENGINES.md) is the guide to writing one ("Add an engine in ten minutes"), with `Shoggoth.AppImage providers new` and `providers check` to start and test it.
 - **Advanced > Engine settings** edits everything in Lemonade's own configuration, searchable, with a reset-to-default for every value.
 - **Advanced > Themes** changes how Shoggoth looks (see below).
 - **Settings** is where you change where models live, how long large models stay in memory and how much a chat remembers, and update everything. Its **My own server, and the first-run screen** section is where you check Lemonade's version or connect to one you run yourself; **Advanced > Engines** has backends, Strata and the agent helper. **Help > Run the welcome steps again** shows the first-run screen again.
 
-![Advanced > Hardware: each graphics card as a live VRAM tank, with utilisation, temperature and power](docs/screenshots/hardware.png)
+![Advanced > Hardware: two graphics cards as machines at the back of a lab bench, with a memory beaker, a heat gauge, a coil and a radio](docs/screenshots/hardware.png)
 
-*Advanced > Hardware: a tank for each graphics card, with its memory, load, temperature and power, and the switch and arrows that choose which cards Shoggoth uses and in what order.*
+*Advanced > Hardware with a Large model spread over two cards: an RTX 3080 and an RTX 4080 SUPER, 94% of their memory in use.*
 
 ### Using a Lemonade you already run
 
@@ -260,7 +279,7 @@ Shoggoth looks the same everywhere you use it, but you can change its finish. Op
 | The secret that lets a browser into Shoggoth's own page (file mode `600`) | `~/.config/shoggoth/ui-token` |
 | Lemonade updates you've downloaded | `~/.local/share/shoggoth/lemonade/<version>/` |
 | The built-in Lemonade's own config and the backends it installs | `~/.local/share/shoggoth/lemonade-data/` |
-| Its log (shown on the Logs page) | `~/.local/share/shoggoth/lemond.log` |
+| Its log (shown at the bottom of Advanced > Server) | `~/.local/share/shoggoth/lemond.log` |
 | Links to models you chose to bring in, and each engine's view of your Models folder | `~/.local/share/shoggoth/` (`imported-models/`, `views/`) |
 | Models you download | the folder you chose (a **Models** folder with a subfolder for each engine), or the Hugging Face cache if you kept that |
 | Skills you added and which are switched on | `~/.local/share/shoggoth/skills/` |
@@ -268,7 +287,7 @@ Shoggoth looks the same everywhere you use it, but you can change its finish. Op
 | Chat conversations, jobs, their transcripts, the folders Shoggoth has worked in (and the commands you always allow there), work copies of folders awaiting review, and Pi's configuration (rewritten at each start) | `~/.local/share/shoggoth/cowork/` |
 | Display preferences | your browser's local storage |
 
-(`XDG_CONFIG_HOME` and `XDG_DATA_HOME` are respected.) To start from scratch, delete `~/.config/shoggoth` and `~/.local/share/shoggoth`. Downloaded models are not in there unless you chose a folder inside it.
+(`XDG_CONFIG_HOME` and `XDG_DATA_HOME` are respected.) **Coming from Zest?** The first time Shoggoth starts, it moves `~/.config/zest` and `~/.local/share/zest` to these names and keeps everything in them: chats, skills, settings and keys. Apps that use a `zest-` key keep working, and old `ZEST_*` environment variables are still read. To start from scratch, delete `~/.config/shoggoth` and `~/.local/share/shoggoth`. Downloaded models are not in there unless you chose a folder inside it.
 
 ### Privacy
 
@@ -317,7 +336,7 @@ Then open <http://127.0.0.1:13306> (it opens automatically unless you pass `--no
 Shoggoth is a small Python program with no dependencies (`shoggoth/server.py` plus a few modules) and one HTML page (`shoggoth/index.html`).
 
 - `shoggoth/gateway.py` is the door for other apps and the request recorder. Both it and Shoggoth's own chat forward through one function that streams the answer back untouched while noting whether the model is waiting, thinking (`reasoning_content`, or text inside `<think>` tags) or writing.
-- `shoggoth/agent.py` runs Pi (`pi --mode rpc`, one process per task) against Lemonade through Shoggoth's own `/api/v1` proxy, and relays its JSON events to the page as server-sent events. `shoggoth/pi/zest-gate.js` is the Pi extension that makes it ask before editing or running commands. Details in [docs/COWORK.md](docs/COWORK.md).
+- `shoggoth/agent.py` runs Pi (`pi --mode rpc`, one process per task) against Lemonade through Shoggoth's own `/api/v1` proxy, and relays its JSON events to the page as server-sent events. `shoggoth/pi/zest-gate.js` (the old name is kept so existing setups find it) is the Pi extension that makes it ask before editing or running commands. Details in [docs/COWORK.md](docs/COWORK.md).
 - `shoggoth/hf.py` reads a Hugging Face repository's file list and groups GGUF files by quantisation.
 - `/api/*` is passed straight through to Lemonade, so the page needs no CORS changes. Chat uses the OpenAI-compatible `/api/v1/chat/completions` stream, and model downloads use Lemonade's background download jobs.
 - Everything Shoggoth changes in Lemonade goes through Lemonade's own HTTP API: `/internal/config` and `/internal/set` for settings, `/v1/models/{id}/options` for per-model options, `/v1/install` for backends. Shoggoth does not need the `lemonade` command-line tool.
@@ -351,6 +370,7 @@ To cut a release: bump `VERSION` in `shoggoth/server.py`, then `git tag vX.Y.Z &
 - **[Pi](https://github.com/earendil-works/pi)** (MIT) is bundled unmodified in the AppImage; its licence is included alongside it.
 - **[Lemonade](https://github.com/lemonade-sdk/lemonade)** (Apache-2.0) is bundled unmodified in the AppImage; its licence is included alongside it.
 - **[llama.cpp](https://github.com/ggml-org/llama.cpp)** (MIT) and the other backends are downloaded by Lemonade when you install them.
+- **[Doto](https://github.com/oliverlalan/Doto), [Inter](https://rsms.me/inter/) and [JetBrains Mono](https://www.jetbrains.com/lp/mono/)** (SIL Open Font License) are embedded in the page; their licences are in `docs/plans/assets/fonts` and ship in the AppImage.
 - **[Python](https://www.python.org)** (PSF licence), via a relocatable build from [python-build-standalone](https://github.com/astral-sh/python-build-standalone), is bundled so the AppImage needs no system Python.
 
 ## License
