@@ -154,6 +154,20 @@ dialog.mcdlg::backdrop{background:rgba(20,18,10,.22)}
 .hwlamp{fill:#2e3035}.hwlamp.on{fill:var(--lemon)}
 .reel{transform-box:view-box;animation:spin 8s linear infinite}@keyframes spin{to{transform:rotate(360deg)}}
 @media (prefers-reduced-motion:reduce){.rig *{animation:none!important}}
+/* ---------- the Server page's bench and log ---------- */
+.srvbench{margin:0 0 4px}.srvbench[hidden]{display:none}.benchsvg{width:100%;height:auto;display:block;max-height:240px}
+.benchsvg text{font:900 11px/1 "Doto",monospace;letter-spacing:.05em;fill:var(--text)}.benchsvg text.st{fill:var(--muted);font-size:10px}
+.benchsvg .tube{fill:none;stroke:var(--line);stroke-width:3.4;stroke-linecap:round}
+.flask.st-answering .tube{stroke:var(--lemon);stroke-dasharray:7 7;animation:flow .5s linear infinite}@keyframes flow{to{stroke-dashoffset:-14}}
+.flask .bub{opacity:0}.flask.st-thinking .bub,.flask.st-waiting .bub{animation:rise 1.3s ease-in infinite}.flask .bub:nth-of-type(2){animation-delay:-.45s}.flask .bub:nth-of-type(3){animation-delay:-.9s}
+@keyframes rise{0%{opacity:0;transform:translateY(0)}20%{opacity:.9}100%{opacity:0;transform:translateY(-34px)}}
+#v-server.pics .glasssvg{display:none}
+#v-server.pics .reqlist{font-family:"Doto",monospace;font-weight:900;letter-spacing:.03em}
+.logscr{margin:0 0 14px;border-radius:14px;background:#0c0d0f;border:1px solid #2a2c31;box-shadow:inset 0 2px 8px rgba(0,0,0,.6),0 1px 0 var(--hi);padding:10px 16px 12px;color:#a7a49a;font:900 15px/1.6 "Doto",monospace;letter-spacing:.03em}
+.logscr header{display:flex;justify-content:space-between;font-size:11px;letter-spacing:.14em;color:#6d6b63;margin-bottom:4px}
+.logscr .ll{display:flex;gap:14px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.logscr time{color:#6d6b63}
+.logscr .ll.in span{color:#e9e6dc}.logscr .ll.ok span{color:var(--lemon)}.logscr .ll.sys span{color:#8f8c82}.logscr .ll.bad span{color:var(--bad)}
+@media (prefers-reduced-motion:reduce){.srvbench *{animation:none!important}}
 /* ---------- shell ---------- */
 .app{display:grid;grid-template-columns:var(--rail) 1fr;height:100dvh}
 .rail{display:flex;flex-direction:column;gap:4px;padding:20px 14px;border-right:1px solid var(--line-soft);background:var(--bg);overflow-y:auto}
@@ -3630,6 +3644,7 @@ async function srvFetch(){
     SRV.off = r.now - Date.now() / 1000; SRV.err = "";
     const gsig = JSON.stringify(r.gateway), changed = gsig !== SRV.gsig; SRV.gsig = gsig; SRV.g = r.gateway;
     SRV.reqs = new Map(r.requests.map(q => [q.id, q]));
+    srvLogNote(r.requests, r.gateway);
     if(!SRV.built || changed) srvBuild();
     srvPaint();
   }catch(e){
@@ -3689,8 +3704,9 @@ function srvBuild(){
       <div class="sechead"><h3>Right now</h3>
         <button class="sw" type="button" role="switch" aria-checked="${g.capture}" data-sact="capture"><i></i>Show what models are saying</button></div>
       <div class="panel nowpanel">
+        <div id="srvbench" class="srvbench" aria-hidden="true"></div>
         <div id="glasses" class="nowgrid" aria-live="off"></div>
-        <div class="nowkey"><span><i class="kb"></i>Bubbles are the model thinking</span><span><i class="kl"></i>The lemon fills as it writes the answer</span><span id="todaycount"></span>
+        <div class="nowkey"><span><i class="kb"></i>Bubbles are the model thinking</span><span><i class="kl"></i>It fills as the model writes the answer</span><span id="todaycount"></span>
           <button class="btn" type="button" data-sact="test">Send a test message</button></div>
       </div>
     </section>
@@ -3704,6 +3720,7 @@ function srvBuild(){
     </section>
     <section class="srvsec srvlist">
       <div class="sechead"><h3>Requests</h3></div>
+      <section class="logscr" aria-label="Server log"><header><span>LOG</span><span id="logn">${SRV.log.length} LINES</span></header><div id="srvlines">${srvLogHTML()}</div></section>
       <div class="filters" id="srvfilters" style="margin:0 0 12px"></div>
       <div id="reqlist" class="reqlist panel"></div>
     </section>
@@ -3745,16 +3762,75 @@ function glassHTML(r){
       <p class="nowmodel">${esc(friendly(r.model || "") || "a model")}</p></div></div>
     ${q ? `<blockquote class="nowquote">“${esc(q.replace(/[*_`#>]+/g, "").replace(/\s+/g, " ").trim())}”</blockquote>` : ""}</article>`;
 }
+/* ======================= the Server page's bench and log ======================= */
+/* The log screen: the gateway's lines as they happen, worked out from the request list the page already polls. */
+SRV.log = SRV.log || []; SRV.lstate = SRV.lstate || new Map();
+function srvLogLine(text, cls){
+  const t = new Date();
+  SRV.log.push({t: t.toLocaleTimeString([], {hour12: false}), text, cls});
+  if(SRV.log.length > 9) SRV.log.splice(0, SRV.log.length - 9);
+  const box = $("#srvlines"); if(box){ box.innerHTML = srvLogHTML(); $("#logn").textContent = SRV.log.length + " LINES"; }
+}
+const srvLogHTML = () => SRV.log.map(l => `<div class="ll ${l.cls || ""}"><time>${esc(l.t)}</time><span>${esc(l.text)}</span></div>`).join("") || '<div class="ll sys"><span>Waiting for the first request.</span></div>';
+function srvLogNote(reqs, g){
+  const first = !SRV.lstarted; SRV.lstarted = true;
+  if(first && g) srvLogLine(g.enabled ? `gateway on ${g.url} · sharing is on` : "sharing is off: no other app can connect", "sys");
+  for(const r of reqs){
+    const was = SRV.lstate.get(r.id); SRV.lstate.set(r.id, r.state);
+    if(first || was === r.state) continue;
+    const app = appLabel(r.app), model = friendly(r.model || "") || "a model";
+    if(!was) srvLogLine(`${app} → ${r.method || "POST"} ${r.path || ""} · ${model}`, "in");
+    if((r.state === "answering" || r.state === "done") && (!was || was === "waiting" || was === "thinking") && r.t_write)
+      srvLogLine(`${app} · ${model} first word after ${(r.t_write - r.t0).toFixed(1)} s`);
+    if(r.state === "done"){ const s = (r.t_end || r.t0) - r.t0, n = r.tokens_out || Math.round((r.out_chars || 0) / 4);
+      srvLogLine(`${app} ← ${r.status || 200} · ${n.toLocaleString()} tokens in ${s.toFixed(1)} s${s > 0 && n ? ` · ${Math.round(n / s)} tok/s` : ""}`, "ok"); }
+    if(r.state === "error") srvLogLine(`${app} ← ${r.status || "error"} · ${r.error || "didn't work"}`, "bad");
+  }
+  if(SRV.lstate.size > 400) SRV.lstate = new Map([...SRV.lstate].slice(-200));
+}
+/* The bench: the model on a table, cabled to a flask for each app being answered now. */
+function srvBench(live){
+  const id = live[0] && live[0].model, m = pkModels().find(x => x.id === id || (id && x.id.endsWith(id))) || pkFind((S.ms || {}).loaded);
+  const tint = m ? crTone(m) : "var(--steel)", n = Math.max(1, Math.min(4, live.length)), span = 560 / n;
+  const flasks = live.slice(0, 4).map((r, i) => {
+    const x = 210 + span * (i + .5), fl = `M${x - 8} 66 V104 L${x - 36} 170 Q${x - 38} 178 ${x - 30} 178 H${x + 30} Q${x + 38} 178 ${x + 36} 170 L${x + 8} 104 V66 Z`;
+    const lvl = r.state === "thinking" ? .12 : r.state === "answering" ? .25 + Math.min(.7, (r.out_chars || 0) / 1800) : r.state === "done" ? 1 : r.state === "error" ? .1 : 0;
+    const y = 178 - lvl * 74, word = {waiting: "READING", thinking: "THINKING", answering: "WRITING", done: "DONE", error: "DIDN'T WORK"}[r.state] || "";
+    return `<g class="flask st-${r.state}">${hwContact(x, 76, 180)}
+      <path class="tube" d="M140 150 C ${x - 90} 150, ${x - 30} 40, ${x} 60"/>
+      <defs><clipPath id="sf${r.id}"><path d="${fl}"/></clipPath></defs>
+      <path d="${fl}" fill="var(--surface)" fill-opacity=".55"/>
+      <rect clip-path="url(#sf${r.id})" x="${x - 40}" y="${y.toFixed(1)}" width="80" height="${(180 - y).toFixed(1)}" fill="url(#kAccent)"/>
+      <g clip-path="url(#sf${r.id})"><circle class="bub" cx="${x - 10}" cy="172" r="3" fill="#fff" fill-opacity=".8"/><circle class="bub" cx="${x + 8}" cy="174" r="2.2" fill="#fff" fill-opacity=".8"/><circle class="bub" cx="${x}" cy="170" r="2.6" fill="#fff" fill-opacity=".8"/></g>
+      <path d="${fl}" fill="url(#kGlassH)"/><path d="${fl}" fill="none" stroke="var(--line)" stroke-width="1.6" stroke-linejoin="round"/>
+      <rect x="${x - 12}" y="60" width="24" height="7" rx="3" fill="url(#kTorus)" stroke="var(--line)" stroke-width=".9"/>
+      <path d="M${x - 24} 168 L${x - 4} 112" stroke="#fff" stroke-opacity=".5" stroke-width="2.6" stroke-linecap="round"/>
+      <rect x="${x - 50}" y="194" width="18" height="15" rx="3" fill="var(--text)"/><text x="${x - 41}" y="205" text-anchor="middle" style="fill:var(--bg)">0${i + 1}</text>
+      <text x="${x - 26}" y="200">${esc(hwShort(appLabel(r.app), 14)).toUpperCase()}</text><text class="st" x="${x - 26}" y="210.5">${word}</text></g>`;
+  }).join("");
+  return `<svg viewBox="0 0 800 216" class="benchsvg">
+    <rect x="4" y="178" width="792" height="10" rx="3" fill="url(#kTable)"/><rect x="4" y="186" width="792" height="28" rx="4" fill="url(#kTableFront)" stroke="var(--line)" stroke-width="1"/>
+    ${hwContact(80, 140, 180)}
+    <path d="M24 70 H136 V160 Q136 178 118 178 H42 Q24 178 24 160 Z" fill="${tint}" fill-opacity=".14"/>
+    ${m ? crPic(m, {mood: live.some(r => r.state === "answering") ? "answering" : live.some(r => r.state === "thinking") ? "thinking" : "idle", live: true, crop: true, label: false}).replace("<svg ", '<svg x="34" y="88" width="92" height="86" ') : ""}
+    <path d="M24 70 H136 V160 Q136 178 118 178 H42 Q24 178 24 160 Z" fill="url(#kGlassH)"/><path d="M24 70 H136 V160 Q136 178 118 178 H42 Q24 178 24 160 Z" fill="none" stroke="var(--line)" stroke-width="1.6"/>
+    <rect x="18" y="64" width="124" height="7" rx="3" fill="url(#kTorus)" stroke="var(--line)" stroke-width=".9"/>
+    <text x="80" y="205" text-anchor="middle">${m ? esc(hwShort(m.title, 16)).toUpperCase() : "NO MODEL"}</text>
+    ${flasks || `<text x="480" y="130" text-anchor="middle" class="st">NOTHING IS BEING ASKED</text>`}</svg>`;
+}
+
 function srvPaint(){
   if(!SRV.built || S.view !== "server") return;
   const now = srvNow(), all = [...SRV.reqs.values()].sort((a, b) => b.id - a.id);
   const live = all.filter(r => ["waiting", "thinking", "answering"].includes(r.state) || (r.t_end && now - r.t_end < 5 && r.state === "done")).sort((a, b) => a.id - b.id);
   const gl = $("#glasses");
   const sig = live.map(r => r.id + r.state + Math.round((r.state === "answering" ? r.out_chars : r.think_chars) / 60) + (r.quote ? r.quote.length : 0)).join("|");
+  const bench = $("#srvbench");
+  if(bench){ bench.hidden = !picturesOn(); $("#v-server").classList.toggle("pics", picturesOn()); if(picturesOn() && bench.dataset.sig !== sig){ bench.dataset.sig = sig; bench.innerHTML = srvBench(live); crCrop(bench); } }
   if(gl && gl.dataset.sig !== sig){
     gl.dataset.sig = sig;
     gl.innerHTML = live.length ? live.slice(0, 6).map(glassHTML).join("") + (live.length > 6 ? `<div class="gmore">+${live.length - 6} more</div>` : "")
-      : `<p class="quiet2">Nothing is being asked right now. When an app uses your models, a card with a glass appears here for each request: it bubbles while the model thinks, and the lemon fills as the answer is written.${SRV.g && !SRV.g.capture ? " Turn on “Show what models are saying” to see a line of what it is saying, too." : ""}</p>`;
+      : `<p class="quiet2">Nothing is being asked right now. When an app uses your models, a card appears here for each request: it bubbles while the model thinks, and fills as the answer is written.${SRV.g && !SRV.g.capture ? " Turn on “Show what models are saying” to see a line of what it is saying, too." : ""}</p>`;
   }
   $$("#glasses .nowdetail").forEach(el => { const r = SRV.reqs.get(+el.dataset.rid); if(r) el.textContent = nowDetail(r, now); });
   const tc = $("#todaycount"); if(tc) tc.textContent = SRV.today != null ? `${SRV.today.toLocaleString()} request${SRV.today === 1 ? "" : "s"} today` : "";
