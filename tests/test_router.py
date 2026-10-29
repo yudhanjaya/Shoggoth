@@ -311,7 +311,7 @@ class GatewayRouting(Env):
     def test_a_request_for_another_engines_model_goes_there(self):
         lem.configure("127.0.0.1", 1, "")                                  # the default engine is elsewhere and must not be touched
         body = json.dumps({"model": "big/m1", "messages": []}).encode()
-        host, port, key, path, new_body, err = gateway._route("/v1/chat/completions", body)
+        scheme, host, port, key, path, new_body, err = gateway._route("/v1/chat/completions", body)
         self.assertIsNone(err)
         self.assertEqual((host, port // 5), ("127.0.0.1", 18985 // 5))
         self.assertEqual(path, "/v1/chat/completions")
@@ -321,17 +321,70 @@ class GatewayRouting(Env):
     def test_unknown_names_and_non_inference_paths_are_left_alone(self):
         lem.configure("127.0.0.1", 4242, "k")
         body = json.dumps({"model": "an-embedding-model"}).encode()
-        self.assertEqual(gateway._route("/v1/embeddings", body), ("127.0.0.1", 4242, "k", "/v1/embeddings", body, None))
-        self.assertEqual(gateway._route("/v1/health", None)[:2], ("127.0.0.1", 4242))
+        self.assertEqual(gateway._route("/v1/embeddings", body), ("http", "127.0.0.1", 4242, "k", "/v1/embeddings", body, None))
+        self.assertEqual(gateway._route("/v1/health", None)[1:3], ("127.0.0.1", 4242))
 
     def test_a_model_that_cannot_start_is_a_clean_error(self):
         self.big.approved = False
         body = json.dumps({"model": "big/m1"}).encode()
         # not running and not approved: activation fails with words, and the request is refused instead of hanging
         self.big.stop()
-        h, p, k, path, b, err = gateway._route("/v1/chat/completions", body)
+        s, h, p, k, path, b, err = gateway._route("/v1/chat/completions", body)
         self.assertTrue(err)
         self.assertIn("approved", err)
+
+    def test_a_running_model_is_answered_while_another_is_still_starting(self):
+        self.big.ensure("m1", lambda t: None)
+        router._idx["v"] = None
+        body = json.dumps({"model": "big/m1"}).encode()
+        self.assertTrue(router._lock.acquire(blocking=False))             # as if a big model were half an hour into starting
+        try:
+            t0 = time.time()
+            s, host, port, key, path, b, err = gateway._route("/v1/chat/completions", body)
+            self.assertIsNone(err)
+            self.assertLess(time.time() - t0, 5)
+        finally:
+            router._lock.release()
+
+    def test_an_apps_request_in_flight_keeps_its_engine_from_being_stopped(self):
+        self.big.ensure("m1", lambda t: None)
+        router._idx["v"] = None
+        router.busy_checks.append(gateway._provider_busy)
+        r = gateway.REC.start("app", "gateway", "POST", "/v1/chat/completions", "big/m1", True, "127.0.0.1")
+        r.update(sent=True, state="answering")
+        try:
+            with self.assertRaises(provbase.ProviderError) as e:
+                router.activate("fast/m1")
+            self.assertIn("answering", str(e.exception))
+            self.assertTrue(self.big.is_running())
+            r["state"] = "done"
+            router.activate("fast/m1")                                    # finished: now it gives way
+            self.assertFalse(self.big.is_running())
+        finally:
+            r["state"] = "done"
+
+    def test_a_hold_stops_starting_and_using_models(self):
+        self.big.ensure("m1", lambda t: None)
+        router._idx["v"] = None
+        router.holds.append(lambda: "Zest is tuning.")
+        try:
+            s, h, p, k, path, b, err = gateway._route("/v1/chat/completions", json.dumps({"model": "big/m1"}).encode())
+            self.assertEqual(err, "Zest is tuning.")
+            with self.assertRaises(provbase.ProviderError):
+                router.activate("fast/m1")
+        finally:
+            router.holds.pop()
+
+    def test_an_https_engine_is_reached_over_https(self):
+        orig = router.route, router.known
+        router.route = lambda ref, *a, **k: {"base_url": "https://strata.example/v1", "model": "served-name", "key": "s"}
+        router.known = lambda ref: True
+        try:
+            s, host, port, key, path, b, err = gateway._route("/v1/chat/completions", json.dumps({"model": "big/m1"}).encode())
+        finally:
+            router.route, router.known = orig
+        self.assertEqual((s, host, port, key, path), ("https", "strata.example", 443, "s", "/v1/chat/completions"))
+        self.assertEqual(json.loads(b)["model"], "served-name")           # the name the engine serves it under
 
     def test_models_list_for_apps_adds_the_other_engines(self):
         self.big.ensure("m1", lambda t: None)

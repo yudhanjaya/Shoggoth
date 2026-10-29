@@ -33,11 +33,9 @@ _lock = threading.Lock()
 
 
 def _before_launch():
+    """Make room before a model loads. A hook that can't (something else is answering) raises, and the start stops with its reason."""
     for f in before_launch:
-        try:
-            f()
-        except Exception:  # noqa: BLE001
-            pass
+        f()
 
 
 def _changed():
@@ -84,6 +82,7 @@ def _json(args, timeout=20):
 
 
 _cache = {"t": 0, "v": None}
+_dlock = threading.Lock()                # one discovery at a time; callers that arrive meanwhile get its answer
 
 
 def version():
@@ -131,7 +130,7 @@ def _health(url):
     return h if status == 200 and h.get("service") == "strata" else None
 
 
-def _show_key(url):
+def _show_key():
     """The key of a server `strata launch` manages. Empty when there isn't one or the command doesn't say."""
     code, out = _run(["launch", "--show-key"], 10)
     words = re.findall(r"[A-Za-z0-9_\-]{16,}", out) if code == 0 else []
@@ -144,10 +143,10 @@ def running():
     [{url, port, name, state, source, owner, needs_key, key, models:[{id, ctx, vision}]}]
     source: launch (strata launch manages it), probe (found answering on a local port), saved (an address typed in).
     owner: "zest" if Zest started it, otherwise "yours". Zest only ever acts by itself on its own."""
-    now = time.time()
-    if _cache["v"] is None or now - _cache["t"] > 3:
-        _cache.update(t=now, v=_discover())
-    return _cache["v"]
+    with _dlock:
+        if _cache["v"] is None or time.time() - _cache["t"] > 3:
+            _cache.update(t=time.time(), v=_discover())
+        return _cache["v"]
 
 
 def _discover():
@@ -157,27 +156,34 @@ def _discover():
         if r.get("url"):
             found[r["url"].rstrip("/")] = {"name": r.get("name"), "profile": r.get("profile"), "port": r.get("port"), "state": r.get("state"), "source": "launch"}
     probe = [u for u in ("http://127.0.0.1:%d" % p for p in PROBE_PORTS) if u not in found]
+    saved = [u for u in (str(r.get("url", "")).rstrip("/") for r in st["remote"]) if u and u not in found and u not in probe]
+    with concurrent.futures.ThreadPoolExecutor(max_workers=8) as pool:          # an unreachable address costs its timeout once, not once each
+        health = dict(zip(probe + saved, pool.map(_health, probe + saved)))
     for u in probe:
-        h = _health(u)
+        h = health[u]
         if h:
             found[u] = {"name": h.get("model") or "Strata", "port": int(u.rsplit(":", 1)[1]), "state": "ready" if h.get("loaded") else "loading", "source": "probe"}
-    for r in st["remote"]:
-        u = str(r.get("url", "")).rstrip("/")
-        if u and u not in found:
-            h = _health(u)
-            found[u] = {"name": (h or {}).get("model") or u, "port": 0, "state": ("ready" if h.get("loaded") else "loading") if h else "unreachable", "source": "saved"}
+    for u in saved:
+        h = health[u]
+        found[u] = {"name": (h or {}).get("model") or u, "port": 0, "state": ("ready" if h.get("loaded") else "loading") if h else "unreachable", "source": "saved"}
     owned = st["owned"].get("port")
+    mine = profile_of(st["owned"]["preset"]) if st["owned"].get("preset") else ""
+    launched = [u for u, r in found.items() if r["source"] == "launch"]
+    # `launch --show-key` names no server: its key is only known to be that server's when `strata launch` manages just one
+    shown = _show_key() if len(launched) == 1 and not st["keys"].get(launched[0]) else ""
     out = []
     for u, r in sorted(found.items()):
-        key = st["keys"].get(u, "") or (_show_key(u) if r["source"] == "launch" else "")
+        key = st["keys"].get(u, "") or (shown if r["source"] == "launch" else "")
         status, data = _http_json(u + "/v1/models", key) if r["state"] == "ready" else (0, {})
         models = []
         for m in data.get("data", []):
             mods = (m.get("architecture") or {}).get("input_modalities") or []
             if m.get("id"):
                 models.append({"id": m["id"], "ctx": int((m.get("meta") or {}).get("n_ctx") or 0), "vision": "image" in mods})
-        out.append(dict(r, url=u, key=key, needs_key=status in (401, 403), models=models,
-                        owner="zest" if owned and r["port"] == owned else "yours"))
+        # Zest's own is the one `strata launch` runs on the port Zest started it on, from the preset Zest started (when Strata says
+        # which): a server of yours that later takes the same port is still yours.
+        ours = bool(owned) and r["port"] == owned and r["source"] == "launch" and (not r.get("profile") or not mine or r["profile"] == mine)
+        out.append(dict(r, url=u, key=key, needs_key=status in (401, 403), models=models, owner="zest" if ours else "yours"))
     if owned and not any(r["owner"] == "zest" for r in out):
         _save(lambda s: s["owned"].update(preset="", port=0))       # the one Zest started has gone: forget it
     return out
@@ -223,12 +229,15 @@ def models():
             if im["status"] != "present":
                 continue
             p = _preset_for(im, mine)
-            if not p or not p.get("port") or PREFIX + im["name"] in have or int(p["port"]) in ports:
+            if not p or not p.get("port") or int(p["port"]) in ports:
                 continue
             k = _settings()["known"].get(p["name"]) or {}
+            name = k.get("id") or im["name"]                  # what its server called it last time it ran: the name it will have again
+            if PREFIX + name in have:
+                continue
             url = "http://127.0.0.1:%d" % int(p["port"])
-            out.append({"id": PREFIX + im["name"], "tools": True, "reasoning": True, "vision": bool(k.get("vision", p.get("vision") not in (None, "off"))),
-                        "ctx": int(k.get("ctx") or p.get("context") or 131072), "provider": _provider(url), "url": url, "key": "", "bare": im["name"],
+            out.append({"id": PREFIX + name, "tools": True, "reasoning": True, "vision": bool(k.get("vision", p.get("vision") not in (None, "off"))),
+                        "ctx": int(k.get("ctx") or p.get("context") or 131072), "provider": _provider(url), "url": url, "key": "", "bare": name,
                         "dormant": True, "preset": p["name"]})
     return out
 
@@ -656,21 +665,33 @@ def _do_setup(entry, force=False):
 
 def ensure(model, on_line=None):
     """Make sure the Strata model `model` is serving, starting the Zest-made setup behind a dormant one. Waits until it
-    answers (the first start loads tens of GB). Raises ValueError with something a person can act on."""
+    answers (the first start loads tens of GB). Returns the live model ({id, url, key, ctx, bare, ...}): normally `model`
+    itself, but the first time a setup runs its server may call it something else. Raises ValueError with something a
+    person can act on."""
     m = find_model(model)
     if m and not m.get("dormant"):
-        return
+        return m
     if not m:
         raise ValueError("Strata isn't running that model. Start it from the Models page.")
     deadline = time.time() + 1800
     if not start(m["preset"]):
         if RUN["state"] == "error":
             raise ValueError(RUN["error"])
+    ready_at = None
     while time.time() < deadline:                  # started by us just now, or by another chat a moment ago
-        if is_live(model):
-            return
+        live = find_model(model)
+        if live and not live.get("dormant"):
+            return live
         if RUN["state"] == "error":
             raise ValueError(RUN["error"] or "Strata didn't start.")
+        if RUN["state"] == "ready":
+            # It started, but not under that name: whatever the server on the setup's port serves is this setup's model.
+            other = next((x for x in models() if not x.get("dormant") and x["url"] == m["url"]), None)
+            if other:
+                return other
+            ready_at = ready_at or time.time()
+            if time.time() - ready_at > 60:
+                raise ValueError("Strata started, but nothing is serving %s on %s. Look at the Models page." % (bare(model), m["url"]))
         if on_line and RUN["log"]:
             on_line(RUN["log"][-1])
         time.sleep(1)

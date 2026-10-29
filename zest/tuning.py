@@ -12,6 +12,7 @@ import agent
 import hardware
 import lem
 import lemtune
+import router
 import strata
 
 _lock = threading.Lock()
@@ -19,6 +20,15 @@ JOB = {"id": 0, "engine": None, "target": None, "title": "", "state": "idle", "t
        "error": None, "result": None, "started": 0}
 _cancel = threading.Event()
 before_run = []                           # callables run just before a job takes the GPUs (e.g. free what Zest itself is running)
+
+
+def _hold():
+    """While a tune runs it has the graphics cards: no chat or app may start or use a model (that would spoil the measurements, or run out of memory)."""
+    return "Zest is tuning %s right now, which needs the graphics cards to itself. Wait for it to finish, or cancel it on Advanced > Tuning." % (JOB["title"] or "a model") \
+        if JOB["state"] == "running" else ""
+
+
+router.holds.append(_hold)
 
 
 class _Job:
@@ -72,6 +82,8 @@ def blockers(engine, target):
         why.append("Another tune is running.")
     if any(s.running for s in list(agent._sessions.values())):
         why.append("A chat is answering right now. Wait for it to finish.")
+    elif router.anything_busy():
+        why.append("Another app is getting an answer from a model right now. Wait for it to finish.")
     theirs = [r for r in strata.running() if r["owner"] == "yours" and r["source"] != "saved" and r["state"] in ("ready", "loading")]
     if theirs:
         why.append("A Strata you started is running (%s). Tuning needs the graphics cards to itself, so stop it first." % (theirs[0]["name"] or "a model"))

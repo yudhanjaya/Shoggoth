@@ -32,8 +32,8 @@ def request(method, path, body=None, timeout=10, host=None, port=None, api_key=N
         conn.request(method, path, body=data, headers=headers)
         r = conn.getresponse()
         raw = r.read()
-    except OSError as e:
-        return 0, {"error": str(e)}
+    except (OSError, http.client.HTTPException) as e:          # HTTPException: a reply cut off or garbled (say, mid-load)
+        return 0, {"error": str(e) or e.__class__.__name__}
     finally:
         conn.close()
     try:

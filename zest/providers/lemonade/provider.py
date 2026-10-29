@@ -53,12 +53,39 @@ class Provider(provbase.GenericProvider):
         status, payload = lem.request("POST", "/v1/load", body, timeout=900)
         if status != 200:
             raise provbase.ProviderError(lem.error_text(payload, "Lemonade couldn't load the model."))
+        self._mine(add=model_id)
         return self.endpoint(model_id)
 
+    def _mine(self, add=None, drop=None, clear=False):
+        """The models Zest loaded into Lemonade (kept across restarts): in a Lemonade the person runs, only these are Zest's to free."""
+        cur = [] if clear else [m for m in self.ctx.settings(self.id).get("loaded_by_zest") or [] if m != drop]
+        if add and add not in cur:
+            cur.append(add)
+        self.ctx.remember(self.id, loaded_by_zest=cur or None)
+        return cur
+
     def stop(self, model_id=None):
-        """Free one model's memory, or every model's when none is named. Lemonade's models are loaded by Zest on request, so Zest frees them."""
+        """Free one model's memory, or every model's when none is named (the person asked, from the chat bar or the Models page)."""
         status, payload = lem.request("POST", "/v1/unload", {"model_name": model_id} if model_id else {}, timeout=60)
+        if status == 200:
+            self._mine(drop=model_id, clear=not model_id)
         return status == 200, "" if status == 200 else lem.error_text(payload, "Lemonade couldn't free the model.")
+
+    def make_way(self):
+        """Free memory for another engine. A Lemonade Zest runs is Zest's to empty. In one the person runs (a system service, say), Zest only
+        unloads the models it loaded there itself; one another program loaded is theirs, and is reported instead."""
+        if engine.running():
+            return self.stop()
+        mine = set(self._mine())
+        loaded = [m.get("model_name") for m in lem.get("/v1/health").get("all_models_loaded", [])]
+        for mid in [m for m in loaded if m in mine]:
+            ok, msg = self.stop(mid)
+            if not ok:
+                return False, msg
+        theirs = [m for m in loaded if m not in mine]
+        if theirs:
+            return False, "Lemonade has %s loaded, which Zest didn't load. Free it in Lemonade first." % ", ".join(theirs)
+        return True, ""
 
     def ref(self, model_id):
         return model_id                                  # Lemonade's names are the ones chats have always used

@@ -15,6 +15,7 @@ _lock = threading.RLock()          # one activation at a time (held for as long 
 _slock = threading.Lock()          # guards STATE only, so the page can always read the progress of a start in progress
 STATE = {"ref": None, "provider": None, "step": "", "since": 0}      # what is being started right now, for the page's progress card
 busy_checks = []          # callables(provider id) -> bool; True when something of Zest's (a chat answering) is using that provider
+holds = []                # callables() -> "" or why no model may be started or used right now (a tune has the graphics cards)
 on_change = []            # callables run after an activation or a stop, so cached model lists are re-read
 _idx = {"t": 0, "v": None}
 _idle = {}
@@ -129,6 +130,25 @@ def _in_use(p):
     return p.busy() or any(chk(p.id) for chk in busy_checks)
 
 
+def anything_busy():
+    """Is any engine answering anything right now (a chat, another app, or the engine says so)?"""
+    for p in providers():
+        try:
+            if _in_use(p):
+                return True
+        except Exception:  # noqa: BLE001
+            continue
+    return False
+
+
+def held():
+    """Raises provbase.ProviderError when something has the engines to itself for now (see `holds`)."""
+    for h in holds:
+        why = h()
+        if why:
+            raise provbase.ProviderError(why)
+
+
 def make_room(p, progress):
     """Free the memory `p` needs: stop whatever shares its memory group and can't sit beside it.
 
@@ -151,7 +171,7 @@ def make_room(p, progress):
         if _in_use(q):
             raise provbase.ProviderError("%s is answering right now. Wait for it to finish, or stop it, then try again." % q.name)
         progress("Freeing memory: stopping %s…" % q.name)
-        ok, msg = q.stop()
+        ok, msg = q.make_way()
         if not ok:
             if mem["exclusive"]:
                 raise provbase.ProviderError("%s is running something you started, and %s needs the memory to itself. %s" % (q.name, p.name, msg))
@@ -165,6 +185,7 @@ def activate(ref, progress=None, opts=None):
 
     Raises provbase.ProviderError with a message a person can act on. Only one activation runs at a time."""
     progress = progress or (lambda t: None)
+    held()
     p, mid = resolve(ref)
     if p is None:
         raise provbase.ProviderError("No engine is set up to run models.")
@@ -194,7 +215,20 @@ def activate(ref, progress=None, opts=None):
     finally:
         _lock.release()
     invalidate()
-    return dict(ep or {}, provider=p.id, model=mid)
+    return dict(ep or {}, provider=p.id, model=(ep or {}).get("model") or mid)       # the name the engine serves it under
+
+
+def route(ref, progress=None, opts=None):
+    """Where to send a request for `ref` right now: like activate, but a model that is already running is answered at once, without
+    waiting behind another model that is starting (that can take half an hour for a big one)."""
+    held()
+    p, mid = resolve(ref)
+    if p is not None:
+        live, _ = p.loaded(mid)
+        ep = p.endpoint(mid) if live else None
+        if ep:
+            return dict(ep, provider=p.id, model=ep.get("model") or mid)
+    return activate(ref, progress, opts)
 
 
 def friendly_name(ref):
