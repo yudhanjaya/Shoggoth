@@ -37,6 +37,7 @@ import llamaargs   # noqa: E402
 import modelscan   # noqa: E402
 import piup        # noqa: E402
 import provbase    # noqa: E402
+import recs        # noqa: E402
 import registry    # noqa: E402
 import router      # noqa: E402
 import skills      # noqa: E402
@@ -295,6 +296,8 @@ class Handler(BaseHTTPRequestHandler):
             self.send_json(tuning.status())
         elif p == "/ui/strata/update":
             self.get_strata_update(parse_qs(u.query))
+        elif p == "/ui/recommendations":
+            self.send_json(recs.summary())
         elif p == "/ui/strata/recommend":
             self.send_json(strata.recommend())
         elif p == "/ui/strata":
@@ -795,7 +798,7 @@ class Handler(BaseHTTPRequestHandler):
         """Get a big model in one step: install Strata if needed, download, save as a Zest preset, start. Lemonade's models are
         freed first because they share the memory."""
         family, model = str(body.get("family", "")), str(body.get("model", ""))
-        if not any(e["family"] == family and e["model"] == model for e in strata.CATALOG):
+        if not any(e["family"] == family and e["model"] == model for e in strata.catalog()):
             raise ValueError("Zest doesn't know that model.")
         self.send_json({"started": strata.setup(family, model, bool(body.get("force"))), **strata.summary()})
 
@@ -1010,6 +1013,8 @@ def main():
     if args[:1] == ["providers"]:
         import provcheck
         sys.exit(provcheck.main(args[1:]))
+    if args[:1] == ["recommendations"]:
+        sys.exit(recs.main(args[1:]))
     ap = argparse.ArgumentParser(description="Zest: a console for Lemonade Server")
     ap.add_argument("--host", default=os.environ.get("ZEST_HOST", "127.0.0.1"), help="address to listen on (default 127.0.0.1)")
     ap.add_argument("--port", type=int, default=int(os.environ.get("ZEST_PORT", "13306")), help="port to listen on (default 13306)")

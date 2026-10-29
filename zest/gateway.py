@@ -22,6 +22,7 @@ from urllib.parse import urlparse
 
 import lem
 import provbase
+import recs
 import router
 import store
 
@@ -41,12 +42,8 @@ def norm(path):
 
 
 # ---------------------------------------------------------------- who is asking
-_APPS = [
-    (r"opencode", "opencode"), (r"hermes", "Hermes agent"), (r"open[- ]?webui", "Open WebUI"),
-    (r"claude[- ]?code", "Claude Code"), (r"cline", "Cline"), (r"roo", "Roo Code"), (r"continue", "Continue"),
-    (r"aider", "Aider"), (r"cursor", "Cursor"), (r"zed", "Zed"), (r"lobe", "LobeChat"), (r"librechat", "LibreChat"),
-    (r"anythingllm", "AnythingLLM"), (r"sillytavern", "SillyTavern"), (r"msty", "Msty"), (r"jan/", "Jan"),
-    (r"goose", "Goose"), (r"langchain", "LangChain"), (r"llamaindex", "LlamaIndex"),
+# Named apps come from the `detect` patterns in recommendations/tools.yaml; these say what kind of program it is when no app matched.
+_GENERIC = [
     (r"openai[-/ ]?python|openai/py", "Python app"), (r"openai[-/ ]?(js|node)|openai/js", "Node app"),
     (r"python-requests|python-httpx|aiohttp|urllib", "Python script"), (r"^curl", "curl"), (r"node|undici|axios", "Node app"),
     (r"go-http-client", "Go app"), (r"mozilla", "A web page"),
@@ -58,7 +55,10 @@ def app_name(headers):
     if forced:
         return re.sub(r"[^\w .+\-]", "", forced)[:32] or "Unknown app"
     ua = (headers.get("User-Agent") or "").strip()
-    for pat, name in _APPS:
+    for pat, name in recs.app_patterns():
+        if pat.search(ua):
+            return name
+    for pat, name in _GENERIC:
         if re.search(pat, ua, re.I):
             return name
     first = re.split(r"[/ ;(]", ua, 1)[0] if ua else ""

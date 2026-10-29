@@ -1,0 +1,193 @@
+# The tools Zest knows about: apps that use your models, skills, engines, and guides to choosing a model. Edit this file to add
+# or change one; nothing else needs to change.
+#
+# Check your edits with:   python3 zest/server.py recommendations check
+# Zest reads the file again when it changes: refresh the page to see it.
+# A copy at ~/.local/share/zest/recommendations/tools.yaml is used instead of this one.
+#
+# One entry per tool:
+#   id        short name: lowercase letters, digits, - and _
+#   name      what people call it
+#   kind      app (uses your models), skills (makes a model better at things), engine (runs models), guide (helps you choose)
+#   badge     a short chip on its card, like "My pick"
+#   take      what you think of it, a sentence or three. `code` and [links](https://...) work; [Skills](#skills) opens a Zest page.
+#   links     [{label, url}]: where to get it or read about it
+#   show      where it appears, in this file's order (see `places` below). Leave it out to list a tool only so the Server page
+#             can recognise it.
+#   detect    patterns for the User-Agent an app sends, so the Server page names it ("opencode" rather than "node"). Regular
+#             expressions, matched anywhere, ignoring case. The first tool that matches wins, so put specific patterns first.
+#   connect   for show: [server], how to point the app at Zest. Either
+#               fields: [base_url, key, model]       the values to type in, each with a Copy button, or
+#               json: {...}                          a config file to copy. In it, "{base_url}", "{key}", "{model}" and
+#                                                    "{model_name}" become Zest's address, key and a model (names too).
+#             plus help: one line on where it goes.
+#   provider  for an engine: the id of its folder under providers/, so its card on Advanced > Engines shows these links.
+
+version: 1
+
+# Where a tool can appear. The title and blurb head that part of the page.
+places:
+  library: {title: "Make any model better: a harness and skills", blurb: A model gets much more useful when it can search the web and follow skills.}
+  server: {title: Connect an app}
+  engines: {title: More engines worth knowing, blurb: Other programs that run models. Add one under Add an engine below.}
+  guides: {title: Where to compare models}
+
+tools:
+  # ------------------------------------------------------------ apps and skills I recommend (Library > Recommended)
+  - id: openchamber
+    name: OpenChamber
+    kind: app
+    badge: My pick
+    take: >-
+      The app I recommend for working with your models. Connect it through the [Server](#server) page. I find Unsloth Desktop laggy at
+      the moment, and Hermes more complex than most people need.
+    links: [{label: OpenChamber on GitHub, url: "https://github.com/openchamber/openchamber"}]
+    show: [library]
+    detect: [openchamber]
+
+  - id: superpowers
+    name: obra/superpowers
+    kind: skills
+    badge: Skills
+    take: >-
+      Give your models a few skills, especially this set, and most of them turn into a very good daily driver. A trimmed copy already
+      comes with Zest: switch it on under [Skills](#skills).
+    links: [{label: obra/superpowers on GitHub, url: "https://github.com/obra/superpowers"}]
+    show: [library]
+
+  # ------------------------------------------------------------ apps with setup steps on the Server page
+  - id: opencode
+    name: opencode
+    kind: app
+    links: [{label: opencode.ai, url: "https://opencode.ai/"}]
+    show: [server]
+    detect: [opencode]
+    connect:
+      help: Save this as `opencode.json` in your project, or add the `zest` part to your existing config.
+      json:
+        $schema: https://opencode.ai/config.json
+        provider:
+          zest:
+            npm: "@ai-sdk/openai-compatible"
+            name: Zest
+            options: {baseURL: "{base_url}", apiKey: "{key}"}
+            models:
+              "{model}": {name: "{model_name}"}
+
+  - id: hermes
+    name: Hermes
+    kind: app
+    show: [server]
+    detect: [hermes]
+    connect:
+      help: In Hermes, choose a custom OpenAI-compatible endpoint and enter these three values.
+      fields: [base_url, key, model]
+
+  # ------------------------------------------------------------ engines (their own settings live in providers/<id>/provider.yaml)
+  - id: lemonade
+    name: Lemonade
+    kind: engine
+    provider: lemonade
+    links: [{label: lemonade-server.ai, url: "https://lemonade-server.ai/"}]
+
+  - id: strata
+    name: Strata
+    kind: engine
+    provider: strata
+    links: [{label: Strata on GitHub, url: "https://github.com/Niko1221/Strata"}]
+
+  - id: llama-cpp
+    name: llama.cpp server
+    kind: engine
+    take: >-
+      The engine underneath most local AI. Zest comes with a ready example: run
+      `providers new llama-server --from llama-server` and follow [the ten-minute guide](https://github.com/yudhanjaya/Zest/blob/main/docs/ENGINES.md).
+    links: [{label: llama.cpp on GitHub, url: "https://github.com/ggml-org/llama.cpp"}]
+    show: [engines]
+
+  # ------------------------------------------------------------ other apps the Server page recognises by name
+  - {id: open-webui, name: Open WebUI, kind: app, detect: ["open[- ]?webui"]}
+  - {id: claude-code, name: Claude Code, kind: app, detect: ["claude[- ]?code"]}
+  - {id: cline, name: Cline, kind: app, detect: [cline]}
+  - {id: roo-code, name: Roo Code, kind: app, detect: [roo]}
+  - {id: continue, name: Continue, kind: app, detect: [continue]}
+  - {id: aider, name: Aider, kind: app, detect: [aider]}
+  - {id: cursor, name: Cursor, kind: app, detect: [cursor]}
+  - {id: zed, name: Zed, kind: app, detect: [zed]}
+  - {id: lobechat, name: LobeChat, kind: app, detect: [lobe]}
+  - {id: librechat, name: LibreChat, kind: app, detect: [librechat]}
+  - {id: anythingllm, name: AnythingLLM, kind: app, detect: [anythingllm]}
+  - {id: sillytavern, name: SillyTavern, kind: app, detect: [sillytavern]}
+  - {id: msty, name: Msty, kind: app, detect: [msty]}
+  - {id: jan, name: Jan, kind: app, detect: ["jan/"]}
+  - {id: goose, name: Goose, kind: app, detect: [goose]}
+  - {id: langchain, name: LangChain, kind: app, detect: [langchain]}
+  - {id: llamaindex, name: LlamaIndex, kind: app, detect: [llamaindex]}
+
+  # ------------------------------------------------------------ guides (Help > How do I choose a model)
+  - id: lukes-dev-lab
+    name: Luke's Dev Lab
+    kind: guide
+    take: "Speed and agent tests of local models on real hardware: how fast they decode, how they handle long prompts, and whether they finish real tasks."
+    links: [{label: lukesdevlab.com, url: "https://lukesdevlab.com/"}]
+    show: [guides]
+  - id: artificial-analysis
+    name: Artificial Analysis
+    kind: guide
+    take: Compares models on overall quality, speed and price side by side. Good for a quick overall ranking.
+    links: [{label: artificialanalysis.ai, url: "https://artificialanalysis.ai/"}]
+    show: [guides]
+  - id: lmarena
+    name: LMArena
+    kind: guide
+    take: People vote blind between two answers. It shows which models people actually prefer for everyday chat.
+    links: [{label: lmarena.ai, url: "https://lmarena.ai/"}]
+    show: [guides]
+  - id: aider-leaderboards
+    name: Aider leaderboards
+    kind: guide
+    take: How well models edit code in real projects. Look here if you want a coding helper.
+    links: [{label: aider.chat, url: "https://aider.chat/docs/leaderboards/"}]
+    show: [guides]
+  - id: bfcl
+    name: Berkeley Function-Calling Leaderboard
+    kind: guide
+    take: How reliably models call tools and functions. This matters when you give a model web search or other tools.
+    links: [{label: gorilla.cs.berkeley.edu, url: "https://gorilla.cs.berkeley.edu/leaderboard.html"}]
+    show: [guides]
+  - id: swe-bench
+    name: SWE-bench
+    kind: guide
+    take: Whether a model can fix real bugs from GitHub projects. A tough test for coding agents.
+    links: [{label: swebench.com, url: "https://www.swebench.com/"}]
+    show: [guides]
+  - id: livebench
+    name: LiveBench
+    kind: guide
+    take: Reasoning, maths, coding and language questions that are refreshed often, so models can't simply have memorised the answers.
+    links: [{label: livebench.ai, url: "https://livebench.ai/#/"}]
+    show: [guides]
+  - id: benchlm
+    name: BenchLM
+    kind: guide
+    take: Collects benchmark scores for many models in one place, so you can compare them side by side.
+    links: [{label: benchlm.ai, url: "https://benchlm.ai/"}]
+    show: [guides]
+  - id: llm-stats
+    name: LLM Stats
+    kind: guide
+    take: Lists the benchmarks themselves and which models lead on each, with an explanation of what every test measures.
+    links: [{label: llm-stats.com, url: "https://llm-stats.com/benchmarks"}]
+    show: [guides]
+  - id: r-localllama
+    name: r/LocalLLaMA
+    kind: guide
+    take: People running models at home share what works on real computers. Good for first impressions of a new release.
+    links: [{label: reddit.com/r/LocalLLaMA, url: "https://www.reddit.com/r/LocalLLaMA/"}]
+    show: [guides]
+  - id: level1techs
+    name: "Level1Techs forum: Deep Machine Learning / AI"
+    kind: guide
+    take: Enthusiasts and engineers discussing hardware and local AI setups, with real-world speeds and troubleshooting.
+    links: [{label: forum.level1techs.com, url: "https://forum.level1techs.com/c/high-performance-computing/deep-machine-learning-ai/155"}]
+    show: [guides]

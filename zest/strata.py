@@ -21,6 +21,7 @@ import urllib.error
 import urllib.request
 
 import hardware
+import recs
 import store
 
 REPO = "Niko1221/Strata"
@@ -367,7 +368,7 @@ def free_memory():
 
 def need_gb(model):
     """What a catalog model needs in RAM plus graphics memory; None for one Zest has no figure for (a setup of your own)."""
-    return next((e["need_gb"] for e in CATALOG if e["model"].lower() == str(model or "").lower()), None)
+    return next((e["need_gb"] for e in catalog() if e["model"].lower() == str(model or "").lower()), None)
 
 
 def check_memory(model):
@@ -487,16 +488,10 @@ def _do_install():
 
 
 # ---------------------------------------------------------------- what fits this computer
-# Qwen3.8-Flash-Next from ISTA-DASLab, Strata's recommended provider (docs/MODELS.md "Pick by memory"): the memory the weights
-# need in RAM plus VRAM, best quality first. DeepSeek V4.1 is listed but never recommended: 257 GB of disk and a fixed 8K window.
-CATALOG = [
-    {"family": "qwen", "model": "IQ3_S", "title": "Qwen3.8 Flash-Next, best quality", "need_gb": 54.8, "ctx": 131072},
-    {"family": "qwen", "model": "IQ3_XXS", "title": "Qwen3.8 Flash-Next, great quality", "need_gb": 47.0, "ctx": 131072},
-    {"family": "qwen", "model": "IQ2_XS", "title": "Qwen3.8 Flash-Next, balanced", "need_gb": 39.2, "ctx": 131072},
-    {"family": "qwen", "model": "Q2_0", "title": "Qwen3.8 Flash-Next, fastest", "need_gb": 37.6, "ctx": 131072},
-    {"family": "deepseek41", "model": "IST-DAS-2.00bpw", "title": "DeepSeek V4.1 Flash (very large, 8K window)", "need_gb": 46.0, "ctx": 8192,
-     "min_vram_gb": 12, "disk_gb": 270},
-]
+def catalog():
+    """The big models Zest offers to set up, best quality first, with the memory each needs: the `strata` list in
+    recommendations/models.yaml (edit that file to change them)."""
+    return recs.strata_catalog()
 
 
 def machine():
@@ -552,8 +547,9 @@ def recommend(ctx=131072, max_age=300):
     # An install that already holds models keeps them wherever its owner chose, and that disk is the one a download must fit on.
     root = models_root() if binary() else None
     adopted = bool(binary() and (root or _json(["models", "list", "--installed", "--output", "json"], 30).get("models")))
+    cat = catalog()
     fits = []
-    for e in CATALOG:
+    for e in cat:
         why = ""
         if not m["gpus"]:
             fit, why = "no", "Strata needs a graphics card."
@@ -566,22 +562,22 @@ def recommend(ctx=131072, max_age=300):
                 why = "Needs about %d GB of RAM plus graphics memory; this computer has %d GB." % (e["need_gb"], budget)
         fits.append((fit, why))
     plans = {}
-    with concurrent.futures.ThreadPoolExecutor(max_workers=len(CATALOG)) as pool:
-        futs = {e["model"]: pool.submit(_plan, e, e["ctx"]) for e, (fit, _) in zip(CATALOG, fits) if fit != "no"}
+    with concurrent.futures.ThreadPoolExecutor(max_workers=max(1, len(cat))) as pool:
+        futs = {e["model"]: pool.submit(_plan, e, e["ctx"]) for e, (fit, _) in zip(cat, fits) if fit != "no"}
         for k, f in futs.items():
             try:
                 plans[k] = f.result(timeout=90)
             except Exception:  # noqa: BLE001
                 plans[k] = {}
     out = []
-    for e, (fit, why) in zip(CATALOG, fits):
+    for e, (fit, why) in zip(cat, fits):
         plan = plans.get(e["model"], {})
         dl = plan.get("download_gb")
         bad = disk_problem(dl, root) if fit != "no" and (root or not adopted) else None
         if bad:
             fit, why = "no", bad
         out.append(dict(e, fit=fit, why=why, download_gb=dl, warnings=plan.get("warnings", [])))
-    pick = next((o for o in out if o["fit"] == "fits" and o["family"] == "qwen"), None) or next((o for o in out if o["fit"] == "tight" and o["family"] == "qwen"), None)
+    pick = next((o for o in out if o["fit"] == "fits" and o["suggest"]), None) or next((o for o in out if o["fit"] == "tight" and o["suggest"]), None)
     res = {"machine": m, "adopted": adopted, "options": out, "pick": pick["model"] if pick else None}
     _rc.update(t=time.time(), v=res)
     return res
@@ -600,7 +596,7 @@ def _free_port():
 def setup(family, model, force=False):
     """Install Strata if it is missing, then download `model`, save it as the preset "Zest <model>" with the context Zest
     uses (128k where the model allows) and start it. Runs in the background; progress is in RUN. Never touches a running Strata."""
-    entry = next((e for e in CATALOG if e["family"] == family and e["model"] == model), None)
+    entry = next((e for e in catalog() if e["family"] == family and e["model"] == model), None)
     if not entry:
         RUN.update(state="error", preset=None, error="Zest doesn't know that model.", log=[])
         return False

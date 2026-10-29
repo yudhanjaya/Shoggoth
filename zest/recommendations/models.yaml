@@ -1,0 +1,76 @@
+# The models Zest recommends. Edit this file to change the cards; nothing else needs to change.
+#
+# Check your edits with:   python3 zest/server.py recommendations check
+# Zest reads the file again when it changes: refresh the page to see the new cards.
+# A copy at ~/.local/share/zest/recommendations/models.yaml is used instead of this one.
+#
+# Text may use `code` and [links](https://example.com). A link to #skills, #models, #server... opens that page in Zest.
+
+version: 1
+
+# Library > "Recommended for this computer". A card shows only when its engine lists the model (by `id`, or one of `also`, the
+# same model under another name) and it fits this computer. The Library sorts the cards into Small, Medium and Large by size;
+# within a size they keep this order. `label` is the chip on the card (it also shows in the chat's model picker), `take` the text.
+recommended:
+  # Start here: small and fast. Runs on almost any computer.
+  - id: LFM2.5-8B-A1B
+    label: Best small model
+    take: >-
+      Very fast, runs on almost anything, and calls tools well. Its answers are short and to the point. Give it web search in a
+      harness such as OpenChamber and it is the smartest small model I have used. Think of it as a stand-in for a cloud “flash” model.
+
+  # My general pick: the one I would install first if your computer can hold it.
+  - id: Qwen3.6-35B-A3B-MTP-GGUF
+    label: Best all-rounder
+    take: >-
+      Very fast and competent at everyday tasks. It sometimes mangles complex code, but you can run it again and again until it
+      gets there. It does well at research, tweaking system settings and scripts, and at agent work (better than GLM). A good
+      in-editor helper for small functions. Its writing style is not to everyone's taste.
+
+  # If Qwen 3.6 won't run: a fallback, with a warning.
+  - id: GLM-4.7-Flash-GGUF
+    label: Only if you can't run Qwen 3.6
+    take: >-
+      Fast, but a confident bluffer: it makes things up often, so I would not trust it to write code. It improves a lot when you
+      give it skills in a harness like OpenCode or Hermes, but pick it only if Qwen 3.6 is out of reach.
+
+  # Bigger and slower: dense models. Good answers, but slower than the models above because every part of them works on every
+  # word. On a computer with a big graphics card and plenty of RAM, the Large models are faster than these.
+  - id: Gemma-4-31B-it-MTP-GGUF
+    label: Clear and concise
+    take: "I like the style: clear, concise and competent. It is simply slow next to the mixture-of-experts models."
+  - id: Qwen3.8-27B-GGUF
+    label: A thinker
+    take: >-
+      Competent, but it ruminates and refines its answers before it replies, and can think for ages unless you tell it to keep
+      its thinking and answers short.
+
+# The first-run screen: "Choose your first model", one card per size. Each size shows the first model in `models` that this
+# computer can run. `recommended: true` marks the one Zest suggests. The large card is Strata's suggestion (from `strata` below).
+first_run:
+  - size: small
+    models: [LFM2.5-8B-A1B]
+    blurb: Answers fast and keeps it short. Runs on almost any computer.
+    start: Ready in seconds
+  - size: medium
+    models: [Qwen3.6-35B-A3B-MTP-GGUF, Gemma-4-26B-A4B-it-GGUF, Gemma-4-31B-it-MTP-GGUF]
+    blurb: "My general pick: fast, and good at everyday tasks, research and simple code."
+    start: Ready in seconds
+    recommended: true
+  - size: large
+    engine: strata
+    blurb: The most capable, for a big computer. It takes a couple of minutes to start.
+    start: About 2 minutes to start
+
+# Very large models that Strata downloads and sets up itself (Large in the Library). `family` and `model` are Strata's own names
+# (`strata launch --family F --model M`). `need_gb` is the RAM plus graphics memory the weights need: it decides whether the model
+# fits. The suggestion is the first one, best quality first, that fits; `suggest: false` lists a model without ever suggesting it.
+strata:
+  # Qwen3.8 Flash-Next from ISTA-DASLab, Strata's recommended provider (Strata's docs/MODELS.md, "Pick by memory").
+  - {family: qwen, model: IQ3_S, title: "Qwen3.8 Flash-Next, best quality", need_gb: 54.8, ctx: 131072}
+  - {family: qwen, model: IQ3_XXS, title: "Qwen3.8 Flash-Next, great quality", need_gb: 47.0, ctx: 131072}
+  - {family: qwen, model: IQ2_XS, title: "Qwen3.8 Flash-Next, balanced", need_gb: 39.2, ctx: 131072}
+  - {family: qwen, model: Q2_0, title: "Qwen3.8 Flash-Next, fastest", need_gb: 37.6, ctx: 131072}
+  # 257 GB of disk and a fixed 8K window: listed, never suggested.
+  - {family: deepseek41, model: IST-DAS-2.00bpw, title: "DeepSeek V4.1 Flash (very large, 8K window)", need_gb: 46.0, ctx: 8192,
+     min_vram_gb: 12, disk_gb: 270, suggest: false}

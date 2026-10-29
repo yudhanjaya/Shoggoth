@@ -4840,7 +4840,7 @@
     "engine": "strata",
     "id": "IQ3_S dual",
     "title": "IQ3_S dual",
-    "detail": "IQ3_S · 128k context",
+    "detail": "IQ3_S \u00b7 128k context",
     "tuned": {
      "has": true,
      "stale": false,
@@ -4857,7 +4857,7 @@
     "engine": "strata",
     "id": "IST-DAS-2.00bpw 128K",
     "title": "IST-DAS-2.00bpw 128K",
-    "detail": "IST-DAS-2.00bpw · 128k context",
+    "detail": "IST-DAS-2.00bpw \u00b7 128k context",
     "tuned": {
      "has": false,
      "stale": false,
@@ -4874,7 +4874,7 @@
     "engine": "lemonade",
     "id": "gemma-3-270m-it-UD-IQ2_M",
     "title": "gemma-3-270m-it-UD-IQ2_M",
-    "detail": "Lemonade · llama.cpp",
+    "detail": "Lemonade \u00b7 llama.cpp",
     "tuned": {
      "has": false,
      "stale": false,
@@ -4891,7 +4891,7 @@
     "engine": "lemonade",
     "id": "gemma270m-q4",
     "title": "gemma270m-q4",
-    "detail": "Lemonade · llama.cpp",
+    "detail": "Lemonade \u00b7 llama.cpp",
     "tuned": {
      "has": false,
      "stale": false,
@@ -4917,6 +4917,718 @@
    "error": null,
    "result": null,
    "started": 0
+  }
+ },
+ "/ui/recommendations": {
+  "models": {
+   "recommended": [
+    {
+     "id": "LFM2.5-8B-A1B",
+     "also": [],
+     "label": "Best small model",
+     "take": "Very fast, runs on almost anything, and calls tools well. Its answers are short and to the point. Give it web search in a harness such as OpenChamber and it is the smartest small model I have used. Think of it as a stand-in for a cloud \u201cflash\u201d model."
+    },
+    {
+     "id": "Qwen3.6-35B-A3B-MTP-GGUF",
+     "also": [],
+     "label": "Best all-rounder",
+     "take": "Very fast and competent at everyday tasks. It sometimes mangles complex code, but you can run it again and again until it gets there. It does well at research, tweaking system settings and scripts, and at agent work (better than GLM). A good in-editor helper for small functions. Its writing style is not to everyone's taste."
+    },
+    {
+     "id": "GLM-4.7-Flash-GGUF",
+     "also": [],
+     "label": "Only if you can't run Qwen 3.6",
+     "take": "Fast, but a confident bluffer: it makes things up often, so I would not trust it to write code. It improves a lot when you give it skills in a harness like OpenCode or Hermes, but pick it only if Qwen 3.6 is out of reach."
+    },
+    {
+     "id": "Gemma-4-31B-it-MTP-GGUF",
+     "also": [],
+     "label": "Clear and concise",
+     "take": "I like the style: clear, concise and competent. It is simply slow next to the mixture-of-experts models."
+    },
+    {
+     "id": "Qwen3.8-27B-GGUF",
+     "also": [],
+     "label": "A thinker",
+     "take": "Competent, but it ruminates and refines its answers before it replies, and can think for ages unless you tell it to keep its thinking and answers short."
+    }
+   ],
+   "first_run": [
+    {
+     "size": "small",
+     "models": [
+      "LFM2.5-8B-A1B"
+     ],
+     "engine": "",
+     "blurb": "Answers fast and keeps it short. Runs on almost any computer.",
+     "start": "Ready in seconds",
+     "recommended": false
+    },
+    {
+     "size": "medium",
+     "models": [
+      "Qwen3.6-35B-A3B-MTP-GGUF",
+      "Gemma-4-26B-A4B-it-GGUF",
+      "Gemma-4-31B-it-MTP-GGUF"
+     ],
+     "engine": "",
+     "blurb": "My general pick: fast, and good at everyday tasks, research and simple code.",
+     "start": "Ready in seconds",
+     "recommended": true
+    },
+    {
+     "size": "large",
+     "models": [],
+     "engine": "strata",
+     "blurb": "The most capable, for a big computer. It takes a couple of minutes to start.",
+     "start": "About 2 minutes to start",
+     "recommended": false
+    }
+   ],
+   "strata": [
+    {
+     "family": "qwen",
+     "model": "IQ3_S",
+     "title": "Qwen3.8 Flash-Next, best quality",
+     "need_gb": 54.8,
+     "ctx": 131072,
+     "suggest": true
+    },
+    {
+     "family": "qwen",
+     "model": "IQ3_XXS",
+     "title": "Qwen3.8 Flash-Next, great quality",
+     "need_gb": 47.0,
+     "ctx": 131072,
+     "suggest": true
+    },
+    {
+     "family": "qwen",
+     "model": "IQ2_XS",
+     "title": "Qwen3.8 Flash-Next, balanced",
+     "need_gb": 39.2,
+     "ctx": 131072,
+     "suggest": true
+    },
+    {
+     "family": "qwen",
+     "model": "Q2_0",
+     "title": "Qwen3.8 Flash-Next, fastest",
+     "need_gb": 37.6,
+     "ctx": 131072,
+     "suggest": true
+    },
+    {
+     "family": "deepseek41",
+     "model": "IST-DAS-2.00bpw",
+     "title": "DeepSeek V4.1 Flash (very large, 8K window)",
+     "need_gb": 46.0,
+     "ctx": 8192,
+     "min_vram_gb": 12,
+     "disk_gb": 270,
+     "suggest": false
+    }
+   ]
+  },
+  "tools": {
+   "places": {
+    "library": {
+     "title": "Make any model better: a harness and skills",
+     "blurb": "A model gets much more useful when it can search the web and follow skills."
+    },
+    "server": {
+     "title": "Connect an app",
+     "blurb": ""
+    },
+    "engines": {
+     "title": "More engines worth knowing",
+     "blurb": "Other programs that run models. Add one under Add an engine below."
+    },
+    "guides": {
+     "title": "Where to compare models",
+     "blurb": ""
+    }
+   },
+   "tools": [
+    {
+     "id": "openchamber",
+     "name": "OpenChamber",
+     "kind": "app",
+     "badge": "My pick",
+     "take": "The app I recommend for working with your models. Connect it through the [Server](#server) page. I find Unsloth Desktop laggy at the moment, and Hermes more complex than most people need.",
+     "links": [
+      {
+       "label": "OpenChamber on GitHub",
+       "url": "https://github.com/openchamber/openchamber"
+      }
+     ],
+     "show": [
+      "library"
+     ],
+     "detect": [
+      "openchamber"
+     ],
+     "provider": ""
+    },
+    {
+     "id": "superpowers",
+     "name": "obra/superpowers",
+     "kind": "skills",
+     "badge": "Skills",
+     "take": "Give your models a few skills, especially this set, and most of them turn into a very good daily driver. A trimmed copy already comes with Zest: switch it on under [Skills](#skills).",
+     "links": [
+      {
+       "label": "obra/superpowers on GitHub",
+       "url": "https://github.com/obra/superpowers"
+      }
+     ],
+     "show": [
+      "library"
+     ],
+     "detect": [],
+     "provider": ""
+    },
+    {
+     "id": "opencode",
+     "name": "opencode",
+     "kind": "app",
+     "badge": "",
+     "take": "",
+     "links": [
+      {
+       "label": "opencode.ai",
+       "url": "https://opencode.ai/"
+      }
+     ],
+     "show": [
+      "server"
+     ],
+     "detect": [
+      "opencode"
+     ],
+     "provider": "",
+     "connect": {
+      "help": "Save this as `opencode.json` in your project, or add the `zest` part to your existing config.",
+      "fields": [],
+      "json": {
+       "$schema": "https://opencode.ai/config.json",
+       "provider": {
+        "zest": {
+         "npm": "@ai-sdk/openai-compatible",
+         "name": "Zest",
+         "options": {
+          "baseURL": "{base_url}",
+          "apiKey": "{key}"
+         },
+         "models": {
+          "{model}": {
+           "name": "{model_name}"
+          }
+         }
+        }
+       }
+      }
+     }
+    },
+    {
+     "id": "hermes",
+     "name": "Hermes",
+     "kind": "app",
+     "badge": "",
+     "take": "",
+     "links": [],
+     "show": [
+      "server"
+     ],
+     "detect": [
+      "hermes"
+     ],
+     "provider": "",
+     "connect": {
+      "help": "In Hermes, choose a custom OpenAI-compatible endpoint and enter these three values.",
+      "fields": [
+       "base_url",
+       "key",
+       "model"
+      ],
+      "json": null
+     }
+    },
+    {
+     "id": "lemonade",
+     "name": "Lemonade",
+     "kind": "engine",
+     "badge": "",
+     "take": "",
+     "links": [
+      {
+       "label": "lemonade-server.ai",
+       "url": "https://lemonade-server.ai/"
+      }
+     ],
+     "show": [],
+     "detect": [],
+     "provider": "lemonade"
+    },
+    {
+     "id": "strata",
+     "name": "Strata",
+     "kind": "engine",
+     "badge": "",
+     "take": "",
+     "links": [
+      {
+       "label": "Strata on GitHub",
+       "url": "https://github.com/Niko1221/Strata"
+      }
+     ],
+     "show": [],
+     "detect": [],
+     "provider": "strata"
+    },
+    {
+     "id": "llama-cpp",
+     "name": "llama.cpp server",
+     "kind": "engine",
+     "badge": "",
+     "take": "The engine underneath most local AI. Zest comes with a ready example: run `providers new llama-server --from llama-server` and follow [the ten-minute guide](https://github.com/yudhanjaya/Zest/blob/main/docs/ENGINES.md).",
+     "links": [
+      {
+       "label": "llama.cpp on GitHub",
+       "url": "https://github.com/ggml-org/llama.cpp"
+      }
+     ],
+     "show": [
+      "engines"
+     ],
+     "detect": [],
+     "provider": ""
+    },
+    {
+     "id": "open-webui",
+     "name": "Open WebUI",
+     "kind": "app",
+     "badge": "",
+     "take": "",
+     "links": [],
+     "show": [],
+     "detect": [
+      "open[- ]?webui"
+     ],
+     "provider": ""
+    },
+    {
+     "id": "claude-code",
+     "name": "Claude Code",
+     "kind": "app",
+     "badge": "",
+     "take": "",
+     "links": [],
+     "show": [],
+     "detect": [
+      "claude[- ]?code"
+     ],
+     "provider": ""
+    },
+    {
+     "id": "cline",
+     "name": "Cline",
+     "kind": "app",
+     "badge": "",
+     "take": "",
+     "links": [],
+     "show": [],
+     "detect": [
+      "cline"
+     ],
+     "provider": ""
+    },
+    {
+     "id": "roo-code",
+     "name": "Roo Code",
+     "kind": "app",
+     "badge": "",
+     "take": "",
+     "links": [],
+     "show": [],
+     "detect": [
+      "roo"
+     ],
+     "provider": ""
+    },
+    {
+     "id": "continue",
+     "name": "Continue",
+     "kind": "app",
+     "badge": "",
+     "take": "",
+     "links": [],
+     "show": [],
+     "detect": [
+      "continue"
+     ],
+     "provider": ""
+    },
+    {
+     "id": "aider",
+     "name": "Aider",
+     "kind": "app",
+     "badge": "",
+     "take": "",
+     "links": [],
+     "show": [],
+     "detect": [
+      "aider"
+     ],
+     "provider": ""
+    },
+    {
+     "id": "cursor",
+     "name": "Cursor",
+     "kind": "app",
+     "badge": "",
+     "take": "",
+     "links": [],
+     "show": [],
+     "detect": [
+      "cursor"
+     ],
+     "provider": ""
+    },
+    {
+     "id": "zed",
+     "name": "Zed",
+     "kind": "app",
+     "badge": "",
+     "take": "",
+     "links": [],
+     "show": [],
+     "detect": [
+      "zed"
+     ],
+     "provider": ""
+    },
+    {
+     "id": "lobechat",
+     "name": "LobeChat",
+     "kind": "app",
+     "badge": "",
+     "take": "",
+     "links": [],
+     "show": [],
+     "detect": [
+      "lobe"
+     ],
+     "provider": ""
+    },
+    {
+     "id": "librechat",
+     "name": "LibreChat",
+     "kind": "app",
+     "badge": "",
+     "take": "",
+     "links": [],
+     "show": [],
+     "detect": [
+      "librechat"
+     ],
+     "provider": ""
+    },
+    {
+     "id": "anythingllm",
+     "name": "AnythingLLM",
+     "kind": "app",
+     "badge": "",
+     "take": "",
+     "links": [],
+     "show": [],
+     "detect": [
+      "anythingllm"
+     ],
+     "provider": ""
+    },
+    {
+     "id": "sillytavern",
+     "name": "SillyTavern",
+     "kind": "app",
+     "badge": "",
+     "take": "",
+     "links": [],
+     "show": [],
+     "detect": [
+      "sillytavern"
+     ],
+     "provider": ""
+    },
+    {
+     "id": "msty",
+     "name": "Msty",
+     "kind": "app",
+     "badge": "",
+     "take": "",
+     "links": [],
+     "show": [],
+     "detect": [
+      "msty"
+     ],
+     "provider": ""
+    },
+    {
+     "id": "jan",
+     "name": "Jan",
+     "kind": "app",
+     "badge": "",
+     "take": "",
+     "links": [],
+     "show": [],
+     "detect": [
+      "jan/"
+     ],
+     "provider": ""
+    },
+    {
+     "id": "goose",
+     "name": "Goose",
+     "kind": "app",
+     "badge": "",
+     "take": "",
+     "links": [],
+     "show": [],
+     "detect": [
+      "goose"
+     ],
+     "provider": ""
+    },
+    {
+     "id": "langchain",
+     "name": "LangChain",
+     "kind": "app",
+     "badge": "",
+     "take": "",
+     "links": [],
+     "show": [],
+     "detect": [
+      "langchain"
+     ],
+     "provider": ""
+    },
+    {
+     "id": "llamaindex",
+     "name": "LlamaIndex",
+     "kind": "app",
+     "badge": "",
+     "take": "",
+     "links": [],
+     "show": [],
+     "detect": [
+      "llamaindex"
+     ],
+     "provider": ""
+    },
+    {
+     "id": "lukes-dev-lab",
+     "name": "Luke's Dev Lab",
+     "kind": "guide",
+     "badge": "",
+     "take": "Speed and agent tests of local models on real hardware: how fast they decode, how they handle long prompts, and whether they finish real tasks.",
+     "links": [
+      {
+       "label": "lukesdevlab.com",
+       "url": "https://lukesdevlab.com/"
+      }
+     ],
+     "show": [
+      "guides"
+     ],
+     "detect": [],
+     "provider": ""
+    },
+    {
+     "id": "artificial-analysis",
+     "name": "Artificial Analysis",
+     "kind": "guide",
+     "badge": "",
+     "take": "Compares models on overall quality, speed and price side by side. Good for a quick overall ranking.",
+     "links": [
+      {
+       "label": "artificialanalysis.ai",
+       "url": "https://artificialanalysis.ai/"
+      }
+     ],
+     "show": [
+      "guides"
+     ],
+     "detect": [],
+     "provider": ""
+    },
+    {
+     "id": "lmarena",
+     "name": "LMArena",
+     "kind": "guide",
+     "badge": "",
+     "take": "People vote blind between two answers. It shows which models people actually prefer for everyday chat.",
+     "links": [
+      {
+       "label": "lmarena.ai",
+       "url": "https://lmarena.ai/"
+      }
+     ],
+     "show": [
+      "guides"
+     ],
+     "detect": [],
+     "provider": ""
+    },
+    {
+     "id": "aider-leaderboards",
+     "name": "Aider leaderboards",
+     "kind": "guide",
+     "badge": "",
+     "take": "How well models edit code in real projects. Look here if you want a coding helper.",
+     "links": [
+      {
+       "label": "aider.chat",
+       "url": "https://aider.chat/docs/leaderboards/"
+      }
+     ],
+     "show": [
+      "guides"
+     ],
+     "detect": [],
+     "provider": ""
+    },
+    {
+     "id": "bfcl",
+     "name": "Berkeley Function-Calling Leaderboard",
+     "kind": "guide",
+     "badge": "",
+     "take": "How reliably models call tools and functions. This matters when you give a model web search or other tools.",
+     "links": [
+      {
+       "label": "gorilla.cs.berkeley.edu",
+       "url": "https://gorilla.cs.berkeley.edu/leaderboard.html"
+      }
+     ],
+     "show": [
+      "guides"
+     ],
+     "detect": [],
+     "provider": ""
+    },
+    {
+     "id": "swe-bench",
+     "name": "SWE-bench",
+     "kind": "guide",
+     "badge": "",
+     "take": "Whether a model can fix real bugs from GitHub projects. A tough test for coding agents.",
+     "links": [
+      {
+       "label": "swebench.com",
+       "url": "https://www.swebench.com/"
+      }
+     ],
+     "show": [
+      "guides"
+     ],
+     "detect": [],
+     "provider": ""
+    },
+    {
+     "id": "livebench",
+     "name": "LiveBench",
+     "kind": "guide",
+     "badge": "",
+     "take": "Reasoning, maths, coding and language questions that are refreshed often, so models can't simply have memorised the answers.",
+     "links": [
+      {
+       "label": "livebench.ai",
+       "url": "https://livebench.ai/#/"
+      }
+     ],
+     "show": [
+      "guides"
+     ],
+     "detect": [],
+     "provider": ""
+    },
+    {
+     "id": "benchlm",
+     "name": "BenchLM",
+     "kind": "guide",
+     "badge": "",
+     "take": "Collects benchmark scores for many models in one place, so you can compare them side by side.",
+     "links": [
+      {
+       "label": "benchlm.ai",
+       "url": "https://benchlm.ai/"
+      }
+     ],
+     "show": [
+      "guides"
+     ],
+     "detect": [],
+     "provider": ""
+    },
+    {
+     "id": "llm-stats",
+     "name": "LLM Stats",
+     "kind": "guide",
+     "badge": "",
+     "take": "Lists the benchmarks themselves and which models lead on each, with an explanation of what every test measures.",
+     "links": [
+      {
+       "label": "llm-stats.com",
+       "url": "https://llm-stats.com/benchmarks"
+      }
+     ],
+     "show": [
+      "guides"
+     ],
+     "detect": [],
+     "provider": ""
+    },
+    {
+     "id": "r-localllama",
+     "name": "r/LocalLLaMA",
+     "kind": "guide",
+     "badge": "",
+     "take": "People running models at home share what works on real computers. Good for first impressions of a new release.",
+     "links": [
+      {
+       "label": "reddit.com/r/LocalLLaMA",
+       "url": "https://www.reddit.com/r/LocalLLaMA/"
+      }
+     ],
+     "show": [
+      "guides"
+     ],
+     "detect": [],
+     "provider": ""
+    },
+    {
+     "id": "level1techs",
+     "name": "Level1Techs forum: Deep Machine Learning / AI",
+     "kind": "guide",
+     "badge": "",
+     "take": "Enthusiasts and engineers discussing hardware and local AI setups, with real-world speeds and troubleshooting.",
+     "links": [
+      {
+       "label": "forum.level1techs.com",
+       "url": "https://forum.level1techs.com/c/high-performance-computing/deep-machine-learning-ai/155"
+      }
+     ],
+     "show": [
+      "guides"
+     ],
+     "detect": [],
+     "provider": ""
+    }
+   ]
+  },
+  "problems": [],
+  "files": {
+   "models": "/zest/recommendations/models.yaml",
+   "tools": "/zest/recommendations/tools.yaml"
   }
  }
 }
