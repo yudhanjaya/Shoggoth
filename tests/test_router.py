@@ -14,7 +14,7 @@ import time
 import unittest
 
 HERE = os.path.dirname(os.path.abspath(__file__))
-sys.path.insert(0, os.path.join(HERE, "..", "zest"))
+sys.path.insert(0, os.path.join(HERE, "..", "shoggoth"))
 
 import gateway  # noqa: E402
 import library  # noqa: E402
@@ -47,8 +47,8 @@ YAML = """
 class Env(unittest.TestCase):
     def setUp(self):
         self.tmp = tempfile.mkdtemp()
-        self._old = {k: os.environ.get(k) for k in ("ZEST_DATA_DIR", "ZEST_CONFIG_DIR")}
-        os.environ["ZEST_DATA_DIR"], os.environ["ZEST_CONFIG_DIR"] = os.path.join(self.tmp, "data"), os.path.join(self.tmp, "config")
+        self._old = {k: os.environ.get(k) for k in ("SHOGGOTH_DATA_DIR", "SHOGGOTH_CONFIG_DIR")}
+        os.environ["SHOGGOTH_DATA_DIR"], os.environ["SHOGGOTH_CONFIG_DIR"] = os.path.join(self.tmp, "data"), os.path.join(self.tmp, "config")
         self.user = os.path.join(self.tmp, "providers")
         os.makedirs(self.user)
         self.add("fast", id="fast", name="Fast", tier="small-medium", ports="18980-18984", exclusive="false", idle=0)
@@ -166,8 +166,8 @@ class Progress(Env):
 
     def test_what_zest_started_goes_when_zest_quits_and_what_you_started_stays(self):
         self.start_stray(18984)                                                   # yours, on the fast engine's ports
-        router.activate("fast/m2", lambda x: None)                                # a name the stray doesn't serve, so Zest starts its own
-        self.assertTrue(provbase.port_open(18980))                                # Zest's own, on the first free port
+        router.activate("fast/m2", lambda x: None)                                # a name the stray doesn't serve, so Shoggoth starts its own
+        self.assertTrue(provbase.port_open(18980))                                # Shoggoth's own, on the first free port
         stopped = router.stop_started()
         self.assertEqual(stopped, ["fast"])
         self.assertFalse(provbase.port_open(18980))
@@ -366,10 +366,10 @@ class GatewayRouting(Env):
     def test_a_hold_stops_starting_and_using_models(self):
         self.big.ensure("m1", lambda t: None)
         router._idx["v"] = None
-        router.holds.append(lambda: "Zest is tuning.")
+        router.holds.append(lambda: "Shoggoth is tuning.")
         try:
             s, h, p, k, path, b, err = gateway._route("/v1/chat/completions", json.dumps({"model": "big/m1"}).encode())
-            self.assertEqual(err, "Zest is tuning.")
+            self.assertEqual(err, "Shoggoth is tuning.")
             with self.assertRaises(provbase.ProviderError):
                 router.activate("fast/m1")
         finally:

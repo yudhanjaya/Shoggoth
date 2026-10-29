@@ -1,4 +1,4 @@
-"""The model cards and tools Zest recommends come from zest/recommendations/*.yaml. These tests check the files as shipped (so an edit
+"""The model cards and tools Shoggoth recommends come from shoggoth/recommendations/*.yaml. These tests check the files as shipped (so an edit
 with a mistake fails here before it reaches anyone), that a copy in the data folder wins, that a mistake is reported with where it is,
 and that Strata and the Server page read what the files say. Run: python3 -m unittest discover tests"""
 import os
@@ -9,7 +9,7 @@ import sys
 import tempfile
 import unittest
 
-sys.path.insert(0, os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", "zest"))
+sys.path.insert(0, os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", "shoggoth"))
 
 import gateway  # noqa: E402
 import recs  # noqa: E402
@@ -19,12 +19,12 @@ import strata  # noqa: E402
 class Env(unittest.TestCase):
     def setUp(self):
         self.tmp = tempfile.mkdtemp()
-        self._old = os.environ.get("ZEST_DATA_DIR")
-        os.environ["ZEST_DATA_DIR"] = self.tmp
+        self._old = os.environ.get("SHOGGOTH_DATA_DIR")
+        os.environ["SHOGGOTH_DATA_DIR"] = self.tmp
         recs._cache.clear()
 
     def tearDown(self):
-        os.environ.pop("ZEST_DATA_DIR", None) if self._old is None else os.environ.__setitem__("ZEST_DATA_DIR", self._old)
+        os.environ.pop("SHOGGOTH_DATA_DIR", None) if self._old is None else os.environ.__setitem__("SHOGGOTH_DATA_DIR", self._old)
         recs._cache.clear()
         shutil.rmtree(self.tmp, ignore_errors=True)
 
@@ -48,7 +48,7 @@ class Shipped(Env):
         ids = {x["id"]: x for x in t["tools"]}
         self.assertEqual([x["id"] for x in t["tools"] if "server" in x["show"]], ["opencode", "hermes"])
         self.assertEqual(ids["hermes"]["connect"]["fields"], ["base_url", "key", "model"])
-        self.assertEqual(ids["opencode"]["connect"]["json"]["provider"]["zest"]["options"]["baseURL"], "{base_url}")
+        self.assertEqual(ids["opencode"]["connect"]["json"]["provider"]["shoggoth"]["options"]["baseURL"], "{base_url}")
         self.assertEqual(len([x for x in t["tools"] if "guides" in x["show"]]), 11)
 
 
@@ -72,7 +72,7 @@ class Yours(Env):
         self.assertEqual([m["id"] for m in s["models"]["recommended"]], ["B"])
         self.assertEqual(s["models"]["strata"], [])
         joined = "\n".join(s["problems"])
-        self.assertIn("recommended[0]: `lable` isn't a setting Zest reads (did you mean `label`?)", joined)
+        self.assertIn("recommended[0]: `lable` isn't a setting Shoggoth reads (did you mean `label`?)", joined)
         self.assertIn("strata[0]: `need_gb` must be a number", joined)
 
     def test_a_file_that_isnt_yaml_falls_back_to_zests_own(self):

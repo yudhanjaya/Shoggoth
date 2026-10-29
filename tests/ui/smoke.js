@@ -1,9 +1,9 @@
-// Loads zest/index.html in jsdom against recorded API answers, opens every page and exits 1 on any script error.
+// Loads shoggoth/index.html in jsdom against recorded API answers, opens every page and exits 1 on any script error.
 //   node smoke.js                       replay tests/ui/api.json
-//   node smoke.js --record URL TOKEN    walk the pages against a running Zest and write api.json (paths are made anonymous)
+//   node smoke.js --record URL TOKEN    walk the pages against a running Shoggoth and write api.json (paths are made anonymous)
 const fs = require("fs"), path = require("path");
 const { JSDOM, VirtualConsole } = require("jsdom");
-const html = fs.readFileSync(process.env.ZEST_HTML || path.join(__dirname, "..", "..", "zest", "index.html"), "utf8");
+const html = fs.readFileSync(process.env.SHOGGOTH_HTML || path.join(__dirname, "..", "..", "shoggoth", "index.html"), "utf8");
 const recording = process.argv[2] === "--record";
 const base = recording ? process.argv[3] : "", token = recording ? process.argv[4] : "";
 const apiFile = path.join(__dirname, "api.json");

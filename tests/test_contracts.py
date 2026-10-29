@@ -1,4 +1,4 @@
-"""What Zest reads from Strata, checked on answers captured from a real install (tests/fixtures/real), so a fake can't drift from the real thing
+"""What Shoggoth reads from Strata, checked on answers captured from a real install (tests/fixtures/real), so a fake can't drift from the real thing
 unnoticed. When Strata changes its output, capture it again (see the top of each file) and these say what no longer matches.
 Run: python3 -m unittest discover tests"""
 import copy
@@ -8,7 +8,7 @@ import sys
 import unittest
 
 HERE = os.path.dirname(os.path.abspath(__file__))
-sys.path.insert(0, os.path.join(HERE, "..", "zest"))
+sys.path.insert(0, os.path.join(HERE, "..", "shoggoth"))
 
 import strata  # noqa: E402
 

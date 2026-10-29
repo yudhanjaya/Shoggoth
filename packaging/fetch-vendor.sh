@@ -1,12 +1,12 @@
 #!/usr/bin/env bash
-# Fetches Mermaid (MIT), which draws the diagrams that appear in Chat, into zest/vendor/. Pinned by npm's sha512.
+# Fetches Mermaid (MIT), which draws the diagrams that appear in Chat, into shoggoth/vendor/. Pinned by npm's sha512.
 # The AppImage build runs this; from a source checkout, run it once if you want diagrams to render.
 set -euo pipefail
 cd "$(dirname "$0")/.."
 VER="12.2.0"
 URL="https://registry.npmjs.org/mermaid/-/mermaid-${VER}.tgz"
 INT="sha512-w7nr/SFrLO7BaVTs3dQTvYSV6nYSBj0Yy9DjBhsIJtAcHqRzXSq4Pg32ujHZ/AdWsAMNEvvhbm5dt9E2tOiHzw=="
-OUT=zest/vendor
+OUT=shoggoth/vendor
 [ -f "$OUT/mermaid.min.js" ] && [ -f "$OUT/mermaid.version" ] && [ "$(cat "$OUT/mermaid.version")" = "$VER" ] && exit 0
 mkdir -p "$OUT" build/cache
 TGZ="build/cache/mermaid-${VER}.tgz"

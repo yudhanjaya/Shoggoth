@@ -1,7 +1,8 @@
 # Maintainer: Yudhanjaya Wijeratne <yudhanjaya@gmail.com>
-pkgname=zest-appimage
-_name=Zest
-pkgver=3.4.3
+# Update pkgver and the AppImage's sha256 with each release.
+pkgname=shoggoth-appimage
+_name=Shoggoth
+pkgver=4.0.0
 pkgrel=1
 pkgdesc="Friendly interface for running open-weights models locally, with Lemonade and the Pi agent included"
 arch=('x86_64')
@@ -9,25 +10,29 @@ url="https://github.com/yudhanjaya/Zest"
 license=('MIT')
 depends=('zlib' 'fuse2' 'openssl' 'zstd' 'libdrm')
 options=('!strip' '!debug')
-provides=('zest')
-conflicts=('zest')
+provides=('shoggoth' 'zest')
+conflicts=('zest' 'zest-appimage')
+replaces=('zest-appimage')
 source=("$_name-$pkgver-x86_64.AppImage::$url/releases/download/v$pkgver/$_name-$pkgver-x86_64.AppImage"
         "$url/raw/v$pkgver/LICENSE")
 noextract=("$_name-$pkgver-x86_64.AppImage")
-sha256sums=('5c08531c606abe87da8be47684db76b742a9effdd9f4c40a5a9c3731c041cce2'
+sha256sums=('SKIP'
             'SKIP')
 
 prepare() {
   chmod +x "$_name-$pkgver-x86_64.AppImage"
-  ./"$_name-$pkgver-x86_64.AppImage" --appimage-extract zest.desktop >/dev/null
-  ./"$_name-$pkgver-x86_64.AppImage" --appimage-extract zest.png >/dev/null
+  ./"$_name-$pkgver-x86_64.AppImage" --appimage-extract shoggoth.desktop >/dev/null
+  ./"$_name-$pkgver-x86_64.AppImage" --appimage-extract shoggoth.png >/dev/null
 }
 
 package() {
   install -Dm755 "$_name-$pkgver-x86_64.AppImage" "$pkgdir/opt/$pkgname/$_name.AppImage"
   install -d "$pkgdir/usr/bin"
-  ln -s "/opt/$pkgname/$_name.AppImage" "$pkgdir/usr/bin/zest"
-  install -Dm644 squashfs-root/zest.desktop "$pkgdir/usr/share/applications/zest.desktop"
-  install -Dm644 squashfs-root/zest.png "$pkgdir/usr/share/pixmaps/zest.png"
+  ln -s "/opt/$pkgname/$_name.AppImage" "$pkgdir/usr/bin/shoggoth"
+  # The old command still works, and says what it is called now.
+  printf '#!/bin/sh\necho "Zest is called Shoggoth now. Starting shoggoth..." >&2\nexec /usr/bin/shoggoth "$@"\n' > zest
+  install -Dm755 zest "$pkgdir/usr/bin/zest"
+  install -Dm644 squashfs-root/shoggoth.desktop "$pkgdir/usr/share/applications/shoggoth.desktop"
+  install -Dm644 squashfs-root/shoggoth.png "$pkgdir/usr/share/pixmaps/shoggoth.png"
   install -Dm644 LICENSE "$pkgdir/usr/share/licenses/$pkgname/LICENSE"
 }

@@ -2,5 +2,5 @@ build/
 dist/
 __pycache__/
 *.pyc
-zest/vendor/
+shoggoth/vendor/
 tests/ui/node_modules/

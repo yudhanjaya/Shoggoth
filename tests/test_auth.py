@@ -1,4 +1,4 @@
-"""Zest's own page only opens for the window Zest started. Run: python3 -m unittest discover tests"""
+"""Shoggoth's own page only opens for the window Shoggoth started. Run: python3 -m unittest discover tests"""
 import http.client
 import json
 import os
@@ -8,7 +8,7 @@ import tempfile
 import threading
 import unittest
 
-sys.path.insert(0, os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", "zest"))
+sys.path.insert(0, os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", "shoggoth"))
 
 import server  # noqa: E402
 import uiauth  # noqa: E402
@@ -17,10 +17,10 @@ import uiauth  # noqa: E402
 class Door(unittest.TestCase):
     def setUp(self):
         self.tmp = tempfile.mkdtemp()
-        self._old = {k: os.environ.get(k) for k in ("ZEST_DATA_DIR", "ZEST_CONFIG_DIR", "ZEST_AUTH", "ZEST_TOKEN")}
-        os.environ["ZEST_DATA_DIR"], os.environ["ZEST_CONFIG_DIR"] = os.path.join(self.tmp, "data"), os.path.join(self.tmp, "config")
-        os.environ.pop("ZEST_AUTH", None)
-        os.environ.pop("ZEST_TOKEN", None)
+        self._old = {k: os.environ.get(k) for k in ("SHOGGOTH_DATA_DIR", "SHOGGOTH_CONFIG_DIR", "SHOGGOTH_AUTH", "SHOGGOTH_TOKEN")}
+        os.environ["SHOGGOTH_DATA_DIR"], os.environ["SHOGGOTH_CONFIG_DIR"] = os.path.join(self.tmp, "data"), os.path.join(self.tmp, "config")
+        os.environ.pop("SHOGGOTH_AUTH", None)
+        os.environ.pop("SHOGGOTH_TOKEN", None)
         self.srv = server.ThreadingHTTPServer(("127.0.0.1", 0), server.Handler)
         self.srv.daemon_threads = True
         self.port = self.srv.server_address[1]
@@ -43,7 +43,7 @@ class Door(unittest.TestCase):
     def test_a_stranger_gets_the_locked_page_and_nothing_else(self):
         status, _, body = self.call("GET", "/")
         self.assertEqual(status, 401)
-        self.assertIn(b"Start Zest again", body)
+        self.assertIn(b"Start Shoggoth again", body)
         for method, path in (("GET", "/ui/info"), ("GET", "/ui/library"), ("GET", "/ui/providers"), ("POST", "/ui/model/ctx"), ("POST", "/ui/providers/reload"),
                              ("POST", "/ui/ping"), ("POST", "/ui/code"), ("GET", "/api/v1/models"), ("DELETE", "/ui/cowork/delete")):
             self.assertEqual(self.call(method, path, body="{}")[0], 401, (method, path))
@@ -85,7 +85,7 @@ class Door(unittest.TestCase):
         self.assertEqual(self.call("GET", "/?c=" + code)[0], 401)
 
     def test_it_can_be_switched_off(self):
-        os.environ["ZEST_AUTH"] = "off"
+        os.environ["SHOGGOTH_AUTH"] = "off"
         self.assertEqual(self.call("GET", "/ui/library/places")[0], 200)
 
     def test_the_secret_is_kept_private_and_stable(self):

@@ -1,0 +1,11 @@
+{
+ "name": "Shoggoth basics",
+ "blurb": "Skills written for Shoggoth: diagrams that appear as pictures in the chat, and clear Markdown for documents.",
+ "source": "",
+ "license": "MIT",
+ "author": "Shoggoth",
+ "inline": [
+  "diagrams",
+  "markdown-writing"
+ ]
+}

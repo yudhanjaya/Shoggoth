@@ -12,7 +12,7 @@ import textwrap
 import unittest
 
 HERE = os.path.dirname(os.path.abspath(__file__))
-sys.path.insert(0, os.path.join(HERE, "..", "zest"))
+sys.path.insert(0, os.path.join(HERE, "..", "shoggoth"))
 
 import gguf  # noqa: E402
 import library  # noqa: E402
@@ -45,8 +45,8 @@ def write_gguf(path, arch="gemma3", name="Test Model", file_type=15, ctx=8192, s
 class Env(unittest.TestCase):
     def setUp(self):
         self.tmp = tempfile.mkdtemp()
-        self._old = {k: os.environ.get(k) for k in ("ZEST_DATA_DIR", "ZEST_CONFIG_DIR", "HF_HUB_CACHE")}
-        os.environ["ZEST_DATA_DIR"], os.environ["ZEST_CONFIG_DIR"] = os.path.join(self.tmp, "data"), os.path.join(self.tmp, "config")
+        self._old = {k: os.environ.get(k) for k in ("SHOGGOTH_DATA_DIR", "SHOGGOTH_CONFIG_DIR", "HF_HUB_CACHE")}
+        os.environ["SHOGGOTH_DATA_DIR"], os.environ["SHOGGOTH_CONFIG_DIR"] = os.path.join(self.tmp, "data"), os.path.join(self.tmp, "config")
         os.environ["HF_HUB_CACHE"] = os.path.join(self.tmp, "nohf")
         library._index.update(loaded=False, d={})
         self.lib = os.path.join(self.tmp, "lib")
@@ -354,7 +354,7 @@ class Imports(Env):
 
 class Layout(Env):
     def test_the_models_folder_holds_only_models(self):
-        # engines get their own subfolders; the views (links) live in Zest's data folder, never in the Models folder
+        # engines get their own subfolders; the views (links) live in Shoggoth's data folder, never in the Models folder
         write_gguf(os.path.join(self.lib, "lemonade", "a", "A-Q4.gguf"), size=2 * GB)
         self.elsewhere = os.path.join(self.tmp, "other")
         write_gguf(os.path.join(self.elsewhere, "B-Q4.gguf"), size=2 * GB)

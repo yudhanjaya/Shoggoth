@@ -1,5 +1,7 @@
 """Settings: saved by several threads at once (none may undo another's change), and usable where the home folder can't be written.
 Run: python3 -m unittest discover tests"""
+import contextlib
+import io
 import os
 import shutil
 import sys
@@ -8,7 +10,7 @@ import threading
 import unittest
 
 HERE = os.path.dirname(os.path.abspath(__file__))
-sys.path.insert(0, os.path.join(HERE, "..", "zest"))
+sys.path.insert(0, os.path.join(HERE, "..", "shoggoth"))
 
 import store  # noqa: E402
 
@@ -16,11 +18,11 @@ import store  # noqa: E402
 class Merging(unittest.TestCase):
     def setUp(self):
         self.tmp = tempfile.mkdtemp()
-        self._old = os.environ.get("ZEST_CONFIG_DIR")
-        os.environ["ZEST_CONFIG_DIR"] = self.tmp
+        self._old = os.environ.get("SHOGGOTH_CONFIG_DIR")
+        os.environ["SHOGGOTH_CONFIG_DIR"] = self.tmp
 
     def tearDown(self):
-        os.environ.pop("ZEST_CONFIG_DIR", None) if self._old is None else os.environ.__setitem__("ZEST_CONFIG_DIR", self._old)
+        os.environ.pop("SHOGGOTH_CONFIG_DIR", None) if self._old is None else os.environ.__setitem__("SHOGGOTH_CONFIG_DIR", self._old)
         shutil.rmtree(self.tmp, ignore_errors=True)
 
     def test_two_writers_that_changed_different_settings_both_keep_their_change(self):
@@ -81,7 +83,7 @@ class UnwritableHome(unittest.TestCase):
         self._env = {k: os.environ.get(k) for k in ("XDG_CONFIG_HOME", "XDG_DATA_HOME", "TMPDIR")}
         os.environ["TMPDIR"] = self.tmp
         tempfile.tempdir = None
-        self._zest = {k: os.environ.pop(k, None) for k in ("ZEST_CONFIG_DIR", "ZEST_DATA_DIR")}      # the test overrides would hide the fallback
+        self._zest = {k: os.environ.pop(k, None) for k in ("SHOGGOTH_CONFIG_DIR", "SHOGGOTH_DATA_DIR")}      # the test overrides would hide the fallback
 
     def tearDown(self):
         for k, v in self._env.items():
@@ -108,13 +110,46 @@ class UnwritableHome(unittest.TestCase):
 
     def test_a_writable_home_is_used_as_is(self):
         os.environ["XDG_CONFIG_HOME"] = os.path.join(self.tmp, "cfg")
-        self.assertEqual(store.config_dir(), os.path.join(self.tmp, "cfg", "zest"))
+        self.assertEqual(store.config_dir(), os.path.join(self.tmp, "cfg", "shoggoth"))
+
+    def test_a_folder_from_before_the_rename_is_moved(self):
+        os.environ["XDG_CONFIG_HOME"] = os.path.join(self.tmp, "cfg")
+        os.makedirs(os.path.join(self.tmp, "cfg", "zest"))
+        open(os.path.join(self.tmp, "cfg", "zest", "settings.json"), "w").write("{}")
+        with contextlib.redirect_stdout(io.StringIO()):
+            d = store.config_dir()
+        self.assertEqual(d, os.path.join(self.tmp, "cfg", "shoggoth"))
+        self.assertTrue(os.path.exists(os.path.join(d, "settings.json")))
+        self.assertFalse(os.path.exists(os.path.join(self.tmp, "cfg", "zest")))
+
+    def test_an_old_folder_that_cannot_move_is_used_where_it_is(self):
+        os.environ["XDG_CONFIG_HOME"] = os.path.join(self.tmp, "cfg")
+        os.makedirs(os.path.join(self.tmp, "cfg", "zest"))
+        real = os.rename
+        os.rename = lambda a, b: (_ for _ in ()).throw(OSError("busy"))
+        try:
+            self.assertEqual(store.config_dir(), os.path.join(self.tmp, "cfg", "zest"))
+        finally:
+            os.rename = real
+
+
+class OldVariables(unittest.TestCase):
+    def test_a_zest_variable_stands_in_for_its_new_name(self):
+        os.environ["ZEST_TEST_ONLY"] = "x"
+        try:
+            store._legacy_env()
+            self.assertEqual(os.environ.get("SHOGGOTH_TEST_ONLY"), "x")
+            os.environ["ZEST_TEST_ONLY"] = "y"
+            store._legacy_env()
+            self.assertEqual(os.environ.get("SHOGGOTH_TEST_ONLY"), "x")          # the new name wins once it is set
+        finally:
+            os.environ.pop("ZEST_TEST_ONLY", None); os.environ.pop("SHOGGOTH_TEST_ONLY", None)
 
 
 class Shipping(unittest.TestCase):
     def test_every_module_is_readable_by_other_users(self):
         # The catalog runs the AppImage as another user; a 0600 module crashed it on import.
-        root = os.path.join(HERE, "..", "zest")
+        root = os.path.join(HERE, "..", "shoggoth")
         bad = [f for f in os.listdir(root) if f.endswith(".py") and not os.stat(os.path.join(root, f)).st_mode & 0o004]
         self.assertEqual(bad, [])
 
