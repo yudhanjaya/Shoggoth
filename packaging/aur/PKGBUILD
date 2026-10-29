@@ -16,8 +16,8 @@ replaces=('zest-appimage')
 source=("$_name-$pkgver-x86_64.AppImage::$url/releases/download/v$pkgver/$_name-$pkgver-x86_64.AppImage"
         "$url/raw/v$pkgver/LICENSE")
 noextract=("$_name-$pkgver-x86_64.AppImage")
-sha256sums=('SKIP'
-            'SKIP')
+sha256sums=('c02c51e87e34e45dd7881fe828ded0a466aabda166b126588feed254e190902f'
+            'a0632f009d8fd1bf13d9a83abec848b4b44118a87e0951519073a9183648f597')
 
 prepare() {
   chmod +x "$_name-$pkgver-x86_64.AppImage"
