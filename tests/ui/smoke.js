@@ -60,6 +60,10 @@ const w = dom.window, wait = ms => new Promise(r => setTimeout(r, ms));
   for (const v of ["backends", "prefs", "models"]) { w.eval(`show(${JSON.stringify(v)})`); await wait(300); w.document.querySelectorAll(`#v-${v} details`).forEach(d => (d.open = true)); await wait(200); }
   const add = w.document.getElementById("libadd"); if (add) add.click();
   await wait(300);
+  // and every page again with model pictures turned off (Settings > Look)
+  w.localStorage.setItem("shoggoth.pictures", "false");
+  for (const v of views) { try { w.eval(`show(${JSON.stringify(v)})`); } catch (e) { problems.push(`pictures off, show(${v}): ${e.message}`); } await wait(60); }
+  w.localStorage.removeItem("shoggoth.pictures");
   if (recording) { fs.writeFileSync(apiFile, JSON.stringify(api, null, 1)); console.log(`recorded ${Object.keys(api).length} answers`); }
   console.log("pages: " + seen.join(" "));
   if (unknown.size && !recording) console.log("answers not recorded (served as {}): " + [...unknown].slice(0, 12).join(", "));
