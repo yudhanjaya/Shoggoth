@@ -44,7 +44,7 @@ Open **Chat** and type. The bar under the title shows which model will answer an
 
 Models are loaded into your graphics memory (primarily) and your RAM.
 
-The first answer takes a little longer; subsequent answers arrive much faster. **Unload** frees your graphics memory. While the model works, a small strip under the reply shows what it is doing: 📖 reading your message, 🤔 thinking, ✍️ writing, 🛠️ using a tool (🍋 loading, or 🙋 waiting for your OK, when that is the case). Its thinking appears above the reply and folds away when it is done.
+The first answer takes a little longer; subsequent answers arrive much faster. **Unload** frees your graphics memory. While the model works, a small strip under the reply shows what it is doing: reading your message, thinking, writing or using a tool. It also shows loading, and waiting for your OK, when those happen. A line in italics under the strip says the same thing in a more unsettling way. Its thinking appears above the reply and folds away when it is done.
 
 - Your conversations are listed on the left, with any jobs they started nested underneath. Click one to carry on where you left off, even after closing Shoggoth. To delete one, hover over it and press the cross.
 - Speed: the pill at the top shows how fast the model is writing, in tokens per second. You can think of tokens as being roughly analagous to words. Anything above about 5 is comfortable to read, but you should ideally run faster models.

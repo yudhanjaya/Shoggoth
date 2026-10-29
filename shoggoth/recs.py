@@ -21,7 +21,9 @@ import yaml  # noqa: E402
 import store  # noqa: E402
 
 BUNDLED = os.path.join(HERE, "recommendations")
-FILES = ("models", "tools")
+FILES = ("models", "tools", "flavour")
+FLAVOUR_SETS = ("loading", "reading", "thinking", "writing", "grasp", "quill", "seek", "eye", "sigil", "edit", "crypt", "tome", "orb",
+                 "threshold", "maw", "severed", "idle")
 ID_RE = re.compile(r"^[a-z0-9][a-z0-9_-]{0,47}$")
 KINDS = ("app", "skills", "engine", "guide")
 PLACES = ("library", "server", "engines", "guides")
@@ -262,7 +264,43 @@ def clean_tools(doc, c):
 
 
 # ---------------------------------------------------------------- reading
-CLEAN = {"models": clean_models, "tools": clean_tools}
+# ---------------------------------------------------------------- flavour.yaml
+def clean_flavour(doc, c):
+    """The usable part of a parsed flavour.yaml: {lines: {set: [line, ...]}}. Only {model} and {target} may be filled in."""
+    out = {"lines": {}}
+    if not isinstance(doc, dict):
+        c.bad("", "the file must be groups of settings (key: value), not %s." % type(doc).__name__)
+        return out
+    c.keys(doc, "", ["version", "lines"])
+    if doc.get("version", 1) != 1:
+        c.bad("version", "Shoggoth reads version 1.")
+    lines = doc.get("lines") or {}
+    if not isinstance(lines, dict):
+        c.bad("lines", "must be groups, one per set (thinking:, writing: ...).")
+        return out
+    c.keys(lines, "lines", list(FLAVOUR_SETS))
+    for k in FLAVOUR_SETS:
+        v = lines.get(k)
+        if v is None:
+            continue
+        v = v if isinstance(v, list) else [v]
+        keep = []
+        for i, x in enumerate(v):
+            w = "lines.%s[%d]" % (k, i)
+            if not isinstance(x, str) or not x.strip():
+                c.bad(w, "must be a line of text.")
+                continue
+            odd = [p for p in re.findall(r"\{([^}]*)\}", x) if p not in ("model", "target")]
+            if odd:
+                c.bad(w, "{%s} isn't something Shoggoth fills in. Use {model} or {target}." % odd[0])
+                continue
+            keep.append(x.strip())
+        if keep:
+            out["lines"][k] = keep
+    return out
+
+
+CLEAN = {"models": clean_models, "tools": clean_tools, "flavour": clean_flavour}
 
 
 def _read(fname):
@@ -328,9 +366,10 @@ def tools():
 
 
 def summary():
-    """Everything the page needs: {models, tools, problems, files}."""
-    m, t = get("models"), get("tools")
-    return {"models": m["data"], "tools": t["data"], "problems": m["problems"] + t["problems"], "files": {"models": m["file"], "tools": t["file"]}}
+    """Everything the page needs: {models, tools, flavour, problems, files}."""
+    m, t, f = get("models"), get("tools"), get("flavour")
+    return {"models": m["data"], "tools": t["data"], "flavour": f["data"], "problems": m["problems"] + t["problems"] + f["problems"],
+            "files": {"models": m["file"], "tools": t["file"], "flavour": f["file"]}}
 
 
 def strata_catalog():
@@ -350,7 +389,7 @@ def app_patterns():
 # ---------------------------------------------------------------- the command line
 def main(argv):
     """`recommendations check [file...]` and `recommendations where`. Returns the exit code."""
-    usage = "usage: recommendations check [models.yaml|tools.yaml ...] | recommendations where"
+    usage = "usage: recommendations check [models.yaml|tools.yaml|flavour.yaml ...] | recommendations where"
     if not argv or argv[0] not in ("check", "where"):
         print(usage)
         return 2
@@ -364,13 +403,14 @@ def main(argv):
     for f in targets:
         name = next((n for n in FILES if os.path.basename(f).startswith(n)), None)
         if not name:
-            print("%s: Shoggoth reads models.yaml and tools.yaml; it can't tell which this is." % f)
+            print("%s: Shoggoth reads models.yaml, tools.yaml and flavour.yaml; it can't tell which this is." % f)
             bad += 1
             continue
         r = load(name, os.path.abspath(f))
         d = r["data"]
         counts = ("%d recommended, %d first-run sizes, %d Strata models" % (len(d["recommended"]), len(d["first_run"]), len(d["strata"])) if name == "models"
-                  else "%d tools, %d places" % (len(d["tools"]), len(d["places"])))
+                  else "%d tools, %d places" % (len(d["tools"]), len(d["places"])) if name == "tools"
+                  else "%d lines in %d sets" % (sum(map(len, d["lines"].values())), len(d["lines"])))
         print("%s %s: %s" % ("✗" if r["problems"] else "✓", f, counts))
         for p in r["problems"]:
             print("  ✗ " + p)
