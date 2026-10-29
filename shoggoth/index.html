@@ -972,7 +972,7 @@ svg.gl{width:1.2em;height:1.2em;vertical-align:-.25em;stroke:currentColor;fill:n
 .cwcut{display:flex;gap:12px;align-items:center;flex-wrap:wrap;margin:.4em 0 0}
 .cwcut .cwnote{margin:0}
 /* the model bar: which model, how much context, in memory or not */
-.mbar{display:flex;align-items:center;gap:12px;padding:8px 20px;border-bottom:1px solid var(--line-soft);background:var(--surface-2);flex-wrap:wrap}
+.mbar{display:flex;align-items:center;gap:8px;padding:8px 20px;border-bottom:1px solid var(--line-soft);background:var(--surface-2);flex-wrap:wrap}
 .mbar .btn{flex:none;white-space:nowrap}
 .mbar .grow{display:none}
 .mdot{width:9px;height:9px;border-radius:50%;background:var(--steel);flex:none}
@@ -1014,7 +1014,7 @@ svg.gl{width:1.2em;height:1.2em;vertical-align:-.25em;stroke:currentColor;fill:n
 .mcard li::before{content:"✓ ";color:var(--leaf)}
 .mcard li.now::before{content:"… ";color:var(--lemon-text)}
 .mcard .mt{font-size:12.5px;color:var(--faint)}
-.mbar .btn{min-height:34px;padding:0 16px}
+.mbar .btn{min-height:34px;padding:0 12px}
 @media (max-width:900px){.mbar{padding:8px 16px}.mbar .mpick select{max-width:22ch}.mbar .grow{display:none}.mbar .mstate{flex:1 0 100%;order:9;white-space:normal}}
 @media (max-width:1180px){
   .cwside{position:absolute;right:0;top:52px;bottom:0;z-index:5;background:var(--bg);box-shadow:-12px 0 30px rgba(0,0,0,.08);display:none}
@@ -1126,7 +1126,9 @@ svg.gl{width:1.2em;height:1.2em;vertical-align:-.25em;stroke:currentColor;fill:n
 .cwchipwrap{position:relative;min-width:0}
 @media (max-width:1240px){.cwbar{flex-wrap:wrap;row-gap:8px}.cwbar .cwtitle{flex:1;min-width:0;max-width:none}.cwbar .cwchipwrap{order:5;flex:1 0 100%}}
 .cwchips .fc{white-space:nowrap}
-.cwbar .cwtitle{flex:0 1 auto;max-width:42%}
+/* the chips stay whole on one line; the chat's title gives way */
+.cwbar .cwtitle{flex:0 1 auto;min-width:6em}
+@media (min-width:1241px){.cwbar .cwchipwrap{flex:none}.cwbar .cwchips{flex-wrap:nowrap}}
 .cwside{grid-template-columns:minmax(0,1fr)}
 .cwside>*,.wbbody>*,.wbbody{min-width:0}
 .cwgrp{min-width:0}
@@ -5459,7 +5461,7 @@ function cwModelBar(){
   else if(ms.loaded) st.textContent = "Another model is in memory. Choosing this one frees it first.";
   else st.textContent = "Starts when you send a message" + (m && m.start && !m.live && m.start_s >= 45 ? ` · ${m.start.toLowerCase()}` : "");
   st.title = st.textContent;
-  const fr = $("#mbfree"); fr.hidden = !ms.loaded || loading; fr.disabled = !!CW.running;
+  const fr = $("#mbfree"); fr.hidden = !ms.loaded || loading || !!CW.running;   // it can't free memory mid-answer, so it steps aside
   // the progress card: what Shoggoth is doing while it gets a model ready
   const card = $("#mbcard");
   if(loading){

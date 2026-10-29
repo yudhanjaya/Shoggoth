@@ -269,7 +269,7 @@ Shoggoth looks the same everywhere you use it, but you can change its finish. Op
 
 ## Your data and privacy
 
-![The Help page, answering "Is my data private?"](docs/screenshots/help.png)
+![The Help page: short answers to common questions, as one list](docs/screenshots/help.png)
 
 ### Where Shoggoth keeps things
 
