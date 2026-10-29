@@ -21,6 +21,8 @@ DEFAULTS = {
     "models": {"storage": "hf", "custom_dir": "", "imports": []},
     # The door for other apps: its own port, always needs the key, this computer only unless `lan` is on.
     "gateway": {"enabled": True, "port": 13308, "api_key": "", "lan": False, "capture": False},
+    # Each model family's creature on this computer: {lineage: [form, tone]}, given once and never changed.
+    "creatures": {},
 }
 _lock = threading.RLock()
 

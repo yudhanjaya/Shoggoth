@@ -376,11 +376,88 @@ def _start_hint(seconds):
 
 _pk = {"t": 0, "v": None}
 
+# ---------------------------------------------------------------- the creature each model grows into
+QUANT_RE = re.compile(r"[-_.](?:UD[-_])?(?:I?Q\d[A-Z0-9_]*|F16|BF16|F32|MXFP4[A-Z0-9_]*)$", re.I)
+SIZE_RE = re.compile(r"(?<![a-z0-9])(?:(\d+)x)?(\d+(?:\.\d+)?)([bm])(?![a-z])", re.I)
+BITS = {"2": 2.7, "3": 3.6, "4": 4.6, "5": 5.5, "6": 6.6, "8": 8.5}
+COMMON_B = (0.5, 1, 2, 3, 4, 7, 8, 9, 12, 14, 20, 24, 27, 30, 32, 35, 70, 80, 120, 235)
+
+
+def fnv(s):
+    """The page's hashStr (32-bit FNV-1a), so the server and the page agree on a creature."""
+    h = 2166136261
+    for ch in s:
+        h = ((h ^ ord(ch)) * 16777619) & 0xFFFFFFFF
+    return h
+
+
+def lineage(e, fallback):
+    """The model family, so Q4 and Q8 of one model grow the same body: the Hugging Face repo name, else the file name, with the
+    quant and "GGUF" taken off, lowercased."""
+    m = re.search(r"models--[^/\\]+?--([^/\\]+)", str(e.get("folder") or ""))
+    base = m.group(1) if m else str(e.get("stem") or str(e.get("title") or "").split(",")[0] or fallback or "")
+    base = re.sub(r"[-_.]?gguf$", "", base, flags=re.I)
+    for _ in range(2):
+        base = QUANT_RE.sub("", base)
+    return base.lower() or str(fallback).lower()
+
+
+def quant_of(e, fallback):
+    q = str(e.get("quant") or "")
+    for text in ("" if q else e.get("stem"), "" if q else fallback):
+        m = re.search(r"(?:^|[-_.])(I?Q\d[A-Z0-9_]*|F16|BF16|F32)(?:$|[-_.])", str(text or ""), re.I)
+        if m:
+            q = m.group(1)
+            break
+    return q.upper() or "Q4_K_M"
+
+
+def params_of(e, title, size_gb, quant):
+    """Billions of parameters: from a size label or the name (35B, 0.6B, 270M, 8x7B), else estimated from the file size and quant."""
+    for text in (e.get("size_label"), title, e.get("stem")):
+        m = SIZE_RE.search(str(text or ""))
+        if m and m.group(1) and int(m.group(1)) > 16:      # labels like 512x56B count experts, not a size worth multiplying
+            continue
+        if m:
+            n = float(m.group(2)) * (int(m.group(1)) if m.group(1) else 1)
+            return round(n / 1000 if m.group(3).lower() == "m" else n, 2)
+    d = re.search(r"\d", quant)
+    est = (size_gb or 4) * 8 / BITS.get(d.group(0) if d else "4", 4.6)
+    return min(COMMON_B, key=lambda b: abs(b - est))
+
+
+def creatures(lineages):
+    """{lineage: (form, tone)} for these families. A new family gets the form and tone its name hashes to, or the next ones
+    no other family here has; once given, a family keeps them, so deleting one model never changes another's creature."""
+    have = (store.load().get("creatures") or {})
+    new = [l for l in lineages if l not in have]
+    if new:
+        def add(s):
+            cur = s.setdefault("creatures", {})
+            for l in new:
+                if l in cur:
+                    continue
+                forms = {v[0] for v in cur.values()}
+                tones = {v[1] for v in cur.values()}
+                f, t = fnv(l) % 9, fnv(l + "|tone") % 5
+                for _ in range(9):
+                    if f not in forms or len(forms) >= 9:
+                        break
+                    f = (f + 1) % 9
+                for _ in range(5):
+                    if t not in tones or len(tones) >= 5:
+                        break
+                    t = (t + 1) % 5
+                cur[l] = [f, t]
+        have = store.update(add).get("creatures") or {}
+    return {l: tuple(have.get(l, (fnv(l) % 9, fnv(l + "|tone") % 5))) for l in lineages}
+
 
 def picker(max_age=8):
     """The models a person can pick for a chat, from every engine, with what helps them choose:
 
-    [{id, title, tier, tier_label, fit, why, size_gb, need_gb, live, start_s, start, engine, engine_name, vision, tools, reasoning, ctx, ctx_fixed}].
+    [{id, title, tier, tier_label, fit, why, size_gb, need_gb, live, start_s, start, engine, engine_name, vision, tools, reasoning, ctx, ctx_fixed,
+    quant, params, lineage, form, tone}]: the last five draw the model's creature.
     Engine names are carried for a discreet line; the interface never leads with them."""
     import router
     if max_age and _pk["v"] is not None and time.time() - _pk["t"] < max_age:
@@ -402,6 +479,11 @@ def picker(max_age=8):
                     "live": bool(m["live"]), "start_s": start, "start": _start_hint(start), "engine": m["engine"], "engine_name": p.name if p else m["engine"],
                     "vision": bool(m.get("vision")), "tools": bool(m.get("tools")), "reasoning": bool(m.get("reasoning")), "ctx": m.get("ctx") or 0,
                     "ctx_fixed": router.fixed_ctx(m["id"])})
+        q = quant_of(e, m["pi_model"])
+        out[-1].update(quant=q, lineage=lineage(e, m["pi_model"]), params=params_of(e, out[-1]["title"], out[-1]["size_gb"] or out[-1]["need_gb"], q))
+    shapes = creatures(sorted({x["lineage"] for x in out}))
+    for x in out:
+        x["form"], x["tone"] = shapes[x["lineage"]]
     order = {t: i for i, t in enumerate(TIERS)}
     out.sort(key=lambda x: (order.get(x["tier"], 9), x["need_gb"] or x["size_gb"] or 0, x["title"].lower()))
     res = {"models": out, "machine": machine, "tiers": [{"id": t, "label": TIER_LABEL[t]} for t in TIERS]}
