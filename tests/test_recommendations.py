@@ -80,6 +80,14 @@ class ThePicks(Env):
         self.assertIn("Claude Sonnet 5", next(e for e in st if e["family"] == "qwen")["take"])
         self.assertIn("token-maxxers", next(e for e in st if e["family"] == "deepseek41")["take"])
 
+    def test_flash_next_has_two_sizes_and_coder_and_swift_are_offered_but_never_suggested(self):
+        st = recs.models()["strata"]
+        self.assertEqual([e["model"] for e in st if e["family"] == "qwen"], ["IQ3_S", "IQ2_XS"])
+        for fam in ("coder", "swift"):
+            e = next(e for e in st if e["family"] == fam)
+            self.assertFalse(e["suggest"])
+            self.assertTrue(e["take"])
+
     def test_no_speed_figures_on_a_card(self):
         for r in recs.models()["recommended"]:
             self.assertNotRegex(r["take"] + r["title"], r"tok/s|tokens/s|tokens per second")

@@ -117,19 +117,46 @@ first_run:
 # (`strata launch --family F --model M`). `need_gb` is the RAM plus graphics memory the weights need: it decides whether the model
 # fits. The suggestion is the first one, best quality first, that fits; `suggest: false` lists a model without ever suggesting it.
 strata:
-  # Qwen3.8 Flash-Next from ISTA-DASLab, Strata's recommended provider (Strata's docs/MODELS.md, "Pick by memory").
+  # Qwen3.8 Flash-Next from ISTA-DASLab, Strata's recommended provider (Strata's docs/MODELS.md, "Pick by memory"): the best quality
+  # size and the balanced one. The two smaller sizes (IQ3_XXS, Q2_0) are left out on purpose.
   - family: qwen
     model: IQ3_S
-    title: "Qwen3.8 Flash-Next, best quality"
+    title: "Qwen3.8 Flash-Next, IQ3_S"
     need_gb: 54.8
     ctx: 131072
     take: >-
       One of the closest options we have to a frontier model experience at home, thanks to Strata. Blazing fast (often as fast as some of
       the medium models), roughly comparable to Claude Sonnet 5 for agentic work and code. You need at least 64 GB of RAM and a 12 GB GPU
       to run this.
-  - {family: qwen, model: IQ3_XXS, title: "Qwen3.8 Flash-Next, great quality", need_gb: 47.0, ctx: 131072}
-  - {family: qwen, model: IQ2_XS, title: "Qwen3.8 Flash-Next, balanced", need_gb: 39.2, ctx: 131072}
-  - {family: qwen, model: Q2_0, title: "Qwen3.8 Flash-Next, fastest", need_gb: 37.6, ctx: 131072}
+  # The balanced size: 48 GB of RAM is enough for it (Strata's docs/MODELS.md).
+  - family: qwen
+    model: IQ2_XS
+    title: "Qwen3.8 Flash-Next, IQ2_XS"
+    need_gb: 39.2
+    ctx: 131072
+    take: >-
+      The IQ2_XS quantization. Smaller, and therefore less likely to be accurate - quantizations at this level tend to develop odd
+      habits, like looping or hallucinating. But if you're low on RAM, this is a good pick.
+  # Two more models from Strata's MODELS.md. `suggest: false`: they are never the default pick, only offered.
+  - family: coder
+    model: IQ1_M
+    title: "Qwen3.8 Flash-Next Coder (code only)"
+    need_gb: 29.6
+    ctx: 131072
+    suggest: false
+    take: >-
+      Flash-Next with half of its experts cut away, keeping only the stuff relevant for code. It runs on about 32 GB of RAM (half the
+      size of the full model). ISTA-DASLab, who made it, report that it keeps 91% of the full model’s SWE-bench Verified score and 99%
+      of its LiveCodeBench score. TL;DR: good at code and worse at everything else, especially multilingual stuff.
+  - family: swift
+    model: IQ2_XS
+    title: "Swift 1.5 (Flash-Next that thinks less)"
+    need_gb: 39.2
+    ctx: 131072
+    suggest: false
+    take: >-
+      A fine-tune of Qwen 3.8 Flash-Next by UkisAI that thinks much less before it answers, at about the same quality. It needs the
+      same memory, but you get your answers sooner and spend fewer tokens on long tool jobs. I prefer the original, but your call.
   # 257 GB of disk and a fixed 8K window: listed, never suggested.
   - family: deepseek41
     model: IST-DAS-2.00bpw

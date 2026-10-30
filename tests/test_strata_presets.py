@@ -85,5 +85,15 @@ class UpdateFailure(unittest.TestCase):
         self.assertIsNone(strata.update_failure({"ok": False, "results": [{"component": "engine", "status": "current"}]}))
 
 
+class PresetNames(unittest.TestCase):
+    def test_a_family_that_shares_a_model_name_gets_its_own_saved_setup(self):
+        q = strata.preset_name({"family": "qwen", "model": "IQ2_XS"})
+        w = strata.preset_name({"family": "swift", "model": "IQ2_XS"})
+        self.assertEqual(q, "Shoggoth IQ2_XS")
+        self.assertNotEqual(q, w)
+        self.assertEqual(strata.preset_name({"family": "deepseek41", "model": "IST-DAS-2.00bpw"}), "Shoggoth IST-DAS-2.00bpw")
+        self.assertEqual(strata.preset_name({"family": "coder", "model": "IQ1_M"}), "Shoggoth coder IQ1_M")
+
+
 if __name__ == "__main__":
     unittest.main()

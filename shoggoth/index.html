@@ -148,9 +148,9 @@ main{position:relative}
 .nav button:hover{background:var(--surface-2);color:var(--text)}
 .nav button[aria-current="page"],.nav button.in-group{background:var(--lemon-wash);color:var(--text)}
 .nav button[aria-current="page"]{font-weight:700}
-.nav .sub{display:none;flex-direction:column;gap:2px;margin:2px 0 8px 24px;padding-left:12px;border-left:2px solid var(--line)}
+.nav .sub{display:none;flex-direction:column;gap:4px;margin:4px 0 8px 16px}
 .nav .sub.open{display:flex}
-.nav .sub button{min-height:38px;font-size:14px;font-weight:500}
+.nav .sub button{min-height:36px;font-size:14px;font-weight:500}
 .rail .spacer{flex:1}
 .railnote{padding:12px 12px;font-size:12.5px;color:var(--faint);line-height:1.45}
 main{display:flex;flex-direction:column;min-width:0;height:100dvh}
@@ -160,7 +160,7 @@ main{display:flex;flex-direction:column;min-width:0;height:100dvh}
 .top .crumb[hidden],.top .crumbsep[hidden]{display:none}
 .top .grow{flex:1}
 .dot{width:9px;height:9px;border-radius:50%;background:var(--faint);flex:none}
-.dot.on{background:var(--leaf);box-shadow:0 0 0 0 var(--leaf);animation:pulse 2.4s infinite}
+.dot.on{background:var(--leaf)}
 .dot.busy{background:var(--lemon);animation:pulse 1s infinite}
 .dot.off{background:var(--bad)}
 @keyframes pulse{0%{box-shadow:0 0 0 0 color-mix(in srgb,var(--leaf) 50%,transparent)}70%{box-shadow:0 0 0 8px transparent}100%{box-shadow:0 0 0 0 transparent}}
@@ -266,7 +266,8 @@ main{display:flex;flex-direction:column;min-width:0;height:100dvh}
 .composer.dropping{border-color:var(--lemon);box-shadow:0 0 0 3px var(--lemon-wash)}
 .msg.user .pics{display:flex;flex-wrap:wrap;gap:8px;margin-bottom:8px}
 .msg.user .pics img{max-width:220px;max-height:180px;border-radius:10px;display:block}
-.crow{display:flex;align-items:center;gap:8px;margin-top:8px}
+.crow{display:flex;flex-wrap:wrap;align-items:center;gap:4px 8px;margin-top:8px}.crow .btn{white-space:nowrap}
+@media (max-width:640px){.crow .btn.ghost{padding-left:8px;padding-right:8px}}
 .crow .grow{flex:1}
 .pick{display:inline-flex;align-items:center;gap:8px;min-height:36px;padding:0 12px;border-radius:9px;border:1px solid var(--line);background:var(--bg);font-size:13px;max-width:46vw}
 .pick select{appearance:none;border:0;background:none;outline:none;max-width:30ch;text-overflow:ellipsis;cursor:pointer;padding-right:2px}
@@ -299,7 +300,7 @@ main{display:flex;flex-direction:column;min-width:0;height:100dvh}
 .card{position:relative;border:1px solid var(--line);background:var(--surface);border-radius:var(--radius);padding:20px;display:flex;flex-direction:column;gap:16px;transition:border-color .2s,transform .2s var(--ease)}
 .card:hover{border-color:var(--faint);transform:translateY(-2px)}
 .card.loaded{border-color:var(--lemon);background:linear-gradient(180deg,var(--lemon-wash),transparent 60%),var(--surface)}
-.card h3{margin:0;font:650 19px/1.2 var(--sans);overflow-wrap:anywhere}
+.card h3{margin:0;font:600 19px/1.2 var(--sans);overflow-wrap:anywhere}
 .card .tags{display:flex;gap:8px;flex-wrap:wrap}
 .card .row{display:flex;justify-content:space-between;align-items:baseline;font-size:13px;color:var(--muted)}
 .fit{height:8px;border-radius:99px;background:var(--surface-2);overflow:hidden;position:relative}
@@ -349,7 +350,7 @@ dialog label{display:grid;gap:8px;font-size:13px;color:var(--muted)}
 .panel h3{margin:0;font:800 20px var(--disp)}
 .kv{display:grid;grid-template-columns:max-content 1fr;gap:8px 24px;font-size:14px}
 .kv dt{color:var(--muted)}.kv dd{margin:0;font-family:var(--mono);font-size:13px;overflow-wrap:anywhere}
-.toast{position:fixed;left:50%;bottom:26px;transform:translate(-50%,20px);background:var(--text);color:var(--bg);padding:12px 20px;border-radius:12px;font-size:14px;opacity:0;pointer-events:none;transition:all .28s var(--ease);z-index:20;max-width:calc(100vw - 32px)}
+.toast{position:fixed;left:50%;bottom:26px;transform:translate(-50%,20px);background:var(--text);color:var(--bg);padding:12px 20px;border-radius:12px;font-size:14px;opacity:0;pointer-events:none;transition:opacity .28s var(--ease),transform .28s var(--ease);z-index:20;max-width:calc(100vw - 32px)}
 .toast.show{opacity:1;transform:translate(-50%,0)}
 
 .applybar{position:sticky;top:0;z-index:5;display:flex;align-items:center;gap:12px;flex-wrap:wrap;padding:12px 16px;margin:0 0 20px;border:1px solid var(--lemon);border-radius:14px;background:var(--surface);box-shadow:0 10px 30px rgba(0,0,0,.18)}
@@ -377,7 +378,7 @@ dialog label{display:grid;gap:8px;font-size:13px;color:var(--muted)}
 .bkp .grow{flex:1}
 .bkp .eng{margin:-4px 0 0;color:var(--muted);font-size:14.5px;max-width:70ch}
 .bkhelp{padding:0 20px;margin:0 0 20px}
-.bkhelp summary{cursor:pointer;list-style:none;min-height:48px;display:flex;align-items:center;font:650 17px var(--sans)}
+.bkhelp summary{cursor:pointer;list-style:none;min-height:48px;display:flex;align-items:center;font:600 17px var(--sans)}
 .bkhelp summary::-webkit-details-marker{display:none}
 .bkdl{display:grid;grid-template-columns:max-content 1fr;gap:8px 20px;margin:0 0 12px}
 .bkdl dt{font-weight:600}.bkdl dd{margin:0;color:var(--muted)}
@@ -436,10 +437,11 @@ details.adv[open] summary{margin-bottom:12px}
 .card .optline b{color:var(--lemon-text);font-weight:600}
 .btn.icon{flex:0 0 44px!important;padding:0}
 .setbar{display:flex;gap:12px;align-items:center;margin-bottom:20px;flex-wrap:wrap}
+.setbar[hidden]{display:none}
 .setbar input{flex:1;min-width:200px;min-height:42px;border:1px solid var(--line);border-radius:999px;background:var(--surface);padding:0 20px;outline:none}
 .setbar input:focus{border-color:var(--lemon)}
 details.setgrp{border:1px solid var(--line);border-radius:var(--radius);background:var(--surface);margin-bottom:16px}
-details.setgrp>summary{cursor:pointer;list-style:none;padding:16px 20px;font:650 19px var(--sans);display:flex;align-items:center;gap:12px;min-height:56px}
+details.setgrp>summary{cursor:pointer;list-style:none;padding:16px 20px;font:600 19px var(--sans);display:flex;align-items:center;gap:12px;min-height:56px}
 details.setgrp>summary::-webkit-details-marker{display:none}
 details.setgrp>summary::before{content:"";width:7px;height:7px;border-right:1.8px solid currentColor;border-bottom:1.8px solid currentColor;transform:rotate(-45deg);transition:transform .2s;opacity:.6}
 details.setgrp[open]>summary::before{transform:rotate(45deg)}
@@ -447,7 +449,7 @@ details.setgrp>summary small{font:12px var(--mono);color:var(--faint);font-weigh
 .setrows{border-top:1px solid var(--line-soft)}
 #setstrata:not(:empty){margin-bottom:16px}
 .gpu .ctl[hidden]{display:none}
-.card .ctop h3{flex:1;min-width:0}.cthumb{width:46px;height:42px;flex:none;display:grid;place-items:center}.cthumb svg{width:100%;height:100%}
+.card .ctop h3{flex:1;min-width:0}.cthumb{width:72px;height:64px;flex:none;display:grid;place-items:center}.cthumb svg{width:100%;height:100%}
 .setrow{display:grid;grid-template-columns:minmax(0,1fr) minmax(220px,340px);gap:12px 28px;padding:16px 20px;border-bottom:1px solid var(--line-soft);align-items:start}
 .setrow:last-child{border-bottom:0}
 .setrow .lab b{display:block;font-size:14.5px}
@@ -488,7 +490,7 @@ details.aegrp>summary small{margin-left:auto;font:11.5px var(--mono);color:var(-
 .aectl .reset{justify-self:start;border:0;background:none;color:var(--lemon-text);font-size:12px;padding:2px 4px;border-radius:6px}
 .aectl .reset[hidden]{display:none}
 .aeall input[type=search]{margin:12px 16px 4px;width:calc(100% - 28px);min-height:38px;border:1px solid var(--line);border-radius:999px;background:var(--surface);color:var(--text);padding:0 16px;outline:none}
-.aeall h4{margin:16px 16px 0;font:600 11.5px var(--mono);text-transform:uppercase;letter-spacing:.06em;color:var(--faint)}
+.aeall h4{margin:16px 16px 0;font:600 12.5px var(--sans);color:var(--faint)}
 .aeall .note{margin:12px 16px;font-size:12.5px;color:var(--faint)}
 .aeprev{display:grid;gap:4px;padding:12px 16px;border:1px dashed var(--line);border-radius:12px}
 .aeprev span{font-size:12px;color:var(--faint)}
@@ -501,10 +503,11 @@ details.aegrp>summary small{margin-left:auto;font:11.5px var(--mono);color:var(-
 .nav2{margin-bottom:4px}
 .rail{overflow-y:auto}
 .faint{color:var(--faint)}
+a:not([class]){color:var(--lemon-text);text-underline-offset:3px}
 .step a,.note-warn a,.lead a{color:var(--lemon-text);text-underline-offset:3px}
 .btn.ghost{background:none;border-color:transparent}
 .hero{margin:8px 0 24px}
-.hero h2{font:800 clamp(34px,5vw,52px)/1.05 var(--disp);letter-spacing:0;margin:0 0 12px}
+.hero h2{font:700 clamp(24px,3vw,30px)/1.2 var(--disp);letter-spacing:0;margin:0 0 8px}
 .hero p{color:var(--muted);max-width:62ch;margin:0;font-size:16px}
 .flow{display:grid;grid-template-columns:repeat(4,1fr);gap:0;list-style:none;margin:0;padding:0;counter-reset:fl}
 .flow li{position:relative;padding:16px 16px 16px 56px;border:1px solid var(--line);background:var(--surface);min-height:76px;display:grid;align-content:center;gap:1px}
@@ -568,7 +571,7 @@ details.aegrp>summary small{margin-left:auto;font:11.5px var(--mono);color:var(-
 .libwhere b{color:var(--text);font-weight:600;overflow-wrap:anywhere}
 .libplaces{display:grid;gap:8px;margin:12px 0}
 .libplaces label{display:flex;gap:12px;align-items:center;padding:8px 12px;border:1px solid var(--line);border-radius:10px;background:var(--surface);cursor:pointer;font-size:13.5px}
-.libplaces label:has(input:checked){border-color:var(--lemon-text);background:color-mix(in srgb,var(--lemon) 16%,transparent)}
+.libplaces label:has(input:checked){border-color:var(--text);background:var(--surface-2)}
 .libplaces small{color:var(--muted);margin-left:auto;white-space:nowrap}
 .line:has(>[data-lib]){display:flex;flex-wrap:wrap;align-items:center;gap:12px 16px;margin-top:16px}.line:has(>[data-lib]) .linkbtn{margin-left:8px;padding:8px 4px}
 .libdl{display:grid;gap:8px;margin-bottom:16px}
@@ -588,7 +591,7 @@ details.aegrp>summary small{margin-left:auto;font:11.5px var(--mono);color:var(-
 .wrow2>i{flex:none;width:26px;height:26px;border-radius:50%;display:grid;place-items:center;font-style:normal;font-size:14px;background:var(--surface-2);color:var(--muted);border:1px solid var(--line)}
 .wrow2.done>i{background:var(--leaf);color:#fff;border-color:var(--leaf)}
 .wrow2.working>i{background:var(--lemon);color:var(--text);border-color:var(--lemon)}
-.wrow2.problem>i{background:var(--bad);color:#fff;border-color:var(--bad)}
+.wrow2.problem>i{background:color-mix(in srgb,var(--bad) 12%,var(--surface));color:var(--bad);border-color:var(--bad)}
 .wr{display:grid;gap:4px;flex:1;min-width:0}
 .wr b{font-size:15px}.wr span{color:var(--muted);font-size:13.5px;overflow-wrap:anywhere}
 .wrow2.waiting b{color:var(--faint)}
@@ -618,7 +621,11 @@ details.aegrp>summary small{margin-left:auto;font:11.5px var(--mono);color:var(-
 .linkbtn{border:0;background:none;color:var(--lemon-text);text-decoration:underline;text-underline-offset:3px;padding:0;font:inherit;cursor:pointer}
 .note-warn{border:1px solid color-mix(in srgb,var(--warn) 45%,transparent);background:var(--warn-bg);color:var(--warn);border-radius:12px;padding:12px 16px;font-size:14px}
 .note-warn a{color:inherit;font-weight:600}
-.card .ctop{display:flex;justify-content:space-between;gap:12px;align-items:flex-start}
+.card .ctop{display:grid;grid-template-columns:minmax(0,1fr);gap:6px 12px;align-items:start}
+.card .ctop:has(.cthumb){grid-template-columns:auto minmax(0,1fr)}
+.card .ctop h3{overflow-wrap:anywhere}.card .ctop .chip{order:-1;justify-self:start}
+.card .ctop .cthumb{grid-column:1;grid-row:1 / span 3}.card .ctop:has(.cthumb)>:not(.cthumb){grid-column:2}
+.libmore{margin-top:8px}.libmore summary{cursor:pointer;color:var(--muted);font-size:13px;padding:4px 0}
 .card .what{margin:-8px 0 0;color:var(--muted);font-size:14px}
 .card details.more{border-top:1px solid var(--line-soft);padding-top:4px}.card details.more summary .eng{margin-left:auto;color:var(--faint);font-size:12px}
 .card .row + .fitwrap{margin-top:-8px}
@@ -697,7 +704,7 @@ details.aegrp>summary small{margin-left:auto;font:11.5px var(--mono);color:var(-
 .soonband{position:absolute;left:-6%;right:-6%;top:44px;transform:rotate(-4deg);padding:7px 0;text-align:center;background:#f7d916;color:#17140a;
   font:800 17px/1 var(--disp);letter-spacing:.06em;box-shadow:0 2px 0 rgba(0,0,0,.18);pointer-events:none}
 .warnbox{border:1px solid var(--warn-line);background:var(--warn-bg);color:var(--warn);border-radius:12px;padding:12px 16px;font-size:14px}
-.engrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(310px,1fr));gap:16px}
+.engrid{display:grid;grid-template-columns:repeat(auto-fit,minmax(310px,1fr));gap:16px}
 .engcard{align-content:start}
 .engcard .links{display:flex;gap:16px;flex-wrap:wrap}.engcard .links a{font-weight:600}
 .picktier.more{color:var(--muted)}
@@ -710,7 +717,7 @@ details.aegrp>summary small{margin-left:auto;font:11.5px var(--mono);color:var(-
 #pickdlg header p{margin:4px 0 0;color:var(--muted);font-size:14px}
 #pickdlg .actions{padding:16px 24px;border-top:1px solid var(--line-soft)}
 #pickbody{display:block}
-#pickbody h4{font:650 17px var(--sans);margin:20px 0 8px}
+#pickbody h4{font:600 17px var(--sans);margin:20px 0 8px}
 #pickbody h4:first-child{margin-top:0}
 .picklist{margin:0;padding-left:20px;display:grid;gap:8px}
 .picksites{list-style:none;margin:0;padding:0;display:grid;gap:12px}
@@ -719,7 +726,7 @@ details.aegrp>summary small{margin-left:auto;font:11.5px var(--mono);color:var(-
 .picksites span{font-size:14px;color:var(--muted)}
 .faq{display:grid;max-width:760px;border-top:1px solid var(--line)}
 .faq details{border-bottom:1px solid var(--line);padding:0 4px}
-.faq summary{cursor:pointer;list-style:none;min-height:54px;display:flex;align-items:center;font:650 17px var(--sans)}
+.faq summary{cursor:pointer;list-style:none;min-height:54px;display:flex;align-items:center;font:600 17px var(--sans)}
 .faq summary::-webkit-details-marker{display:none}
 .faq summary::after{content:"+";margin-left:auto;font:400 22px var(--sans);color:var(--faint)}
 .faq details[open] summary::after{content:"–"}
@@ -832,7 +839,8 @@ h4.sub{margin:12px 0 0;font:600 13px var(--sans);color:var(--muted);text-transfo
   .brand{padding:2px 8px 4px}
   .nav{display:grid;grid-template-columns:repeat(3,1fr);gap:4px;flex:none}
   .nav button{flex-direction:column;justify-content:center;gap:4px;min-height:54px;padding:6px 2px;font-size:12.5px;font-weight:600;text-align:center}
-  .nav .sub{grid-column:1/-1;margin:2px 0 4px;padding-left:10px}
+  .nav .sub{grid-column:1/-1;margin:4px 0 8px}
+  .nav .sub button{flex-direction:row;justify-content:flex-start;text-align:left;min-height:36px;padding:0 12px 0 16px;font-size:14px;font-weight:500}
   .nav .navdot{top:6px;right:22px}
   .railchats{flex:1;min-height:0;display:flex;flex-direction:column}
   .railchats:empty{display:none}
@@ -882,14 +890,14 @@ h4.sub{margin:12px 0 0;font:600 13px var(--sans);color:var(--muted);text-transfo
 .cwbar .grow{flex:1}
 .cwbar .chip[hidden],.cwhero [hidden]{display:none}
 .cwbar #cwtoggle-list,.cwbar #cwtoggle-side{display:none}
-.cwtitle{font:650 17px var(--sans);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.cwtitle{font:600 17px var(--sans);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .cwside{width:300px;flex:none;border-left:1px solid var(--line-soft);padding:20px 16px;display:grid;gap:20px;align-content:start;overflow:auto}
-.cwside h4{margin:0 0 8px;font:600 12px var(--sans);letter-spacing:.06em;text-transform:uppercase;color:var(--faint)}
+.cwside h4{margin:0 0 8px;font:600 13px var(--sans);color:var(--faint)}
 .cwside .path{font:12px var(--mono);color:var(--muted);overflow-wrap:anywhere}
 .cwside select{width:100%;min-height:38px;border:1px solid var(--line);border-radius:10px;background:var(--surface);padding:0 12px}
 .cwmodes{display:grid;gap:8px}
 .cwmodes label{display:grid;grid-template-columns:18px 1fr;gap:2px 8px;padding:8px 12px;border:1px solid var(--line);border-radius:10px;cursor:pointer;background:var(--surface)}
-.cwmodes label:has(input:checked){border-color:var(--lemon);background:var(--lemon-wash)}
+.cwmodes label:has(input:checked){border-color:var(--text);background:var(--surface-2)}
 .cwmodes b{font-weight:600;font-size:14px}
 .cwmodes small{grid-column:2;color:var(--muted);font-size:12.5px;line-height:1.4}
 .cwmeter{height:8px;border-radius:99px;background:var(--surface-2);overflow:hidden;border:1px solid var(--line-soft)}
@@ -925,7 +933,7 @@ h4.sub{margin:12px 0 0;font:600 13px var(--sans);color:var(--muted);text-transfo
 .cwthink summary{cursor:pointer;font-size:13px;color:var(--faint)}
 .tool{border:1px solid var(--line);border-radius:12px;background:var(--surface);margin:0 0 12px 44px;overflow:hidden}
 .tool .thead{display:flex;gap:12px;align-items:center;width:100%;border:0;background:none;padding:8px 12px;text-align:left}
-.tool .tn{font:600 11.5px var(--sans);letter-spacing:.05em;text-transform:uppercase;color:var(--muted);flex:none;min-width:48px}
+.tool .tn{font:600 12.5px var(--sans);color:var(--muted);flex:none;min-width:48px}
 .tool .tsum{font:12.5px var(--mono);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;flex:1;min-width:0}
 .tool .tst{font-size:12px;color:var(--faint);flex:none}
 .tool.run .tst{color:var(--warn)}.tool.ok .tst{color:var(--leaf)}.tool.bad .tst,.tool.no .tst{color:var(--bad)}
@@ -1049,7 +1057,7 @@ svg.gl{width:1.2em;height:1.2em;vertical-align:-.25em;stroke:currentColor;fill:n
 .cwfpop{position:absolute;top:calc(100% + 6px);left:0;z-index:8;width:min(340px,86vw);background:var(--surface);border:1px solid var(--line);border-radius:14px;box-shadow:0 14px 40px rgba(0,0,0,.12);padding:16px;display:grid;gap:12px}
 .cwfpop[hidden]{display:none}
 .cwfpop .path{font:12px var(--mono);overflow-wrap:anywhere;color:var(--muted)}
-.cwfpop h5{margin:0;font:600 12px var(--sans);letter-spacing:.06em;text-transform:uppercase;color:var(--faint)}
+.cwfpop h5{margin:0;font:600 13px var(--sans);color:var(--faint)}
 .seg{display:inline-flex;border:1px solid var(--line);border-radius:10px;overflow:hidden;background:var(--surface)}
 .seg label{padding:8px 12px;font-size:13.5px;cursor:pointer;color:var(--muted)}
 .seg input{position:absolute;opacity:0;pointer-events:none}
@@ -1065,7 +1073,7 @@ svg.gl{width:1.2em;height:1.2em;vertical-align:-.25em;stroke:currentColor;fill:n
 .jc.working{border-color:var(--lemon);box-shadow:0 0 0 3px var(--lemon-wash)}
 .jc.paused,.jc.interrupted{border-color:color-mix(in srgb,var(--warn) 45%,transparent);background:var(--warn-bg)}
 .jc .jh{display:flex;gap:8px;align-items:center}
-.jc .jh b{font-weight:650;flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.jc .jh b{font-weight:600;flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .jc .jst{font-size:12.5px;color:var(--muted)}
 .jc .jgoal{margin:0;color:var(--muted);font-size:13.5px;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
 .jc .jprog{display:flex;gap:12px;align-items:center;font-size:12.5px;color:var(--muted)}
@@ -1101,7 +1109,7 @@ svg.gl{width:1.2em;height:1.2em;vertical-align:-.25em;stroke:currentColor;fill:n
 .chg .diff .ln.add{background:rgba(27,122,58,.13)}.chg .diff .ln.del{background:rgba(179,38,30,.12)}.chg .diff .ln.hunk{color:var(--faint)}
 .jobform{max-width:780px;margin:0 auto 12px;border:1.5px solid var(--lemon);background:var(--surface);border-radius:18px;padding:16px 20px;display:grid;gap:12px}
 .jobform[hidden]{display:none}
-.jobform h3{margin:0;font:650 18px var(--sans)}
+.jobform h3{margin:0;font:600 18px var(--sans)}
 .jobform label.f{display:grid;gap:4px;font-size:13px;font-weight:600;color:var(--muted)}
 .jobform textarea,.jobform input[type=text],.jobform select{width:100%;border:1px solid var(--line);border-radius:10px;padding:8px 12px;background:var(--surface);min-height:38px;font-weight:400;color:var(--text)}
 .jobform textarea{resize:vertical;min-height:62px}
@@ -1114,7 +1122,7 @@ svg.gl{width:1.2em;height:1.2em;vertical-align:-.25em;stroke:currentColor;fill:n
 .cwhome{align-items:flex-start;margin:0 0 20px 44px}.cwhome code{font:12.5px var(--mono)}
 .herocards button{text-align:left;border:1px solid var(--line);background:var(--surface);border-radius:16px;padding:16px;display:grid;gap:4px;transition:border-color .15s,transform .1s}
 .herocards button:hover{border-color:var(--lemon)}
-.herocards b{font:650 17px var(--sans)}
+.herocards b{font:600 17px var(--sans)}
 .herocards span{color:var(--muted);font-size:13.5px}
 .approve .key{font-size:12.5px;color:var(--muted)}
 .approve .btn.alw{border-style:dashed}
@@ -1331,15 +1339,16 @@ svg.gl{width:1.2em;height:1.2em;vertical-align:-.25em;stroke:currentColor;fill:n
 
 /* ---------- the themes page ---------- */
 .themegrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(230px,1fr));gap:16px;margin:0 0 28px}
+.themegrid.core{grid-template-columns:repeat(auto-fill,minmax(300px,1fr))}.themegrid.compact{grid-template-columns:repeat(auto-fill,minmax(176px,1fr));gap:8px}.themegrid.compact .themecard{padding:10px 12px}
 .themecard{text-align:left;border:1px solid var(--line);background:var(--surface);border-radius:16px;padding:16px 16px 16px;display:grid;gap:8px;align-content:start;transition:border-color .2s}
 .themecard:hover{border-color:var(--text)}
 .themecard[aria-pressed="true"]{border-color:var(--lemon);box-shadow:0 0 0 3px var(--lemon-wash)}
-.themecard b{font:650 19px var(--sans)}
+.themecard b{font:600 19px var(--sans)}
 .themecard span.d{color:var(--muted);font-size:13.5px}
 .themecard .tsw{display:flex;gap:4px}
 .themecard .tsw i{flex:1;height:22px;border-radius:5px;box-shadow:inset 0 0 0 1px rgba(128,128,128,.35)}
 .themecard .tnow{font-size:12px;color:var(--leaf);font-weight:700;min-height:16px}
-h3.themesec{font:600 12px var(--sans);letter-spacing:.08em;text-transform:uppercase;color:var(--faint);margin:0 0 12px}
+h3.themesec{font:600 13px var(--sans);color:var(--faint);margin:0 0 12px}
 </style>
 </head>
 <body>
@@ -1375,7 +1384,7 @@ h3.themesec{font:600 12px var(--sans);letter-spacing:.08em;text-transform:upperc
       <button data-view="skills"><svg class="i" viewBox="0 0 24 24"><path d="M13 3L5 13.5h6L10 21l8-10.5h-6z"/></svg><span>Skills</span></button>
       <button data-view="docs"><svg class="i" viewBox="0 0 24 24"><path d="M5 4h10a3 3 0 0 1 3 3v13H8a3 3 0 0 1-3-3z"/><path d="M5 17a3 3 0 0 1 3-3h10M9 8h5"/></svg><span>Docs</span></button>
       <button data-view="help"><svg class="i" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M9.5 9.5a2.6 2.6 0 0 1 5 1c0 1.7-2.5 2-2.5 3.6M12 17.2v.1"/></svg><span>Help</span></button>
-      <button data-view="advanced"><svg class="i" viewBox="0 0 24 24"><path d="M4 7h9M17 7h3M4 17h3M11 17h9"/><circle cx="15" cy="7" r="2"/><circle cx="9" cy="17" r="2"/></svg><span>Advanced</span><span class="navdot" id="navdot" hidden></span></button>
+      <button data-view="advanced"><svg class="i" viewBox="0 0 24 24"><path d="M4 7h9M17 7h3M4 17h3M11 17h9"/><circle cx="15" cy="7" r="2"/><circle cx="9" cy="17" r="2"/></svg><span>Advanced</span><span class="navdot" id="navdot" title="An update is waiting. See Advanced, Engines." hidden></span></button>
       <div class="sub" id="subnav">
         <button data-view="server"><span>Server</span></button>
         <button data-view="hardware"><span>Hardware</span></button>
@@ -2270,7 +2279,7 @@ function savedLine(m){
   return parts.length ? `<div class="optline" title="${esc(parts.join(" · "))}"><b>Custom settings</b> ${esc(parts.join(" · "))}</div>` : "";
 }
 /* the model's creature, small, at the head of its card (when model pictures are on) */
-function libPic(id){ const m = picturesOn() && id ? pkFind(id) : null; return m ? `<span class="cthumb" style="--tone:${crTone(m)}">${crPic(m, {crop: true, label: false})}</span>` : ""; }
+function libPic(id, extra){ if(!picturesOn() || !id) return ""; const m = Object.assign({id}, pkFind(id) || {}, extra || {}); return `<span class="cthumb" style="--tone:${crTone(m)}">${crPic(m, {crop: true, label: false})}</span>`; }
 /* "Leave some graphics memory free so my computer doesn't slow": the same row on every model card, whichever engine runs it. Large (Strata) models start with 1.5 GB kept free unless the person says otherwise. */
 const HR = {d: {strata: 1.5, lemonade: 0}, set: {}, t: 0};
 async function hrLoad(){ if(Date.now() - HR.t < 4000) return; HR.t = Date.now(); try{ const r = await api("/ui/model/headroom"); HR.d = r.default || HR.d; HR.set = r.set || {}; }catch{} }
@@ -2298,7 +2307,7 @@ function cardHTML(m, extra, title){
   const sh = m.downloaded ? speedHistory(m.id) : null, [shWord, shCls] = sh ? speedWord(sh.tps) : ["", ""];
   const spLine = sh ? `<div class="speedline"><span class="sw ${shCls}">${shWord}</span><span>About <b class="num">${fmtRate(sh.tps)}</b> tok/s on this computer${sh.n > 1 ? ` <small>(from ${sh.n} answers)</small>` : ""}</span></div>` : "";
   return `<article class="card ${isLoaded?"loaded":""}" data-id="${esc(m.id)}">
-    <div class="ctop">${libPic(m.id)}<h3>${esc(title || (recPick(m.id) || {}).title || friendly(m))}</h3>${isLoaded?'<span class="chip ok">Loaded</span>':m.downloaded?'<span class="chip">On this computer</span>':""}${m.downloaded && m.recipe === "llamacpp" ? tnTag("lemonade", m.id) : ""}</div>
+    <div class="ctop">${libPic(m.id, {title: friendly(m), size_gb: m.size})}<h3>${esc(title || (recPick(m.id) || {}).title || friendly(m))}</h3>${isLoaded?'<span class="chip ok">Loaded</span>':m.downloaded?'<span class="chip">On this computer</span>':""}${m.downloaded && m.recipe === "llamacpp" ? tnTag("lemonade", m.id) : ""}</div>
     <p class="what">${esc(whatFor(m))}</p>${extra || ""}
     <div class="row"><span>${m.size ? `${sizeWord(m.size)} <span class="mono num">· ${m.size.toFixed(m.size<10?1:0)} GB</span>` : ""}</span></div>
     ${f ? `<div class="fitwrap"><div class="fit ${f.cls}" role="img" aria-label="${esc(f.note)}"><i style="width:${f.pct}%"></i></div><div class="fitnote ${f.cls}" style="margin-top:6px">${esc(f.note)}</div></div>` : ""}
@@ -2358,6 +2367,7 @@ function libFilters(){
     `<input type="search" id="mq" placeholder="Search by name" aria-label="Search models" value="${esc(LIB.q)}">`;
 }
 /* where models live: the one folder the person chose, or the one question that picks it */
+const libPlace = (ps, pick) => ps.map(p => `<label><input type="radio" name="libplace" value="${esc(p.folder)}" ${p.folder === pick ? "checked" : ""}><span class="mono">${esc(p.folder)}</span><small>${p.free_gb} GB free${p.suggested ? " · most room" : ""}</small></label>`).join("");
 function libWhereHTML(){
   const d = LIB.d; if(!d) return "";
   if(d.chosen && d.missing) return `<div class="note-warn libwhere" role="alert">The models folder <b>${esc(d.root)}</b> can't be found. If it is on a disk that isn't connected, connect it and reload. Otherwise <button class="linkbtn" type="button" data-lib="where">choose another folder</button>.</div>`;
@@ -2366,8 +2376,8 @@ function libWhereHTML(){
   const ps = d.places || [], pick = LIB.picked || ((ps.find(p => p.suggested) || ps[0] || {}).folder || "");
   return `<section class="panel" style="margin-bottom:14px"><h3>Where should your models live?</h3>
     <p class="help" style="margin:0">Models are big, so pick a disk with room. Shoggoth keeps everything in one folder called Models there, and moves nothing you already have.</p>
-    <div class="libplaces" role="radiogroup" aria-label="Where models should live">${ps.map(p => `<label><input type="radio" name="libplace" value="${esc(p.folder)}" ${p.folder === pick ? "checked" : ""}><span class="mono">${esc(p.folder)}</span><small>${p.free_gb} GB free${p.suggested ? " · most room" : ""}</small></label>`).join("")}</div>
-    <div class="line"><button class="btn primary" type="button" data-lib="use">Use this folder</button><button class="btn" type="button" data-lib="pick">Choose another folder…</button><button class="linkbtn" type="button" data-lib="later">Not now</button></div>
+    <div class="libplaces" role="radiogroup" aria-label="Where models should live">${libPlace(ps.slice(0, 3), pick)}${ps.length > 3 ? `<details class="libmore"><summary>${ps.length - 3} more ${ps.length - 3 === 1 ? "place" : "places"}</summary>${libPlace(ps.slice(3), pick)}</details>` : ""}</div>
+    <div class="line"><button class="btn primary" type="button" data-lib="use">Use this folder</button><button class="btn" type="button" data-lib="pick">Choose another folder…</button><button class="btn ghost" type="button" data-lib="later">Not now</button></div>
     ${LIB.err ? `<p class="errline" role="alert">${esc(LIB.err)}</p>` : ""}</section>`;
 }
 document.addEventListener("change", e => { if(e.target.name === "libplace") LIB.picked = e.target.value; });   // keep the choice when the page repaints
@@ -2377,7 +2387,7 @@ function libDlItems(){
   for(const j of (S.downloads || []).filter(isActiveJob)) out.push({title: friendly(j.model_name), percent: j.percent || 0, text: j.status === "paused" ? "Paused" : "", cancel: j.model_name});
   const run = (STR.d || {}).run || {}, ins = (STR.d || {}).install || {};
   if(ins.state === "installing") out.push({title: "Getting ready for large models", percent: null, text: (ins.log || []).filter(Boolean).slice(-1)[0] || "Installing…"});
-  if(run.state === "starting") out.push({title: ((bigOptions().find(o => "Shoggoth " + o.model === run.preset) || {}).title) || (run.preset || "A large model").replace(/^Shoggoth /, ""), percent: null, text: run.phase || (run.log || []).filter(Boolean).slice(-1)[0] || "Getting it ready. The first time can take a long while."});
+  if(run.state === "starting") out.push({title: ((bigOptions().find(o => o.preset === run.preset) || {}).title) || (run.preset || "A large model").replace(/^Shoggoth /, ""), percent: null, text: run.phase || (run.log || []).filter(Boolean).slice(-1)[0] || "Getting it ready. The first time can take a long while."});
   return out;
 }
 function libDlHTML(){
@@ -2389,13 +2399,13 @@ function libDlHTML(){
 /* cards */
 const featLine = e => [e.vision ? "Understands pictures" : "", e.reasoning ? "Thinks before it answers" : "", e.tools !== false ? "Can use tools" : ""].filter(Boolean).join(" · ") || "Everyday chat and writing";
 function libFitHTML(e){
-  if(!e.why && e.fit === "fits") return `<div class="fitnote ok" style="margin-top:2px">Fits this computer.</div>`;
+  if(!e.why && e.fit === "fits") return `<div class="fitnote ok" style="margin-top:2px">Fits this computer</div>`;
   return `<div class="fitnote ${e.fit === "no" ? "over" : e.fit === "tight" ? "tight" : "ok"}" style="margin-top:2px">${esc(e.why || (e.fit === "tight" ? "A snug fit." : "Fits this computer."))}</div>`;
 }
 function bigCard(e){          // an installed model that a Large-model engine runs (no per-engine settings to edit here)
   const startable = !!pkFind(e.ref), live = (S.ms || {}).loaded === e.ref;
   return `<article class="card ${live ? "loaded" : ""}" data-id="${esc(e.ref || e.id)}">
-    <div class="ctop">${libPic(e.ref)}<h3>${esc(e.title)}</h3>${live ? '<span class="chip ok">Ready</span>' : '<span class="chip">On this computer</span>'}${tnTag("strata", e.ref)}</div>
+    <div class="ctop">${libPic(e.ref, {title: e.title, size_gb: (e.size_bytes || 0) / 1e9})}<h3>${esc(e.title)}</h3>${live ? '<span class="chip ok">Ready</span>' : '<span class="chip">On this computer</span>'}${tnTag("strata", e.ref)}</div>
     <p class="what">${esc(featLine(e))}</p>
     <div class="row"><span>Large <span class="mono num">· needs about ${Math.round(e.need_gb || 0)} GB of memory</span></span></div>
     ${libFitHTML(e)}
@@ -2409,7 +2419,7 @@ function bigCard(e){          // an installed model that a Large-model engine ru
 }
 function getBigCard(o){        // a Large model that can be set up from here
   const busy = ((STR.d || {}).run || {}).state === "starting", no = o.fit === "no";
-  return `<article class="card"><div class="ctop"><h3>${esc(o.title)}</h3></div>
+  return `<article class="card"><div class="ctop">${libPic(o.family + "/" + o.model, {title: o.title, size_gb: o.need_gb})}<h3>${esc(o.title)}</h3></div>
     ${o.take ? `<p class="take">${inline(o.take)}</p>` : ""}
     <p class="what">Needs about ${Math.round(o.need_gb)} GB of memory${o.download_gb ? ` · ${Math.round(o.download_gb)} GB to download` : ""} · remembers up to ${fmtTok(o.ctx)}</p>
     <div class="fitnote ${no ? "over" : o.fit === "tight" ? "tight" : "ok"}" style="margin-top:2px">${esc(no ? o.why : o.fit === "tight" ? "A snug fit: close other big programs first." : "Fits this computer.")}</div>
@@ -2424,7 +2434,13 @@ const libMatch = (m, q) => !q || m.id.toLowerCase().includes(q) || friendly(m).t
 const libKind = (m, k) => k === "all" || (k === "chat" ? isChatModel(m) : k === "vision" ? (m.labels || []).includes("vision") : k === "image" ? m.recipe === "sd-cpp" : ["whispercpp", "kokoro", "moonshine", "acestep", "thinksound"].includes(m.recipe));
 const bigOptions = () => (STR.rec || {}).options || [];
 /* is this Large model already on the computer? (Qwen sizes are told apart by quality; DeepSeek has one set up) */
-const bigHave = o => ((LIB.d || {}).models || []).some(e => e.provider && e.provider !== "lemonade" && (o.family === "deepseek41" ? e.architecture === "deepseek41" : e.architecture === "qwen4exp" && e.quant === o.model));
+const bigHave = o => ((LIB.d || {}).models || []).some(e => {
+  if(!e.provider || e.provider === "lemonade") return false;
+  if(o.family === "deepseek41") return e.architecture === "deepseek41";
+  // Swift and Coder are Flash-Next files with the same quant names as the original, told apart by what the files are called
+  const name = `${e.stem || ""} ${e.title || ""}`.toLowerCase(), kind = /swift/.test(name) ? "swift" : /coder/.test(name) ? "coder" : "qwen";
+  return e.architecture === "qwen4exp" && e.quant === o.model && kind === o.family;
+});
 function libInstalled(){
   const q = LIB.q.toLowerCase(), cat = (LIB.d || {}).models || [], by = {tier: {small: [], medium: [], large: [], other: []}};
   const seen = new Set();
@@ -2451,12 +2467,11 @@ function recGetCard(it){
   const act = job ? `<div class="dlrow" style="flex:1"><div class="prog" style="flex:1"><i style="width:${job.percent}%"></i></div>${job.percent}%</div><button class="btn" data-canceldl="${esc(it.id)}">Cancel</button>`
     : PICK.id === it.id ? `<button class="btn" disabled>Getting ready…</button>`
     : `<button class="btn primary" data-recget="${esc(it.id)}">${lemReady() ? "Get it" : "Set up and get it"} · ${size} GB</button>`;
-  return `<article class="card" data-id="${esc(it.id)}"><div class="ctop"><h3>${esc(it.title || friendly(it.id))}</h3></div>
+  return `<article class="card" data-id="${esc(it.id)}"><div class="ctop">${libPic(it.id, {title: it.title, size_gb: it.size_gb})}<h3>${esc(it.title || friendly(it.id))}</h3></div>
     ${recExtra(it, gb)}
-    <div class="row"><span>${sizeWord(gb)} <span class="mono num">· ${size} GB</span></span></div>
     ${f ? `<div class="fitwrap"><div class="fit ${f.cls}" role="img" aria-label="${esc(f.note)}"><i style="width:${f.pct}%"></i></div><div class="fitnote ${f.cls}" style="margin-top:6px">${esc(f.note)}</div></div>` : ""}
     <div class="act">${act}</div>
-    <details class="more"><summary>Details<span class="eng">Runs on ${esc(it.provider || "Lemonade")}</span></summary><div class="mbody"><div class="mono mid">${esc(it.id)}</div>${it.download ? `<div class="mono mid">${esc(it.download.checkpoint)}</div>` : ""}</div></details></article>`;
+    <details class="more"><summary>Details</summary><div class="mbody"><div class="mono mid">${esc(it.id)}</div>${it.download ? `<div class="mono mid">${esc(it.download.checkpoint)}</div>` : ""}</div></details></article>`;
 }
 const recSoonCard = c => `<article class="card soon" aria-label="${esc(c.title)}, coming soon"><span class="soonband" aria-hidden="true">COMING SOON!</span><div class="ctop"><h3>${esc(c.title)}</h3></div>${c.take ? `<p class="take">${inline(c.take)}</p>` : ""}</article>`;
 /* the person chose a pick before Lemonade was installed: set up, then fetch it */
@@ -3288,14 +3303,14 @@ function engUpdateRow(p){
   if(c.supported === false) return c.note ? `<p class="help" style="margin:0">${esc(c.note)}</p>` : "";
   if(c.major) return `<div class="note-warn">A bigger update is out${c.latest ? " (" + esc(c.latest) + ")" : ""}. Shoggoth leaves that one for you to take yourself.</div>`;
   if(c.available) return `<div class="erow"><span class="stat-dot busy"></span><span><b>A newer version is available</b>${c.latest ? " (" + esc(c.latest) + ")" : ""}.${c.deferred ? " It is running something you started, so it can't be replaced yet." : ""}</span>${c.deferred ? "" : `<button class="btn primary" data-eng="update" data-id="${esc(p.id)}">Update</button>`}</div>`;
-  return `<div class="erow"><span class="stat-dot ok"></span><span>Up to date.</span><button class="btn ghost" data-eng="check" data-id="${esc(p.id)}">Check again</button></div>`;
+  return `<div class="erow"><span class="stat-dot ok"></span><span>Up to date</span><button class="btn ghost" data-eng="check" data-id="${esc(p.id)}">Check again</button></div>`;
 }
 function engCard(p){
   const run = p.running || [], zestRuns = run.some(r => r.owner === "zest"), more = {strata: "Saved setups, connections and the large-model program", lemonade: "Kinds of model and the hardware they use"}[p.id];
   const stat = [p.installed ? `<span><b>${p.version ? "Version " + esc(p.version) : "Installed"}</b></span>` : `<span><b>Not installed</b></span>`,
     run.length ? run.map(r => `<span><b>Running</b> · ${r.owner === "zest" ? "started by Shoggoth" : "started by you"}${r.port ? ", port " + r.port : ""}</span>`).join("") : `<span>Not running right now. Shoggoth starts it when a model needs it.</span>`].join("");
   const cons = p.consent ? `<div class="note-warn"><b>This engine wants to ${p.consent.will.map(esc).join(" and ")}.</b>${p.consent.code ? " It also runs its own Python code inside Shoggoth." : ""}${p.consent.unsafe_install ? " Its installer has no checksum to check." : ""}<details style="margin-top:6px"><summary>Exactly what it will run</summary><div class="mono mid">${p.consent.commands.map(c => esc(c.where) + ": " + esc((c.command || []).join(" "))).join("<br>")}</div></details><div class="erow" style="margin-top:8px"><button class="btn primary" data-eng="approve" data-id="${esc(p.id)}">Allow it</button></div></div>` : "";
-  return `<section class="panel engine" data-pid="${esc(p.id)}"><div class="ehead"><h3>${esc(p.name)}</h3><span class="chip">${esc(ENG_TIER[p.tier] || p.tier || "Engine")}</span><span class="chip ${p.trusted ? "" : "lem"}">${p.trusted ? "Built in" : "Added by you"}</span></div>
+  return `<section class="panel engine" data-pid="${esc(p.id)}"><div class="ehead"><h3>${esc(p.name)}</h3><span class="chip">${esc(ENG_TIER[p.tier] || p.tier || "Engine")}</span><span class="chip ${p.trusted ? "" : "lem"}">${p.trusted ? "Supported" : "Added by you"}</span></div>
     <p class="help" style="margin:0">${esc(p.summary || "")}</p>${engToolLinks(p)}
     <div class="estat">${stat}</div>${(p.problems || []).length ? `<div class="note-warn">${p.problems.map(esc).join("<br>")}</div>` : ""}${cons}
     ${p.approved ? engUpdateRow(p) : ""}
@@ -3687,7 +3702,7 @@ function tnPaint(){
   };
   host.innerHTML = `<p class="lede">Tuning finds the settings that make a model answer faster on this computer. Shoggoth measures the model as it is, tries changes one at a time, and keeps only the ones that clearly help. Answers stay the same: nothing here changes how a model is compressed. A tune takes the graphics cards for a while, so it never starts without your say-so.</p>
     ${jobBox}${planBox}${group("strata", `Large models <span class="faint">· Strata</span>`)}${group("lemonade", `Small and medium models <span class="faint">· Lemonade</span>`)}
-    ${!d.targets.length ? '<p class="help">Nothing to tune yet. Download a model first.</p>' : ""}${TN.msg ? `<div class="note-bad">${esc(TN.msg)}</div>` : ""}`;
+    ${!d.targets.length ? '<p class="help">Nothing to tune yet. <a href="#models" data-go="models">Get a model</a> first.</p>' : ""}${TN.msg ? `<div class="note-bad">${esc(TN.msg)}</div>` : ""}`;
 }
 $("#tuning").addEventListener("change", e => { if(e.target.id === "tnmode") TN.opts.mode = e.target.value; if(e.target.id === "tngoal") TN.opts.goal = e.target.value; if(e.target.id === "tnuse") TN.opts.use = e.target.value; if(e.target.id === "tnmode" && TN.sel) tnPlan(TN.sel); });
 async function tnPlan(t){
@@ -3724,8 +3739,8 @@ function renderThemes(){
   const cur = store.get("shoggoth.theme", "light-touch");
   const card = t => `<button type="button" class="themecard" data-theme-id="${t[0]}" aria-pressed="${cur === t[0]}"><b>${esc(t[1])}</b><span class="d">${esc(t[2])}</span><span class="tsw">${t[4].map(c => `<i style="background:${c}"></i>`).join("")}</span><span class="tnow">${cur === t[0] ? "In use" : ""}</span></button>`;
   $("#themes").innerHTML = `<p class="lede">Pick how Shoggoth looks. Everything stays where it is; only the colours and the finish change. Your choice is remembered on this computer.</p>
-    <h3 class="themesec">Shoggoth</h3><div class="themegrid">${THEMES.filter(t => t[3] === "core").map(card).join("")}</div>
-    <h3 class="themesec">Editor colours</h3><div class="themegrid">${THEMES.filter(t => t[3] === "palette").map(card).join("")}</div>`;
+    <h3 class="themesec">Shoggoth</h3><div class="themegrid core">${THEMES.filter(t => t[3] === "core").map(card).join("")}</div>
+    <h3 class="themesec">Editor colours</h3><div class="themegrid compact">${THEMES.filter(t => t[3] === "palette").map(card).join("")}</div>`;
 }
 $("#themes").addEventListener("click", e => { const c = e.target.closest("[data-theme-id]"); if(c){ applyTheme(c.dataset.themeId); renderThemes(); } });
 
@@ -4122,10 +4137,10 @@ async function loadSettings(){
   renderStrataSettings();
   try{
     if(!S.bk){ try{ S.bk = (await api("/ui/backends")).recipes; }catch{} }
-    const r = await api("/ui/config"); SET.cfg = r.config; SET.defaults = r.defaults; renderSettings();
+    const r = await api("/ui/config"); SET.cfg = r.config; SET.defaults = r.defaults; renderSettings(); $("#setq").parentElement.hidden = !$$("#settings .setrow").length;
   }catch(e){
     $("#settings").innerHTML = `<div class="empty-note">${STR.d && STR.d.installed ? "Lemonade isn't running, so its settings aren't shown. Strata's are above." : "Couldn't read Lemonade's settings: " + esc(e.message)}</div>`;
-    $("#setcount").textContent = "";
+    $("#setcount").textContent = ""; $("#setq").parentElement.hidden = true;
   }
 }
 async function saveSetting(key, value, row, revert){
@@ -4301,7 +4316,7 @@ function generate(P) {
   const topAt = (x, y) => { for (let z = 58; z >= 0; z--) if (has(x, y, z)) return z; return -1; };
   const qd = parseInt((P.quant.match(/\d/) || ['4'])[0], 10);
   const rxv = 5 + 1.1 * Math.log2(P.params + 1);
-  const sIdx = P.form != null ? P.form % 9 : hashStr(P.seed + '|' + P.params) % 9;
+  const sIdx = P.form != null ? P.form % CR_FORMS : hashStr(P.seed + '|' + P.params) % CR_FORMS;
   const asp = 0.8 + rnd() * 0.45, asp2 = 0.85 + rnd() * 0.4;
   const ph = [rnd() * 6.28, rnd() * 6.28, rnd() * 6.28];
   const lump = 0.09 + (8 - Math.min(8, qd)) * 0.01;
@@ -4356,7 +4371,7 @@ function generate(P) {
       const a = rxv * (1.1 - 0.4 * cz / Ht), b = rxv * 0.5;
       return (u / a) * (u / a) + (v / b) * (v / b) <= 1;
     };
-  } else {
+  } else if (sIdx === 8) {
     const n = 4 + Math.floor(rnd() * 3), rs = [];
     for (let i = 0; i < n; i++) rs.push(rxv * (0.5 + rnd() * 0.7));
     inside = (cx, cy, cz) => {
@@ -4366,6 +4381,38 @@ function generate(P) {
       if (cz - 3 * zi >= 2) return false;
       return (cx / rs[zi]) * (cx / rs[zi]) + (cy / (rs[zi] * asp)) * (cy / (rs[zi] * asp)) <= 1;
     };
+  } else if (sIdx === 9) {
+    const w = rxv * 0.95, h = rxv * 1.9;
+    inside = (cx, cy, cz) => Math.abs(cx) <= w && Math.abs(cy) <= w * asp && cz <= h && !(cx > w * 0.35 && cy > w * asp * 0.35 && cz > h * 0.55);
+  } else if (sIdx === 10) {
+    const a = rxv * 1.25, pw = rxv * 0.5, H = rxv * 2.2, t = rxv * 0.55, d = rxv * 0.55 * (0.8 + asp * 0.4);
+    inside = (cx, cy, cz) => Math.abs(cy) <= d && cz <= H && ((Math.abs(cx) >= a - pw && Math.abs(cx) <= a) || (cz >= H - t && Math.abs(cx) <= a));
+  } else if (sIdx === 11) {
+    const zc = rxv * 1.7, rr = rxv * 1.15;
+    inside = (cx, cy, cz) => Math.abs(cx) / rr + Math.abs(cy) / (rr * asp) + Math.abs(cz - zc) / zc <= 1;
+  } else if (sIdx === 12) {
+    const zm = rxv * 1.5, rmax = rxv * 1.05, rmin = rxv * 0.3;
+    inside = (cx, cy, cz) => { if (cz > 2 * zm) return false; const r = rmin + (rmax - rmin) * Math.abs(cz - zm) / zm; return (cx / r) * (cx / r) + (cy / (r * asp)) * (cy / (r * asp)) <= 1; };
+  } else if (sIdx === 13) {
+    const Rm = rxv * 1.05, rw = rxv * 0.4, hh = rxv * 0.95;
+    inside = (cx, cy, cz) => { const rho = Math.hypot(cx, cy / asp); if (Math.abs(rho - Rm) > rw || Math.abs(cz - hh) > hh) return false; return !(cy > 0 && Math.abs(cx) < cy * 0.95); };
+  } else if (sIdx === 14) {
+    const np = 5 + Math.floor(rnd() * 3), Rr = rxv * 1.15, pr = rxv * 0.3, ps = [];
+    for (let i = 0; i < np; i++) { const th = (i / np) * 6.283; ps.push({ x: Math.cos(th) * Rr, y: Math.sin(th) * Rr * asp, h: rxv * (1.3 + rnd() * 1.3) }); }
+    inside = (cx, cy, cz) => (cz <= 1.5 && Math.hypot(cx, cy / asp) <= Rr + pr) || ps.some((q) => Math.hypot(cx - q.x, cy - q.y) <= pr && cz <= q.h);
+  } else if (sIdx === 15) {
+    const Lc = rxv * 0.9, rr = rxv * 0.8;
+    inside = (cx, cy, cz) => { const q = Math.max(-Lc, Math.min(Lc, cx)); return (cx - q) * (cx - q) + (cy / asp) * (cy / asp) + (cz - rr) * (cz - rr) <= rr * rr; };
+  } else if (sIdx === 16) {
+    const w = rxv * 0.3, r1 = rxv * 0.45, r2 = rxv * 1.5;
+    inside = (cx, cy, cz) => {
+      const rho = Math.hypot(cx, cy / asp), f = (Math.atan2(cy / asp, cx) + Math.PI) / (2 * Math.PI);
+      for (let k = 0; k < 3; k++) { const t = (k + f) / 3; if (Math.abs(rho - (r1 + (r2 - r1) * t)) <= w && cz <= 3.5 + rxv * 1.8 * t) return true; }
+      return false;
+    };
+  }
+  else {
+    inside = () => false;
   }
   for (let x = -R; x <= R; x++) for (let y = -R; y <= R; y++) for (let z = 0; z <= ZM; z++) {
     if (inside(x + 0.5, y + 0.5, z + 0.5)) put(x, y, z, 'body');
@@ -4410,23 +4457,44 @@ function generate(P) {
     }
   }
   if (P.tools) {
-    [[1, -0.5, 'x'], [-0.5, 1, 'y']].forEach((a, i) => {
-      let x = 0, y = 0, z = Math.max(3, Math.round(zMax * 0.6)), found = false;
-      const an = Math.hypot(a[0], a[1]);
-      for (let r = Math.ceil(fp) + 2; r >= 0; r--) { const px = Math.round(a[0] / an * r), py = Math.round(a[1] / an * r); if (has(px, py, z)) { x = px; y = py; found = true; break; } }
-      if (!found) return;
-      const L = 7 + Math.floor(rnd() * 3);
+    // hands: two at 6B, up to eight at 100B. They hold pens, then papers, then keyboards.
+    const nA = Math.max(2, Math.min(8, 2 + Math.floor(1.6 * Math.log2(Math.max(6, P.params) / 6))));
+    const kinds = ['pen', 'pen', 'paper', 'keys', 'pen', 'paper', 'keys', 'pen'];
+    for (let i = 0; i < nA; i++) {
+      const th = -0.46 + i * 6.2832 / nA, dx = Math.cos(th), dy = Math.sin(th);
+      let x = 0, y = 0, z = Math.max(3, Math.round(zMax * (0.5 + 0.18 * ((i * 0.618) % 1)))), found = false;
+      for (let dz = 0; dz < 4 && !found; dz++) for (let r = Math.ceil(fp) + 2; r >= 0; r--) {
+        const px = Math.round(dx * r), py = Math.round(dy * r);
+        if (has(px, py, z - dz)) { x = px; y = py; z = z - dz; found = true; break; }
+      }
+      if (!found) continue;
+      const alongX = Math.abs(dx) >= Math.abs(dy), sg = (alongX ? dx : dy) >= 0 ? 1 : -1, L = 7 + Math.floor(rnd() * 3);
       for (let s = 0; s < L; s++) {
-        if (a[2] === 'x') x++; else y++;
+        if (alongX) x += sg; else y += sg;
         if (s % 2 === 1 && z > 2) z--;
-        else if (rnd() < 0.3) { if (a[2] === 'x') y += rnd() < 0.5 ? 1 : -1; else x += rnd() < 0.5 ? 1 : -1; }
+        else if (rnd() < 0.3) { if (alongX) y += rnd() < 0.5 ? 1 : -1; else x += rnd() < 0.5 ? 1 : -1; }
         put(x, y, z, 'tent');
       }
       while (z > 2) { z--; put(x, y, z, 'tent'); }
       [[0, 0], [1, 0], [0, 1], [1, 1]].forEach((o) => put(x + o[0], y + o[1], z, 'bone', true));
-      if (i === 0) { put(x, y, z + 1, 'ink', true); put(x, y, z + 2, 'ink', true); put(x, y, z + 3, 'lemon', true); }
-      else { put(x, y, z + 1, 'lemon', true); put(x, y, z + 2, 'lemon', true); put(x, y, z + 3, 'ink', true); }
-    });
+      const kind = kinds[i % kinds.length];
+      if (kind === 'pen') {
+        if (i % 2 === 0) { put(x, y, z + 1, 'ink', true); put(x, y, z + 2, 'ink', true); put(x, y, z + 3, 'lemon', true); }
+        else { put(x, y, z + 1, 'lemon', true); put(x, y, z + 2, 'lemon', true); put(x, y, z + 3, 'ink', true); }
+      } else if (kind === 'paper') {
+        // an upright sheet with two lines of writing
+        for (let j = -1; j <= 1; j++) for (let k = 1; k <= 4; k++) {
+          const px = alongX ? x : x + j, py = alongX ? y + j : y;
+          put(px, py, z + k, (k === 2 || k === 4) && j < 1 ? 'ink' : 'bone', true);
+        }
+      } else {
+        // a keyboard held flat, four keys wide
+        for (let j = 0; j < 4; j++) for (let k = 0; k < 2; k++) {
+          const px = alongX ? x + j * sg - 1 : x + k, py = alongX ? y + k : y + j * sg - 1;
+          put(px, py, z + 1, (j + k) % 2 ? 'ink' : 'bone', true);
+        }
+      }
+    }
   }
   if (rnd() < 0.75) {
     const nr = 4 + Math.floor(rnd() * 4), cxr = ax - Math.round(fp * 0.45), cyr = ay - Math.round(fp * 0.45);
@@ -4473,28 +4541,39 @@ function generate(P) {
     yFace.map((v) => ({ v, d: (v.x - sv.x) * (v.x - sv.x) + (v.z - sv.z) * (v.z - sv.z) + (v.y - sv.y) * (v.y - sv.y) }))
       .filter((o) => o.d <= 7).sort((a, b) => a.d - b.d).slice(0, 7).forEach((o) => { o.v.m = 'void'; });
   }
-  let lens = null, lensTop = null;
+  const lenses = [];
+  let lensTop = null;
   if (P.vision) {
-    outer: for (const n of [3, 2]) {
-      for (const zr of [0.5, 0.3, 0.7, 0.2]) {
+    // large camera eyes: a flat square set into the body on a side that shows, more of them (and bigger) as the creature grows
+    const nL = Math.max(3, Math.min(7, 3 + Math.floor(Math.log2(Math.max(4, P.params) / 4)))), big = rxv >= 9 ? 4 : 3;
+    const clash = (f, a, z0, n) => lenses.some((l) => l.f === f && a < l.a + l.n + 1 && l.a < a + n + 1 && z0 < l.z0 + l.n + 1 && l.z0 < z0 + n + 1);
+    const tryLens = (f, n) => {
+      for (const zr of [0.5, 0.3, 0.7, 0.2, 0.4, 0.6, 0.15, 0.8]) {
         const z0 = Math.max(1, Math.round(zMax * zr));
-        for (const x0 of [-1, 0, -2, 1, -3, 2, -4, 3, -5, 4]) {
+        for (let s = 0; s <= 2 * R; s++) {
+          const a0 = (s % 2 ? 1 : -1) * Math.ceil(s / 2) - 1;
+          if (clash(f, a0, z0, n)) continue;
           const cols = [];
-          let ok = true, ymax = -99;
-          for (let dx = 0; dx < n && ok; dx++) for (let dz = 0; dz < n && ok; dz++) {
-            let yb = -99;
-            for (let y = Math.ceil(fp) + 4; y >= -Math.ceil(fp); y--) if (has(x0 + dx, y, z0 + dz)) { yb = y; break; }
-            if (yb < -90) ok = false; else { cols.push([x0 + dx, z0 + dz, yb]); ymax = Math.max(ymax, yb); }
+          let ok = true, mx = -99;
+          for (let da = 0; da < n && ok; da++) for (let dz = 0; dz < n && ok; dz++) {
+            let b = -99;
+            for (let u = Math.ceil(fp) + 4; u >= -Math.ceil(fp); u--) if (f === 'y' ? has(a0 + da, u, z0 + dz) : has(u, a0 + da, z0 + dz)) { b = u; break; }
+            if (b < -90) ok = false; else { cols.push([a0 + da, z0 + dz, b]); mx = Math.max(mx, b); }
           }
           if (!ok) continue;
-          const plane = ymax + 1;
-          cols.forEach((c) => { for (let y = c[2] + 1; y <= plane; y++) put(c[0], y, c[1], 'body'); });
-          lens = { x0, z0, plane, n };
-          break outer;
+          const plane = mx + 1;
+          cols.forEach((c) => { for (let u = c[2] + 1; u <= plane; u++) { if (f === 'y') put(c[0], u, c[1], 'body'); else put(u, c[0], c[1], 'body'); } });
+          lenses.push({ f, a: a0, z0, n, plane });
+          return true;
         }
       }
+      return false;
+    };
+    for (let i = 0; i < nL; i++) {
+      const f = i % 2 ? 'x' : 'y', n = i < 2 ? big : 3;
+      if (!(tryLens(f, n) || tryLens(f, 2) || tryLens(f === 'y' ? 'x' : 'y', 2))) break;
     }
-    if (!lens) lensTop = { x: ax, y: ay, z: topAt(ax, ay) };
+    if (!lenses.length) lensTop = { x: ax, y: ay, z: topAt(ax, ay) };
   }
   const mkM = (face, x, y, z, k) => {
     const off = (1 - k) / 2;
@@ -4520,11 +4599,11 @@ function generate(P) {
     return e;
   };
   const used = [];
-  if (lens) {
-    const e = makeEye('y', { x: lens.x0, y: lens.plane, z: lens.z0 }, lens.n, 'lens');
+  lenses.forEach((l) => {
+    const e = l.f === 'y' ? makeEye('y', { x: l.a, y: l.plane, z: l.z0 }, l.n, 'lens') : makeEye('x', { x: l.plane, y: l.a, z: l.z0 }, l.n, 'lens');
     decals.push(e);
-    used.push(scr([lens.x0 + lens.n / 2, lens.plane + 1, lens.z0 + lens.n / 2]).concat([lens.n * 16]));
-  }
+    used.push(scr(l.f === 'y' ? [l.a + l.n / 2, l.plane + 1, l.z0 + l.n / 2] : [l.plane + 1, l.a + l.n / 2, l.z0 + l.n / 2]).concat([l.n * 16]));
+  });
   if (lensTop && lensTop.z >= 0) { decals.push(makeEye('t', lensTop, 1, 'lens')); used.push(scr(centerOf(lensTop, 't')).concat([30])); }
   stalkTips.forEach((tp) => {
     ['y', 'x', 't'].forEach((f) => { if (vis(f, tp)) decals.push(makeEye(f, tp, 1)); });
@@ -4633,9 +4712,17 @@ const archetype = (seed, params) => hashStr(seed + '|' + params) % 9;
 
 
 const crCache = new Map();
-const crIn = m => ({seed: String(m.lineage || m.id || "model"), params: Number(m.params) || 4, quant: String(m.quant || "Q4_K_M"),
-  ctx: Math.max(4, Math.round((Number(m.ctx) || 32768) / 1024)), vision: !!m.vision, reasoning: !!m.reasoning, tools: !!m.tools,
-  tone: m.tone != null ? m.tone : hashStr(String(m.lineage || m.id)) % 5, form: m.form});
+/* The creature comes from the name. The family (the name without sizes, quants and packaging) picks its shape and colour, the biggest
+   number written before a B sets its size and how many hands it has, and every creature gets camera eyes and hands holding things. */
+const CR_FORMS = 17;
+const crFamily = t => String(t || "model").toLowerCase().replace(/^[^/]*\//, "").replace(/^(user|extra)\./, "").replace(/,.*$/, "").replace(/\(.*?\)/g, " ")
+  .replace(/\b(gguf|mtp|it|distill|gsq|rco|dual|instruct)\b/g, " ").replace(/\bi?q\d[a-z0-9_]*\b/g, " ").replace(/\b\d{4}\b/g, " ")
+  .replace(/\b[a-z]?\d+(\.\d+)?b\b/g, " ").replace(/-a\d+b\b/g, " ").replace(/[\s_]+/g, "-").replace(/-+/g, "-").replace(/^-|-$/g, "") || "model";
+const crParams = (t, gb) => { const n = [...String(t || "").toLowerCase().matchAll(/(\d+(?:\.\d+)?)b\b/g)].map(x => +x[1]).filter(x => x > 0); return n.length ? Math.max(...n) : gb ? Math.round(gb * 1.8) : 8; };
+const crQuant = t => (String(t || "").match(/\b(i?q\d[a-z0-9_]*|bf16|f16)\b/i) || [0, "Q4_K_M"])[1].toUpperCase();
+const crIn = m => { const name = m.title || m.id || "model", seed = crFamily(m.lineage || name);
+  return {seed, params: Number(m.params) || crParams(name + " " + (m.id || ""), m.size_gb || m.need_gb || m.size), quant: String(m.quant || crQuant(name + " " + (m.id || ""))),
+    ctx: 256, vision: true, reasoning: !!m.reasoning, tools: true, tone: hashStr(seed + "|tone") % 5, form: m.formOverride != null ? m.formOverride : hashStr(seed) % CR_FORMS}; };
 function crGrown(m){
   const P = crIn(m), k = JSON.stringify(P);
   if(!crCache.has(k)) crCache.set(k, generate(P));
@@ -4645,11 +4732,9 @@ const crTone = m => PAL[crIn(m).tone % PAL.length].t;
 const crEyes = m => +(crGrown(m).label.match(/with (\d+) eyes/) || [0, 0])[1];
 const crSkin = q => { const d = +(String(q).match(/\d/) || [4])[0]; return d >= 8 ? "smooth skin (an exact, large copy)" : d >= 5 ? "fine-grained skin (close to exact)" : d >= 4 ? "slightly rough skin (smaller, a little less exact)" : "rough skin (much smaller, less exact)"; };
 function crParts(m){
-  const P = crIn(m), q = P.quant.replace(/_K_[MSL]|_0|_[SML]$/, "");
-  const p = [`${crEyes(m)} eyes: remembers about ${P.ctx}K tokens of a conversation`, `${P.params} billion parameters: its size`, `${crSkin(P.quant)}: ${q}`];
+  const P = crIn(m);
+  const p = [`its shape and colour come from the name "${P.seed}"`, `${P.params} billion parameters: the bigger the number, the bigger the creature and the more hands it has`, "large camera eyes, and hands holding pens, papers and keyboards"];
   if(P.reasoning) p.push("an open brain: thinks before it answers");
-  if(P.vision) p.push("a lens: can look at pictures");
-  if(P.tools) p.push("hands holding pens: can use tools, such as web search");
   return p;
 }
 const crDescribe = m => `Picture of ${m.title || m.id}: ${crParts(m).join("; ")}.`;
@@ -5066,7 +5151,7 @@ function renderHardware(){
     host.innerHTML = devs.length ? order.map(id => {
       const d = devs.find(x => x.id === id), active = sel.includes(id), pos = sel.indexOf(id) + 1;
       const ticks = [0.25,0.5,0.75].map(t => `<line class="tick" x1="12" x2="22" y1="${(240*(1-t)).toFixed(0)}" y2="${(240*(1-t)).toFixed(0)}"/><text x="26" y="${(240*(1-t)+4).toFixed(0)}">${(d.mib/1024*t).toFixed(0)}</text>`).join("");
-      return `<article class="gpu ${active || looking ? "active" : "idle"}" data-id="${id}">
+      return `<article class="gpu ${active ? "active" : "idle"}" data-id="${id}">
         <svg class="tank" viewBox="0 0 120 240" role="img" aria-label="VRAM">
           <defs><clipPath id="c-${id}"><rect x="1" y="1" width="118" height="238" rx="18"/></clipPath>
           <pattern id="h-${id}" width="8" height="8" patternUnits="userSpaceOnUse" patternTransform="rotate(45)"><line x1="0" y1="0" x2="0" y2="8" stroke="var(--line)" stroke-width="2"/></pattern></defs>
@@ -5396,7 +5481,7 @@ function pkRender(){
       return `<button type="button" class="pkrow" role="option" data-id="${esc(m.id)}" aria-selected="${m.id === cur}" ${no ? 'aria-disabled="true"' : ""}><span class="pkdot ${m.live ? "on" : ""}" aria-hidden="true"></span><span class="pkmain"><b>${esc(m.title)}${pi ? ` <span class="chip">${esc(pi.label)}</span>` : ""}</b><span class="pkmeta">${pkNote(m)}</span></span><span class="pkeng">${esc(m.engine_name)}</span></button>`;
     }).join("");
   }
-  if(!html) html = '<div class="pkhead"><span>No model downloaded yet. Open Models to get one.</span></div>';
+  if(!html) html = '<div class="pkhead"><span>No model downloaded yet.</span></div><div class="pkfoot"><button type="button" class="btn" data-pk="models">Get one in Models</button></div>';
   const foot = [ms.loaded ? '<button type="button" class="btn ghost" data-pk="free">Unload</button>' : "", ms.loaded && ms.loaded === cur ? '<button type="button" class="btn ghost" data-pk="again" title="Load it again, so settings you saved for this model take effect">Load it again</button>' : ""].join("");
   pop.innerHTML = html + (foot.replace(/<[^>]*>/g, "").trim() ? `<div class="pkfoot">${foot}</div>` : "");
 }
@@ -5437,7 +5522,7 @@ function cwModelBar(){
   $("#mbdot").className = "mdot " + (loading ? "busy" : here ? "on" : "");
   $("#mbname").textContent = m ? m.title : "Choose a model";
   $("#mbtier").textContent = m && m.tier ? (PK_TIER[m.tier][0].replace(" models", "")) : "";
-  const pb = $("#mbpick"); pb.disabled = !models.length || !!isJob || CW.running || loading;
+  const pb = $("#mbpick"); pb.disabled = !!isJob || CW.running || loading;
   pb.title = isJob ? "A job keeps the model it started with." : CW.running ? "Wait until it has finished answering." : loading ? "Getting a model ready…" : "Choose a model";
   selC.disabled = busy || !!(m && m.ctx_fixed);
   selC.title = m && m.ctx_fixed ? "This model decides how much it can remember." : "How much of the conversation the model can keep in mind. 128k is the default.";
@@ -5479,7 +5564,8 @@ async function pkChoose(id){
 cwEl("mbpick").addEventListener("click", () => pkOpen());
 $("#mbpop").addEventListener("click", e => {
   const f = e.target.closest("[data-pk]"), r = e.target.closest(".pkrow");
-  if(f){ pkOpen(false); const m = (S.ms || {}).loaded; if(f.dataset.pk === "free") cwModelAct(async () => { await api("/ui/model/unload", {method: "POST", body: JSON.stringify({model: m})}); toast("The model is unloaded and its memory is free."); }); else loadModelNow(cwBarModel(), null, true); }
+  if(f && f.dataset.pk === "models"){ pkOpen(false); show("models"); }
+  else if(f){ pkOpen(false); const m = (S.ms || {}).loaded; if(f.dataset.pk === "free") cwModelAct(async () => { await api("/ui/model/unload", {method: "POST", body: JSON.stringify({model: m})}); toast("The model is unloaded and its memory is free."); }); else loadModelNow(cwBarModel(), null, true); }
   else if(r) pkChoose(r.dataset.id);
 });
 $("#mbpop").addEventListener("keydown", e => {
@@ -6185,7 +6271,7 @@ function cwDetailsTab(t){
   const files = [...CW.files.entries()];
   /* the first-time note sits here, not above the conversation, so it never pushes the chat down */
   const picNote = picturesOn() && !store.get("shoggoth.picturesNoted", false)
-    ? '<div class="picnote" id="picnote">Model pictures are on. You can turn them off under <b>Model pictures</b> below.<button class="x" type="button" id="picnotex" aria-label="Dismiss">×</button></div>' : "";
+    ? '<div class="picnote" id="picnote">Model pictures are on. Turn them off in the Model pictures section below.<button class="x" type="button" id="picnotex" aria-label="Dismiss">×</button></div>' : "";
   return `${picNote}
     <section><h4>Folder</h4><div class="path">${folder ? esc(folder) : "None. Just chatting."}</div>${isHome ? '<p class="help" style="margin:6px 0 0"><b>This is your home folder.</b> Choose a project folder for focused work. In your home folder, <b>Ask first</b> is the safe choice.</p>' : ""}${isJob ? "" : `<button class="btn" type="button" id="cwside-folder" style="margin-top:8px">${folder ? "Change folder…" : "Work in a folder…"}</button>`}</section>
     ${plain || isJob ? "" : `<section><h4>How careful</h4><div class="cwmodes">${CW_MODES.map(([k, n, d]) => `<label><input type="radio" name="cwmode" value="${k}" ${CW.mode === k ? "checked" : ""}><b>${n}</b><small>${d}</small></label>`).join("")}</div></section>`}
