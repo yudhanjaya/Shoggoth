@@ -75,7 +75,7 @@ Setup takes no technical steps: download one file and follow a few short screens
 If you already have models, or run your own Lemonade or Strata, Shoggoth finds them and you can skip the first-run screen. Three places help here:
 
 - The few choices are spread to where they belong: **Models** holds where models live, **Hardware** holds how long big models stay in memory, the chat's **Memory** menu holds how much a chat remembers, and **Advanced > Engines** holds updates.
-- **Add models** on the Models page brings in models you already have. It finds LM Studio, Ollama, llama.cpp and other folders for you.
+- **Add models from other sources** on the Models page brings in models you already have. It finds LM Studio, Ollama, llama.cpp and other folders for you.
 - **Advanced > Engines > My own server** connects a Lemonade you run yourself.
 
 ### What you need
@@ -183,15 +183,17 @@ Models has three tabs:
   - **Small:** under 10 GB of graphics memory. Ready in seconds.
   - **Medium:** 10 to 24 GB.
   - **Large:** for computers with about 64 GB of RAM. They take a couple of minutes to start.
-- **Recommended for this computer** leads with the models I've tested and recommend, plus any Large model that fits.
-- **Everything** is the full list, with a filter for pictures, speech and sound.
+- **Recommended for this computer** leads with the models I've tested and recommend, plus any Large model that fits. Each card says what it is, how much memory it needs, which engine runs it, and whether it can use tools or see pictures. The picks show even before Lemonade is installed: choosing one sets Lemonade up first, then gets the model. Models that aren't ready yet sit greyed out under **Coming soon**. The picks and their text live in `shoggoth/recommendations/models.yaml`. There are no speed figures on them, because speed depends on your computer.
+- **All models** is everything Lemonade offers, tested or not, with a filter for pictures, speech and sound.
+
+Every model you have shows whether it is tuned (**Tuned**, **Not tuned**, or **Tuning out of date**). Tune it on the Tuning page. A model that won't load gets a plain explanation, such as "This model needs a newer engine" when llama.cpp doesn't know its design yet.
 
 Each card shows whether the model fits in the graphics memory that is free right now. If another program is using that memory, Shoggoth says so and names it.
 
 **Getting models**
 
 - **Get it** downloads a model in the background, with a progress bar. You can keep using Shoggoth meanwhile. All downloads share one "Getting models" strip. If a model needs something extra, such as Strata for the first Large model, Shoggoth sets it up as part of the same step.
-- **Add models** brings in models from three places:
+- **Add models from other sources** brings in models from three places:
   - a Hugging Face link. Shoggoth lists the repository's GGUF versions with their sizes and a plain label such as "A good balance".
   - any folder.
   - the usual places other programs keep models: LM Studio, llama.cpp's cache, GPT4All, Jan, Ollama, `~/models` and `~/Downloads`.

@@ -163,9 +163,9 @@ Replies can also contain tables, lists, links, quotes and code blocks, shown nea
 
 Open **Models**. It lists every model on your computer, whichever program runs it. Models are grouped by size. **Small** ones use under 10 GB of graphics memory and are ready in seconds. **Medium** ones use 10 to 24 GB. **Large** ones are for big computers and take a couple of minutes to start.
 
-- **Installed** is what you have. **Recommended for this computer** has the models I have tried and recommend on systems from 10 GB of VRAM to 26 GB of VRAM, and any Large model that will fit yours. **Everything** is the full list, with a filter for pictures, speech and sound.
+- **Installed** is what you have. **Recommended for this computer** has the models I have tried and recommend on systems from 10 GB of VRAM to 26 GB of VRAM, and any Large model that will fit yours. You can pick one before Lemonade is installed: Shoggoth sets Lemonade up, then gets the model. Models that aren't ready yet are greyed out under **Coming soon**. **All models** is everything Lemonade offers, tested or not, with a filter for pictures, speech and sound. Each model shows whether it is tuned.
 - **Get it** downloads a model in the background while you carry on. Every download shows together in one "Getting models" strip, and a model that needs something extra (the first Large model, for example) sets that up for you as part of the same step.
-- **Add models** brings in a model from a Hugging Face link, from a folder you choose, or from the usual places other programs keep them (LM Studio, Ollama and so on). Nothing is copied.
+- **Add models from other sources** brings in a model from a Hugging Face link, from a folder you choose, or from the usual places other programs keep them (LM Studio, Ollama and so on). Nothing is copied.
 - **Chat with it** starts a chat with a model, and **Settings** on a model edits how it runs. Choosing a model in the chat gets it ready, and frees the memory of whatever else was running.
 - Shoggoth keeps your models in one folder you choose (change it at the top of the **Models** page), with a subfolder for each engine, and moves nothing you already have. The name of the engine that runs a model is shown, small, at the foot of its card.
 
