@@ -1,3 +1,6 @@
+> [!WARNING]
+> Shoggoth is being tested and updated, more updates incoming this week. Please wait until this version is out of beta.
+
 # Shoggoth
 
 [![Release](https://img.shields.io/github/v/release/yudhanjaya/Shoggoth)](https://github.com/yudhanjaya/Shoggoth/releases)
