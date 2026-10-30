@@ -7,8 +7,8 @@ cd "$(dirname "$0")/.."
 VERSION="$(sed -n 's/^VERSION = "\(.*\)"/\1/p' shoggoth/server.py)"
 PY_URL="https://github.com/astral-sh/python-build-standalone/releases/download/20261013/cpython-3.12.15%2B20261013-x86_64-unknown-linux-gnu-install_only_stripped.tar.gz"
 PY_SHA="178d3d83b6e8e99285a65d3fce9c16b87952cc5efdb4d1a0e3ff3be18ff0fc9c"
-AIT_URL="https://github.com/AppImage/appimagetool/releases/download/continuous/appimagetool-x86_64.AppImage"
-AIT_SHA="95cbe7cce9717fce90c484e34052ee7c7f1d7635b33c12525b4776826a7d29b6"   # "continuous" moves: refresh this when it does
+AIT_URL="https://github.com/AppImage/appimagetool/releases/download/1.9.1/appimagetool-x86_64.AppImage"
+AIT_SHA="ed4ce84f0d9caff66f50bcca6ff6f35aae54ce8135408b3fa33abfc3cb384eb0"   # a numbered release: "continuous" is rebuilt and breaks the pin
 
 # Lemonade's official "embeddable" build (Apache-2.0). To bundle a newer one, change these two lines.
 LEM_VER="2026.43.3"
