@@ -8,7 +8,7 @@ You can ask a question, get an answer, think something through, draw a diagram, 
 
 The AI works in a folder: it can look at the files in it, change them, and run commands in a terminal, while you watch. It asks your permission before it changes anything, unless you tell it not to.
 
-Everything else in Shoggoth (Library, Skills, Settings, Advanced) exists to make those two things work well.
+Everything else in Shoggoth (Models, Skills, Advanced) exists to make those two things work well.
 
 ## The components
 
@@ -50,7 +50,7 @@ Shoggoth draws every model as a creature. Each one is made from the model itself
 
 The creature for the chat's model sits in a glass tube at the top of the Chat page, wired to the model bar. It wakes up when the model is loading, thinking or writing. Click the tube (or **Open the machine** in the model menu) to open **the Machine**: a drawer with one slot for each engine and a shelf of every model you have. Load and unload models there if you like seeing what is in memory.
 
-The **Hardware** and **Server** pages use the same creatures, on a lab bench. Don't like them? Turn them off under **Settings › Look**. Everything still works the same way.
+The **Hardware** and **Server** pages use the same creatures, on a lab bench. Don't like them? Turn them off with the **Model pictures** switch in the chat's right sidebar. Everything still works the same way.
 
 ## Chatting
 
@@ -161,13 +161,13 @@ Replies can also contain tables, lists, links, quotes and code blocks, shown nea
 
 ## Choosing and managing models
 
-Open **Library**. It lists every model on your computer, whichever program runs it. Models are grouped by size. **Small** ones use under 10 GB of graphics memory and are ready in seconds. **Medium** ones use 10 to 24 GB. **Large** ones are for big computers and take a couple of minutes to start.
+Open **Models**. It lists every model on your computer, whichever program runs it. Models are grouped by size. **Small** ones use under 10 GB of graphics memory and are ready in seconds. **Medium** ones use 10 to 24 GB. **Large** ones are for big computers and take a couple of minutes to start.
 
 - **Installed** is what you have. **Recommended for this computer** has the models I have tried and recommend on systems from 10 GB of VRAM to 26 GB of VRAM, and any Large model that will fit yours. **Everything** is the full list, with a filter for pictures, speech and sound.
 - **Get it** downloads a model in the background while you carry on. Every download shows together in one "Getting models" strip, and a model that needs something extra (the first Large model, for example) sets that up for you as part of the same step.
 - **Add models** brings in a model from a Hugging Face link, from a folder you choose, or from the usual places other programs keep them (LM Studio, Ollama and so on). Nothing is copied.
 - **Chat with it** starts a chat with a model, and **Settings** on a model edits how it runs. Choosing a model in the chat gets it ready, and frees the memory of whatever else was running.
-- Shoggoth keeps your models in one folder you choose (change it in **Settings**), with a subfolder for each engine, and moves nothing you already have. The name of the engine that runs a model is shown, small, at the foot of its card.
+- Shoggoth keeps your models in one folder you choose (change it at the top of the **Models** page), with a subfolder for each engine, and moves nothing you already have. The name of the engine that runs a model is shown, small, at the foot of its card.
 
 - Will it fit? Shoggoth compares a model's size with the memory that is free on your graphics card right now, and marks it comfortable, snug or too big.
 - For working in a folder, pick a model that handles tools well. Look for tool-calling in its description. The recommended ones lean that way. Models that are very small can still chat well but often fumble tools.
@@ -176,13 +176,13 @@ Open **Library**. It lists every model on your computer, whichever program runs 
 
 ## Large models
 
-Some models are far too big for a graphics card. Shoggoth can still run them, by keeping part of the model in your RAM and on your SSD. They're slower than a model that fits, and they take a couple of minutes to start. They also need plenty of disk and a lot of RAM: the Large group is meant for computers with about 64 GB. They sit in the **Large** group of the Library, and you use them like any other model.
+Some models are far too big for a graphics card. Shoggoth can still run them, by keeping part of the model in your RAM and on your SSD. They're slower than a model that fits, and they take a couple of minutes to start. They also need plenty of disk and a lot of RAM: the Large group is meant for computers with about 64 GB. They sit in the **Large** group of Models, and you use them like any other model.
 
 - **Choosing one is the same as choosing any model.** Under **Recommended for this computer**, Shoggoth looks at your RAM, graphics memory and free disk and suggests the best Large model that fits. **Get it** downloads it. The first time, Shoggoth also sets up the program that runs large models for you: it downloads it, checks it against the checksum its authors publish, and fits it to your computer. There is nothing to configure. Choose the model in Chat and a card shows it starting.
 - **Memory is shared.** Only one big model runs at a time. When you pick a Large model, Shoggoth frees whatever else was running first. Before it starts, Shoggoth checks there is enough free memory and, if not, says how much is missing and which programs are using the most (with a **Start anyway** button). Picking a smaller model later frees the big one again, unless it is answering right now.
-- **It frees itself.** A large model Shoggoth started is stopped after 20 idle minutes, and the next chat starts it again. Change this under **Memory** in **Settings**, or set 0 to keep it ready.
-- **Updates come with everything else.** **Check and update everything** in Settings includes the large-model program. If the one Shoggoth started is running, Shoggoth stops it, updates it and starts it again when a chat needs it.
-- **If you already run one yourself.** If you have already installed that program, or already have a big model running (started in a terminal, by its own app, or by hand), Shoggoth finds it and lists those models in the Library with no setup. When it has been idle, it frees its model's memory; Shoggoth keeps listing the model, and your next message wakes it. Shoggoth never stops, restarts or updates one you started yourself, and won't start a second big model beside it. It has a **Stop** button (with a confirmation) only when you ask for one.
+- **It frees itself.** A large model Shoggoth started is stopped after 20 idle minutes, and the next chat starts it again. Change this under **Memory** on the **Hardware** page, or set 0 to keep it ready.
+- **Updates come with everything else.** **Check and update everything** on **Advanced > Engines** includes the large-model program. If the one Shoggoth started is running, Shoggoth stops it, updates it and starts it again when a chat needs it.
+- **If you already run one yourself.** If you have already installed that program, or already have a big model running (started in a terminal, by its own app, or by hand), Shoggoth finds it and lists those models in Models with no setup. When it has been idle, it frees its model's memory; Shoggoth keeps listing the model, and your next message wakes it. Shoggoth never stops, restarts or updates one you started yourself, and won't start a second big model beside it. It has a **Stop** button (with a confirmation) only when you ask for one.
 
 The program is [Strata](https://github.com/Niko1221/Strata). Its saved setups, a way to connect to one on another computer, and its installer are all under **Advanced > Engines**.
 
@@ -206,7 +206,7 @@ Everything in **Advanced** is optional.
 - **Engines** has a card for each program Shoggoth uses to run models: [Lemonade](https://lemonade-server.ai) for small and medium models, Strata for Large ones, and any you add. Each card shows its version, whether it is running and who started it, an update check, and a Stop button for ones Shoggoth started. Each card also holds that engine's own details. Lemonade's shows which hardware each kind of model uses (CUDA, Vulkan, ROCm or the processor). Strata's has your saved setups, a link to a Strata on another computer, and its installer. You can add your own engine by putting a folder with a `provider.yaml` file in the engines folder shown at the bottom of the page, then pressing **Reload**. Shoggoth asks once before an engine you added runs a program. The repository's `docs/ENGINES.md` explains how, and `providers check <folder>` (run the AppImage with those words) tells you what to fix before you reload.
 - **Engine settings** is every setting Lemonade has, searchable.
 - **Themes** changes how Shoggoth looks. **Light Touch** is the default; **Braun T3** and **Teenage Engineering** are softer and bolder takes on the same idea, and the rest borrow colour schemes from popular code editors (Dracula, Nord, Monokai Pro, GitHub Light and more). Nothing moves when you switch, and your choice is remembered on this computer.
-- **Settings** (in the main menu, not under Advanced) is where you choose where your models live, how long large models stay in memory, and how much a chat remembers. **Check and update everything** is there too. Its **My own server** section is for the rare case where you run Lemonade yourself, for example as a system service: connect Shoggoth to it there instead of using the one Shoggoth starts.
+- **Advanced > Engines** is where **Check and update everything** lives. Its **My own server** section is for the rare case where you run Lemonade yourself, for example as a system service: connect Shoggoth to it there instead of using the one Shoggoth starts.
 
 ## Where things live, and privacy
 
@@ -224,7 +224,7 @@ Shoggoth goes online only to: download models you ask for, check for Shoggoth, e
 
 ## When something goes wrong
 
-**The answer never starts, or it is very slow.** The model may still be loading, or it may be too big for your graphics card. Close games and other heavy programs, or pick a smaller model in the **Library**.
+**The answer never starts, or it is very slow.** The model may still be loading, or it may be too big for your graphics card. Close games and other heavy programs, or pick a smaller model in the **Models**.
 
 **The model seems to have very little memory.** Look at the bar under the chat's title: it shows how much context the model has. Pick 128k from the **Memory** menu there and Shoggoth reloads the model, which takes a moment.
 
@@ -243,7 +243,7 @@ Shoggoth goes online only to: download models you ask for, check for Shoggoth, e
 - **Model**: the AI itself, a big file on your computer.
 - **Engine**: a program that runs the model. Shoggoth picks and starts the right one for each model. (Lemonade runs small and medium models; Strata runs Large ones.)
 - **Small, Medium, Large**: how Shoggoth groups models by what they need. Small fits under 10 GB of graphics memory, Medium 10 to 24 GB, and Large is for big computers with lots of RAM.
-- **Library**: the list of every model on your computer, and where you get new ones.
+- **Models**: the list of every model on your computer, and where you get new ones.
 - **Pi**: the helper that lets a model read files, make edits and run steps.
 - **Agent**: an AI that can take steps on its own (look, edit, run) instead of only talking.
 - **Skill**: a short instruction sheet the AI follows for a particular kind of job.

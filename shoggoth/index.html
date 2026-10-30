@@ -1376,11 +1376,10 @@ h3.themesec{font:600 12px var(--sans);letter-spacing:.08em;text-transform:upperc
     <div class="brand"><svg viewBox="0 0 64 64" aria-hidden="true"><rect x="2" y="2" width="60" height="60" rx="14" fill="#f7d916"/><rect x="7" y="3.2" width="50" height="1.4" rx=".7" fill="#fff" fill-opacity=".45"/><path d="M7 62 C 6 50 8 40 12 33 C 13 26 18 18 26 17 C 31 13 39 14 43 19 C 50 20 55 27 54 35 C 58 40 58 49 55 56 C 56 59 57 61 58 62 Z" fill="#1d1d22"/><path d="M12 47 C 6 47 4 42 6 38 C 7 36 9 37 8 39 C 7 42 9 44 12 43" fill="none" stroke="#1d1d22" stroke-width="3.2" stroke-linecap="round"/><path d="M53 44 C 59 43 61 38 59 34 C 58 32 56 33 57 35 C 58 38 56 40 53 40" fill="none" stroke="#1d1d22" stroke-width="3" stroke-linecap="round"/><path d="M30 17 C 29 11 32 7 36 8 C 38 8.5 38 10.5 36.5 10.5 C 34.5 10.5 33.5 12.5 34 16" fill="none" stroke="#1d1d22" stroke-width="2.8" stroke-linecap="round"/><g fill="#efe8d2"><ellipse cx="25" cy="32" rx="7.2" ry="6.4"/><ellipse cx="41.5" cy="27" rx="4.8" ry="4.4"/><ellipse cx="38" cy="43" rx="4" ry="3.6"/><ellipse cx="19.5" cy="47" rx="3" ry="2.7"/><ellipse cx="48" cy="38" rx="2.6" ry="2.4"/><ellipse cx="30" cy="51" rx="2.2" ry="2"/></g><g fill="#f7d916"><circle cx="25.6" cy="32.4" r="4.4"/><circle cx="41.8" cy="27.4" r="3"/><circle cx="38.3" cy="43.3" r="2.4"/></g><g fill="#0e0e12"><ellipse cx="25.6" cy="32.4" rx="1.3" ry="3.8"/><ellipse cx="41.8" cy="27.4" rx=".9" ry="2.6"/><ellipse cx="38.3" cy="43.3" rx=".75" ry="2.1"/><ellipse cx="19.7" cy="47.2" rx=".7" ry="1.9"/><ellipse cx="48.1" cy="38.2" rx=".6" ry="1.7"/><ellipse cx="30.1" cy="51.1" rx=".55" ry="1.4"/></g><g fill="#fff" fill-opacity=".85"><circle cx="23" cy="30" r="1.4"/><circle cx="40.3" cy="25.7" r=".9"/></g></svg><span>Shoggoth</span></div>
     <div class="nav">
       <button data-view="cowork" aria-current="page"><svg class="i" viewBox="0 0 24 24"><path d="M21 12a8 8 0 0 1-11.6 7.1L4 20.5l1.5-4.6A8 8 0 1 1 21 12z"/></svg><span>Chat</span></button>
-      <button data-view="models"><svg class="i" viewBox="0 0 24 24"><path d="M12 3l8 4.5v9L12 21l-8-4.5v-9z"/><path d="M12 12l8-4.5M12 12L4 7.5M12 12v9"/></svg><span>Library</span></button>
+      <button data-view="models"><svg class="i" viewBox="0 0 24 24"><path d="M12 3l8 4.5v9L12 21l-8-4.5v-9z"/><path d="M12 12l8-4.5M12 12L4 7.5M12 12v9"/></svg><span>Models</span></button>
       <button data-view="skills"><svg class="i" viewBox="0 0 24 24"><path d="M13 3L5 13.5h6L10 21l8-10.5h-6z"/></svg><span>Skills</span></button>
       <button data-view="docs"><svg class="i" viewBox="0 0 24 24"><path d="M5 4h10a3 3 0 0 1 3 3v13H8a3 3 0 0 1-3-3z"/><path d="M5 17a3 3 0 0 1 3-3h10M9 8h5"/></svg><span>Docs</span></button>
       <button data-view="help"><svg class="i" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M9.5 9.5a2.6 2.6 0 0 1 5 1c0 1.7-2.5 2-2.5 3.6M12 17.2v.1"/></svg><span>Help</span></button>
-      <button data-view="prefs"><svg class="i" viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M12 3v3M12 18v3M3 12h3M18 12h3M5.6 5.6l2.1 2.1M16.3 16.3l2.1 2.1M18.4 5.6l-2.1 2.1M7.7 16.3l-2.1 2.1"/></svg><span>Settings</span></button>
       <button data-view="advanced"><svg class="i" viewBox="0 0 24 24"><path d="M4 7h9M17 7h3M4 17h3M11 17h9"/><circle cx="15" cy="7" r="2"/><circle cx="9" cy="17" r="2"/></svg><span>Advanced</span><span class="navdot" id="navdot" hidden></span></button>
       <div class="sub" id="subnav">
         <button data-view="server"><span>Server</span></button>
@@ -1528,6 +1527,7 @@ h3.themesec{font:600 12px var(--sans);letter-spacing:.08em;text-transform:upperc
       <div class="rig" id="hwrig" hidden></div>
       <div class="applybar" id="applybar" hidden></div>
       <div class="gpus" id="gpus"></div>
+      <div id="hwmemory"></div>
       <div class="panel"><h3>Engine</h3><dl class="kv" id="engine"></dl></div>
     </div></div></section>
 
@@ -1537,6 +1537,7 @@ h3.themesec{font:600 12px var(--sans);letter-spacing:.08em;text-transform:upperc
       <div id="engcards"></div>
       <div id="pibox"></div>
       <div id="engadd"></div>
+      <div id="prefs"></div>
       <div id="engparts" hidden>
         <div id="stratabox"></div>
         <div id="bkpart">
@@ -1577,12 +1578,10 @@ h3.themesec{font:600 12px var(--sans);letter-spacing:.08em;text-transform:upperc
       </section>
     </div></div></section>
 
-    <!-- SETUP -->
-    <section class="view" id="v-prefs"><div class="pad"><div class="wrap" id="prefs"></div></div></section>
 
     <!-- SETTINGS -->
     <section class="view" id="v-settings"><div class="pad"><div class="wrap">
-      <p class="lede">Every setting Lemonade offers. Lemonade runs your small and medium models. Changes save as you make them, and you'll rarely need this page. Settings for a single model are in the Library, on its card under <b>Settings</b>.</p>
+      <p class="lede">Every setting Lemonade offers. Lemonade runs your small and medium models. Changes save as you make them, and you'll rarely need this page. Settings for a single model are in Models, on its card under <b>Settings</b>.</p>
       <div id="setstrata"></div>
       <div class="setbar"><input type="search" id="setq" placeholder="Search settings" aria-label="Search settings"><span class="chip" id="setcount"></span></div>
       <div id="settings"></div>
@@ -1703,10 +1702,10 @@ async function api(path, opts={}){
 }
 
 /* ======================= navigation ======================= */
-const TITLES = {specimens:"Specimens", welcome:"Welcome", cowork:"Chat", chat:"Earlier chats", skills:"Skills", docs:"Docs", models:"Library", help:"Help", advanced:"Advanced", server:"Server", hardware:"Hardware", backends:"Engines", settings:"Engine settings", prefs:"Settings", tuning:"Tuning", themes:"Themes"};
+const TITLES = {specimens:"Specimens", welcome:"Welcome", cowork:"Chat", chat:"Earlier chats", skills:"Skills", docs:"Docs", models:"Models", help:"Help", advanced:"Advanced", server:"Server", hardware:"Hardware", backends:"Engines", settings:"Engine settings", prefs:"Settings", tuning:"Tuning", themes:"Themes"};
 const ADV = ["advanced","server","hardware","backends","settings","tuning","themes"];
 function show(v){
-  if(v === "setup") v = "prefs";                                                   // the Setup guide's pieces now live in Settings
+  if(v === "setup" || v === "prefs") v = "backends";                               // the old Settings page was split up: updates and "my own server" live on Engines
   S.view = v;
   $$(".view").forEach(el => el.classList.toggle("active", el.id === "v-"+v));
   const inAdv = ADV.includes(v);
@@ -1727,9 +1726,9 @@ function show(v){
   if(v === "hardware") renderHardware();
   if(v === "specimens") (async () => { await pkLoad(true); while(S.pk.busy) await new Promise(r => setTimeout(r, 200)); renderSpecimens(); })();
   if(v === "backends"){ loadBackends(); strRefresh(); enginesExtras(); }
+  if(v === "hardware") hwMemoryShow();
   if(v === "settings") loadSettings();
-  if(v === "prefs" || v === "welcome") refreshSetup(true);
-  if(v === "prefs"){ libLoad(); prefsTune(); strRefresh(); }
+  if(v === "backends" || v === "welcome") refreshSetup(true);
   if(v === "welcome"){ libLoad(); pkLoad(true); strRefreshWelcome(); }
   if(v === "tuning") tnShow();
   $(".app").classList.toggle("focus", v === "welcome");
@@ -1846,7 +1845,7 @@ function friendlyProblem(raw, what){
   if(/out of memory|cudamalloc|oom|failed to allocate|insufficient memory|not enough memory|vram/.test(t))
     return {title: "Not enough memory", body: `${what || "This model"} needs more graphics (or system) memory than is free right now.`, hint: "Close other programs that use the graphics card, unload other models, choose a smaller version, or shorten its context window under Settings for this model."};
   if(/no space|disk full|enospc|not enough (disk|space)/.test(t))
-    return {title: "Not enough disk space", body: "There isn't enough free space to store this model.", hint: "Free some space, or delete a model you no longer use from the Library."};
+    return {title: "Not enough disk space", body: "There isn't enough free space to store this model.", hint: "Free some space, or delete a model you no longer use from Models."};
   if(/timed? ?out|timeout|connection|network|unreachable|resolve/.test(t))
     return {title: "Couldn't reach the internet", body: "The download couldn't connect.", hint: "Check your connection and try again."};
   return {title: "Something went wrong", body: "That didn't work, and there isn't a simpler explanation for it.", hint: "Details are below. If it keeps happening, the Activity log (Advanced > Server) may say more."};
@@ -1899,8 +1898,8 @@ async function diskProblem(gb){
   if(!gb) return "";
   try{
     const d = await api("/ui/disk");
-    if(d.missing) return `The models folder ${d.where} can't be found. Connect its disk, or choose another folder in Settings.`;
-    if(d.free_gb < gb + 5) return `This is about ${gb.toFixed(gb < 10 ? 1 : 0)} GB, and the disk it goes on has ${d.free_gb} GB free (${d.where}). Free some space or choose another folder in Settings, then try again.`;
+    if(d.missing) return `The models folder ${d.where} can't be found. Connect its disk, or choose another folder in Models.`;
+    if(d.free_gb < gb + 5) return `This is about ${gb.toFixed(gb < 10 ? 1 : 0)} GB, and the disk it goes on has ${d.free_gb} GB free (${d.where}). Free some space or choose another folder in Models, then try again.`;
   }catch{}
   return "";
 }
@@ -2232,7 +2231,7 @@ function friendly(m){
   const t = id.replace(/^user\./, "").replace(/-GGUF$/i, "").replace(/[-_](instruct|it|chat)\b/ig, "").replace(/[-_]+/g, " ").replace(/\s+/g, " ").trim();
   return t || id;
 }
-const sizeWord = gb => !gb ? "" : {small: "Small", medium: "Medium", large: "Large"}[libTier(gb)];            // the same words as the Library's groups
+const sizeWord = gb => !gb ? "" : {small: "Small", medium: "Medium", large: "Large"}[libTier(gb)];            // the same words as the groups on Models
 function whatFor(m){
   const l = m.labels || [], out = [];
   if(m.recipe === "sd-cpp") return "Draws pictures from a description";
@@ -2321,7 +2320,7 @@ function recProblems(){                  // a mistake in the files is said where
   const p = (RECS.d || {}).problems || [];
   return p.length ? `<div class="note-warn" style="margin-top:12px"><b>Some recommendations were skipped.</b> Run <span class="mono">python3 shoggoth/server.py recommendations check</span> for the full list.<br>${p.slice(0, 5).map(esc).join("<br>")}</div>` : "";
 }
-/* ======================= the Library: one list, whichever engine runs a model ======================= */
+/* ======================= the Models page: one list, whichever engine runs a model ======================= */
 const LIB = {d: null, t: 0, busy: false, tab: store.get("shoggoth.libtab", "installed"), kind: "all", q: "", notNow: false, picked: ""};
 const LIB_TIERS = [["small", "Small models", "Under 10 GB of graphics memory. They start in seconds."], ["medium", "Medium models", "10 to 24 GB of graphics memory."],
   ["large", "Large models", "For big computers. They take a couple of minutes to start."], ["other", "Pictures, speech and sound", ""]];
@@ -2336,7 +2335,7 @@ const isChatModel = m => m.recipe === "llamacpp" && !(m.labels || []).some(l => 
 async function libLoad(fresh){
   if(LIB.busy) return; LIB.busy = true;
   try{ LIB.d = await api("/ui/library"); LIB.t = Date.now(); }catch{}
-  LIB.busy = false; if(S.view === "models") renderModels(); if(S.view === "welcome") renderWelcome(true); if(S.view === "prefs") renderPrefs(true);
+  LIB.busy = false; if(S.view === "models") renderModels(); if(S.view === "welcome") renderWelcome(true); if(S.view === "backends") renderPrefs(true);
 }
 /* while the first-run screen is up, keep the Large-model download state fresh */
 async function strRefreshWelcome(){ if(S.view !== "welcome") return; try{ STR.d = await api("/ui/strata"); }catch{} renderWelcome(); setTimeout(strRefreshWelcome, 3000); }
@@ -2476,7 +2475,7 @@ async function libAddFolder(path, label, kind){
 $("#adddlg").addEventListener("click", async e => {
   const b = e.target.closest("[data-add],[data-adduse]"); if(!b) return; const res = $("#addres");
   if(b.dataset.add === "hf"){ $("#adddlg").close(); return openHF(); }
-  if(b.dataset.add === "folder") return openFs("", async path => { try{ res.textContent = "Adding…"; await libAddFolder(path); res.innerHTML = `<p class="help">Added. Its models are in your Library now.</p>`; }catch(err){ res.innerHTML = `<p class="errline">${esc(err.message)}</p>`; } });
+  if(b.dataset.add === "folder") return openFs("", async path => { try{ res.textContent = "Adding…"; await libAddFolder(path); res.innerHTML = `<p class="help">Added. Its models are in Models now.</p>`; }catch(err){ res.innerHTML = `<p class="errline">${esc(err.message)}</p>`; } });
   if(b.dataset.add === "scan"){
     res.innerHTML = '<p class="help">Looking…</p>';
     try{
@@ -2487,7 +2486,7 @@ $("#adddlg").addEventListener("click", async e => {
   if(b.dataset.adduse){
     const picks = [...$$("#addres input[data-i]:checked")].map(x => LIB.found[+x.dataset.i]);
     res.textContent = "Adding…";
-    try{ for(const s of picks) await libAddFolder(s.path, s.label, s.kind); res.innerHTML = `<p class="help">Added ${picks.length} folder${picks.length === 1 ? "" : "s"}. Their models are in your Library now.</p>`; }catch(err){ res.innerHTML = `<p class="errline">${esc(err.message)}</p>`; }
+    try{ for(const s of picks) await libAddFolder(s.path, s.label, s.kind); res.innerHTML = `<p class="help">Added ${picks.length} folder${picks.length === 1 ? "" : "s"}. Their models are in Models now.</p>`; }catch(err){ res.innerHTML = `<p class="errline">${esc(err.message)}</p>`; }
   }
 });
 $("#libadd").addEventListener("click", libAddOpen);
@@ -3036,10 +3035,10 @@ function stepShell(n, key, title, doneFlag, chipHTML, body){
 }
 
 /* ======================= first-run welcome ======================= */
-const inSetup = () => S.view === "prefs" || S.view === "welcome";
+const inSetup = () => S.view === "backends" || S.view === "welcome";
 /* ---- the first-run screen: Shoggoth gets itself ready, and asks one question */
 const W = {auto: {}, go: false};
-function wLibAct(a){                     // the folder question's buttons (the Library uses the same ones)
+function wLibAct(a){                     // the folder question's buttons (Models uses the same ones)
   if(a === "use"){ const v = document.querySelector('input[name="libplace"]:checked'); if(v) return libSetRoot(v.value); }
   if(a === "pick") return openFs("", p => libSetRoot(p.replace(/\/$/, "") + "/Models"));
   if(a === "where") return openFs((LIB.d || {}).root || "", p => libSetRoot(p));
@@ -3200,17 +3199,8 @@ function engineStep(){
 
 function renderSetup(force){
   if(S.view === "welcome") return renderWelcome(force);
-  if(S.view === "prefs") return renderPrefs(force);
+  if(S.view === "backends") return renderPrefs(force);
 }
-/* ======================= Settings: the few things worth choosing, in plain words ======================= */
-const PREFS = {tune: null, tuneAt: 0};
-async function prefsTune(){
-  if(Date.now() - PREFS.tuneAt < 30000) return; PREFS.tuneAt = Date.now();
-  try{ const d = await api("/ui/tuning"); PREFS.tune = {n: d.targets.filter(t => t.tuned.has && !t.tuned.stale).length, total: d.targets.length}; }catch{}
-  if(S.view === "prefs") renderPrefs(true);
-}
-function prefsCtxOptions(cfg){ const o = BAR_CTX.includes(cfg) ? BAR_CTX : BAR_CTX.concat([cfg]).sort((a, b) => a - b); return o.map(n => `<option value="${n}" ${n === cfg ? "selected" : ""}>${fmtTok(n)}${n === 131072 ? " · default" : ""}</option>`).join(""); }
-
 /* ======================= Advanced > Engines: one card per engine, from the provider data ======================= */
 const ENG = {d: null, checks: {}, msg: "", sig: ""};
 const ENG_TIER = {"small-medium": "Small and medium models", large: "Large models"};
@@ -3297,39 +3287,33 @@ async function enginesExtras(){
   await engLoad();
   if(S.view === "backends") setTimeout(enginesExtras, 2500);
 }
+/* Engines: updates for everything, and the "run my own server" option. The rest of the old Settings page went to Models, Hardware, Tuning and the chat sidebar. */
 function renderPrefs(force){
-  const host = $("#prefs"); if(!SU.st){ host.innerHTML = `<div class="empty-note">Loading…</div>`; return; }
-  const sig = JSON.stringify([SU.st, SU.busy, SU.msg, SU.check, SU.checkErr, autoCheckOn(), SU.up, LIB.d && [LIB.d.chosen, LIB.d.root, LIB.d.disk], LIB.notNow, LIB.picked, LIB.err, (S.ms || {}).chat_ctx, STR.d && [STR.d.installed, STR.d.idle_minutes], PREFS.tune, SU.pi.info, SU.pi.check]);
+  const host = $("#prefs"); if(!host) return; if(!SU.st){ host.innerHTML = ""; return; }
+  const sig = JSON.stringify([SU.st, SU.busy, SU.msg, SU.check, SU.checkErr, autoCheckOn(), SU.up, SU.pi.info, SU.pi.check]);
   const typing = host.contains(document.activeElement) && /^(INPUT|TEXTAREA|SELECT)$/.test(document.activeElement.tagName);
   if(!force && (sig === SU.sig || typing)) return; SU.sig = sig;
-  const d = LIB.d || {}, cfg = (S.ms || {}).chat_ctx || 131072, big = STR.d && STR.d.installed, t = PREFS.tune;
-  const where = d.chosen ? `<p class="lead" style="margin:0">Your models live in <b class="mono" style="overflow-wrap:anywhere">${esc(d.root)}</b>${d.disk ? `, with ${d.disk.free_gb} GB free` : ""}.</p>
-      <p class="help" style="margin:0">Changing it sends new models there. Models you already have stay where they are and still show up in the Library.</p>
-      <div class="line"><button class="btn" type="button" data-lib="where">Choose another folder…</button><button class="btn ghost" type="button" data-act="w-add">Add models you already have</button></div>`
-    : `<p class="lead" style="margin:0">Models are kept wherever each program puts them. Pick one folder, and Shoggoth keeps every new model there.</p>${LIB.notNow ? `<div class="line"><button class="btn primary" type="button" data-lib="again">Choose a folder…</button></div>` : libWhereHTML()}`;
-  host.innerHTML = `<p class="lede">The few things worth choosing. Everything else Shoggoth looks after.</p>
-    <section class="step"><header><span class="num">▤</span><h3>Where your models live</h3></header><div class="sbody">${where}</div></section>
-    <section class="step"><header><span class="num">◔</span><h3>Memory</h3></header><div class="sbody">
-      <p class="lead" style="margin:0">Models use your computer's memory while they are ready. Shoggoth frees the memory of whatever else was running when you choose another model.</p>
-      ${big ? `<div class="line"><label class="grow help" style="margin:0">Free the memory of large models after <input id="stridle" type="number" min="0" max="1440" value="${+(STR.d.idle_minutes ?? 20)}" style="width:70px"> idle minutes (0 keeps them ready). This only applies to large models Shoggoth started itself.</label><button class="btn" data-act="idle-save">Save</button></div>` : `<p class="help" style="margin:0">Nothing to set yet. If you get a large model, you can choose here how long it stays in memory when you aren't using it.</p>`}</div></section>
-    <section class="step"><header><span class="num">∞</span><h3>How much a chat remembers</h3></header><div class="sbody">
-      <p class="lead" style="margin:0">A longer memory lets a chat keep more of the conversation, and the files it has read, in mind. It uses more memory. 128k suits most work.</p>
-      <div class="line"><label class="help" style="margin:0">Remembers up to <select id="prefctx" aria-label="How much a chat remembers">${prefsCtxOptions(cfg)}</select></label></div>
-      <p class="help" style="margin:0">A few large models decide this themselves; the chat bar shows it when you choose one.</p></div></section>
-    <section class="step"><header><span class="num">${glyph("sigil")}</span><h3>Speed</h3></header><div class="sbody">
-      <p class="lead" style="margin:0">Shoggoth can measure a model on this computer and keep the settings that make it answer faster. Answers stay the same.</p>
-      <div class="line"><button class="btn primary" type="button" data-go="tuning">Make models faster</button>${t ? `<span class="help" style="margin:0">${t.n} of ${t.total} models tuned</span>` : ""}</div></div></section>
-    <section class="step"><header><span class="num">${glyph("eye")}</span><h3>Look</h3></header><div class="sbody">
-      <div class="line"><button type="button" class="sw" role="switch" id="picsw" aria-checked="${picturesOn()}"><i></i>Show model pictures</button></div>
-      <p class="help" style="margin:0">Draws each model as a creature, beside the chat, in the Machine, and on the Server and Hardware pages. Turn it off for the plain look. Colours and type are under <a href="#themes" data-go="themes">Themes</a>.</p></div></section>
-    ${updatePanel()}
+  host.innerHTML = `${updatePanel()}
     <details class="panel" id="ownserver"><summary><b>My own server, and the first-run screen</b></summary><div style="margin-top:12px;display:grid;gap:14px">
       <p class="help" style="margin:0">Most people never need this. Shoggoth runs its own copy of what runs AI. If you run one yourself, for example as a system service, you can point Shoggoth at it here.</p>
       ${engineStep()}
-      <div class="line"><button class="btn" type="button" data-go="welcome">Show the first-run screen again</button></div></div></details>
-    <div class="setfoot"><button class="btn" data-act="finish">Back to Shoggoth</button></div>`;
+      <div class="line"><button class="btn" type="button" data-go="welcome">Show the first-run screen again</button></div></div></details>`;
   updateNavDot();
 }
+/* Hardware: how long Shoggoth keeps large models in memory when nobody is using them */
+function hwMemoryPaint(){
+  const host = $("#hwmemory"); if(!host) return;
+  if(host.contains(document.activeElement) && document.activeElement.tagName === "INPUT") return;
+  const big = STR.d && STR.d.installed;
+  host.innerHTML = `<section class="panel"><h3>Memory</h3>
+    <p class="help" style="margin:4px 0 12px">Models use your computer's memory while they are ready. Shoggoth frees the memory of whatever else was running when you choose another model.</p>
+    ${big ? `<div class="line"><label class="grow help" style="margin:0">Free the memory of large models after <input id="stridle" type="number" min="0" max="1440" value="${+(STR.d.idle_minutes ?? 20)}" style="width:70px"> idle minutes (0 keeps them ready). This only applies to large models Shoggoth started itself.</label><button class="btn" data-hwidle="save">Save</button></div>` : `<p class="help" style="margin:0">Large models are not set up on this computer, so there is nothing to time out here.</p>`}</section>`;
+}
+async function hwMemoryShow(){ try{ STR.d = await api("/ui/strata"); }catch{} hwMemoryPaint(); }
+$("#hwmemory").addEventListener("click", async e => {
+  if(!e.target.closest("[data-hwidle]")) return;
+  try{ await api("/ui/strata/idle", {method: "POST", body: JSON.stringify({minutes: +$("#stridle").value || 0})}); toast("Saved."); await hwMemoryShow(); }catch(err){ toast(err.message); }
+});
 
 async function suPost(path, body){ return api(path, {method: "POST", headers: {"Content-Type": "application/json"}, body: JSON.stringify(body || {})}); }
 async function suBusy(key, fn){
@@ -3368,8 +3352,7 @@ const setupClick = async e => {
   if(a === "cancel-dl") return cancelDownload(el.dataset.model);
   if(a === "w-fit") { SU.msg.backend = ""; const r = llamaRecipe(); const rec = r && r.backends.find(x => ["installable", "update_required"].includes(x.state)); if(rec) W.auto["fit-" + rec.name] = false; return renderWelcome(true); }
   if(a === "w-add"){ show("models"); return libAddOpen(); }
-  if(a === "w-own"){ show("prefs"); setTimeout(() => { const d = $("#ownserver"); if(d){ d.open = true; d.scrollIntoView({block: "start"}); } }, 400); return; }
-  if(a === "idle-save"){ try{ await api("/ui/strata/idle", {method: "POST", body: JSON.stringify({minutes: +$("#stridle").value || 0})}); toast("Saved."); await strRefresh(); }catch(err){ toast(err.message); } return renderPrefs(true); }
+  if(a === "w-own"){ show("backends"); setTimeout(() => { const d = $("#ownserver"); if(d){ d.open = true; d.scrollIntoView({block: "start"}); } }, 400); return; }
   if(a === "sget"){
     if(!confirm("Get this model? It can be tens of gigabytes, and the first start takes a few minutes.")) return;
     try{ STR.d = await api("/ui/strata/setup", {method: "POST", body: JSON.stringify({family: el.dataset.family, model: el.dataset.model})}); }catch(err){ toast(err.message); }
@@ -3386,8 +3369,7 @@ $("#welcome").addEventListener("click", setupClick);
 $("#prefs").addEventListener("click", setupClick);
 $("#pibox").addEventListener("click", setupClick);
 $("#prefs").addEventListener("change", async e => {
-  if(e.target.id === "prefctx"){ const n = +e.target.value; try{ await api("/ui/model/ctx", {method: "POST", body: JSON.stringify({ctx: n})}); toast(`Chats will remember up to ${fmtTok(n)}.`); await pollServer(); }catch(err){ toast(err.message); } renderPrefs(true); }
-  else if(e.target.dataset && e.target.dataset.act === "autocheck") store.set("shoggoth.autocheck", e.target.checked);
+  if(e.target.dataset && e.target.dataset.act === "autocheck") store.set("shoggoth.autocheck", e.target.checked);
 });
 $("#prefs").addEventListener("keydown", e => { if((e.key === "Enter" || e.key === " ") && e.target.matches(".choice[data-act]")){ e.preventDefault(); e.target.click(); } });
 async function waitLemonade(){
@@ -3404,13 +3386,14 @@ async function strUpdFetch(fresh){
   updateNavDot(); if(S.view === "models") strPaint();
 }
 async function strRefresh(){
-  if(S.view !== "models" && S.view !== "backends" && S.view !== "prefs") return;
+  if(S.view !== "models" && S.view !== "backends" && S.view !== "hardware") return;
   try{ STR.d = await api("/ui/strata"); }catch{ STR.d = null; }
   if(STR.d && STR.d.installed && (!SU.strUpd || (SU.strUpd.update || {}).state === "working")) await strUpdFetch();
   if(Date.now() - STR.recAt > 60000 && !(STR.d && STR.d.run && String(STR.d.run.state).startsWith("start"))){ STR.recAt = Date.now(); try{ STR.rec = await api("/ui/strata/recommend"); }catch{} }
   strPaint();
   if(S.view === "models" && !document.activeElement?.closest?.("#grid, #filters, #adddlg")) renderModels();
-  if(S.view === "prefs") renderPrefs();
+  if(S.view === "backends") renderPrefs();
+  if(S.view === "hardware") hwMemoryPaint();
 }
 function strPaint(){
   const box = $("#stratabox"), d = STR.d; if(!box) return;
@@ -3490,7 +3473,7 @@ $("#stratabox").addEventListener("submit", async e => {
   try{ STR.d = await api("/ui/strata/connect", {method: "POST", body: JSON.stringify({url: $("#strurl").value.trim(), key: $("#strk").value.trim()})}); }catch(err){ STR.msg = err.message; }
   strPaint();
 });
-setInterval(() => { if((S.view === "models" || S.view === "backends" || S.view === "prefs") && !document.hidden) strRefresh(); }, 3000);
+setInterval(() => { if((S.view === "models" || S.view === "backends" || S.view === "hardware") && !document.hidden) strRefresh(); }, 3000);
 
 /* ---- folder browser */
 const FS = {cb: null, path: ""};
@@ -3514,7 +3497,7 @@ function renderPick(){
   $("#pickbody").innerHTML = `
     <h4>Start with three questions</h4>
     <ol class="picklist">
-      <li><b>Will it fit?</b> Shoggoth's Library lists <b>Recommended for this computer</b> first, and hides anything that won't run comfortably in your free graphics memory. A model that doesn't fit will be slow or fail to start.</li>
+      <li><b>Will it fit?</b> Shoggoth's Models page lists <b>Recommended for this computer</b> first, and hides anything that won't run comfortably in your free graphics memory. A model that doesn't fit will be slow or fail to start.</li>
       <li><b>What is it for?</b> Chat and writing, coding, tool use, or understanding pictures. The labels on each card say what a model is good at.</li>
       <li><b>How much does it need to remember?</b> The context window is how much conversation the model can see. 128k tokens is enough for long chats and agent work. It's Shoggoth's default.</li>
     </ol>
@@ -3531,11 +3514,11 @@ const FAQ = [
   ["What is a model?", "A model is the AI that answers you. It is a big file, usually a few gigabytes, that lives on this computer. Bigger models tend to write better but need a stronger computer and answer more slowly. Shoggoth marks each one as comfortable, snug or too big for your machine."],
   ["Is my data private?", "Yes. Shoggoth and the models run on this computer. Your conversations are saved on this computer, in Shoggoth's own folder, and are never sent anywhere. Shoggoth only goes online to download a model you ask for, check for updates, fetch skills when you paste a link, or search the web when you allow the model to (it asks first, every time, and you can switch it off in the chat's Details panel). The <a href=\"#docs\" data-go=\"docs\">Docs</a> page explains where everything is kept."],
   ["Why is the first answer slow?", "The model has to be loaded into your computer's memory before it can answer. That takes a few seconds to a minute, depending on its size. After that, answers start right away."],
-  ["How do I know which model to use?", "It depends on your computer and what you want to do. Start with <b>Recommended for this computer</b> in the Library, where I explain each recommendation. <b>Everything</b> shows the rest, with a note on whether each one will fit. <p><button class=\"btn\" type=\"button\" data-pick>Show me how to compare models</button></p>"],
+  ["How do I know which model to use?", "It depends on your computer and what you want to do. Start with <b>Recommended for this computer</b> in Models, where I explain each recommendation. <b>Everything</b> shows the rest, with a note on whether each one will fit. <p><button class=\"btn\" type=\"button\" data-pick>Show me how to compare models</button></p>"],
   ["What is the context window?", "It is how much of the conversation a model can see at once. Shoggoth uses <b>128k</b> tokens (about 100,000 words) by default. That's enough for long chats and agent work. You can change it for one model under <b>Details</b>, then <b>Settings for this model</b>. A bigger window needs more graphics memory."],
-  ["How do I get more models?", "Open the <b>Library</b> and press <b>Get it</b> on any model. Models you already have somewhere else, or ones from Hugging Face, come in with <b>Add models</b>. Large models work the same way: Shoggoth sets up whatever they need and starts them when you pick one."],
+  ["How do I get more models?", "Open the <b>Models</b> and press <b>Get it</b> on any model. Models you already have somewhere else, or ones from Hugging Face, come in with <b>Add models</b>. Large models work the same way: Shoggoth sets up whatever they need and starts them when you pick one."],
   ["Can other apps use my models?", "Yes. Open <b>Advanced</b>, then <b>Server</b>. Shoggoth gives you an address and a key that you can paste into opencode, Hermes, or any chat app or coding assistant that works with an OpenAI-style server."],
-  ["Answers are slow or the model won't start", "Close other programs that use your graphics card, such as games or video editors, and try again. If it still struggles, choose a smaller model in the Library. Models marked “Probably too big” often fail on this computer. Large models take a couple of minutes to start; the bar at the top of the chat shows how far along they are."]
+  ["Answers are slow or the model won't start", "Close other programs that use your graphics card, such as games or video editors, and try again. If it still struggles, choose a smaller model in Models. Models marked “Probably too big” often fail on this computer. Large models take a couple of minutes to start; the bar at the top of the chat shows how far along they are."]
 ];
 let DOCS = null;
 async function renderDocs(){
@@ -3764,7 +3747,7 @@ const appLabel = a => a === "Shoggoth" ? "Shoggoth chat" : a;
 function stateWord(r){ return {waiting: "Reading the question", thinking: "Thinking", answering: "Writing", done: "Done", error: "Didn't work"}[r.state]; }
 const wordsOf = chars => Math.max(0, Math.round((chars || 0) / 5.5));
 const wordsTxt = chars => { const n = wordsOf(chars); return n.toLocaleString() + (n === 1 ? " word" : " words"); };
-/* a request's model as the Library names it, falling back to a tidied id */
+/* a request's model as Models names it, falling back to a tidied id */
 const reqModel = id => id ? ((pkFind(id) || {}).title || friendly(id)) : "";
 function nowDetail(r, now){
   const end = r.t_end || now;
@@ -3972,7 +3955,7 @@ const SET_META = {
   rocm_channel: {l:"ROCm channel"},
   rocm_install_method: {l:"ROCm install method", opts:["auto","pip","tarball"]},
   no_fetch_executables: {l:"Never download backend programs"},
-  "llamacpp.args": {l:"Extra arguments for every model", h:"Added to every llama-server start. Per-model arguments are set from the Library."},
+  "llamacpp.args": {l:"Extra arguments for every model", h:"Added to every llama-server start. Per-model arguments are set from Models."},
   "llamacpp.backend": {l:"Backend", kind:"backend"},
   "llamacpp.device": {l:"Devices", h:"Choose and order devices on the Hardware page.", link:"hardware"},
   "llamacpp.prefer_system": {l:"Prefer a llama.cpp installed on this system"}
@@ -4041,7 +4024,7 @@ function renderStrataSettings(){
   const run = (d.servers || []).filter(r => r.state === "ready" || r.state === "loading"), ps = d.presets || [];
   host.innerHTML = `<details class="setgrp" open><summary>Engine: Strata<small>${ps.length} setup${ps.length === 1 ? "" : "s"}</small></summary><div class="setrows">
     <div class="setrow"><div><b>Version</b><span class="help">Strata runs your large models. It keeps its own saved setups (called presets), so there are no flags to edit here.</span></div><div class="mono">${esc(d.version || "unknown")}</div></div>
-    <div class="setrow"><div><b>Running now</b><span class="help">Start and stop models from the model picker in Chat or from the Library.</span></div><div>${run.length ? run.map(r => esc((r.models[0] || {}).id || r.name || r.url)).join(", ") : "Nothing"}</div></div>
+    <div class="setrow"><div><b>Running now</b><span class="help">Start and stop models from the model picker in Chat or from Models.</span></div><div>${run.length ? run.map(r => esc((r.models[0] || {}).id || r.name || r.url)).join(", ") : "Nothing"}</div></div>
     <div class="setrow"><div><b>Saved setups</b><span class="help">Make new ones in a terminal with <code>strata launch</code>.</span></div><div>${ps.length ? ps.map(p => esc(p.name)).join(", ") : "None yet"}</div></div>
     <div class="setrow"><div><b>Speed settings</b><span class="help">Strata's own tuner and each model's tuning are under Tuning.</span></div><div><button class="btn" data-goto="tuning">Open Tuning</button></div></div>
   </div></details>`;
@@ -4093,7 +4076,7 @@ $("#settings").addEventListener("click", async e => {
 });
 
 /* ======================= the model's picture ======================= */
-/* One switch: Settings › Look › Show model pictures (on unless turned off). */
+/* One switch: the Model pictures switch in the chat sidebar (on unless turned off). */
 const picturesOn = () => store.get("shoggoth.pictures", true) !== false;
 const holesSvg = (x0, y0, cols, rows, gap, r) => { let h = ""; for(let i = 0; i < cols; i++) for(let j = 0; j < rows; j++) h += `<circle cx="${x0 + i * gap}" cy="${y0 + j * gap}" r="${r}"/>`; return h; };
 const screwSvg = (x, y) => `<circle cx="${x}" cy="${y}" r="2.6" fill="var(--surface)" stroke="var(--line)" stroke-width=".9"/><path d="M${x - 1.5} ${y + 1.1} L${x + 1.5} ${y - 1.1}" stroke="var(--muted)" stroke-width=".8"/>`;
@@ -4251,7 +4234,7 @@ function mcPaint(){
     <div class="mccase"><div class="mccasehead"><b>This computer</b><span>${esc([gpus, m.ram_gb ? m.ram_gb + " GB RAM" : ""].filter(Boolean).join(" · "))}</span></div>
       <div class="mcslots">${provs.length ? provs.map(mcSlot).join("") : '<p class="help">No engines yet.</p>'}</div></div>
     <div><h2>Your models</h2><p class="help">Press Load, or drag a model into its slot. A Strata model needs all the memory, so loading one unloads Lemonade's first.</p></div>
-    <div class="mcshelf">${shelf || '<p class="help">No models yet. <a href="#models" data-go="models">Get one in the Library.</a></p>'}</div></div>`;
+    <div class="mcshelf">${shelf || '<p class="help">No models yet. <a href="#models" data-go="models">Get one in Models.</a></p>'}</div></div>`;
   MC.justIn = null; crCrop(body);
 }
 async function mcLoad(id){
@@ -5175,7 +5158,7 @@ async function loadBackends(){
 }
 const STATE_LABEL = {installed:"installed", update_required:"update needed", installable:"not installed"};
 const ENGINE_INFO = {
-  llamacpp: "Runs chat and writing models (the GGUF files you download from the Library). This is the engine Shoggoth's chat uses, so it is the one that matters most.",
+  llamacpp: "Runs chat and writing models (the GGUF files you download from Models). This is the engine Shoggoth's chat uses, so it is the one that matters most.",
   whispercpp: "Listens to speech and turns it into text, for dictation and transcribing recordings.",
   moonshine: "A small, quick speech-to-text engine that works well on ordinary processors.",
   kokoro: "Reads text aloud with a natural voice (text-to-speech).",
@@ -5255,7 +5238,7 @@ async function loadLogs(){
 $("#logq").addEventListener("input", loadLogs); $("#logref").addEventListener("click", loadLogs);
 setInterval(() => { if(S.view === "server" && $("#logauto").checked && !document.hidden) loadLogs(); }, 3000);
 
-window.addEventListener("hashchange", () => { let h = location.hash.slice(1); if(h === "logs"){ pendingLogScroll = true; h = "server"; } if(h === "setup") h = "prefs"; if(TITLES[h] && h !== S.view) show(h); });
+window.addEventListener("hashchange", () => { let h = location.hash.slice(1); if(h === "logs"){ pendingLogScroll = true; h = "server"; } if(h === "setup" || h === "prefs") h = "backends"; if(TITLES[h] && h !== S.view) show(h); });
 
 /* keep-alive so the desktop (AppImage) build knows the tab is still open */
 setInterval(() => fetch("/ui/ping", {method:"POST"}).catch(() => {}), 5000); fetch("/ui/ping", {method:"POST"}).catch(() => {});
@@ -5266,7 +5249,7 @@ setInterval(() => fetch("/ui/ping", {method:"POST"}).catch(() => {}), 5000); fet
   try{ SU.st = await api("/ui/setup"); S.bk = (await api("/ui/backends")).recipes; }catch{}
   if(!S.convs.length || !conv()) { if(S.convs.length) S.cur = S.convs[0].id; else { const c = {id:uid(), title:"New chat", messages:[], system:"", created:Date.now()}; S.convs.push(c); S.cur = c.id; } }
   renderConvs(); syncModelSelect(); renderStatus(); setSendState();
-  let h = location.hash.slice(1); if(h === "logs"){ pendingLogScroll = true; h = "server"; } if(h === "setup") h = "prefs";
+  let h = location.hash.slice(1); if(h === "logs"){ pendingLogScroll = true; h = "server"; } if(h === "setup" || h === "prefs") h = "backends";
   show(TITLES[h] && h !== "welcome" ? h : (SU.st && !SU.st.setup_done ? "welcome" : "cowork"));
   renderThread();
   grow();
@@ -5439,7 +5422,7 @@ function pkRender(){
       return `<button type="button" class="pkrow" role="option" data-id="${esc(m.id)}" aria-selected="${m.id === cur}" ${no ? 'aria-disabled="true"' : ""}><span class="pkdot ${m.live ? "on" : ""}" aria-hidden="true"></span><span class="pkmain"><b>${esc(m.title)}${pi ? ` <span class="chip">${esc(pi.label)}</span>` : ""}</b><span class="pkmeta">${pkNote(m)}</span></span><span class="pkeng">${esc(m.engine_name)}</span></button>`;
     }).join("");
   }
-  if(!html) html = '<div class="pkhead"><span>No model downloaded yet. Open the Library to get one.</span></div>';
+  if(!html) html = '<div class="pkhead"><span>No model downloaded yet. Open Models to get one.</span></div>';
   const foot = [picturesOn() ? '<button type="button" class="btn ghost mcopen">Open the machine</button>' : "", ms.loaded ? '<button type="button" class="btn ghost" data-pk="free">Free memory</button>' : "", ms.loaded && ms.loaded === cur ? '<button type="button" class="btn ghost" data-pk="again" title="Load it again, so settings you saved for this model take effect">Load it again</button>' : ""].join("");
   pop.innerHTML = html + (foot.replace(/<[^>]*>/g, "").trim() ? `<div class="pkfoot">${foot}</div>` : "");
 }
@@ -5485,7 +5468,7 @@ function cwModelBar(){
   selC.title = m && m.ctx_fixed ? "This model decides how much it can remember." : "How much of the conversation the model can keep in mind. 128k is the default.";
   const st = $("#mbstate");
   if(loading) st.textContent = (S.loadSteps[S.loadSteps.length - 1]) || "Getting ready…";
-  else if(!models.length) st.textContent = "Download a model from the Library to start.";
+  else if(!models.length) st.textContent = "Download a model from Models to start.";
   else if(CW.running) st.textContent = "Answering…";
   /* the memory select already says how much it remembers; only a difference needs words */
   else if(here) st.textContent = ms.ctx && !(m && m.ctx_fixed) && ms.ctx < cfg ? `Ready · on ${fmtTok(ms.ctx)} until you next send` : "Ready";
@@ -6142,7 +6125,7 @@ function cwDetailsTab(t){
   const files = [...CW.files.entries()];
   /* the first-time note sits here, not above the conversation, so it never pushes the chat down */
   const picNote = picturesOn() && !store.get("shoggoth.picturesNoted", false)
-    ? '<div class="picnote" id="picnote">Model pictures are on. <a href="#prefs" data-go="prefs">Turn them off in Settings › Look</a><button class="x" type="button" id="picnotex" aria-label="Dismiss">×</button></div>' : "";
+    ? '<div class="picnote" id="picnote">Model pictures are on. You can turn them off under <b>Model pictures</b> below.<button class="x" type="button" id="picnotex" aria-label="Dismiss">×</button></div>' : "";
   return `${picNote}
     <section><h4>Folder</h4><div class="path">${folder ? esc(folder) : "None. Just chatting."}</div>${isHome ? '<p class="help" style="margin:6px 0 0"><b>This is your home folder.</b> Choose a project folder for focused work. In your home folder, <b>Ask first</b> is the safe choice.</p>' : ""}${isJob ? "" : `<button class="btn" type="button" id="cwside-folder" style="margin-top:8px">${folder ? "Change folder…" : "Work in a folder…"}</button>`}</section>
     ${plain || isJob ? "" : `<section><h4>How careful</h4><div class="cwmodes">${CW_MODES.map(([k, n, d]) => `<label><input type="radio" name="cwmode" value="${k}" ${CW.mode === k ? "checked" : ""}><b>${n}</b><small>${d}</small></label>`).join("")}</div></section>`}
@@ -6151,6 +6134,7 @@ function cwDetailsTab(t){
       <p class="help" style="margin:6px 0 8px">${Math.round(u.tokens / 1000)}k of ${Math.round(u.contextWindow / 1000)}k tokens (${pct}%)</p>
       <button class="btn" type="button" id="cwcompact">Make room</button></section>` : ""}
     ${cwSearchSection()}
+    <section><h4>Model pictures</h4><button type="button" class="sw" role="switch" id="picsw" aria-checked="${picturesOn()}"><i></i>Show model pictures</button><p class="help" style="margin:6px 0 0">Draws each model as a creature, here and on the Models, Server and Hardware pages. Colours and type are under <a href="#themes" data-go="themes">Themes</a>.</p></section>
     <section><h4>Skills</h4><p class="help" style="margin:0 0 8px">${CW.skillsOn ? CW.skillsOn + " switched on." : "None switched on."}</p><button class="btn" type="button" id="cwside-skills">Manage skills</button></section>
     ${CW.piVersion ? `<p class="help" style="margin:0">Agent: Pi ${esc(CW.piVersion)}${SU.pi.check && SU.pi.check.update_available ? ` · <a href="#backends" data-go="setup">update available</a>` : ""}</p>` : ""}
     ${plain ? "" : `<section><h4>Files it changed</h4>${files.length ? `<div class="cwfiles">${files.map(([p, op]) => `<div><b>${op === "edited" ? "M" : "A"}</b><span title="${esc(p)}">${esc(p)}</span></div>`).join("")}</div>` : '<p class="help">None yet.</p>'}</section>`}`;

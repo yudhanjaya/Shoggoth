@@ -74,9 +74,9 @@ Setup takes no technical steps: download one file and follow a few short screens
 
 If you already have models, or run your own Lemonade or Strata, Shoggoth finds them and you can skip the first-run screen. Three places help here:
 
-- **Settings** holds the few choices: where models live, how long big models stay in memory, how much a chat remembers, and updates.
-- The Library's **Add models** brings in models you already have. It finds LM Studio, Ollama, llama.cpp and other folders for you.
-- **Settings > My own server** connects a Lemonade you run yourself.
+- The few choices are spread to where they belong: **Models** holds where models live, **Hardware** holds how long big models stay in memory, the chat's **Memory** menu holds how much a chat remembers, and **Advanced > Engines** holds updates.
+- **Add models** on the Models page brings in models you already have. It finds LM Studio, Ollama, llama.cpp and other folders for you.
+- **Advanced > Engines > My own server** connects a Lemonade you run yourself.
 
 ### What you need
 
@@ -96,11 +96,11 @@ The menu on the left has seven places. A newcomer needs only the first six. Ever
 | Menu item | What it is for |
 | --- | --- |
 | **Chat** | Talk to a model, or choose a folder and let it work on your files. |
-| **Library** | Every model on your computer in one list, grouped into Small, Medium and Large. Shoggoth recommends the ones that will run well. Get new models, add ones you have, and change a model's settings. |
+| **Models** | Every model on your computer in one list, grouped into Small, Medium and Large. Shoggoth recommends the ones that will run well. Get new models, add ones you have, and change a model's settings. |
 | **Skills** | Switch skills on and off, and add more from a GitHub link. |
 | **Docs** | A plain-language guide to all of this, inside the app. |
 | **Help** | Short answers to common questions, and a button to see the first-run screen again. |
-| **Settings** | Where your models live, how long large models stay in memory, how much a chat remembers, whether model pictures show, and one button to update everything. |
+| **Advanced > Engines** | Updates for everything in one button, and the option to use a server you run yourself. |
 | **Advanced** | Server, Hardware, Engines, Engine settings, Tuning and Themes. You never need these just to chat. |
 
 ![The Docs page, with the menu on the left](docs/screenshots/docs.png)
@@ -169,17 +169,17 @@ Click the tube, or **Open the machine** in the model menu, to open **the Machine
 
 The **Hardware** and **Server** pages put the same creatures on a lab bench. See [Advanced tools](#advanced-tools) and [Use your models in other apps](#use-your-models-in-other-apps).
 
-To hide the pictures, switch off **Show model pictures** under **Settings › Look**. Nothing else changes.
+To hide the pictures, switch off **Show model pictures** in the chat's right sidebar. Nothing else changes.
 
 ## Choosing and managing models
 
-The **Library** is one list of every model on your computer, whichever engine runs it. It is also where you get new ones.
+The **Models** is one list of every model on your computer, whichever engine runs it. It is also where you get new ones.
 
 You don't pick an engine. Shoggoth runs small and medium models on [Lemonade](https://lemonade-server.ai) and large ones on [Strata](https://github.com/Niko1221/Strata). It starts the engine your model needs and frees the memory of whatever else was running. Each card names its engine on the **Details** row.
 
 ![Models on this computer](docs/screenshots/models.png)
 
-The Library has three tabs:
+Models has three tabs:
 
 - **Installed** lists what you have, by size:
   - **Small:** under 10 GB of graphics memory. Ready in seconds.
@@ -199,12 +199,12 @@ Each card shows whether the model fits in the graphics memory that is free right
   - the usual places other programs keep models: LM Studio, llama.cpp's cache, GPT4All, Jan, Ollama, `~/models` and `~/Downloads`.
 
   Nothing is copied. Shoggoth gives each engine a folder of links to your files, so you use no extra disk space and your originals stay where they are.
-- **Where models live.** You choose one folder, once, in **Settings** or on the first-run screen. Shoggoth keeps new models there, in a **Models** folder with a subfolder for each engine. It moves nothing you already have.
+- **Where models live.** You choose one folder, once, on the **Models** page or on the first-run screen. Shoggoth keeps new models there, in a **Models** folder with a subfolder for each engine. It moves nothing you already have.
 - **When an engine refuses a model,** Shoggoth explains why in plain language, with the technical details tucked underneath. Common reasons: the architecture isn't supported yet, the model needs a login, it can't be found, or memory or disk is short.
 
 **Choosing the right one**
 
-- **How do I choose a model?** This button in the Library, and the matching entry in Help, explains how to pick. Will it fit? What is it for? How much does it need to remember? It links to places to compare models: Luke's Dev Lab, Artificial Analysis, LMArena, Aider, the Berkeley Function-Calling Leaderboard, SWE-bench, LiveBench, BenchLM, LLM Stats, r/LocalLLaMA and the Level1Techs forum.
+- **How do I choose a model?** This button in Models, and the matching entry in Help, explains how to pick. Will it fit? What is it for? How much does it need to remember? It links to places to compare models: Luke's Dev Lab, Artificial Analysis, LMArena, Aider, the Berkeley Function-Calling Leaderboard, SWE-bench, LiveBench, BenchLM, LLM Stats, r/LocalLLaMA and the Level1Techs forum.
 - **Start here: LFM2.5 8B A1B.** Very fast, runs on almost anything, calls tools well, and keeps answers short.
 - **My general pick: Qwen3.6 35B A3B MTP.** Fast and competent at everyday tasks, research and agent work.
 - **If Qwen 3.6 won't run: GLM 4.7 Flash.** It is fast, but it makes things up, so it comes with a warning.
@@ -216,7 +216,7 @@ Each card shows whether the model fits in the graphics memory that is free right
 
 - **You load a model by choosing it.** Pick a model in the chat's model bar. Shoggoth gets it ready and frees the previous model's memory. Sending a message to a model that isn't in memory also loads it.
 - **Free memory** in the model bar unloads the model. The Machine has **Load** and **Unload** buttons too.
-- **Context window: 128k by default.** Chat loads a model with a 128k (131,072-token) context window. That is a good size for long chats and agent work. The **Memory** menu in the model bar changes it, and **Settings** has a default for every chat. A bigger window needs more graphics memory.
+- **Context window: 128k by default.** Chat loads a model with a 128k (131,072-token) context window. That is a good size for long chats and agent work. The **Memory** menu in the model bar changes it, and it is also the default for new chats. A bigger window needs more graphics memory.
 - **Delete from this computer** is under **Details** on a card. It asks first, says how much disk it frees, and unloads the model if it is running. You can download it again later.
 
 ### Settings for one model
@@ -243,12 +243,12 @@ Some models are far too big for a graphics card. Shoggoth runs them anyway, thro
 
   Pick the model in Chat, and a card shows it starting.
 - **Memory is shared.** Only one big model runs at a time. Picking one frees whatever else was running. Picking a small one frees the big one, unless it is answering right now. Before a big model starts, Shoggoth checks there is enough free memory. If there isn't, it says how much is missing and which programs use the most, with a **Start anyway** button.
-- **It frees itself.** A big model Shoggoth started stops after 20 idle minutes. The next chat starts it again. Change the time under **Memory** in **Settings**, or set 0 to keep it ready.
-- **Shoggoth finds Strata installs you already have.** If Strata is installed, or a model is already running, its models show up in the Library and in Chat with no setup. A running model counts whether `strata launch`, the Strata app or you by hand started it on a local port.
+- **It frees itself.** A big model Shoggoth started stops after 20 idle minutes. The next chat starts it again. Change the time under **Memory** on the **Hardware** page, or set 0 to keep it ready.
+- **Shoggoth finds Strata installs you already have.** If Strata is installed, or a model is already running, its models show up in Models and in Chat with no setup. A running model counts whether `strata launch`, the Strata app or you by hand started it on a local port.
   - Strata frees its model's memory when idle and loads it again on the next request. Meanwhile, Shoggoth keeps listing the model, and your next message wakes it.
   - To use a Strata on another computer, open **Advanced > Engines**, then Strata's card, then **Connect to a Strata on another computer**.
   - Shoggoth never stops, restarts or updates a Strata you started yourself. It shows a **Stop** button, with a confirmation, only when you ask for one. While your own Strata is running, Shoggoth won't start a second big model beside it.
-- **Updates.** Strata's engine and Control update from Strata's own signed feed. Strata test-starts a new engine before it switches over. **Check and update everything** in Settings includes Strata. If the Strata that Shoggoth started is running, Shoggoth stops it, updates it, and starts it again when a chat needs it. A bigger jump, to a new Control series, is yours to take with `strata update`.
+- **Updates.** Strata's engine and Control update from Strata's own signed feed. Strata test-starts a new engine before it switches over. **Check and update everything** in **Advanced > Engines** includes Strata. If the Strata that Shoggoth started is running, Shoggoth stops it, updates it, and starts it again when a chat needs it. A bigger jump, to a new Control series, is yours to take with `strata update`.
 
 ### Tuning
 
@@ -307,9 +307,9 @@ Other apps never talk to Shoggoth's own page. Shoggoth opens a second, much smal
 
 ![Settings](docs/screenshots/setup.png)
 
-*Settings, where updates, the models folder and a few other choices live.*
+*Advanced > Engines, where updates and the own-server option live.*
 
-**Check and update everything** on the Settings page looks for newer versions of Shoggoth, Lemonade, Pi and Strata (if you use it). It checks each download against its published checksum and installs what it finds.
+**Check and update everything** on the Engines page looks for newer versions of Shoggoth, Lemonade, Pi and Strata (if you use it). It checks each download against its published checksum and installs what it finds.
 
 A new Shoggoth is saved as a new AppImage next to the current one, which Shoggoth keeps. **Restart Shoggoth to finish** switches over to it.
 
@@ -352,7 +352,7 @@ Everything under **Advanced** is optional.
 - **Engine settings** edits everything in Lemonade's own configuration. It is searchable, and every value can be reset to its default.
 - **Themes** changes how Shoggoth looks (see [below](#themes)).
 
-**Settings**, in the main menu, is where you choose where models live, how long large models stay in memory and how much a chat remembers, and where you update everything. Its **My own server, and the first-run screen** section checks Lemonade's version, connects to a Lemonade you run yourself, and shows the first-run screen again. **Help > Run the welcome steps again** also shows the first-run screen.
+**Advanced > Engines** is where you update everything. Its **My own server, and the first-run screen** section checks Lemonade's version, connects to a Lemonade you run yourself, and shows the first-run screen again. **Help > Run the welcome steps again** also shows the first-run screen.
 
 ![Advanced > Hardware: two graphics cards as machines at the back of a lab bench, with a memory beaker, a heat gauge, a coil and a radio](docs/screenshots/hardware.png)
 
@@ -360,7 +360,7 @@ Everything under **Advanced** is optional.
 
 ### Using a Lemonade you already run
 
-If you already run Lemonade Server, for example as a system service, open **Settings > My own server, and the first-run screen** and choose **A Lemonade I already run**. Enter its address and, if needed, its API key. Shoggoth uses it instead of starting its own, and leaves the built-in copy alone. Switching back takes one click. Starting Shoggoth with `--lemonade HOST:PORT` does the same without saving anything.
+If you already run Lemonade Server, for example as a system service, open **Advanced > Engines > My own server, and the first-run screen** and choose **A Lemonade I already run**. Enter its address and, if needed, its API key. Shoggoth uses it instead of starting its own, and leaves the built-in copy alone. Switching back takes one click. Starting Shoggoth with `--lemonade HOST:PORT` does the same without saving anything.
 
 Two things work differently with your own Lemonade:
 
