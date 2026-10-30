@@ -617,6 +617,7 @@ class Session:
         self.seq = 0
         self.running = False
         self.pending = {}           # extension_ui_request id -> record, until answered
+        self.loading = False        # its model is being brought up: an engine change must not stop the chat under it
         self.last = time.time()
         self.watchers = 0
         self.proc = None
@@ -1011,11 +1012,14 @@ def command(sid, cmd):
         if s.running:
             cmd = dict(cmd, streamingBehavior="steer")
         else:
+            s.loading = True
             try:
                 ensure_loaded((t or {}).get("model", ""), s)
             except ValueError as e:
                 s.push({"type": "zest_load_failed", "message": str(e), "model": (t or {}).get("model", "")})
                 raise
+            finally:
+                s.loading = False
     s.send(cmd)
     return {"ok": True}
 
@@ -1044,7 +1048,7 @@ def remember_allow(sid, key):
 def restart_idle():
     """After the skills change, idle tasks restart on their next message; a task that is working keeps what it has."""
     for sid, s in list(_sessions.items()):
-        if not s.running and not s.pending and sid not in _ctl:
+        if not s.running and not s.loading and not s.pending and sid not in _ctl:
             stop(sid)
 
 
@@ -1055,7 +1059,7 @@ def reaper():
         for sid, s in list(_sessions.items()):
             if not s.alive():
                 _sessions.pop(sid, None)
-            elif not s.running and not s.pending and not s.watchers and sid not in _ctl and now - s.last > IDLE_STOP:
+            elif not s.running and not s.loading and not s.pending and not s.watchers and sid not in _ctl and now - s.last > IDLE_STOP:
                 stop(sid)
             elif s.alive():
                 s.save_tl()

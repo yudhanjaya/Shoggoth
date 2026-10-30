@@ -479,6 +479,9 @@ details.setgrp>summary::before{content:"";width:7px;height:7px;border-right:1.8p
 details.setgrp[open]>summary::before{transform:rotate(45deg)}
 details.setgrp>summary small{font:12px var(--mono);color:var(--faint);font-weight:400;margin-left:auto}
 .setrows{border-top:1px solid var(--line-soft)}
+#setstrata:not(:empty){margin-bottom:16px}
+.gpu .ctl[hidden]{display:none}
+.card .ctop h3{flex:1;min-width:0}.cthumb{width:46px;height:42px;flex:none;display:grid;place-items:center}.cthumb svg{width:100%;height:100%}
 .setrow{display:grid;grid-template-columns:minmax(0,1fr) minmax(220px,340px);gap:12px 28px;padding:16px 20px;border-bottom:1px solid var(--line-soft);align-items:start}
 .setrow:last-child{border-bottom:0}
 .setrow .lab b{display:block;font-size:14.5px}
@@ -1063,7 +1066,7 @@ svg.gl{width:1.2em;height:1.2em;vertical-align:-.25em;stroke:currentColor;fill:n
 .jobstrip[hidden]{display:none}
 .jobstrip .grow{flex:1;min-width:120px}
 .jobcard{margin:8px 0 16px 44px}
-.jc{border:1px solid var(--line);border-radius:16px;background:var(--surface);padding:16px 16px;display:grid;gap:8px}
+.jc{min-width:0;grid-template-columns:minmax(0,1fr);border:1px solid var(--line);border-radius:16px;background:var(--surface);padding:16px 16px;display:grid;gap:8px}
 .jc.working{border-color:var(--lemon);box-shadow:0 0 0 3px var(--lemon-wash)}
 .jc.paused,.jc.interrupted{border-color:color-mix(in srgb,var(--warn) 45%,transparent);background:var(--warn-bg)}
 .jc .jh{display:flex;gap:8px;align-items:center}
@@ -1580,6 +1583,7 @@ h3.themesec{font:600 12px var(--sans);letter-spacing:.08em;text-transform:upperc
     <!-- SETTINGS -->
     <section class="view" id="v-settings"><div class="pad"><div class="wrap">
       <p class="lede">Every setting Lemonade offers. Lemonade runs your small and medium models. Changes save as you make them, and you'll rarely need this page. Settings for a single model are in the Library, on its card under <b>Settings</b>.</p>
+      <div id="setstrata"></div>
       <div class="setbar"><input type="search" id="setq" placeholder="Search settings" aria-label="Search settings"><span class="chip" id="setcount"></span></div>
       <div id="settings"></div>
     </div></div></section>
@@ -1798,12 +1802,13 @@ async function loadModels(){
 }
 function renderStatus(){
   const d = $("#sdot");
+  const anyLoaded = S.loaded || (S.ms && S.ms.loaded) || null, up = S.up || !!anyLoaded;   // a model Strata runs counts even when Lemonade is off
   const loadingId = S.loadingModel || (S.ms && S.ms.loading && S.ms.loading.model);
-  d.className = "dot " + (!S.up ? "off" : loadingId || S.busy ? "busy" : S.loaded ? "on" : "");
+  d.className = "dot " + (!up ? "off" : loadingId || S.busy ? "busy" : anyLoaded ? "on" : "");
   const eng = SU.st && SU.st.mode === "builtin" ? SU.st.engine : null;
-  $("#sname").textContent = !S.up ? (eng ? (eng.state === "error" ? "Couldn't start" : "Getting ready…") : "Not running")
-    : loadingId ? "Getting " + friendly(loadingId) + " ready…" : S.busy ? friendly(S.loaded || S.model || "") + " is answering" : (S.loaded ? friendly(S.loaded) : "Ready");
-  $("#status").title = S.up ? (S.loaded ? "The model in use. Click to change it." : "Ready. Click to choose a model.") : "The AI engine isn't running yet. Click for details.";
+  $("#sname").textContent = !up ? (eng ? (eng.state === "error" ? "Couldn't start" : "Getting ready…") : "Not running")
+    : loadingId ? "Getting " + friendly(loadingId) + " ready…" : S.busy ? friendly(anyLoaded || S.model || "") + " is answering" : (anyLoaded ? friendly(anyLoaded) : "Ready");
+  $("#status").title = up ? (anyLoaded ? "The model in use. Click to change it." : "Ready. Click to choose a model.") : "The AI engine isn't running yet. Click for details.";
   // Live speed in the pill: exact for Shoggoth's own chat, approximate (~) for other apps using the Server.
   let sp = "";
   if(S.live && S.live.tFirst && S.live.tps) sp = fmtRate(S.live.tps) + " tok/s";
@@ -2270,6 +2275,8 @@ function savedLine(m){
   }
   return parts.length ? `<div class="optline" title="${esc(parts.join(" · "))}"><b>Custom settings</b> ${esc(parts.join(" · "))}</div>` : "";
 }
+/* the model's creature, small, at the head of its card (when model pictures are on) */
+function libPic(id){ const m = picturesOn() && id ? pkFind(id) : null; return m ? `<span class="cthumb" style="--tone:${crTone(m)}">${crPic(m, {crop: true, label: false})}</span>` : ""; }
 function cardHTML(m, extra){
   const f = fitInfo(m), isLoaded = m.id === S.loaded, job = dlJob(m.id);
   const tags = [m.recipe, ...(m.labels||[]).filter(l => l !== m.recipe)].map(l => `<span class="chip">${esc(l)}</span>`).join("");
@@ -2282,7 +2289,7 @@ function cardHTML(m, extra){
   const sh = m.downloaded ? speedHistory(m.id) : null, [shWord, shCls] = sh ? speedWord(sh.tps) : ["", ""];
   const spLine = sh ? `<div class="speedline"><span class="sw ${shCls}">${shWord}</span><span>About <b class="num">${fmtRate(sh.tps)}</b> tok/s on this computer${sh.n > 1 ? ` <small>(from ${sh.n} answers)</small>` : ""}</span></div>` : "";
   return `<article class="card ${isLoaded?"loaded":""}" data-id="${esc(m.id)}">
-    <div class="ctop"><h3>${esc(friendly(m))}</h3>${isLoaded?'<span class="chip ok">Loaded</span>':m.downloaded?'<span class="chip">On this computer</span>':""}</div>
+    <div class="ctop">${libPic(m.id)}<h3>${esc(friendly(m))}</h3>${isLoaded?'<span class="chip ok">Loaded</span>':m.downloaded?'<span class="chip">On this computer</span>':""}</div>
     <p class="what">${esc(whatFor(m))}</p>${extra || ""}
     <div class="row"><span>${m.size ? `${sizeWord(m.size)} <span class="mono num">· ${m.size.toFixed(m.size<10?1:0)} GB</span>` : ""}</span></div>
     ${f ? `<div class="fitwrap"><div class="fit ${f.cls}" role="img" aria-label="${esc(f.note)}"><i style="width:${f.pct}%"></i></div><div class="fitnote ${f.cls}" style="margin-top:6px">${esc(f.note)}</div></div>` : ""}
@@ -2352,6 +2359,7 @@ function libWhereHTML(){
     <div class="line"><button class="btn primary" type="button" data-lib="use">Use this folder</button><button class="btn" type="button" data-lib="pick">Choose another folder…</button><button class="linkbtn" type="button" data-lib="later">Not now</button></div>
     ${LIB.err ? `<p class="errline" role="alert">${esc(LIB.err)}</p>` : ""}</section>`;
 }
+document.addEventListener("change", e => { if(e.target.name === "libplace") LIB.picked = e.target.value; });   // keep the choice when the page repaints
 /* downloads, from every engine, in one strip */
 function libDlItems(){
   const out = [];
@@ -2376,7 +2384,7 @@ function libFitHTML(e){
 function bigCard(e){          // an installed model that a Large-model engine runs (no per-engine settings to edit here)
   const startable = !!pkFind(e.ref), live = (S.ms || {}).loaded === e.ref;
   return `<article class="card ${live ? "loaded" : ""}" data-id="${esc(e.ref || e.id)}">
-    <div class="ctop"><h3>${esc(e.title)}</h3>${live ? '<span class="chip ok">Ready</span>' : '<span class="chip">On this computer</span>'}</div>
+    <div class="ctop">${libPic(e.ref)}<h3>${esc(e.title)}</h3>${live ? '<span class="chip ok">Ready</span>' : '<span class="chip">On this computer</span>'}</div>
     <p class="what">${esc(featLine(e))}</p>
     <div class="row"><span>Large <span class="mono num">· needs about ${Math.round(e.need_gb || 0)} GB of memory</span></span></div>
     ${libFitHTML(e)}
@@ -2453,6 +2461,7 @@ function renderModels(){
   $("#grid").classList.add("picksmode");
   $("#grid").innerHTML = '<div class="picks">' + (LIB.tab === "installed" ? libInstalled() : LIB.tab === "recommended" ? libRecommended() : libEverything()) + "</div>";
   $$("#grid .card[data-id]").forEach(c => { if(open.has(c.dataset.id)) c.querySelector("details.more")?.setAttribute("open", ""); });
+  crCrop($("#grid"));
 }
 /* adding models */
 function libAddOpen(){ $("#addbody").innerHTML = `
@@ -4025,11 +4034,28 @@ function filterSettings(){
   $$("#settings details.setgrp").forEach(d => { const any = $$(".setrow:not([hidden])", d).length > 0; d.hidden = !any; if(q && any) d.open = true; });
   $("#setcount").textContent = q ? `${n} match${n === 1 ? "" : "es"}` : `${$$("#settings .setrow").length} settings`;
 }
+/* What Strata shows on the settings page: it keeps its own setups, so there is no flag list to edit, but what it is and what it runs is here. */
+function renderStrataSettings(){
+  const host = $("#setstrata"), d = STR.d;
+  if(!d || !d.installed){ host.innerHTML = ""; return; }
+  const run = (d.servers || []).filter(r => r.state === "ready" || r.state === "loading"), ps = d.presets || [];
+  host.innerHTML = `<details class="setgrp" open><summary>Engine: Strata<small>${ps.length} setup${ps.length === 1 ? "" : "s"}</small></summary><div class="setrows">
+    <div class="setrow"><div><b>Version</b><span class="help">Strata runs your large models. It keeps its own saved setups (called presets), so there are no flags to edit here.</span></div><div class="mono">${esc(d.version || "unknown")}</div></div>
+    <div class="setrow"><div><b>Running now</b><span class="help">Start and stop models from the model picker in Chat or from the Library.</span></div><div>${run.length ? run.map(r => esc((r.models[0] || {}).id || r.name || r.url)).join(", ") : "Nothing"}</div></div>
+    <div class="setrow"><div><b>Saved setups</b><span class="help">Make new ones in a terminal with <code>strata launch</code>.</span></div><div>${ps.length ? ps.map(p => esc(p.name)).join(", ") : "None yet"}</div></div>
+    <div class="setrow"><div><b>Speed settings</b><span class="help">Strata's own tuner and each model's tuning are under Tuning.</span></div><div><button class="btn" data-goto="tuning">Open Tuning</button></div></div>
+  </div></details>`;
+}
 async function loadSettings(){
+  try{ STR.d = await api("/ui/strata"); }catch{}
+  renderStrataSettings();
   try{
     if(!S.bk){ try{ S.bk = (await api("/ui/backends")).recipes; }catch{} }
     const r = await api("/ui/config"); SET.cfg = r.config; SET.defaults = r.defaults; renderSettings();
-  }catch(e){ $("#settings").innerHTML = `<div class="empty-note">Couldn't read Lemonade's settings: ${esc(e.message)}</div>`; }
+  }catch(e){
+    $("#settings").innerHTML = `<div class="empty-note">${STR.d && STR.d.installed ? "Lemonade isn't running, so its settings aren't shown. Strata's are above." : "Couldn't read Lemonade's settings: " + esc(e.message)}</div>`;
+    $("#setcount").textContent = "";
+  }
 }
 async function saveSetting(key, value, row, revert){
   const path = key.split("."), st = $(".st", row); st.className = "st"; st.textContent = "Saving…";
@@ -4043,6 +4069,7 @@ async function saveSetting(key, value, row, revert){
   }catch(e){ st.className = "st err"; st.textContent = e.message; revert?.(); return false; }
 }
 $("#setq").addEventListener("input", filterSettings);
+$("#setstrata").addEventListener("click", e => { const go = e.target.closest("[data-goto]"); if(go) show(go.dataset.goto); });
 $("#settings").addEventListener("change", e => {
   const el = e.target.closest("[data-set]"); if(!el) return;
   const key = el.dataset.set, old = key.split(".").reduce((o, k) => o?.[k], SET.cfg), row = el.closest(".setrow");
@@ -5064,10 +5091,14 @@ function liveHTML(d, active){
 }
 function tankY(d){ const g = gpuFor(d); return g ? 240 * (1 - Math.min(1, g.mem_used_mb / g.mem_total_mb)) : 240; }
 let hwSig = "";
+/* No llama.cpp to ask (Strata runs models without it): show the cards Shoggoth can read itself, for looking at, not for choosing. */
+const seenOnly = () => !allDevices().length && (S.gpus || []).length > 0;
+const seenDevices = () => (S.gpus || []).map(g => ({id: g.key, name: g.name, mib: Math.round(g.mem_total_mb || 0), gpu_key: g.key, gpu_ref: g.ref || ""}));
 function renderHardware(){
   hwPaint();
-  const devs = allDevices(), {sel, order} = deviceOrder(), auto = !S.draft && !savedIds().length;
-  const sig = JSON.stringify([order, sel, auto, !!S.info?.devices_assumed]);
+  const looking = seenOnly(), devs = looking ? seenDevices() : allDevices();
+  const {sel, order} = looking ? {sel: [], order: devs.map(d => d.id)} : deviceOrder(), auto = !looking && !S.draft && !savedIds().length;
+  const sig = JSON.stringify([order, sel, auto, looking, !!S.info?.devices_assumed]);
   const host = $("#gpus");
   if(sig === hwSig && host.children.length){            // same layout: just refresh the numbers
     order.forEach(id => { const d = devs.find(x => x.id === id), card = host.querySelector(`[data-id="${id}"]`); if(!card) return;
@@ -5080,7 +5111,7 @@ function renderHardware(){
     host.innerHTML = devs.length ? order.map(id => {
       const d = devs.find(x => x.id === id), active = sel.includes(id), pos = sel.indexOf(id) + 1;
       const ticks = [0.25,0.5,0.75].map(t => `<line class="tick" x1="12" x2="22" y1="${(240*(1-t)).toFixed(0)}" y2="${(240*(1-t)).toFixed(0)}"/><text x="26" y="${(240*(1-t)+4).toFixed(0)}">${(d.mib/1024*t).toFixed(0)}</text>`).join("");
-      return `<article class="gpu ${active?"active":"idle"}" data-id="${id}">
+      return `<article class="gpu ${active || looking ? "active" : "idle"}" data-id="${id}">
         <svg class="tank" viewBox="0 0 120 240" role="img" aria-label="VRAM">
           <defs><clipPath id="c-${id}"><rect x="1" y="1" width="118" height="238" rx="18"/></clipPath>
           <pattern id="h-${id}" width="8" height="8" patternUnits="userSpaceOnUse" patternTransform="rotate(45)"><line x1="0" y1="0" x2="0" y2="8" stroke="var(--line)" stroke-width="2"/></pattern></defs>
@@ -5092,11 +5123,11 @@ function renderHardware(){
           <rect class="shell" x="1" y="1" width="118" height="238" rx="18"/>
         </svg>
         <div>
-          <span class="badge chip ${active?"lem":""}">${active ? (sel.length>1 ? `#${pos} · ` : "") + (auto ? "Automatic" : "In use") : "Not used"}</span>
+          <span class="badge chip ${active?"lem":""}">${looking ? "Detected" : active ? (sel.length>1 ? `#${pos} · ` : "") + (auto ? "Automatic" : "In use") : "Not used"}</span>
           <h3>${esc(shortName(d.name))}</h3>
-          <div class="sub">${esc(id.toUpperCase())} in llama.cpp${d.gpu_ref?` · ${esc(d.gpu_ref)}`:""}</div>
+          <div class="sub">${looking ? "Read by Shoggoth" : esc(id.toUpperCase()) + " in llama.cpp"}${d.gpu_ref?` · ${esc(d.gpu_ref)}`:""}</div>
           <div class="live">${liveHTML(d, active)}</div>
-          <div class="ctl">
+          <div class="ctl" ${looking ? "hidden" : ""}>
             <button type="button" class="sw" role="switch" aria-checked="${active}" data-toggle="${id}"><i></i>Use this device</button>
             ${active && sel.length > 1 ? `<button type="button" class="mv" data-move="${id}:-1" aria-label="Move ${esc(shortName(d.name))} earlier" ${pos===1?"disabled":""}><svg class="i" viewBox="0 0 24 24"><path d="M15 6l-6 6 6 6"/></svg></button><button type="button" class="mv" data-move="${id}:1" aria-label="Move ${esc(shortName(d.name))} later" ${pos===sel.length?"disabled":""}><svg class="i" viewBox="0 0 24 24"><path d="M9 6l6 6-6 6"/></svg></button>` : ""}
           </div>
