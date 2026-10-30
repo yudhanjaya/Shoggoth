@@ -27,7 +27,7 @@ import store
 REPO = "Niko1221/Strata"
 PREFIX = "strata/"                       # in front of a Strata model's name wherever Shoggoth lists models next to Lemonade's
 UPD = {"state": "idle", "error": None, "log": []}         # installing the Terminal
-RUN = {"state": "idle", "preset": None, "error": None, "log": [], "since": 0, "low_memory": False, "retry": None}   # starting a preset
+RUN = {"state": "idle", "preset": None, "error": None, "log": [], "since": 0, "low_memory": False, "retry": None, "notice": None}   # starting a preset
 before_launch = []                       # callables run just before Strata starts loading a model (Lemonade's models are freed: shared memory)
 on_change = []                           # callables run after Strata starts or stops (idle chats re-read the model list)
 _lock = threading.Lock()
@@ -198,8 +198,26 @@ def _discover():
 
 def presets():
     return [{"name": p.get("name"), "family": p.get("family"), "model": p.get("model"), "context": p.get("context"),
-             "vision": p.get("vision"), "port": p.get("port"), "last_used": p.get("last_used")}
+             "vision": p.get("vision"), "port": p.get("port"), "last_used": p.get("last_used"),
+             "tuned_preset": p.get("tuned_preset"), "tuned_at": p.get("tuned_at"), "extra": p.get("extra") or {}}
             for p in _json(["launch", "--list-presets", "--output", "json"], 15).get("presets", []) if p.get("name")]
+
+
+def reserve_setting(preset):
+    """How to leave graphics memory free for the system when this saved setup starts: (the `--set` text, MiB), or (None, 0) when the person
+    set no headroom, the setup already carries a reserve of its own (theirs wins), or the family has no such setting. The two Strata
+    engines name it differently: the Qwen engine's `vram-reserve-mib`, the DeepSeek engine's `reserve-mib`. Both are MiB left free on a card."""
+    import modelmeta
+    extra = {str(k).lstrip("-").replace("_", "-") for k in (preset.get("extra") or {})}
+    if extra & {"vram-reserve-mib", "reserve-mib"}:
+        return None, 0
+    mid = str(preset.get("model") or "").lower()
+    inst = next((m for m in installed_models() if mid and (str(m.get("id", "")).lower() == mid or str(m.get("id", "")).lower().endswith(mid))), None)
+    mib = int(round(modelmeta.headroom_gb(PREFIX + (inst["id"] if inst else mid)) * 1024))
+    if mib <= 0:
+        return None, 0
+    key = "reserve-mib" if str(preset.get("family") or "").lower().startswith("deepseek") else "vram-reserve-mib"
+    return "%s=%d" % (key, mib), mib
 
 
 def _provider(url):
@@ -328,7 +346,7 @@ def start(preset, force=False):
         if other:
             RUN.update(state="error", preset=preset, log=[], error="Strata is already running %s on this computer. Shoggoth won't start a second big model beside it: chat with that one, or stop it first." % (other["name"] or "a model"))
             return False
-        RUN.update(state="starting", preset=preset, error=None, log=[], since=time.time(), low_memory=False, retry={"kind": "start", "preset": preset})
+        RUN.update(state="starting", preset=preset, error=None, log=[], since=time.time(), low_memory=False, retry={"kind": "start", "preset": preset}, notice=None)
     threading.Thread(target=_do_start, args=(preset, mine.get("port"), force, mine.get("model")), daemon=True).start()
     return True
 
@@ -404,11 +422,21 @@ def _do_start(preset, port, force=False, model=None):
                 time.sleep(3)                        # let the memory come back before measuring it
         if not force:
             check_memory(model)
-        p = subprocess.Popen([binary(), "launch", "--preset", preset, "--yes", "--no-tui"], stdin=subprocess.DEVNULL,
-                             stdout=subprocess.PIPE, stderr=subprocess.STDOUT, text=True, start_new_session=True)
-        for line in p.stdout:
-            RUN["log"] = (RUN["log"] + [line.rstrip()])[-40:]
-        code = p.wait()
+        saved = next((x for x in presets() if x["name"] == preset), None)
+        keep, mib = reserve_setting(saved) if saved else (None, 0)
+
+        def launch(extra):
+            p = subprocess.Popen([binary(), "launch", "--preset", preset, "--yes", "--no-tui"] + extra, stdin=subprocess.DEVNULL,
+                                 stdout=subprocess.PIPE, stderr=subprocess.STDOUT, text=True, start_new_session=True)
+            for line in p.stdout:
+                RUN["log"] = (RUN["log"] + [line.rstrip()])[-40:]
+            return p.wait()
+        code = launch(["--set", keep] if keep else [])
+        if code != 0 and keep and re.search(r"memory|vram|room|reserve|fit", " ".join(RUN["log"][-12:]), re.I):
+            # Keeping memory free is a wish, not a rule: when the model cannot start with it, start it without
+            RUN["log"] = RUN["log"] + ["It didn't start with %.1f GB kept free, so Shoggoth is starting it without that." % (mib / 1024)]
+            RUN["notice"] = "This model needs the whole graphics card, so it started without keeping %.1f GB free. Your desktop may slow down while it runs." % (mib / 1024)
+            code = launch([])
         if code != 0:
             tail = [l for l in RUN["log"] if l.strip()][-2:]
             raise RuntimeError(" ".join(tail) or "Strata stopped with code %d." % code)

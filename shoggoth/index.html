@@ -905,6 +905,8 @@ h4.sub{margin:12px 0 0;font:600 13px var(--sans);color:var(--muted);text-transfo
 .cwhero .recent button:hover{border-color:var(--lemon)}
 .cwnote{color:var(--faint);font-size:13px;margin:0 0 20px;display:flex;gap:8px;align-items:center}
 .cwnote.err{color:var(--bad)}
+.hrrow{display:grid;gap:4px;font-size:13px;color:var(--muted)}.hrrow label{display:flex;flex-wrap:wrap;align-items:center;gap:6px 10px}.hrrow select{min-height:32px}.hrrow small{font-size:12px;color:var(--faint)}
+.cwspeed{display:flex;align-items:center;gap:10px;margin-top:8px;font-size:12px;color:var(--muted)}
 .cwnote.err pre{white-space:pre-wrap;font:12px var(--mono);margin:0}
 .cwthink{margin:0 0 .9em;color:var(--muted);border-left:2px solid var(--line);padding-left:16px}
 .cwthink summary{cursor:pointer;font-size:13px;color:var(--faint)}
@@ -2248,6 +2250,21 @@ function savedLine(m){
 }
 /* the model's creature, small, at the head of its card (when model pictures are on) */
 function libPic(id){ const m = picturesOn() && id ? pkFind(id) : null; return m ? `<span class="cthumb" style="--tone:${crTone(m)}">${crPic(m, {crop: true, label: false})}</span>` : ""; }
+/* "Leave some graphics memory free so my computer doesn't slow": the same row on every model card, whichever engine runs it. Large (Strata) models start with 1.5 GB kept free unless the person says otherwise. */
+const HR = {d: {strata: 1.5, lemonade: 0}, set: {}, t: 0};
+async function hrLoad(){ if(Date.now() - HR.t < 4000) return; HR.t = Date.now(); try{ const r = await api("/ui/model/headroom"); HR.d = r.default || HR.d; HR.set = r.set || {}; }catch{} }
+const hrGb = (id, engine) => id in HR.set ? HR.set[id] : (HR.d[engine] || 0);
+function headroomRow(id, engine){
+  const v = hrGb(id, engine), opts = [0, 1, 1.5, 2, 3, 4];
+  if(!opts.includes(v)) opts.push(v), opts.sort((a, b) => a - b);
+  return `<div class="hrrow"><label>Leave some graphics memory free so my computer doesn't slow <select data-hr="${esc(id)}" aria-label="Graphics memory to leave free">${opts.map(o => `<option value="${o}" ${o === v ? "selected" : ""}>${o ? o + " GB" : "None"}${o === (HR.d[engine] || 0) ? " (recommended)" : ""}</option>`).join("")}</select></label>
+    <small>${engine === "strata" ? "It applies the next time the model starts. If the model needs the whole card, it starts without this and says so." : "It applies the next time the model loads. The model may keep a little less on the card, which can make it a bit slower."}</small></div>`;
+}
+document.addEventListener("change", async e => {
+  const sel = e.target.closest && e.target.closest("select[data-hr]"); if(!sel) return;
+  try{ await api("/ui/model/meta", {method: "POST", body: JSON.stringify({model: sel.dataset.hr, headroom_gb: sel.value})}); HR.set[sel.dataset.hr] = Number(sel.value); toast(Number(sel.value) ? `It will leave ${sel.value} GB free the next time it starts.` : "It won't keep any graphics memory free."); }
+  catch(err){ toast(err.message); }
+});
 function cardHTML(m, extra){
   const f = fitInfo(m), isLoaded = m.id === S.loaded, job = dlJob(m.id);
   const tags = [m.recipe, ...(m.labels||[]).filter(l => l !== m.recipe)].map(l => `<span class="chip">${esc(l)}</span>`).join("");
@@ -2272,6 +2289,7 @@ function cardHTML(m, extra){
         ${m.checkpoint ? `<div class="mono mid">${esc(String(m.checkpoint).split("\n")[0])}</div>` : ""}
         ${m.context_length ? `<div class="mid">Remembers up to ${fmtTok(m.context_length)} tokens of conversation</div>` : ""}
         ${savedLine(m)}
+        ${m.downloaded ? headroomRow(m.id, "lemonade") : ""}
         <div class="dact">${m.downloaded ? `<button class="btn danger" data-delete="${esc(m.id)}">${ICON.trash} Delete from this computer</button>` : ""}</div>
       </div></details>
   </article>`;
@@ -2311,7 +2329,8 @@ async function libLoad(fresh){
 }
 /* while the first-run screen is up, keep the Large-model download state fresh */
 async function strRefreshWelcome(){ if(S.view !== "welcome") return; try{ STR.d = await api("/ui/strata"); }catch{} renderWelcome(); setTimeout(strRefreshWelcome, 3000); }
-function libShow(){ renderModels(); libLoad(); strRefresh(); pkLoad(true); loadRecs().then(() => { if(S.view === "models") renderModels(); }); }
+function libShow(){
+  hrLoad().then(() => { if(S.view === "models") renderModels(); }); renderModels(); libLoad(); strRefresh(); pkLoad(true); loadRecs().then(() => { if(S.view === "models") renderModels(); }); }
 function libFilters(){
   $("#filters").innerHTML = LIB_TABS.map(([k, l]) => `<button type="button" data-tab="${k}" aria-pressed="${LIB.tab === k}">${l}</button>`).join("") +
     (LIB.tab === "everything" ? `<select id="libkind" aria-label="Kind of model">${LIB_KINDS.map(([k, l]) => `<option value="${k}" ${LIB.kind === k ? "selected" : ""}>${l}</option>`).join("")}</select>` : "") +
@@ -2359,6 +2378,7 @@ function bigCard(e){          // an installed model that a Large-model engine ru
     <p class="what">${esc(featLine(e))}</p>
     <div class="row"><span>Large <span class="mono num">· needs about ${Math.round(e.need_gb || 0)} GB of memory</span></span></div>
     ${libFitHTML(e)}
+    ${startable ? headroomRow(e.ref, "strata") : ""}
     <div class="act">${startable ? `<button class="btn primary" data-chat="${esc(e.ref)}">Chat with it</button><button class="btn" data-go2="tuning">Make it faster</button>`
       : `<span class="help" style="margin:0">It needs a saved setup before Shoggoth can start it. Run <span class="mono">strata launch</span> once and save one, or press Get it below.</span>`}</div>
     <details class="more"><summary>Details</summary><div class="mbody"><div class="tags"><span class="chip">${esc(e.quant || "")}</span><span class="chip">${esc(e.architecture)}</span></div>
@@ -3389,6 +3409,7 @@ function strPaint(){
   }
   if(servers.some(r => r.owner === "yours" && r.state === "ready")) parts.push(`<p class="help" style="margin:0">Shoggoth found this Strata already running and uses it as it is. It never stops, restarts or updates one you started unless you press its button. Its memory is shared with your other models.</p>`);
   const up = servers.some(r => ["ready", "loading"].includes(r.state) && r.source !== "saved");
+  if(run.notice && run.state !== "starting") parts.push(`<div class="note-warn">${esc(run.notice)}</div>`);
   if(busy) parts.push(`<div class="line"><span class="stat-dot busy"></span><span class="grow">${esc(run.phase || ("Starting " + run.preset + "… the first start can take a few minutes while it loads."))} <span class="mono faint">${esc((run.log || []).filter(Boolean).slice(-1)[0] || "")}</span></span></div>`);
   else if(d.installed && !up){
     const ps = d.presets || [];
@@ -3539,8 +3560,12 @@ async function tnLoad(){
   try{ TN.d = await api("/ui/tuning"); }catch(e){ TN.d = null; TN.msg = e.message; }
   tnPaint();
 }
-const tnGain = t => !t.has ? '<span class="chip">Not tuned</span>' : t.stale ? '<span class="chip">Out of date: tune again</span>'
-  : (t.outcome === "default_confirmed" || !t.gain_pct) ? '<span class="chip ok">Already the fastest settings</span>' : `<span class="chip lem">Tuned: ${t.gain_pct > 0 ? "+" : ""}${Number(t.gain_pct).toFixed(1)}%${t.baseline && t.decode ? " (" + Number(t.baseline).toFixed(1) + " → " + Number(t.decode).toFixed(1) + " tokens/s)" : ""}</span>`;
+/* One chip for every engine: tuned (with the speed and gain), the defaults were already best (shown as a result, never as "0%"), out of date, or not tuned. */
+const tnFmt = n => Number(n).toFixed(1);
+const tnGain = t => t.state === "stale" ? '<span class="chip">Out of date: tune again</span>'
+  : t.state === "not_tuned" || !t.has ? '<span class="chip">Not tuned</span>'
+  : t.state === "default_best" ? `<span class="chip ok">Tuned: the defaults were already best${t.decode ? " · " + tnFmt(t.decode) + " tokens/s" : ""}</span>`
+  : `<span class="chip lem">Tuned: ${t.gain_pct > 0 ? "+" : ""}${tnFmt(t.gain_pct || 0)}%${t.baseline && t.decode ? " (" + tnFmt(t.baseline) + " → " + tnFmt(t.decode) + " tokens/s)" : ""}</span>`;
 function tnPaint(){
   const host = $("#tuning"); if(!host) return;
   if(host.contains(document.activeElement) && /^(SELECT|INPUT)$/.test(document.activeElement.tagName)) return;
@@ -3566,8 +3591,10 @@ function tnPaint(){
   const group = (engine, title) => {
     const rows = d.targets.filter(t => t.engine === engine);
     if(!rows.length) return "";
-    return `<section class="panel"><h3>${title}</h3>${rows.map(t => `<div class="line"><span class="grow"><b>${esc(t.title)}</b> <span class="faint">${esc(t.detail || "")}</span><br>${tnGain(t.tuned)}${t.tuned.reasons && t.tuned.reasons.length ? ` <span class="faint">${esc(t.tuned.reasons[0])}</span>` : ""}</span>
-      <button class="btn ${t.tuned.has && !t.tuned.stale ? "" : "primary"}" data-tn="plan" data-engine="${t.engine}" data-id="${esc(t.id)}" ${running ? "disabled" : ""}>${t.tuned.has ? "Tune again" : "Make it faster"}</button>
+    return `<section class="panel"><h3>${title}</h3>${rows.map(t => `<div class="line"><span class="grow"><b>${esc(t.title)}</b> <span class="faint">${esc(t.detail || "")}</span><br>${tnGain(t.tuned)}${t.tuned.reasons && t.tuned.reasons.length ? ` <span class="faint">${esc(t.tuned.reasons[0])}</span>` : ""}${t.tuning && t.tuning.speed ? ` <span class="chip">Measured ${tnFmt(t.tuning.speed.decode)} tokens/s</span>` : ""}
+        </span>
+      ${t.engine === "lemonade" ? `<button class="btn" data-tn="test" data-engine="${t.engine}" data-id="${esc(t.id)}" ${running ? "disabled" : ""}>Test speed</button>` : ""}
+      <button class="btn ${t.tuned.has && !t.tuned.stale ? "" : "primary"}" data-tn="plan" data-engine="${t.engine}" data-id="${esc(t.id)}" ${running ? "disabled" : ""}>${t.tuned.has ? "Tune again" : "Tune"}</button>
       ${t.tuned.can_undo ? `<button class="btn ghost" data-tn="undo" data-engine="${t.engine}" data-id="${esc(t.id)}" ${running ? "disabled" : ""}>${t.engine === "strata" ? "Switch off" : "Undo"}</button>` : ""}</div>`).join("")}</section>`;
   };
   host.innerHTML = `<p class="lede">Tuning finds the settings that make a model answer faster on this computer. Shoggoth measures the model as it is, tries changes one at a time, and keeps only the ones that clearly help. Answers stay the same: nothing here changes how a model is compressed. A tune takes the graphics cards for a while, so it never starts without your say-so.</p>
@@ -3584,6 +3611,7 @@ $("#tuning").addEventListener("click", async e => {
   const b = e.target.closest("[data-tn]"); if(!b) return; const a = b.dataset.tn; TN.msg = "";
   try{
     if(a === "plan") await tnPlan((TN.d.targets.find(t => t.engine === b.dataset.engine && t.id === b.dataset.id)));
+    else if(a === "test"){ const t = TN.d.targets.find(t => t.engine === b.dataset.engine && t.id === b.dataset.id); if(!confirm("Measure " + t.title + "? It loads the model once and uses the graphics cards for a few minutes. Nothing is changed.")) return; await api("/ui/tuning/run", {method: "POST", body: JSON.stringify({engine: t.engine, target: t.id, kind: "test"})}); await tnLoad(); }
     else if(a === "close"){ TN.plan = null; TN.sel = null; }
     else if(a === "go"){ if(!confirm("Start tuning " + TN.sel.title + "? It uses the graphics cards for about " + TN.plan.minutes + " minutes.")) return; await api("/ui/tuning/run", {method: "POST", body: JSON.stringify(Object.assign({engine: TN.sel.engine, target: TN.sel.id}, TN.opts))}); TN.plan = null; TN.sel = null; await tnLoad(); }
     else if(a === "cancel"){ await api("/ui/tuning/cancel", {method: "POST", body: "{}"}); }
@@ -5634,7 +5662,24 @@ function cwMessageEnd(msg){
   if(extra){ const d = document.createElement("div"); d.innerHTML = extra; a.el.append(...d.childNodes); }
   renderDiagrams(a.el, true);
   if(!any) a.el.closest(".msg").remove();
+  else if(msg.stopReason !== "error" && textChars) cwSpeedTag(a.el);
   CW.am = null; cwScroll();
+}
+/* How fast the reply was written: llama.cpp's own figure from the gateway when there is one, otherwise tokens over time (marked ~). */
+async function cwSpeedTag(el){
+  for(let i = 0; i < 4; i++){
+    let last = null;
+    try{ last = (await api("/ui/activity")).last; }catch{}
+    if(last && last.tps && last.id !== CW.lastSpeedId){
+      CW.lastSpeedId = last.id;
+      const [word, cls] = speedWord(last.tps), d = document.createElement("div");
+      d.className = "cwspeed";
+      d.innerHTML = `<span class="sw ${cls}">${word}</span><span><b class="num">${last.exact ? "" : "~"}${fmtRate(last.tps)}</b> tok/s${last.pps ? ` · read your message at ${fmtRate(last.pps)} tok/s` : ""}</span>`;
+      if(el.isConnected) el.append(d);
+      return;
+    }
+    await new Promise(r => setTimeout(r, 500));
+  }
 }
 function cwFriendly(m){
   m = String(m || "The model stopped with an error.");

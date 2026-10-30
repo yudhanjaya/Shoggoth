@@ -216,7 +216,7 @@ def plan(model, backends, devices, cpus):
     return {"trials": n, "minutes": max(5, round((n + 4) * 1.5)), "recipe": d.get("recipe")}
 
 
-def run(model, opts, job, backends, devices, cpus):
+def run(model, opts, job, backends, devices, cpus, env=None):
     """Tune one llama.cpp model. Returns the result dict that is also saved. Raises RuntimeError / Cancelled."""
     use = "coding" if opts.get("use") == "coding" else "chat"
     d = options_of(model)
@@ -282,7 +282,7 @@ def run(model, opts, job, backends, devices, cpus):
                "baseline_tok_s": round(base["decode"], 1), "decode_tok_s": round(best_m["decode"], 1) if best_change else round(base["decode"], 1),
                "outcome": "improved" if best_change else "default_confirmed", "gain_pct": round(best_gain * 100, 1) if best_change else 0.0,
                "best": {"decode": round(best_m["decode"], 1), "prefill": round(best_m["prefill"], 1)} if best_change else None,
-               "change": best_change["label"] if best_change else "", "saved_before": {k: saved.get(k) for k in ("llamacpp_args", "llamacpp_backend", "llamacpp_device")}}
+               "change": best_change["label"] if best_change else "", "env": env or {}, "saved_before": {k: saved.get(k) for k in ("llamacpp_args", "llamacpp_backend", "llamacpp_device")}}
         if best_change:
             new = apply_change(eff, best_change)
             body = {k: new[k] for k in new if new[k] != eff.get(k)}
@@ -312,3 +312,39 @@ def rollback(model):
     res["applied"], res["rolled_back"] = None, time.strftime("%Y-%m-%dT%H:%M:%S%z")
     _save_results(dict(r, **{model: res}))
     return True, ""
+
+
+def test_speed(model, job, repeats=3):
+    """Just the baseline: load the model as it is, measure decode and prefill speed, and keep the answer in Shoggoth's own record for the
+    model (not in the tuning results, which are only ever changes that were measured). Returns {decode, prefill, noise, when}."""
+    import modelmeta
+    d = options_of(model)
+    if d.get("recipe") != "llamacpp":
+        raise RuntimeError("Shoggoth can measure llama.cpp models here. This one runs on a different engine.")
+    eff = d.get("effective") or {}
+    ctx = max(4096, min(int(d.get("resolved_ctx_size") or 8192), 16384))
+    try:
+        if job.cancelled():
+            raise Cancelled()
+        job.update(text="Loading the model…")
+        _load(model, ctx, {k: eff.get(k) for k in ("llamacpp_args", "llamacpp_backend", "llamacpp_device")})
+        job.update(text="Measuring how fast it answers…")
+        m = measure(model, repeats, job.cancelled)
+    finally:
+        lem.request("POST", "/v1/unload", {"model_name": model}, timeout=60)
+    res = {"decode": round(m["decode"], 1), "prefill": round(m["prefill"], 1), "noise": round(m["noise"], 4), "when": time.strftime("%Y-%m-%dT%H:%M:%S%z")}
+    modelmeta.update(model, speed=res)
+    return res
+
+
+def headroom_args(model):
+    """The model's effective llama.cpp arguments plus a margin so `gb` of every card stays free for the system (llama.cpp's --fit-target, in MiB),
+    or None when no headroom is set for the model. Used on load; a tune measures the model as it is and does not use it."""
+    import modelmeta
+    gb = modelmeta.headroom_gb(model)
+    if not gb:
+        return None
+    eff = options_of(model).get("effective") or {}
+    tokens, _ = llamaargs.lem_split(eff.get("llamacpp_args") or "")
+    tokens = set_flag(set_flag(tokens, ("--fit", "-fit"), "on"), ("--fit-target", "-fitt"), int(gb * 1024))
+    return join_args(tokens)

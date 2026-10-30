@@ -192,6 +192,7 @@ The program is [Strata](https://github.com/Niko1221/Strata). Its saved setups, a
 
 - **Large models** are tuned by their own engine's tuner, quick (about 20 minutes) or thorough (up to 2 hours), for chat or for coding with long prompts. The result is saved and used every time the model starts. **Switch off** keeps it but goes back to the standard settings.
 - **Small and medium models** are tuned by Shoggoth: batch sizes, flash attention, threads, which backend and which graphics cards. Each is tried by loading the model with it, and a change is kept only if it beats the measuring noise (and at least 3%). **Undo** puts the old settings back.
+- Every model shows one of four states: tuned (with its speed and gain), tuned but the standard settings were already the fastest, out of date, or not tuned. **Test speed** measures a small or medium model without changing anything, and every model card has **Leave some graphics memory free**: large models keep 1.5 GB free by default, and start without it (saying so) if they need the whole card. Each reply in Chat shows how fast it was written.
 - Tuning needs the graphics cards to itself, so Shoggoth shows the plan first (time, and what it will stop) and waits for your go-ahead. It stops what Shoggoth started, and waits while a chat is answering. It will not start while a large model you started yourself is running. You can cancel at any time and nothing is changed.
 
 ## Using your models in other apps
