@@ -57,7 +57,7 @@ const w = dom.window, wait = ms => new Promise(r => setTimeout(r, ms));
     if (el && !el.textContent.trim()) problems.push(`page "${v}" is empty`);
   }
   // open every <details> on the engine and settings pages and every dialog opener that needs no input
-  for (const v of ["backends", "prefs", "models"]) { w.eval(`show(${JSON.stringify(v)})`); await wait(300); w.document.querySelectorAll(`#v-${v} details`).forEach(d => (d.open = true)); await wait(200); }
+  for (const v of ["backends", "models"]) { w.eval(`show(${JSON.stringify(v)})`); await wait(300); w.document.querySelectorAll(`#v-${v} details`).forEach(d => (d.open = true)); await wait(200); }
   const add = w.document.getElementById("libadd"); if (add) add.click();
   await wait(300);
   // the Hardware bench draws one mainframe per card, for one card and for four
@@ -66,7 +66,7 @@ const w = dom.window, wait = ms => new Promise(r => setTimeout(r, ms));
     const frames = w.document.querySelectorAll("#hwrig .hwframe").length;
     if (frames !== n) problems.push(`hardware bench: ${frames} mainframes for ${n} cards`);
   }
-  // and every page again with model pictures turned off (Settings > Look)
+  // and every page again with model pictures turned off (the Model pictures switch)
   w.localStorage.setItem("shoggoth.pictures", "false");
   for (const v of views) { try { w.eval(`show(${JSON.stringify(v)})`); } catch (e) { problems.push(`pictures off, show(${v}): ${e.message}`); } await wait(60); }
   w.localStorage.removeItem("shoggoth.pictures");
