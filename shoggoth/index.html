@@ -225,6 +225,7 @@ main{display:flex;flex-direction:column;min-width:0;height:100dvh}
 
 /* ---------- chat ---------- */
 .chat{flex-direction:row!important;overflow:hidden}
+.convs[hidden]{display:none!important}
 .convs{width:264px;flex:none;border-right:1px solid var(--line-soft);display:flex;flex-direction:column;padding:16px 12px;gap:12px;overflow:auto}
 .convs .new{width:100%}
 .conv{display:flex;align-items:center;gap:8px;padding:8px 12px;border-radius:10px;border:0;background:none;text-align:left;width:100%;color:var(--muted);font-size:14px;min-height:42px}
@@ -852,6 +853,27 @@ h4.sub{margin:12px 0 0;font:600 13px var(--sans);color:var(--muted);text-transfo
 .log .tag{color:var(--lemon-text)}
 
 /* ---------- responsive ---------- */
+/* one left sidebar on wide screens: the menu is a compact grid, the chats scroll beneath it (below 1100px the chats stay a drawer) */
+@media (min-width:1101px){
+  :root{--rail:292px}
+  .rail{padding:16px 14px 12px;gap:10px;overflow:hidden}
+  .brand{padding:2px 8px 4px}
+  .nav{display:grid;grid-template-columns:repeat(3,1fr);gap:4px;flex:none}
+  .nav button{flex-direction:column;justify-content:center;gap:4px;min-height:54px;padding:6px 2px;font-size:12.5px;font-weight:600;text-align:center}
+  .nav .sub{grid-column:1/-1;margin:2px 0 4px;padding-left:10px}
+  .nav .navdot{top:6px;right:22px}
+  .railchats{flex:1;min-height:0;display:flex;flex-direction:column}
+  .railchats:empty{display:none}
+  .rail .convs{width:auto;flex:1;min-height:0;border:0;padding:6px 0 0;border-top:1px solid var(--line-soft);box-shadow:none;background:none}
+  .rail .spacer{display:none}
+  .railnote{padding:8px 8px 0;margin-top:auto}
+  .cwtask .fold{position:absolute;right:30px;top:10px}
+}
+.cwtask .fold{display:inline-grid;place-items:center;width:22px;height:22px;border-radius:6px;color:var(--faint);flex:none}
+.cwtask .fold:hover{background:var(--surface-2);color:var(--text)}
+.cwtask .fold svg{width:12px;height:12px;transition:transform .15s}
+.cwgrp:not(.open) .fold svg{transform:rotate(-90deg)}
+.cwgrp:not(.open) .cwkids{display:none}
 @media (max-width:1100px){:root{--rail:84px}.brand span,.railnote{display:none}.nav button{flex-direction:column;gap:4px;font-size:11.5px;padding:8px 2px;text-align:center;justify-content:center;min-height:56px}.nav .sub{display:none!important}.brand{justify-content:center;padding:2px 0 16px}}
 @media (max-width:900px){
   .convs{position:absolute;z-index:6;inset:0 auto 0 0;background:var(--bg);transform:translateX(-102%);transition:transform .25s var(--ease);width:min(300px,86vw);box-shadow:8px 0 30px rgba(0,0,0,.35)}
@@ -1390,6 +1412,7 @@ h3.themesec{font:600 12px var(--sans);letter-spacing:.08em;text-transform:upperc
         <button data-view="themes"><span>Themes</span></button>
       </div>
     </div>
+    <div class="railchats" id="railchats"></div>
     <div class="spacer"></div>
     <p class="railnote">Everything runs on this computer.</p>
   </nav>
@@ -1731,6 +1754,7 @@ function show(v){
   if(v === "backends" || v === "welcome") refreshSetup(true);
   if(v === "welcome"){ libLoad(); pkLoad(true); strRefreshWelcome(); }
   if(v === "tuning") tnShow();
+  placeChats();
   $(".app").classList.toggle("focus", v === "welcome");
   if(v === "server") srvShow();
   if(v === "server" && pendingLogScroll){ pendingLogScroll = false; setTimeout(() => $("#srvlog").scrollIntoView({block:"start"}), 1200); }
@@ -1740,6 +1764,14 @@ function show(v){
   hdrPaint();
 }
 $$(".nav button").forEach(b => b.addEventListener("click", () => show(b.dataset.view)));
+/* the chat list lives in the left sidebar on wide screens (one sidebar), and in the chat page as a drawer on narrow ones */
+const wideRail = matchMedia("(min-width:1101px)");
+function placeChats(){
+  const list = $("#cwlist"), home = $("#v-cowork"), rail = $("#railchats");
+  if(wideRail.matches){ if(list.parentElement !== rail) rail.appendChild(list); list.hidden = S.view !== "cowork"; }
+  else { if(list.parentElement !== home) home.insertBefore(list, home.firstChild); list.hidden = false; }
+}
+wideRail.addEventListener("change", placeChats);
 $("#crumb").addEventListener("click", () => show("advanced"));
 document.addEventListener("click", e => { const l = e.target.closest("a[data-go]"); if(l){ e.preventDefault(); show(l.dataset.go); } });
 $("#status").addEventListener("click", () => show(S.up ? "models" : "setup"));
@@ -5257,7 +5289,7 @@ setInterval(() => fetch("/ui/ping", {method:"POST"}).catch(() => {}), 5000); fet
 </script>
 <script>
 /* ======================= Cowork: the Pi agent, working in a folder you choose ======================= */
-const CW = {tasks: [], pi: null, id: null, es: null, cursor: -1, ready: null, state: null, stats: null, running: false,
+const CW = {fold: {}, tasks: [], pi: null, id: null, es: null, cursor: -1, ready: null, state: null, stats: null, running: false,
             tools: {}, files: new Map(), am: null, queue: {steering: [], followUp: []}, folder: "", mode: "ask", timer: null};
 const CW_MODES = [
   ["ask", "Ask first", "Reads freely. Asks before every edit and command."],
@@ -5322,8 +5354,10 @@ function cwSeen(){
 }
 function cwRenderTasks(){
   const jobRow = j => `<button class="cwtask cwjobrow" data-id="${j.id}" ${j.id === CW.id ? 'aria-current="true"' : ""}>${cwJGlyph(j)}<span class="tt"><b>${esc(j.title)}</b><small>${esc(cwJobLine(j))}</small></span></button>`;
-  const html = CW.tasks.map(t => `<div class="cwgrp ${t.need ? "has-need" : ""}"><button class="cwtask" data-id="${t.id}" ${t.id === CW.id ? 'aria-current="true"' : ""}>
+  const isOpen = t => { const u = CW.fold[t.id]; return u != null ? u : t.id === CW.id || (t.jobs || []).some(j => j.id === CW.id || ["working", "paused", "queued"].includes(j.state)); };
+  const html = CW.tasks.map(t => `<div class="cwgrp ${t.need ? "has-need" : ""} ${isOpen(t) ? "open" : ""}"><button class="cwtask" data-id="${t.id}" ${t.id === CW.id ? 'aria-current="true"' : ""}>
     ${CW_GL[t.state === "work" ? "work" : t.state] || '<span class="gl"></span>'}<span class="tt"><b>${esc(t.title)}</b><small>${esc(t.doing || (t.chat ? "Chat" : t.home ? "Home folder" : cwDir(t.cwd)))}</small></span>
+    ${(t.jobs || []).length ? `<span class="fold" role="button" data-fold="${t.id}" aria-expanded="${isOpen(t)}" title="Show or hide its jobs"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M6 9l6 6 6-6"/></svg></span>` : ""}
     <span class="del" role="button" data-del="${t.id}" title="Delete this chat and its jobs">✕</span></button>
     ${(t.jobs || []).length ? `<div class="cwkids">${t.jobs.map(jobRow).join("")}</div>` : ""}</div>`).join("")
     || '<p class="help" style="padding:6px 10px">Your conversations appear here and pick up where they left off.</p>';
@@ -6265,6 +6299,8 @@ cwEl("cwfolderbtn").addEventListener("click", cwPickFolder);
 cwEl("cwtoggle-list").addEventListener("click", () => cwEl("cwlist").classList.toggle("open"));
 cwEl("cwtoggle-side").addEventListener("click", () => cwEl("cwside").classList.toggle("open"));
 cwEl("cwtasks").addEventListener("click", async e => {
+  const fold = e.target.closest("[data-fold]");
+  if(fold){ e.stopPropagation(); const g = fold.closest(".cwgrp"); CW.fold[fold.dataset.fold] = !g.classList.contains("open"); g.classList.toggle("open", CW.fold[fold.dataset.fold]); fold.setAttribute("aria-expanded", CW.fold[fold.dataset.fold]); cwEl("cwtasks")._h = ""; return; }
   const del = e.target.closest("[data-del]");
   if(del){
     e.stopPropagation();
