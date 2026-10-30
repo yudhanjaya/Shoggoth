@@ -40,13 +40,15 @@ You can see the first-run screen again any time: go to **Help**, then **Run the 
 
 ## Model pictures
 
-Shoggoth draws every model as a creature. Each one is made from the model itself, so the same model always looks the same:
+Shoggoth draws every model as a creature, so you can tell your models apart at a glance. A creature is grown from the model's name, so the same model always looks the same:
 
-- **Eyes** show how much it remembers (its context window). More eyes, more memory.
-- **Size** shows how many parameters it has.
-- **Skin** shows how tightly it is compressed. Rougher skin is smaller and a little less exact.
-- **Hands holding pens** mean it can use tools.
-- Models from the same family share a body shape and colour.
+- **Shape and colour** come from the name. Models of one family share them, whatever their size. There are 17 shapes.
+- **Size** follows the biggest number before a "B" in the name (the parameter count). The bigger the model, the bigger the creature.
+- **Camera eyes.** Every creature has large camera eyes, and more of them as it grows.
+- **Hands.** Every creature holds pens. Bigger ones have more hands, and take up papers and then keyboards.
+- **Skin** shows compression. Rougher skin is smaller and a little less exact.
+
+They are pictures, not measurements: the eyes and hands say nothing about what a model can see or do. The model's card says that.
 
 The creature for the chat's model sits in a glass tube at the top of the Chat page, wired to the model bar. The tube is empty until a model is loaded. The creature drops in when it loads, and the liquid shows how full your graphics memory is. Click the tube to open the model list, which is the same as the model menu in the bar.
 
@@ -168,7 +170,7 @@ Replies can also contain tables, lists, links, quotes and code blocks, shown nea
 
 Open **Models**. It lists every model on your computer, whichever program runs it. Models are grouped by size. **Small** ones use under 10 GB of graphics memory and are ready in seconds. **Medium** ones use 10 to 24 GB. **Large** ones are for big computers and take a couple of minutes to start.
 
-- **Installed** is what you have. **Recommended for this computer** has the models I have tried and recommend on systems from 10 GB of VRAM to 26 GB of VRAM, and any Large model that will fit yours. You can pick one before Lemonade is installed: Shoggoth sets Lemonade up, then gets the model. Models that aren't ready yet are greyed out under **Coming soon**. **All models** is everything Lemonade offers, tested or not, with a filter for pictures, speech and sound. Each model shows whether it is tuned.
+- **Installed** is what you have. **Recommended for this computer** has the models I have tried and recommend on systems from 10 GB of VRAM to 26 GB of VRAM, and any Large model that will fit yours. The Large picks are Qwen3.8 Flash-Next (IQ3_S, and the smaller IQ2_XS), plus Coder (code only) and Swift 1.5, which are offered but never suggested. You can pick one before Lemonade is installed: Shoggoth sets Lemonade up, then gets the model. Models that aren't ready yet are greyed out under **Coming soon**. **All models** is everything Lemonade offers, tested or not, with a filter for pictures, speech and sound. Each model shows whether it is tuned.
 - **Get it** downloads a model in the background while you carry on. Every download shows together in one "Getting models" strip, and a model that needs something extra (the first Large model, for example) sets that up for you as part of the same step.
 - **Add models from other sources** brings in a model from a Hugging Face link, from a folder you choose, or from the usual places other programs keep them (LM Studio, Ollama and so on). Nothing is copied.
 - **Chat with it** starts a chat with a model, and **Settings** on a model edits how it runs. Choosing a model in the chat gets it ready, and frees the memory of whatever else was running.
