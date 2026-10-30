@@ -532,12 +532,21 @@ def machine():
     return hardware.machine()
 
 
+QWEN_FAMILIES = ("qwen", "coder", "swift")           # the families built on Qwen3.8 Flash-Next: they take a context size
+
+
+def preset_name(entry):
+    """The saved setup Shoggoth makes for a catalog entry: "Shoggoth <model>", or "Shoggoth <family> <model>" for a family that
+    shares model names with another (Swift's IQ2_XS is not Qwen's)."""
+    return SHOGGOTH_PRESET + (entry["model"] if entry["family"] in ("qwen", "deepseek41") else "%s %s" % (entry["family"], entry["model"]))
+
+
 def _plan(entry, ctx):
     """strata launch --plan for one catalog entry: its download size and warnings, or {} before Strata is installed."""
     if not binary():
         return {}
     args = ["launch", "--plan", "--family", entry["family"], "--model", entry["model"], "--output", "json"]
-    if entry["family"] == "qwen":
+    if entry["family"] in QWEN_FAMILIES:
         args += ["--context", str(ctx)]
     p = _json(args, 20).get("plan") or {}
     return {"download_gb": (p.get("download") or {}).get("gb"), "warnings": p.get("warnings") or []}
@@ -597,7 +606,7 @@ def recommend(ctx=131072, max_age=300):
         fits.append((fit, why))
     plans = {}
     with concurrent.futures.ThreadPoolExecutor(max_workers=max(1, len(cat))) as pool:
-        futs = {e["model"]: pool.submit(_plan, e, e["ctx"]) for e, (fit, _) in zip(cat, fits) if fit != "no"}
+        futs = {(e["family"], e["model"]): pool.submit(_plan, e, e["ctx"]) for e, (fit, _) in zip(cat, fits) if fit != "no"}
         for k, f in futs.items():
             try:
                 plans[k] = f.result(timeout=90)
@@ -605,12 +614,12 @@ def recommend(ctx=131072, max_age=300):
                 plans[k] = {}
     out = []
     for e, (fit, why) in zip(cat, fits):
-        plan = plans.get(e["model"], {})
+        plan = plans.get((e["family"], e["model"]), {})
         dl = plan.get("download_gb")
         bad = disk_problem(dl, root) if fit != "no" and (root or not adopted) else None
         if bad:
             fit, why = "no", bad
-        out.append(dict(e, fit=fit, why=why, download_gb=dl, warnings=plan.get("warnings", [])))
+        out.append(dict(e, fit=fit, why=why, download_gb=dl, warnings=plan.get("warnings", []), preset=preset_name(e)))
     pick = next((o for o in out if o["fit"] == "fits" and o["suggest"]), None) or next((o for o in out if o["fit"] == "tight" and o["suggest"]), None)
     res = {"machine": m, "adopted": adopted, "options": out, "pick": pick["model"] if pick else None}
     _rc.update(t=time.time(), v=res)
@@ -641,13 +650,13 @@ def setup(family, model, force=False):
         if other:
             RUN.update(state="error", preset=None, log=[], error="Strata is already running %s on this computer. Shoggoth won't start a second big model beside it: use that one, or stop it first." % (other["name"] or "a model"))
             return False
-        RUN.update(state="starting", preset=SHOGGOTH_PRESET + model, error=None, log=[], since=time.time(), phase="", low_memory=False, retry={"kind": "setup", "family": family, "model": model})
+        RUN.update(state="starting", preset=preset_name(entry), error=None, log=[], since=time.time(), phase="", low_memory=False, retry={"kind": "setup", "family": family, "model": model})
     threading.Thread(target=_do_setup, args=(entry, force), daemon=True).start()
     return True
 
 
 def _do_setup(entry, force=False):
-    name = SHOGGOTH_PRESET + entry["model"]
+    name = preset_name(entry)
     try:
         if not binary():
             RUN["phase"] = "Installing Strata…"
@@ -657,7 +666,7 @@ def _do_setup(entry, force=False):
             raise RuntimeError("Ports 8080 to 8089 are all in use, so Shoggoth has nowhere to start Strata.")
         args = [binary(), "launch", "--family", entry["family"], "--model", entry["model"], "--access", "local", "--port", str(port),
                 "--save-preset", name, "--yes", "--no-tui"]
-        if entry["family"] == "qwen":
+        if entry["family"] in QWEN_FAMILIES:
             args += ["--context", str(entry["ctx"])]
         if not force:
             bad = disk_problem(_plan(entry, entry["ctx"]).get("download_gb"))
