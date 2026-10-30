@@ -1,6 +1,7 @@
 """Lemonade as a provider, answered by the code that already talks to it (lem.py, engine.py). Nothing here changes behaviour."""
 import engine
 import lem
+import lemtune
 import provbase
 import store
 import uiauth
@@ -47,6 +48,9 @@ class Provider(provbase.GenericProvider):
         body = {"model_name": model_id}
         if ctx:
             body["ctx_size"] = ctx
+        keep_free = lemtune.headroom_args(model_id)       # "leave N GB free for the system", when the person set it for this model
+        if keep_free:
+            body["llamacpp_args"] = keep_free
         progress("Loading %s…" % model_id)
         if isl:
             lem.request("POST", "/v1/unload", {"model_name": model_id}, timeout=60)

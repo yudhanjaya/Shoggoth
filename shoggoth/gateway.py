@@ -113,7 +113,7 @@ class Recorder:
             r = {"id": self.seq, "app": app, "source": source, "method": method, "path": path, "model": model or "",
                  "stream": bool(stream), "ip": ip, "state": "waiting", "t0": time.time(), "t_think": None, "t_write": None,
                  "t_end": None, "status": None, "think_chars": 0, "out_chars": 0, "tokens_in": None, "tokens_out": None,
-                 "error": "", "think": "", "answer": ""}
+                 "error": "", "think": "", "answer": "", "tps": None, "pps": None}
             self.items.append(r)
             del self.items[:-MAX_KEEP]
             return r
@@ -166,6 +166,20 @@ class Recorder:
                 out.append({"id": r["id"], "app": r["app"], "source": r["source"], "model": r["model"], "state": r["state"],
                             "tps": round(chars / 4 / dt, 1) if dt >= 1 and chars >= 20 else None})
         return out
+
+    def last_speed(self, source="zest", model=None):
+        """The newest finished request from `source`: {id, tps, pps, tokens, exact}. `tps` is llama.cpp's own figure when it sent one
+        (`exact`), otherwise tokens over the time between the first token and the end, which still beats counting characters."""
+        with self.lock:
+            for r in reversed(self.items):
+                if r["source"] != source or r["state"] != "done" or (model and r["model"] != model):
+                    continue
+                first = r["t_think"] or r["t_write"]
+                est = None
+                if r["tokens_out"] and first and r["t_end"] and r["t_end"] - first >= 0.5:
+                    est = round(r["tokens_out"] / (r["t_end"] - first), 1)
+                return {"id": r["id"], "tps": r["tps"] or est, "pps": r["pps"], "tokens": r["tokens_out"], "exact": bool(r["tps"])}
+        return None
 
 
 REC = Recorder()
@@ -227,6 +241,12 @@ class Tap:
                     self.rec["state"], self.rec["t_think"] = "thinking", time.time()
 
     def _obj(self, o):
+        tm = o.get("timings")                      # llama.cpp's own speed figures, on the last chunk: exact, where the character count is a guess
+        if isinstance(tm, dict):
+            if isinstance(tm.get("predicted_per_second"), (int, float)):
+                self.rec["tps"] = round(tm["predicted_per_second"], 1)
+            if isinstance(tm.get("prompt_per_second"), (int, float)):
+                self.rec["pps"] = round(tm["prompt_per_second"], 1)
         u = o.get("usage")
         if isinstance(u, dict):
             self.rec["tokens_in"] = u.get("prompt_tokens", self.rec["tokens_in"])
