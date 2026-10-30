@@ -190,8 +190,8 @@ dialog.mcdlg::backdrop{background:rgba(20,18,10,.22)}
 main{display:flex;flex-direction:column;min-width:0;height:100dvh}
 .top{display:flex;align-items:center;gap:16px;padding:16px 28px;border-bottom:1px solid var(--line-soft);min-height:68px}
 .top h1{font:900 52px/1 var(--disp);margin:0;letter-spacing:0}
-.top .crumb{border:0;background:none;color:var(--lemon-text);font-size:14px;padding:4px 0;min-height:32px}
-.top .crumb[hidden]{display:none}
+.top .crumb{border:0;background:none;color:var(--muted);font:inherit;letter-spacing:inherit;padding:0;cursor:pointer}.top .crumb:hover{color:var(--text)}.top .crumbsep{color:var(--faint);margin:0 .25em}
+.top .crumb[hidden],.top .crumbsep[hidden]{display:none}
 .top .grow{flex:1}
 .status{display:flex;align-items:center;gap:12px;padding:8px 16px 8px 12px;border:1px solid var(--line);border-radius:999px;background:var(--surface);font-size:13px;max-width:100%;min-height:40px;transition:border-color .2s}
 .status:hover{border-color:var(--faint)}
@@ -605,6 +605,7 @@ details.aegrp>summary small{margin-left:auto;font:11.5px var(--mono);color:var(-
 .libplaces label{display:flex;gap:12px;align-items:center;padding:8px 12px;border:1px solid var(--line);border-radius:10px;background:var(--surface);cursor:pointer;font-size:13.5px}
 .libplaces label:has(input:checked){border-color:var(--lemon-text);background:color-mix(in srgb,var(--lemon) 16%,transparent)}
 .libplaces small{color:var(--muted);margin-left:auto;white-space:nowrap}
+.line:has(>[data-lib]){display:flex;flex-wrap:wrap;align-items:center;gap:12px 16px;margin-top:16px}.line:has(>[data-lib]) .linkbtn{margin-left:8px;padding:8px 4px}
 .libdl{display:grid;gap:8px;margin-bottom:16px}
 .engine{margin-bottom:16px}
 .engine .ehead{display:flex;flex-wrap:wrap;align-items:center;gap:8px 12px}
@@ -1328,7 +1329,7 @@ svg.gl{width:1.2em;height:1.2em;vertical-align:-.25em;stroke:currentColor;fill:n
 /* Teenage Engineering */
 [data-skin="te"]{--edge:#1a1a17;--hi:transparent;--sh:rgba(26,26,23,.35);--well:#f5f3ec;--warn-bg:#fff0d6;--think-bg:#ffe9a8}
 [data-skin="te"] .top{background:#ff5a1f;color:#1a1a17;border-bottom-color:#1a1a17;box-shadow:0 1px 0 #1a1a17}
-[data-skin="te"] .top .crumb{color:#1a1a17}
+[data-skin="te"] .top .crumb{color:#55554d}
 [data-skin="te"] .rail,[data-skin="te"] .convs{border-color:#1a1a17;box-shadow:inset -1px 0 0 #1a1a17}
 [data-skin="te"] .cwside{border-color:#1a1a17;box-shadow:inset 1px 0 0 #1a1a17}
 [data-skin="te"] .convs{background:#dcdad2}
@@ -1420,8 +1421,7 @@ h3.themesec{font:600 12px var(--sans);letter-spacing:.08em;text-transform:upperc
   <main>
     <header class="top">
       <button class="btn ghost menu-btn" id="menu" aria-label="Show conversations"><svg class="i" viewBox="0 0 24 24"><path d="M4 7h16M4 12h16M4 17h16"/></svg></button>
-      <button class="crumb" id="crumb" type="button" hidden>‹ Advanced</button>
-      <h1 id="title">Chat</h1>
+      <h1 id="titlebar"><button class="crumb" id="crumb" type="button" hidden>Advanced</button><span class="crumbsep" id="crumbsep" aria-hidden="true" hidden>›</span><span id="title">Chat</span></h1>
       <span class="ptube" id="ptube"></span>
       <div class="grow"></div>
       <button class="dlpill" id="dlpill" type="button" hidden aria-label="Model downloads in progress"></button>
@@ -1739,7 +1739,7 @@ function show(v){
   });
   $("#subnav").classList.toggle("open", inAdv);
   $("#title").textContent = TITLES[v];
-  $("#crumb").hidden = !(inAdv && v !== "advanced");
+  $("#crumb").hidden = $("#crumbsep").hidden = !(inAdv && v !== "advanced");
   $("#menu").style.display = v === "chat" ? "" : "none";
   if(location.hash !== "#"+v) history.replaceState(null, "", "#"+v);
   if(v === "cowork" && typeof cwShow === "function") cwShow();
