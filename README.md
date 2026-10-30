@@ -134,7 +134,7 @@ Chats and jobs are saved and pick up where they left off. See [docs/COWORK.md](d
 
 Replies stream in as the model writes them.
 
-- **The model bar** under the title shows the model that answers and its Memory (128k by default). It also shows a short status and **Free memory**.
+- **The model bar** under the title shows the model that answers and its Memory (128k by default). It also shows a short status, **Load** when the model isn't in memory, and **Unload**.
 - **Thinking:** a reasoning model's thinking appears live above its answer, then folds away when it is done.
 - **Formatting:** Markdown and code blocks come with copy buttons.
 - **The working strip** shows what the model is doing: reading, thinking, writing, working, or waiting for your OK. A line in italics under the strip says the same thing in a more unsettling way. It always names the model that is running.
@@ -161,11 +161,9 @@ Shoggoth draws every model as a creature made from the model's own numbers, so t
 - **Hands holding pens:** it can use tools.
 - **Shape and colour:** models from the same family share them.
 
-The chat's model sits in a glass tube at the top of the Chat page, wired to the model bar. It stirs while the model loads, thinks and writes.
+The chat's model sits in a glass tube at the top of the Chat page, wired to the model bar. The tube is empty until a model is loaded. The creature drops in when it loads, and the liquid shows how full your graphics memory is. It stirs while the model thinks and writes.
 
-Click the tube, or **Open the machine** in the model menu, to open **the Machine**. It is a drawer with one slot per engine and a shelf of every model you have. The slots show what is in memory. You can load and unload models from there.
-
-![The Machine: one slot per engine, with the Large model loaded in Strata's slot](docs/screenshots/machine.png)
+Click the tube to open the model list. It is the same list as the model menu in the bar, with models from every engine.
 
 The **Hardware** and **Server** pages put the same creatures on a lab bench. See [Advanced tools](#advanced-tools) and [Use your models in other apps](#use-your-models-in-other-apps).
 
@@ -215,7 +213,7 @@ Each card shows whether the model fits in the graphics memory that is free right
 **Loading and freeing memory**
 
 - **You load a model by choosing it.** Pick a model in the chat's model bar. Shoggoth gets it ready and frees the previous model's memory. Sending a message to a model that isn't in memory also loads it.
-- **Free memory** in the model bar unloads the model. The Machine has **Load** and **Unload** buttons too.
+- **Unload** in the model bar unloads the model, and **Load** loads the one you picked.
 - **Context window: 128k by default.** Chat loads a model with a 128k (131,072-token) context window. That is a good size for long chats and agent work. The **Memory** menu in the model bar changes it, and it is also the default for new chats. A bigger window needs more graphics memory.
 - **Delete from this computer** is under **Details** on a card. It asks first, says how much disk it frees, and unloads the model if it is running. You can download it again later.
 
@@ -227,7 +225,7 @@ Press **Settings** on any downloaded card. You can set the backend and devices, 
 - The dialog shows the exact arguments Shoggoth will pass.
 - Anything your `llama-server` doesn't understand is flagged.
 
-**Save** keeps your changes. They apply the next time the model loads. For a model that is in memory, press **Free memory** and send a message to load it again.
+**Save** keeps your changes. They apply the next time the model loads. For a model that is in memory, press **Unload** and send a message to load it again.
 
 ![Model settings](docs/screenshots/model-options.png)
 
