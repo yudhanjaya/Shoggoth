@@ -56,8 +56,20 @@ def _bundled_dirs():
     return out
 
 
+_PRE = {"dev": 0, "alpha": 1, "a": 1, "beta": 2, "b": 2, "rc": 3, "pre": 3}
+
+
 def vkey(v):
-    return tuple(int(x) for x in re.findall(r"\d+", v or "")) or (0,)
+    """A sortable key for a version: 4.1.0-beta.1 < 4.1.0-rc.1 < 4.1.0 < 4.1.1. Missing parts count as 0 (4.1 == 4.1.0)."""
+    v = str(v or "")
+    m = re.search(r"\d+(?:\.\d+)*", v)
+    if not m:
+        return (0,)
+    nums = [int(x) for x in m.group(0).split(".")]
+    nums += [0] * (4 - len(nums))
+    pre = re.match(r"[-.+]?(dev|alpha|beta|rc|pre|a|b)\.?(\d*)", v[m.end():], re.I)
+    tail = (_PRE[pre.group(1).lower()], int(pre.group(2) or 0)) if pre else (9, 0)       # a release outranks its own pre-releases
+    return tuple(nums) + tail
 
 
 def _version_of(directory):
