@@ -259,6 +259,13 @@ main{display:flex;flex-direction:column;min-width:0;height:100dvh}
 .composer:focus-within{border-color:var(--lemon);box-shadow:0 0 0 3px var(--lemon-wash)}
 .composer textarea{width:100%;border:0;background:none;resize:none;outline:none;max-height:220px;min-height:28px;line-height:1.55;padding:2px 0}
 .composer textarea::placeholder{color:var(--faint)}
+.cwpics{display:flex;flex-wrap:wrap;gap:8px;padding:0 0 10px}
+.cwpics .pic{position:relative;width:64px;height:64px;border-radius:10px;overflow:hidden;border:1px solid var(--line);background:var(--well)}
+.cwpics .pic img{width:100%;height:100%;object-fit:cover;display:block}
+.cwpics .pic button{position:absolute;top:2px;right:2px;width:20px;height:20px;border-radius:50%;border:0;background:rgba(0,0,0,.65);color:#fff;font:700 13px/1 var(--sans,inherit);cursor:pointer;padding:0}
+.composer.dropping{border-color:var(--lemon);box-shadow:0 0 0 3px var(--lemon-wash)}
+.msg.user .pics{display:flex;flex-wrap:wrap;gap:8px;margin-bottom:8px}
+.msg.user .pics img{max-width:220px;max-height:180px;border-radius:10px;display:block}
 .crow{display:flex;align-items:center;gap:8px;margin-top:8px}
 .crow .grow{flex:1}
 .pick{display:inline-flex;align-items:center;gap:8px;min-height:36px;padding:0 12px;border-radius:9px;border:1px solid var(--line);background:var(--bg);font-size:13px;max-width:46vw}
@@ -1461,11 +1468,14 @@ h3.themesec{font:600 12px var(--sans);letter-spacing:.08em;text-transform:upperc
           <div class="cwqueue" id="cwqueue" hidden></div>
           <div class="jobform" id="cwjobform" hidden></div>
           <form class="composer" id="cwform">
+            <div class="cwpics" id="cwpics" hidden></div>
             <label class="sr" for="cwinput">Message</label>
             <textarea id="cwinput" rows="1" placeholder="Ask anything, or describe a job…" autocomplete="off"></textarea>
             <div class="crow">
               <button class="btn ghost" id="cwfolderbtn" type="button" hidden></button>
               <button class="btn ghost" id="cwjobbtn" type="button" hidden>Start a job…</button>
+              <button class="btn ghost" id="cwpicbtn" type="button" hidden title="This model can look at pictures">Add a picture…</button>
+              <input type="file" id="cwpicfile" accept="image/*" multiple hidden>
               <span class="grow"></span>
               <button class="btn danger" id="cwstop" type="button" hidden>Stop</button>
               <button class="btn primary" id="cwsend" type="submit">Send</button>
@@ -5227,7 +5237,7 @@ const CW_MODES = [
   ["auto", "Do everything", "Never asks. Only for a folder you can afford to lose."],
   ["plan", "Look only", "Read-only. It can explore and propose, but not change anything."],
 ];
-const CW_TOOLS = {read: "Read", write: "Write", edit: "Edit", bash: "Run", grep: "Search", find: "Find", ls: "List", web_search: "Web"};
+const CW_TOOLS = {read: "Read", write: "Write", edit: "Edit", bash: "Run", grep: "Search", find: "Find", ls: "List", web_search: "Web", propose_job: "Job form"};
 const cwEl = id => document.getElementById(id);
 const cwDir = p => String(p || "").replace(/\/+$/, "").split("/").pop() || "/";
 
@@ -5329,7 +5339,7 @@ function cwNew(){
   cwClose(); CW.id = null; CW.mode = "ask"; CW.extra = []; cwReset(); cwRenderHero(); cwRenderTasks(); cwRenderSide(); cwSetRunning(false); cwJobStrip(); cwChips();
   cwEl("cwmodechip").hidden = true; cwEl("cwinput").focus();
 }
-function cwReset(){ CW.n = 0; cwEl("cwmsgs")._hero = ""; cwEl("cwjobform").hidden = true; CW.tools = {}; CW.files = new Map(); CW.am = null; CW.ready = null; CW.state = null; CW.stats = null; CW.queue = {steering: [], followUp: []}; cwEl("cwmsgs").innerHTML = ""; cwEl("cwbanner").innerHTML = ""; cwQueue(); }
+function cwReset(){ CW.pics = []; CW.n = 0; cwEl("cwmsgs")._hero = ""; cwEl("cwjobform").hidden = true; CW.tools = {}; CW.files = new Map(); CW.am = null; CW.ready = null; CW.state = null; CW.stats = null; CW.queue = {steering: [], followUp: []}; cwEl("cwmsgs").innerHTML = ""; cwEl("cwbanner").innerHTML = ""; cwQueue(); }
 function cwClose(){ if(CW.es){ CW.es.close(); CW.es = null; } clearTimeout(CW.timer); }
 
 function cwOpen(id){
@@ -5408,6 +5418,7 @@ function loadWatch(on){
   }else if(!on && S.loadPoll){ clearInterval(S.loadPoll); S.loadPoll = null; S.loadSteps = []; }
 }
 function cwModelBar(){
+  cwPicsPaint();
   const bar = cwEl("cwmbar"); if(!bar) return;
   queueMicrotask(hdrPaint);
   if(!S.pk.busy && Date.now() - S.pk.t > 10000) pkLoad();
@@ -5488,35 +5499,74 @@ cwEl("mbctx").addEventListener("change", e => cwModelAct(async () => {
 cwEl("mbload").addEventListener("click", () => cwModelAct(() => loadModelNow(cwBarModel())));
 cwEl("mbfree").addEventListener("click", () => cwModelAct(async () => { await api("/ui/model/unload", {method: "POST", body: JSON.stringify({model: (S.ms || {}).loaded})}); toast("The model is unloaded and its memory is free."); }));
 
+/* ---- pictures, for models that can see them */
+CW.pics = [];
+const cwSees = () => !!(pkFind(cwBarModel()) || {}).vision;
+function cwPicsPaint(){
+  const row = cwEl("cwpics"), btn = cwEl("cwpicbtn"); if(!row || !btn) return;
+  btn.hidden = !cwSees() || !!(cwFind(CW.id) || {}).isJob;
+  row.hidden = !CW.pics.length;
+  const h = CW.pics.map((p, i) => `<div class="pic"><img alt="${esc(p.name)}" src="data:${p.mime};base64,${p.data}"><button type="button" data-picx="${i}" aria-label="Remove ${esc(p.name)}">×</button></div>`).join("");
+  if(row._h !== h){ row._h = h; row.innerHTML = h; }
+}
+/* shrunk so a phone photo doesn't fill the model's memory: the long side is at most 1536 px, saved as JPEG */
+async function cwReadPic(file){
+  const bmp = await createImageBitmap(file), k = Math.min(1, 1536 / Math.max(bmp.width, bmp.height));
+  const c = document.createElement("canvas"); c.width = Math.max(1, Math.round(bmp.width * k)); c.height = Math.max(1, Math.round(bmp.height * k));
+  const g = c.getContext("2d"); g.fillStyle = "#fff"; g.fillRect(0, 0, c.width, c.height); g.drawImage(bmp, 0, 0, c.width, c.height);
+  return {name: file.name || "picture", mime: "image/jpeg", data: c.toDataURL("image/jpeg", 0.88).split(",")[1]};
+}
+async function cwAddPics(files){
+  const imgs = [...files].filter(f => /^image\//.test(f.type)); if(!imgs.length) return;
+  if(!cwSees()){ toast("This model can't look at pictures. Choose one that understands pictures."); return; }
+  for(const f of imgs){
+    if(CW.pics.length >= 4){ toast("Up to 4 pictures at a time."); break; }
+    try{ CW.pics.push(await cwReadPic(f)); }catch{ toast("Couldn't read " + (f.name || "that picture") + "."); }
+  }
+  cwPicsPaint();
+}
+cwEl("cwpicbtn").addEventListener("click", () => cwEl("cwpicfile").click());
+cwEl("cwpicfile").addEventListener("change", e => { cwAddPics(e.target.files); e.target.value = ""; });
+cwEl("cwpics").addEventListener("click", e => { const b = e.target.closest("[data-picx]"); if(b){ CW.pics.splice(+b.dataset.picx, 1); cwPicsPaint(); } });
+cwEl("cwinput").addEventListener("paste", e => { const f = [...((e.clipboardData || {}).files || [])].filter(x => /^image\//.test(x.type)); if(f.length){ e.preventDefault(); cwAddPics(f); } });
+const cwHasFiles = e => [...((e.dataTransfer || {}).types || [])].includes("Files");
+cwEl("cwform").addEventListener("dragover", e => { if(cwHasFiles(e)){ e.preventDefault(); cwEl("cwform").classList.add("dropping"); } });
+cwEl("cwform").addEventListener("dragleave", () => cwEl("cwform").classList.remove("dropping"));
+cwEl("cwform").addEventListener("drop", e => { if(!cwHasFiles(e)) return; e.preventDefault(); cwEl("cwform").classList.remove("dropping"); cwAddPics(e.dataTransfer.files); });
+
 /* ---- sending */
 const cwSend = (cmd) => api("/ui/cowork/cmd", {method: "POST", body: JSON.stringify({id: CW.id, cmd})});
 async function cwSubmit(text){
-  text = text.trim(); if(!text) return;
+  text = text.trim();
+  if(!text){ if(CW.pics.length) toast("Say what you would like to know about the picture."); return; }
+  const images = CW.pics.map(p => ({type: "image", data: p.data, mimeType: p.mime}));
+  if(images.length && !cwSees()){ toast("This model can't look at pictures. Remove them, or choose one that can."); return; }
   if(!CW.id){
     try{
       const r = await api("/ui/cowork/new", {method: "POST", body: JSON.stringify({cwd: CW.folder, mode: CW.mode, folders: CW.extra, model: cwBarModel()})});
-      CW.extra = []; await cwLoad(); cwOpenWith(r.task.id, text);
+      CW.extra = []; await cwLoad(); cwOpenWith(r.task.id, text, images);
     }catch(e){ toast(e.message); }
     return;
   }
-  cwEl("cwinput").value = ""; cwGrow();
-  try{ const r = await cwSend({type: "prompt", message: text}); if(r && r.queued) toast("Noted. It will see this at the start of the next round."); }catch(e){ toast(e.message); }
+  cwEl("cwinput").value = ""; cwGrow(); CW.pics = []; cwPicsPaint();
+  try{ const r = await cwSend(Object.assign({type: "prompt", message: text}, images.length ? {images} : {})); if(r && r.queued) toast("Noted. It will see this at the start of the next round."); }catch(e){ toast(e.message); }
 }
-function cwOpenWith(id, text){
+function cwOpenWith(id, text, images){
   cwClose(); CW.id = id; CW.cursor = -1; cwReset(); CW.mode = (CW.tasks.find(t => t.id === id) || {}).mode || "ask";
   cwEl("cwinput").value = ""; cwGrow(); cwFolderBtn(); cwRenderTasks(); cwRenderSide(); cwSetTitle(text.slice(0, 60));
   cwSetRunning(true);
-  cwSend({type: "prompt", message: text}).catch(e => { cwSetRunning(false); cwNote(e.message, true); });
+  cwSend(Object.assign({type: "prompt", message: text}, images && images.length ? {images} : {})).catch(e => { cwSetRunning(false); cwNote(e.message, true); });
   cwConnect();
 }
-function cwPickFolder(){
+function cwPickFolder(after){
   openFs(CW.folder || "", async p => {
     if(CW.id){
       const id = CW.id;
-      try{ await api("/ui/cowork/folder", {method: "POST", body: JSON.stringify({id, cwd: p})}); await cwLoad(); cwOpen(id); toast("It can now work in " + cwDir(p) + "."); }catch(e){ toast(e.message); }
+      try{ await api("/ui/cowork/folder", {method: "POST", body: JSON.stringify({id, cwd: p})}); await cwLoad(); cwOpen(id); toast("It can now work in " + cwDir(p) + "."); if(typeof after === "function") after(); }catch(e){ toast(e.message); }
       return;
     }
     CW.folder = p; store.set("shoggoth.cowork.folder", p); cwFolderBtn(); cwChips(); cwRenderSide(); if(!CW.id) cwRenderHero(); cwEl("cwinput").focus();
+    if(typeof after === "function") after();
   });
 }
 function cwGrow(){ const t = cwEl("cwinput"); t.style.height = "auto"; t.style.height = Math.min(t.scrollHeight, 220) + "px"; }
@@ -5565,7 +5615,7 @@ function cwEvent(r){
     case "message_end": cwMessageEnd(r.message); cwMark(); break;
     case "tool_execution_start": cwTool(r.toolCallId, r.toolName, r.args).classList.add("run"); cwToolStatus(r.toolCallId, "run", "Working…"); cwPhase("tool", `${CW_TOOLS[r.toolName] || r.toolName}: ${cwSummary(r.toolName, r.args).slice(0, 70)}`); cwScroll(); break;
     case "tool_execution_update": cwToolOutput(r.toolCallId, r.toolName, r.args, r.partialResult); break;
-    case "tool_execution_end": cwToolDone(r.toolCallId, r.toolName, r.result, r.isError, r.durationMs); cwSearchNudge(r); cwPhase("read", "Reading what came back…"); break;
+    case "tool_execution_end": cwToolDone(r.toolCallId, r.toolName, r.result, r.isError, r.durationMs); cwSearchNudge(r); cwJobProposed(r); cwPhase("read", "Reading what came back…"); break;
     case "extension_ui_request": cwUiRequest(r); break;
     case "zest_answered": m.querySelector(`.approve[data-id="${r.id}"]`)?.remove(); cwPhase("think", "Thinking…"); break;
     case "queue_update": CW.queue = {steering: r.steering || [], followUp: r.followUp || []}; cwQueue(); break;
@@ -5630,11 +5680,11 @@ function flavour(set, v = {}){
   return ls[i].replace(/\{model\}/g, v.model || "The model").replace(/\{target\}/g, v.target || "it");
 }
 const FLAV_PHASE = {load: "loading", read: "reading", think: "thinking", write: "writing", tool: "grasp", ask: "threshold"};
-const FLAV_TOOL = {read: "eye", write: "quill", edit: "edit", bash: "sigil", grep: "seek", find: "seek", ls: "crypt", web_search: "orb"};
+const FLAV_TOOL = {read: "eye", write: "quill", edit: "edit", bash: "sigil", grep: "seek", find: "seek", ls: "crypt", web_search: "orb", propose_job: "sigil"};
 const cwModelTitle = () => { const id = cwBarModel(); return (pkFind(id) || {}).title || friendly(id || "") || "The model"; };
 const CW_STEPS = [["load", "rise", "Loading", 1], ["read", "eye", "Reading"], ["think", "dream", "Thinking"], ["write", "quill", "Writing"], ["tool", "grasp", "Working"], ["ask", "threshold", "Your OK", 1]];
 const CW_STRIP = '<div class="pstrip" aria-hidden="true">' + CW_STEPS.map(([k, e, l, x]) => `<b data-p="${k}"${x ? ' class="x"' : ""}><span class="em">${glyph(e)}</span><span>${l}</span></b>`).join("") + "</div>";
-const CW_GLYPH = {read: "eye", write: "quill", edit: "edit", bash: "sigil", grep: "seek", find: "seek", ls: "crypt", skill: "tome", web_search: "orb"};
+const CW_GLYPH = {read: "eye", write: "quill", edit: "edit", bash: "sigil", grep: "seek", find: "seek", ls: "crypt", skill: "tome", web_search: "orb", propose_job: "sigil"};
 function cwWorkText(t){ CW.phaseText = t; const w = cwEl("cwmsgs").querySelector(".cwwork .pt"); if(w) w.textContent = t; }
 /* which step the strip lights up, and a few words beside it */
 function cwPhase(p, text){
@@ -5767,8 +5817,9 @@ function cwFriendly(m){
 function cwUserMsg(msg){
   let text = (Array.isArray(msg.content) ? msg.content.filter(c => c.type === "text").map(c => c.text).join("\n") : String(msg.content || ""));
   text = text.replace(/<zest-note>[\s\S]*?<\/zest-note>\s*/g, "");
-  if(!text.trim() || text.startsWith("/zest-mode")) return;
-  const d = document.createElement("div"); d.className = "msg user"; d.innerHTML = `<div class="body">${esc(text)}</div>`;
+  const pics = Array.isArray(msg.content) ? msg.content.filter(c => c.type === "image" && c.data).map(c => `<img alt="A picture you sent" src="data:${esc(c.mimeType || "image/jpeg")};base64,${esc(c.data)}">`).join("") : "";
+  if((!text.trim() && !pics) || text.startsWith("/zest-mode")) return;
+  const d = document.createElement("div"); d.className = "msg user"; d.innerHTML = `<div class="body">${pics ? `<div class="pics">${pics}</div>` : ""}${esc(text)}</div>`;
   const w = cwEl("cwmsgs").querySelector(".cwwork"); cwEl("cwmsgs").insertBefore(d, w); cwScroll();
 }
 function cwHistoryMsg(msg){ cwHistoryMsg0(msg); cwMark(); }
@@ -5887,7 +5938,8 @@ function cwFolderBtn(){
   b.textContent = !CW.id ? (CW.folder ? "Folder: " + cwDir(CW.folder) : "Folder: home") : "Work in a folder…";
   b.title = !CW.id ? (CW.folder || CW.home || "Your home folder") + ". Click to choose a different folder." : "Let the model read and change files in a folder";
   const jb = cwEl("cwjobbtn"), cur = cwFind(CW.id);
-  jb.hidden = !!(cur && cur.isJob) || (CW.id ? !(t && !t.chat && !t.home) : !CW.folder);
+  jb.hidden = !!(cur && cur.isJob);          // a job needs a folder, but the form asks for one, so the button is always there
+  cwPicsPaint();
 }
 function cwChips(){
   const box = cwEl("cwchips"), t = cwChat(), cur = cwFind(CW.id), isJob = !!(cur && cur.isJob);
@@ -6017,11 +6069,27 @@ async function cwEnsureChat(){
   const r = await api("/ui/cowork/new", {method: "POST", body: JSON.stringify({cwd: CW.folder, mode: CW.mode, folders: CW.extra, model: cwBarModel()})});
   CW.extra = []; await cwLoad(); cwOpen(r.task.id); return r.task.id;
 }
-function cwJobForm(prefill){
+/* Does this chat have a project folder a job could work in? A new chat has one once a folder is chosen; a plain or home chat has none. */
+function cwJobFolder(){
+  const t = cwChat();
+  if(CW.id) return t && !t.chat && !t.home ? t.cwd : "";
+  return CW.folder || "";
+}
+const cwProposed = new Set();       // a proposal opens the form once, even if the page replays the chat
+function cwJobProposed(r){
+  if(r.toolName !== "propose_job" || r.isError || cwProposed.has(r.toolCallId)) return;
+  const job = (((r.result || {}).details) || {}).job; if(!job) return;
+  cwProposed.add(r.toolCallId);
+  cwJobForm(job.goal || "", job);
+}
+function cwJobForm(prefill, spec){
   const f = cwEl("cwjobform");
   if(!f.hidden && prefill === undefined){ f.hidden = true; return; }
-  const goal = prefill !== undefined ? prefill : cwEl("cwinput").value.trim(), folder = (cwChat() || {}).cwd || CW.folder;
+  spec = spec || {};
+  const goal = prefill !== undefined ? prefill : cwEl("cwinput").value.trim(), folder = cwJobFolder();
   f.innerHTML = `<h3>Start a job</h3><p class="help" style="margin:-6px 0 0">It works on this in the background, round after round, and checks its own progress. You can keep chatting.</p>
+    <div class="note-warn" id="jf-nofolder" ${folder ? "hidden" : ""}>A job needs a project folder to work in. <button class="linkbtn" type="button" id="jf-pick">Choose a folder…</button></div>
+    <p class="help" style="margin:0" ${folder ? "" : "hidden"}>It will work in <b>${esc(cwDir(folder || ""))}</b>. <button class="linkbtn" type="button" id="jf-pick2">Change</button></p>
     <label class="f">What should it get done?<textarea id="jf-goal" placeholder="e.g. Make the importer tests pass without changing the tests">${esc(goal)}</textarea></label>
     <div><div class="seg" role="radiogroup" aria-label="How it knows it is done"><label><input type="radio" name="jfk" value="command" checked>A command passes</label><label><input type="radio" name="jfk" value="words">In my words</label></div></div>
     <label class="f"><span id="jf-cl">Done when this command succeeds</span><input type="text" id="jf-check" placeholder="python3 -m pytest -q" autocomplete="off" spellcheck="false"></label>
@@ -6033,6 +6101,12 @@ function cwJobForm(prefill){
     <p class="cwnote err" id="jf-err" hidden></p>
     <div class="fbtns"><button class="btn ghost" type="button" id="jf-cancel">Cancel</button><button class="btn primary" type="button" id="jf-go">Start job</button></div>`;
   f.hidden = false; cwEl("jf-goal").focus();
+  cwEl("jf-go").disabled = !folder;
+  if(spec.check_kind === "words"){ document.querySelector('input[name="jfk"][value="words"]').checked = true; cwEl("jf-cl").textContent = "Describe what “done” looks like (optional)"; cwEl("jf-check").placeholder = "e.g. the page loads without console errors"; }
+  if(spec.check) cwEl("jf-check").value = spec.check;
+  if(spec.rounds){ const r = cwEl("jf-rounds"); if(![...r.options].some(o => +o.value === spec.rounds)) r.add(new Option(spec.rounds + " rounds", spec.rounds)); r.value = spec.rounds; }
+  if(spec.copy === false){ const w = cwEl("jfw2"); if(w) w.checked = true; }
+  if(prefill !== undefined) f.scrollIntoView({block: "nearest"});
   if(folder) api("/ui/cowork/folder/info?path=" + encodeURIComponent(folder)).then(i => {
     if(i.too_big){ const w = cwEl("jfw2"); if(w){ w.checked = true; cwEl("jfw1").disabled = true; } cwEl("jf-err").hidden = false; cwEl("jf-err").textContent = "This folder is too big to copy, so the job will work in it directly."; }
   }).catch(() => {});
@@ -6232,6 +6306,11 @@ document.addEventListener("click", async e => {
   if(t.id === "cwjobbtn"){ cwJobForm(); return; }
   if((b = q("[data-plan2job]"))){ const txt = (b.parentElement._text || "").slice(0, 3000); cwJobForm("Carry out this plan:\n\n" + txt); cwEl("cwjobform").scrollIntoView({block: "nearest"}); return; }
   if(t.id === "jf-go"){ cwJobGo(); return; }
+  if(t.id === "jf-pick" || t.id === "jf-pick2"){
+    const draft = {goal: cwEl("jf-goal").value, check: cwEl("jf-check").value, kind: document.querySelector('input[name="jfk"]:checked').value, rounds: +cwEl("jf-rounds").value, copy: document.querySelector('input[name="jfw"]:checked').value === "copy"};
+    cwPickFolder(() => cwJobForm(draft.goal, {check: draft.check, check_kind: draft.kind, rounds: draft.rounds, copy: draft.copy}));
+    return;
+  }
   if(t.id === "jf-cancel"){ cwEl("cwjobform").hidden = true; return; }
   if(q("#hero-folder")){ cwPickFolder(); return; }
 });
@@ -6247,7 +6326,7 @@ cwEl("cwstop").addEventListener("click", () => cwSend({type: "abort"}).catch(err
   .finally(async () => { await cwLoad(); if(CW.running && !(cwFind(CW.id) || {}).running) cwSetRunning(false); }));
 cwEl("cwnew").addEventListener("click", cwNew);
 cwEl("cwtasks").addEventListener("click", e => { if(e.target.id === "cwolder") show("chat"); });
-cwEl("cwfolderbtn").addEventListener("click", cwPickFolder);
+cwEl("cwfolderbtn").addEventListener("click", () => cwPickFolder());
 cwEl("cwtoggle-list").addEventListener("click", () => cwEl("cwlist").classList.toggle("open"));
 cwEl("cwtoggle-side").addEventListener("click", () => cwEl("cwside").classList.toggle("open"));
 cwEl("cwtasks").addEventListener("click", async e => {

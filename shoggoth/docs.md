@@ -90,11 +90,15 @@ You can give Shoggoth a folder at any point, or change its folder from the Detai
 
 Delete a conversation and the files it changed stay exactly as they are.
 
+## Pictures
+
+Some models can look at pictures: their card says **Understands pictures**. With one of those chosen, press **Add a picture…** next to the message box, or paste or drag pictures in (up to four). Say what you want to know, then send. Shoggoth shrinks large pictures first so they don't use up the model's memory. The button doesn't appear for models that can't see.
+
 ## Jobs
 
 A **job** is a bigger piece of work that the AI keeps going on its own while you do something else. Use it when one answer is not enough, such as "make the tests pass" or "tidy up these notes".
 
-Press **Start a job…** under the message box, then fill in:
+Press **Start a job…** under the message box (it is always there), or describe the work in the chat: the AI asks what done looks like, then fills the form in for you. It never starts the job itself. Either way, you fill in or check:
 
 - **What should it get done?** Describe the goal in plain words.
 - **Done when.** Either a command that succeeds, such as `python3 -m pytest -q`, or a description in your own words. Shoggoth runs the command itself after every round, so it does not depend on the AI saying it is finished.
@@ -136,6 +140,7 @@ Shoggoth comes with:
 - **Superpowers**: a working method. Ask what the person really wants, make a plan, test first, find the cause of a bug before fixing it, and prove something works before saying so.
 - **Diagrams**: draws pictures in the chat.
 - **Markdown writing**: writes clear documents (READMEs, notes, changelogs, how-tos).
+- **Start a job**: turns a bigger request into a filled-in job form for you to review.
 
 Open **Skills** to switch any of them on or off, one at a time or a whole set at once.
 

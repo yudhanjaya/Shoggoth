@@ -31,6 +31,7 @@ HERE = os.path.dirname(os.path.abspath(__file__))
 GATE = os.path.join(HERE, "pi", "zest-gate.js")
 SKILLS_EXT = os.path.join(HERE, "pi", "zest-skills.js")
 SEARCH_EXT = os.path.join(HERE, "pi", "zest-search.js")
+JOB_EXT = os.path.join(HERE, "pi", "zest-job.js")
 MODES = ("ask", "edits", "auto", "plan")
 FORWARD = {"prompt", "steer", "follow_up", "abort", "clear_queue", "get_state", "get_session_stats", "set_model",
            "set_thinking_level", "compact", "get_available_models", "get_commands", "new_session"}
@@ -337,13 +338,13 @@ def set_search(enabled=None, provider=None, brave_key=None, tavily_key=None):
         restart_idle()       # Pi learns whether it has the tool when it starts
 
 
-def _env(mode="ask", inject=(), extra_folders=(), allow=()):
+def _env(mode="ask", inject=(), extra_folders=(), allow=(), jobs=False):
     e = dict(os.environ)
     e.update(PI_CODING_AGENT_DIR=agent_dir(), PI_OFFLINE="1", PI_TELEMETRY="0", PI_SKIP_VERSION_CHECK="1",
              SHOGGOTH_APPROVAL=mode, SHOGGOTH_INJECT=json.dumps(list(inject)), NO_COLOR="1",
              SHOGGOTH_FOLDERS=json.dumps(list(extra_folders)), SHOGGOTH_ALLOW=json.dumps(list(allow)),
              SHOGGOTH_SEARCH="1" if search_enabled() else "0", SHOGGOTH_SEARCH_URL="http://127.0.0.1:%d/ui/search" % _zest_port["v"],
-             SHOGGOTH_SEARCH_KEY=uiauth.token())
+             SHOGGOTH_SEARCH_KEY=uiauth.token(), SHOGGOTH_JOBS="1" if jobs else "0")
     return e
 
 
@@ -671,7 +672,7 @@ class Session:
         t = self.task
         sdir = os.path.join(store.data_dir(), "cowork", "sessions", self.id)
         os.makedirs(sdir, exist_ok=True)
-        args = cmd + ["--mode", "rpc", "--session-dir", sdir, "--no-approve", "-e", GATE, "-e", SKILLS_EXT, "-e", SEARCH_EXT]
+        args = cmd + ["--mode", "rpc", "--session-dir", sdir, "--no-approve", "-e", GATE, "-e", SKILLS_EXT, "-e", SEARCH_EXT, "-e", JOB_EXT]
         chat = bool(t.get("chat"))
         if chat:
             inject = skills.inline()                   # no tools in a plain chat, so the short skills are put in the prompt
@@ -696,7 +697,7 @@ class Session:
             args += ["--provider", chosen.get("pi_provider", "lemonade"), "--model", chosen.get("pi_model", t["model"])]
         extra = [f for f in t.get("folders", [])]
         allow = list(folderstore.get(_origin(t))["allow"]) + list((t.get("job") or {}).get("allow", []))
-        self.proc = subprocess.Popen(args, cwd=t["cwd"], env=_env(t.get("mode", "ask"), inject, extra, allow),
+        self.proc = subprocess.Popen(args, cwd=t["cwd"], env=_env(t.get("mode", "ask"), inject, extra, allow, jobs=not _is_job(t)),
                                      stdin=subprocess.PIPE, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
         threading.Thread(target=self._read, daemon=True).start()
         threading.Thread(target=self._read_err, daemon=True).start()

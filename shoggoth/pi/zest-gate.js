@@ -16,7 +16,8 @@
 // Questions reach Shoggoth as Pi's extension_ui_request "select" dialogs; Shoggoth draws them as approval cards.
 import path from "node:path";
 
-const READ_ONLY = new Set(["read", "grep", "find", "ls"]);
+// propose_job only opens a form for the person to review; nothing is changed until they press Start
+const READ_ONLY = new Set(["read", "grep", "find", "ls", "propose_job"]);
 const WRITES = new Set(["edit", "write"]);
 const ALLOW = "Allow", SESSION = "Allow for this session", DENY = "Don't allow", ALWAYS = "Always allow ";
 

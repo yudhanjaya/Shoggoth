@@ -121,7 +121,9 @@ Chat runs on [Pi](https://pi.dev), a coding-agent harness that ships inside Shog
 
 You can choose how careful the model is in each chat: **Ask first**, **Edit freely**, **Do everything** or **Look only**. You can also add folders it may read or change, switch models, watch how much of the context window is in use, and add notes while it works.
 
-For bigger work, press **Start a job…**. Say what should get done and how Shoggoth can tell it is done, such as a test command that passes.
+For bigger work, press **Start a job…**. It is always there under the message box. Say what should get done and how Shoggoth can tell it is done, such as a test command that passes. A job needs a project folder, and the form asks you to choose one if the chat has none. You can also just describe the work in the chat: the model asks what done looks like, then fills the form in for you. It never starts the job itself; you read the form and press **Start job**.
+
+If the model you chose can see pictures, an **Add a picture…** button appears next to it. You can also paste or drag pictures into the message box, up to four at a time. Shoggoth shrinks big ones first. Models that can't see pictures don't get the button.
 
 - The job runs in the background, round after round.
 - It stops when the check passes, when it reaches its round or time limit, or when it stops making progress.
