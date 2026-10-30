@@ -1,7 +1,7 @@
 > [!WARNING]
 > Shoggoth is being tested and updated, more updates incoming this week. Please wait until this version is out of beta. Any issues you notice - if you're up for testing - are welcome!
 
-# Shoggoth
+<h1 align="center"><img src="docs/readme/banner.png" alt="Shoggoth: run AI models on your own computer, and put them to work" width="100%"></h1>
 
 [![Release](https://img.shields.io/github/v/release/yudhanjaya/Shoggoth)](https://github.com/yudhanjaya/Shoggoth/releases)
 [![Downloads](https://img.shields.io/github/downloads/yudhanjaya/Shoggoth/total.svg)](https://github.com/yudhanjaya/Shoggoth/releases)
@@ -24,15 +24,17 @@ Under the hood, Shoggoth drives three open-source programs:
 
 You never choose an engine. Shoggoth starts the right one for the model you pick. The AppImage includes Lemonade and Pi, and sets up Strata the first time you want a large model. Shoggoth runs on Linux only, for now.
 
-Shoggoth used to be called Zest. It draws every model as a many-eyed creature in a glass tube, wired to a bench of lab equipment. The pictures carry real information: more eyes means more context, and rougher skin means heavier compression. You can turn them off.
+Shoggoth used to be called Zest. It draws every model as a many-eyed creature in a glass tube, wired to a bench of lab equipment. A model's name decides its shape and colour, and the bigger the model, the bigger the creature, with more eyes and more hands. You can turn them off.
 
-![Shoggoth working in a folder](docs/screenshots/work-tools.png)
+![Shoggoth working in a folder: the model's answer after it fixed a bug, with the model in its tube at the top](docs/screenshots/chat.png)
 
-*Working in a folder: the model read the code, fixed a bug with a one-line change (shown as a diff) and ran the tests again.*
+*Working in a folder: the model found why two tests failed, fixed it with a one-line change (shown as a diff) and ran the tests again.*
 
 **Contents:** [What you can do](#what-you-can-do-with-shoggoth) · [Install and run](#install-and-run) · [Finding your way around](#finding-your-way-around) · [Your first conversation](#your-first-conversation) · [Model pictures](#model-pictures) · [Choosing and managing models](#choosing-and-managing-models) · [Skills](#skills) · [Use your models in other apps](#use-your-models-in-other-apps) · [Keeping everything up to date](#keeping-everything-up-to-date) · [Advanced tools](#advanced-tools) · [Themes](#themes) · [Your data and privacy](#your-data-and-privacy) · [For developers](#for-developers)
 
 ## What you can do with Shoggoth
+
+<img align="right" width="130" src="docs/readme/creature-lfm.png" alt="">
 
 - **Chat with an AI that runs on your computer.** Nothing you type leaves it. The one exception is web search, and the model asks before every search.
 - **Let it work on your files.** Choose a folder. The model can read, search, edit and run things there while you watch. It asks before it changes anything.
@@ -40,13 +42,15 @@ Shoggoth used to be called Zest. It draws every model as a many-eyed creature in
 - **Draw diagrams and write documents.** Ask for a picture or a README, and it appears in the chat.
 - **Teach it new tricks with skills.** A skill is a short instruction sheet. Skills make small models far more dependable. Add more by pasting a link.
 - **Pick and manage models.** Shoggoth tells you which models will run well on your computer, and downloads them for you.
-- **See what your models are.** Each model is drawn as a creature built from its own numbers. The Hardware and Server pages show your graphics cards, and the apps using them, as a lab bench.
+- **See what your models are.** Each model is drawn as a creature grown from its name. The Hardware and Server pages show your graphics cards, and the apps using them, as a lab bench.
 - **Make it look the way you like.** Choose from fifteen themes under **Advanced > Themes**.
 - **Use your models in other apps.** Shoggoth can share them with tools such as opencode, or any app that talks to an OpenAI-style server.
 
 Setup takes no technical steps: download one file and follow a few short screens. The **Docs** tab inside the app explains everything in plain language. Its text lives in [shoggoth/docs.md](shoggoth/docs.md).
 
 ## Install and run
+
+<img align="right" width="130" src="docs/readme/creature-mimo.png" alt="">
 
 1. **Download** `Shoggoth-<version>-x86_64.AppImage` from the [latest release](../../releases/latest).
 2. **Run it:**
@@ -91,7 +95,7 @@ Closing the browser tab quits Shoggoth, and its Lemonade, after about three minu
 
 ## Finding your way around
 
-The menu on the left has seven places. A newcomer needs only the first six. Everything technical, including the theme picker, sits under **Advanced**.
+The menu on the left has six places, and your chats are listed beneath it. A newcomer needs only the first five. Everything technical, including the theme picker, sits under **Advanced**.
 
 | Menu item | What it is for |
 | --- | --- |
@@ -100,14 +104,15 @@ The menu on the left has seven places. A newcomer needs only the first six. Ever
 | **Skills** | Switch skills on and off, and add more from a GitHub link. |
 | **Docs** | A plain-language guide to all of this, inside the app. |
 | **Help** | Short answers to common questions, and a button to see the first-run screen again. |
-| **Advanced > Engines** | Updates for everything in one button, and the option to use a server you run yourself. |
-| **Advanced** | Server, Hardware, Engines, Engine settings, Tuning and Themes. You never need these just to chat. |
+| **Advanced** | Server, Hardware, Engines, Engine settings, Tuning and Themes. **Engines** is where everything updates in one button, and where you can use a server you run yourself. You never need these just to chat. |
 
 ![The Docs page, with the menu on the left](docs/screenshots/docs.png)
 
 *The menu on the left, with the Docs tab open.*
 
 ## Your first conversation
+
+<img align="right" width="130" src="docs/readme/creature-gemma12.png" alt="">
 
 Open **Chat** and type. The bar under the title shows which model will answer and whether it is in memory. If it isn't, Shoggoth loads it when you send your first message. That first answer takes a little longer.
 
@@ -141,8 +146,6 @@ Replies stream in as the model writes them.
 - **Formatting:** Markdown and code blocks come with copy buttons.
 - **The working strip** shows what the model is doing: reading, thinking, writing, working, or waiting for your OK. A line in italics under the strip says the same thing in a more unsettling way. It always names the model that is running.
 
-![Chat: the model's answer after it fixed a bug, with the model in its tube at the top](docs/screenshots/chat.png)
-
 ### Working in a folder
 
 Every chat works in a folder: your home folder, unless you choose one. The model can read, search, edit and run things there. Tool cards show each step, and edits show a diff. In **Ask first** and **Edit freely** modes, it stops and asks before it runs a command.
@@ -155,13 +158,19 @@ In the screenshots below, the model was asked to fix a folder whose tests were f
 
 ## Model pictures
 
-Shoggoth draws every model as a creature made from the model's own numbers, so the same model always looks the same:
+Shoggoth draws every model as a creature, so you can tell your models apart at a glance. A creature is grown from the model's name, so the same model always looks the same:
 
-- **Eyes:** how much it remembers (its context window). More eyes, more memory.
-- **Size:** how many parameters it has.
-- **Skin:** how tightly it is compressed. Rougher skin means smaller and a little less exact.
-- **Hands holding pens:** it can use tools.
-- **Shape and colour:** models from the same family share them.
+- **Shape and colour** come from the name. Models of one family (every Gemma 4, say) share them, whatever their size or compression. There are 17 shapes, and any model can get any of them.
+- **Size** follows the biggest number before a "B" in the name, which is the parameter count. The bigger the model, the bigger the creature.
+- **Camera eyes.** Every creature has large camera eyes, and more of them as it grows: three on a small model, up to seven on a big one.
+- **Hands.** Every creature holds pens. Bigger ones have more hands, up to eight, and take up papers and then keyboards.
+- **Skin** shows compression, read from the name (Q4_K_M, IQ3_S and so on). Rougher skin means smaller and a little less exact.
+
+![One family at three sizes: Qwen3.6 at 9B, 35B and 100B. The bigger the model, the bigger the creature, with more camera eyes and more hands holding pens, papers and keyboards](docs/readme/ladder.png)
+
+*One family at three sizes: the shape and colour stay, and the creature grows more eyes and hands.*
+
+The creatures are pictures, not measurements. Eyes and hands say nothing about what a model can see or do: the card says that. A model with no parameter count in its name, such as some Large ones, is drawn at a size worked out from its download.
 
 The chat's model sits in a glass tube at the top of the Chat page, wired to the model bar. The tube is empty until a model is loaded. The creature drops in when it loads, and the liquid shows how full your graphics memory is. It stirs while the model thinks and writes.
 
@@ -173,11 +182,15 @@ To hide the pictures, switch off **Show model pictures** in the chat's right sid
 
 ## Choosing and managing models
 
+<img align="right" width="130" src="docs/readme/creature-qwen36.png" alt="">
+
 The **Models** is one list of every model on your computer, whichever engine runs it. It is also where you get new ones.
 
 You don't pick an engine. Shoggoth runs small and medium models on [Lemonade](https://lemonade-server.ai) and large ones on [Strata](https://github.com/Niko1221/Strata). It starts the engine your model needs and frees the memory of whatever else was running. Each card names its engine on the **Details** row.
 
-![Models on this computer](docs/screenshots/models.png)
+![Models: the recommended picks, each with its creature, and a button to set up and get it](docs/screenshots/models.png)
+
+*Models while Lemonade isn't running yet: the picks show anyway, and **Set up and get it** sets Lemonade up first. Each card has its creature beside the name.*
 
 Models has three tabs:
 
@@ -211,7 +224,7 @@ Each card shows whether the model fits in the graphics memory that is free right
 - **My general pick: Qwen3.6 35B A3B MTP.** Fast and competent at everyday tasks, research and agent work.
 - **If Qwen 3.6 won't run: GLM 4.7 Flash.** It is fast, but it makes things up, so it comes with a warning.
 - **Bigger and slower dense models: Gemma 4 31B MTP and Qwen3.8 27B.** Good answers, but slow.
-- **Large:** with a GPU and 64 GB of RAM, the Large group runs models far bigger than your graphics card.
+- **Large:** with a GPU and 64 GB of RAM, the Large group runs models far bigger than your graphics card. **Qwen3.8 Flash-Next (IQ3_S)** is the pick, and the IQ2_XS size is its smaller version for computers with less RAM. **Qwen3.8 Flash-Next Coder** (code only, about 32 GB of RAM) and **Swift 1.5** (a fine-tune that thinks less) are offered but never suggested. **DeepSeek V4.1 Flash** is for very big computers only: an 8K window and 257 GB of disk.
 - **Make any model better:** I recommend OpenChamber as the app, and obra/superpowers for skills.
 
 **Loading and freeing memory**
@@ -237,7 +250,7 @@ Press **Settings** on any downloaded card. You can set the backend and devices, 
 
 Some models are far too big for a graphics card. Shoggoth runs them anyway, through [Strata](https://github.com/Niko1221/Strata). Strata keeps part of the model in RAM and on the SSD. These models are slower than one that fits, and they need a lot of RAM and disk.
 
-- **You use them like any other model.** Shoggoth suggests the best Large model that fits your RAM, graphics memory and free disk. **Get it** downloads it. The first time, Shoggoth also sets up Strata:
+- **You use them like any other model.** Shoggoth suggests the best Large model that fits your RAM, graphics memory and free disk. A card only shows when it would fit, including the disk space for the download. **Get it** downloads it. The first time, Shoggoth also sets up Strata:
   1. It downloads Strata's installer.
   2. It checks the installer against the checksum Strata publishes.
   3. It runs the installer.
@@ -268,6 +281,8 @@ Some models are far too big for a graphics card. Shoggoth runs them anyway, thro
 
 ## Skills
 
+<img align="right" width="130" src="docs/readme/creature-glm.png" alt="">
+
 A **skill** is a short instruction sheet the model reads when a job calls for it.
 
 Shoggoth comes with three:
@@ -283,6 +298,8 @@ You can switch skills on and off one at a time or by set. In a conversation with
 ![The Skills page: Superpowers and the other skills that come with Shoggoth](docs/screenshots/skills.png)
 
 ## Use your models in other apps
+
+<img align="right" width="130" src="docs/readme/creature-qwen38.png" alt="">
 
 **Advanced > Server** lets other apps use the models on your computer. Tools such as [opencode](https://opencode.ai) and Hermes work, and so does any chat app, coding assistant or agent that talks to an OpenAI-compatible server.
 
@@ -310,7 +327,7 @@ Other apps never talk to Shoggoth's own page. Shoggoth opens a second, much smal
 
 ## Keeping everything up to date
 
-![Settings](docs/screenshots/setup.png)
+![Advanced > Engines: one card for each engine, with its version and an update button](docs/screenshots/engines.png)
 
 *Advanced > Engines, where updates and the own-server option live.*
 
@@ -361,7 +378,7 @@ Everything under **Advanced** is optional.
 
 ![Advanced > Hardware: two graphics cards as machines at the back of a lab bench, with a memory beaker, a heat gauge, a coil and a radio](docs/screenshots/hardware.png)
 
-*Advanced > Hardware with a Large model spread over two cards: an RTX 3080 and an RTX 4080 SUPER, 94% of their memory in use.*
+*Advanced > Hardware with nothing loaded: an RTX 3080 and an RTX 4080 SUPER, with only the desktop using any memory. Load a model and the beaker fills, the lights on the cards climb and the gauge warms.*
 
 ### Using a Lemonade you already run
 
@@ -374,7 +391,9 @@ Two things work differently with your own Lemonade:
 
 ## Themes
 
-Open **Advanced > Themes** and pick one. Shoggoth remembers your choice on this computer. Only the colours and surfaces change. Every button, panel and menu stays where it was.
+<img align="right" width="130" src="docs/readme/creature-deepseek.png" alt="">
+
+Open **Advanced > Themes** and pick one. Shoggoth remembers your choice on this computer. Only the colours and surfaces change. Every button, panel and menu stays where it was. The pictures below are the Models page in each theme.
 
 ![The theme picker, with Light Touch in use](docs/screenshots/themes.png)
 
@@ -390,6 +409,8 @@ Open **Advanced > Themes** and pick one. Shoggoth remembers your choice on this 
 The same picker has One Dark Pro, Dracula, Night Owl, SynthWave '84, Cobalt2, Nord, Gruvbox Dark, GitHub Dark, and Catppuccin Mocha and Latte.
 
 ## Your data and privacy
+
+<img align="right" width="130" src="docs/readme/creature-flash.png" alt="">
 
 ![The Help page: short answers to common questions, as one list](docs/screenshots/help.png)
 
