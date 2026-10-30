@@ -1,5 +1,5 @@
 > [!WARNING]
-> Shoggoth is being tested and updated, more updates incoming this week. Please wait until this version is out of beta.
+> Shoggoth is being tested and updated, more updates incoming this week. Please wait until this version is out of beta. Any issues you notice - if you're up for testing - are welcome!
 
 # Shoggoth
 
