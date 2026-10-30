@@ -48,7 +48,7 @@ Shoggoth draws every model as a creature. Each one is made from the model itself
 - **Hands holding pens** mean it can use tools.
 - Models from the same family share a body shape and colour.
 
-The creature for the chat's model sits in a glass tube at the top of the Chat page, wired to the model bar. It wakes up when the model is loading, thinking or writing. Click the tube (or **Open the machine** in the model menu) to open **the Machine**: a drawer with one slot for each engine and a shelf of every model you have. Load and unload models there if you like seeing what is in memory.
+The creature for the chat's model sits in a glass tube at the top of the Chat page, wired to the model bar. The tube is empty until a model is loaded. The creature drops in when it loads, and the liquid shows how full your graphics memory is. Click the tube to open the model list, which is the same as the model menu in the bar.
 
 The **Hardware** and **Server** pages use the same creatures, on a lab bench. Don't like them? Turn them off with the **Model pictures** switch in the chat's right sidebar. Everything still works the same way.
 
@@ -58,7 +58,7 @@ Open **Chat** and type. The bar under the title shows which model will answer an
 
 Models are loaded into your graphics memory (primarily) and your RAM.
 
-The first answer takes a little longer; subsequent answers arrive much faster. **Free memory** in the same bar frees your graphics memory. While the model works, a small strip under the reply shows what it is doing: reading your message, thinking, writing or using a tool. It also shows loading, and waiting for your OK, when those happen. A line in italics under the strip says the same thing in a more unsettling way. Its thinking appears above the reply and folds away when it is done.
+The first answer takes a little longer; subsequent answers arrive much faster. **Unload** in the same bar frees your graphics memory. While the model works, a small strip under the reply shows what it is doing: reading your message, thinking, writing or using a tool. It also shows loading, and waiting for your OK, when those happen. A line in italics under the strip says the same thing in a more unsettling way. Its thinking appears above the reply and folds away when it is done.
 
 - Your conversations are listed on the left, with any jobs they started nested underneath. Click one to carry on where you left off, even after closing Shoggoth. To delete one, hover over it and press the cross.
 - Speed: the pill at the top shows how fast the model is writing, in tokens per second. You can think of tokens as being roughly analogous to words. Anything above about 5 is comfortable to read, but you should ideally run faster models.
