@@ -121,23 +121,42 @@ class _Check:
 # ---------------------------------------------------------------- models.yaml
 def clean_models(doc, c):
     """The usable part of a parsed models.yaml: {recommended, first_run, strata}."""
-    out = {"recommended": [], "first_run": [], "strata": []}
+    out = {"recommended": [], "first_run": [], "strata": [], "coming_soon": []}
     if not isinstance(doc, dict):
         c.bad("", "the file must be groups of settings (key: value), not %s." % type(doc).__name__)
         return out
-    c.keys(doc, "", ["version", "recommended", "first_run", "strata"])
+    c.keys(doc, "", ["version", "recommended", "first_run", "strata", "coming_soon"])
     if doc.get("version", 1) != 1:
         c.bad("version", "Shoggoth reads version 1.")
     ids = set()
     for i, m in c.items(doc, "recommended", ""):
         w = "recommended[%d]" % i
-        c.keys(m, w, ["id", "also", "label", "take"])
-        mid, label = c.text(m, "id", w, need=True), c.text(m, "label", w, need=True)
+        c.keys(m, w, ["id", "also", "label", "take", "title", "provider", "size_gb", "tools", "vision", "reasoning", "download"])
+        mid = c.text(m, "id", w, need=True)
         if mid in ids:
             c.bad(w, "%s is listed twice." % mid)
-        elif mid and label:
+        elif mid:
             ids.add(mid)
-            out["recommended"].append({"id": mid, "also": c.words(m, "also", w), "label": label, "take": c.text(m, "take", w) or ""})
+            ent = {"id": mid, "also": c.words(m, "also", w), "label": c.text(m, "label", w) or "", "take": c.text(m, "take", w) or "",
+                   "title": c.text(m, "title", w) or "", "provider": c.text(m, "provider", w) or "Lemonade", "size_gb": c.number(m, "size_gb", w),
+                   "tools": c.flag(m, "tools", w), "vision": c.flag(m, "vision", w), "reasoning": c.flag(m, "reasoning", w)}
+            dl = m.get("download")
+            if dl is not None:
+                dw = w + ".download"
+                if not isinstance(dl, dict):
+                    c.bad(dw, "must be a group of settings (checkpoint, and optionally mmproj).")
+                else:
+                    c.keys(dl, dw, ["checkpoint", "mmproj", "recipe"])
+                    ck = c.text(dl, "checkpoint", dw, need=True)
+                    if ck:
+                        ent["download"] = {"checkpoint": ck, "mmproj": c.text(dl, "mmproj", dw) or "", "recipe": c.text(dl, "recipe", dw) or "llamacpp"}
+            out["recommended"].append(ent)
+    for i, e in c.items(doc, "coming_soon", ""):
+        w = "coming_soon[%d]" % i
+        c.keys(e, w, ["title", "take"])
+        title = c.text(e, "title", w, need=True)
+        if title:
+            out["coming_soon"].append({"title": title, "take": c.text(e, "take", w) or ""})
     for i, f in c.items(doc, "first_run", ""):
         w = "first_run[%d]" % i
         c.keys(f, w, ["size", "models", "engine", "blurb", "start", "recommended"])
@@ -155,7 +174,7 @@ def clean_models(doc, c):
     seen = set()
     for i, e in c.items(doc, "strata", ""):
         w = "strata[%d]" % i
-        c.keys(e, w, ["family", "model", "title", "need_gb", "ctx", "min_vram_gb", "disk_gb", "suggest"])
+        c.keys(e, w, ["family", "model", "title", "need_gb", "ctx", "min_vram_gb", "disk_gb", "suggest", "take"])
         ent = {"family": c.text(e, "family", w, need=True), "model": c.text(e, "model", w, need=True), "title": c.text(e, "title", w, need=True),
                "need_gb": c.number(e, "need_gb", w, need=True), "ctx": c.number(e, "ctx", w, need=True)}
         if not all(ent.values()):
@@ -170,6 +189,7 @@ def clean_models(doc, c):
             if v is not None:
                 ent[k] = v
         ent["suggest"] = c.flag(e, "suggest", w, default=True)
+        ent["take"] = c.text(e, "take", w) or ""
         out["strata"].append(ent)
     return out
 
@@ -408,7 +428,7 @@ def main(argv):
             continue
         r = load(name, os.path.abspath(f))
         d = r["data"]
-        counts = ("%d recommended, %d first-run sizes, %d Strata models" % (len(d["recommended"]), len(d["first_run"]), len(d["strata"])) if name == "models"
+        counts = ("%d recommended, %d coming soon, %d first-run sizes, %d Strata models" % (len(d["recommended"]), len(d["coming_soon"]), len(d["first_run"]), len(d["strata"])) if name == "models"
                   else "%d tools, %d places" % (len(d["tools"]), len(d["places"])) if name == "tools"
                   else "%d lines in %d sets" % (sum(map(len, d["lines"].values())), len(d["lines"])))
         print("%s %s: %s" % ("✗" if r["problems"] else "✓", f, counts))

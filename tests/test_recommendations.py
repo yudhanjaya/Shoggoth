@@ -43,7 +43,7 @@ class Shipped(Env):
 
     def test_they_say_what_the_app_used_to_hard_code(self):
         m, t = recs.models(), recs.tools()
-        self.assertEqual(m["recommended"][0]["id"], "LFM2.5-8B-A1B")
+        self.assertEqual([r["id"] for r in m["recommended"]][:3], ["LFM2.5-8B-A1B", "user.MiMo-V2.6-Distill-Qwen-9B-Q4_K_M", "Gemma-4-12B-it-MTP-GGUF"])
         self.assertEqual([f["size"] for f in m["first_run"]], ["small", "medium", "large"])
         self.assertEqual(next(e for e in m["strata"] if e["family"] == "deepseek41")["suggest"], False)
         ids = {x["id"]: x for x in t["tools"]}
@@ -51,6 +51,47 @@ class Shipped(Env):
         self.assertEqual(ids["hermes"]["connect"]["fields"], ["base_url", "key", "model"])
         self.assertEqual(ids["opencode"]["connect"]["json"]["provider"]["shoggoth"]["options"]["baseURL"], "{base_url}")
         self.assertEqual(len([x for x in t["tools"] if "guides" in x["show"]]), 11)
+
+
+class ThePicks(Env):
+    """The picks as the owner gave them: names, where each comes from, and the things that must never come back."""
+
+    def test_small_and_medium_lists_are_the_owners(self):
+        rec = {r["id"]: r for r in recs.models()["recommended"]}
+        self.assertEqual(list(rec), ["LFM2.5-8B-A1B", "user.MiMo-V2.6-Distill-Qwen-9B-Q4_K_M", "Gemma-4-12B-it-MTP-GGUF", "Qwen3.6-35B-A3B-MTP-GGUF",
+                                     "Gemma-4-26B-A4B-it-MTP-GGUF", "GLM-4.7-Flash-GGUF", "Gemma-4-31B-it-MTP-GGUF", "Qwen3.8-27B-GGUF"])
+        for r in rec.values():
+            self.assertTrue(r["title"] and r["take"] and r["size_gb"], r["id"])
+            self.assertEqual(r["provider"], "Lemonade")
+        self.assertNotIn("Muse-Glimmer-30B-GGUF", rec)
+
+    def test_a_model_lemonade_doesnt_list_says_where_to_fetch_it(self):
+        mimo = next(r for r in recs.models()["recommended"] if r["id"].startswith("user.MiMo"))
+        self.assertEqual(mimo["download"]["checkpoint"], "bartowski/MiMo-V2.6-Distill-Qwen-9B-GGUF:MiMo-V2.6-Distill-Qwen-9B-Q4_K_M.gguf")
+        self.assertEqual(mimo["download"]["recipe"], "llamacpp")
+        self.assertEqual([r["id"] for r in recs.models()["recommended"] if "download" in r], [mimo["id"]])
+
+    def test_the_two_models_that_are_not_ready_show_as_coming_soon(self):
+        self.assertEqual([c["title"] for c in recs.models()["coming_soon"]], ["LFM3", "GLM 5.3 Flash"])
+        self.assertTrue(all(c["take"] for c in recs.models()["coming_soon"]))
+
+    def test_the_large_models_carry_their_text(self):
+        st = recs.models()["strata"]
+        self.assertIn("Claude Sonnet 5", next(e for e in st if e["family"] == "qwen")["take"])
+        self.assertIn("token-maxxers", next(e for e in st if e["family"] == "deepseek41")["take"])
+
+    def test_no_speed_figures_on_a_card(self):
+        for r in recs.models()["recommended"]:
+            self.assertNotRegex(r["take"] + r["title"], r"tok/s|tokens/s|tokens per second")
+
+    def test_a_bad_download_or_coming_soon_entry_is_reported(self):
+        self.mine("models", "recommended:\n  - {id: A, label: a, download: {mmproj: x}}\ncoming_soon:\n  - {take: no title}\n")
+        s = recs.summary()
+        joined = "\n".join(s["problems"])
+        self.assertIn("recommended[0].download: needs `checkpoint`", joined)
+        self.assertIn("coming_soon[0]: needs `title`", joined)
+        self.assertEqual(s["models"]["coming_soon"], [])
+        self.assertNotIn("download", s["models"]["recommended"][0])
 
 
 class Yours(Env):
@@ -68,12 +109,13 @@ class Yours(Env):
         self.assertEqual(recs.models()["recommended"][0]["id"], "B")
 
     def test_a_mistake_skips_that_entry_and_says_where(self):
-        self.mine("models", "recommended:\n  - {id: A, lable: x}\n  - {id: B, label: fine}\nstrata:\n  - {family: q, model: M, title: T, need_gb: lots, ctx: 8192}\n")
+        self.mine("models", "recommended:\n  - {id: A, size_gb: lots}\n  - {id: B, label: fine}\nstrata:\n  - {family: q, model: M, title: T, need_gb: lots, ctx: 8192}\n")
         s = recs.summary()
-        self.assertEqual([m["id"] for m in s["models"]["recommended"]], ["B"])
+        self.assertEqual([m["id"] for m in s["models"]["recommended"]], ["A", "B"])
+        self.assertIsNone(s["models"]["recommended"][0]["size_gb"])
         self.assertEqual(s["models"]["strata"], [])
         joined = "\n".join(s["problems"])
-        self.assertIn("recommended[0]: `lable` isn't a setting Shoggoth reads (did you mean `label`?)", joined)
+        self.assertIn("recommended[0]: `size_gb` must be a number above 0", joined)
         self.assertIn("strata[0]: `need_gb` must be a number", joined)
 
     def test_a_file_that_isnt_yaml_falls_back_to_zests_own(self):
@@ -93,11 +135,11 @@ class Yours(Env):
         self.assertIn("no `connect`", joined)
 
     def test_the_check_command_exits_1_on_a_mistake(self):
-        self.mine("models", "recommended:\n  - {id: A}\n")
+        self.mine("models", "recommended:\n  - {id: A, lable: x}\n")
         with contextlib.redirect_stdout(io.StringIO()) as out:
             self.assertEqual(recs.main(["check", os.path.join(recs.user_dir(), "models.yaml")]), 1)
             self.assertEqual(recs.main(["check", os.path.join(recs.BUNDLED, "models.yaml")]), 0)
-        self.assertIn("needs `label`", out.getvalue())
+        self.assertIn("`lable` isn't a setting Shoggoth reads (did you mean `label`?)", out.getvalue())
 
 
 class Flavour(Env):

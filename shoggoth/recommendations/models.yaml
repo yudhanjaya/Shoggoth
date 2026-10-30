@@ -8,42 +8,93 @@
 
 version: 1
 
-# Library > "Recommended for this computer". A card shows only when its engine lists the model (by `id`, or one of `also`, the
-# same model under another name) and it fits this computer. The Library sorts the cards into Small, Medium and Large by size;
-# within a size they keep this order. `label` is the chip on the card (it also shows in the chat's model picker), `take` the text.
+# Models > "Recommended for this computer". A card shows when it fits this computer, whether or not the engine is installed yet: `title`,
+# `size_gb`, `tools`, `vision` and `reasoning` are what the card says until the engine can list the model itself, and `size_gb` sorts it
+# into Small (under 10 GB), Medium (10 to 24 GB) or Large. `id` is the engine's name for the model (`also`: the same model under another
+# name). `download` is for a model the engine does not list: where to fetch it (a Hugging Face `checkpoint`, and optionally `mmproj` for
+# pictures). `label` is an optional chip on the card (it also shows in the chat's model picker), `take` the text. The cards keep this order.
+# Text is the owner's own words; do not paraphrase it. No speed figures: they can't be predicted for other people's computers.
 recommended:
-  # Start here: small and fast. Runs on almost any computer.
+  # Small: runs on almost any computer, starts in seconds.
   - id: LFM2.5-8B-A1B
-    label: Best small model
+    title: LFM2.5-8B-A1B
+    size_gb: 5.2
+    tools: true
     take: >-
-      Very fast, runs on almost anything, and calls tools well. Its answers are short and to the point. Give it web search in a
-      harness such as OpenChamber and it is the smartest small model I have used. Think of it as a stand-in for a cloud “flash” model.
+      Competent all-rounder. Terse language, handles tool calls reasonably well, fast - an excellent all-round pick.
+  # Not in Lemonade's list: Shoggoth fetches the bartowski Q4_K_M and adds it as a custom model. It needs Lemonade 2026.41.1 or newer
+  # (llama.cpp b11393 or later), which fixed MiMo's tool-call template detection.
+  - id: user.MiMo-V2.6-Distill-Qwen-9B-Q4_K_M
+    also: [MiMo-V2.6-Distill-Qwen-9B-Q4_K_M]      # Lemonade lists a custom model without the `user.` it is added under
+    title: MiMo-V2.6-Distill-Qwen-9B
+    size_gb: 5.84
+    tools: true
+    download:
+      checkpoint: bartowski/MiMo-V2.6-Distill-Qwen-9B-GGUF:MiMo-V2.6-Distill-Qwen-9B-Q4_K_M.gguf
+    take: >-
+      An upgraded version of Qwen 9B. Improved tool calling, managed to pass our code debug tests without issues. A little verbose:
+      tends to go on at length, prone to looping sometimes.
+  - id: Gemma-4-12B-it-MTP-GGUF
+    title: Gemma-4-12B-it (MTP)
+    size_gb: 7.75
+    tools: true
+    vision: true
+    take: >-
+      Arguably the best conversationalist of the lot at this size; perhaps not the best at tool-calling. Lacks nuanced reasoning and may
+      hallucinate wildly in long-context tasks.
 
-  # My general pick: the one I would install first if your computer can hold it.
+  # Medium
   - id: Qwen3.6-35B-A3B-MTP-GGUF
-    label: Best all-rounder
+    title: Qwen3.6-35B-A3B (MTP)
+    size_gb: 23.8
+    tools: true
+    vision: true
     take: >-
-      Very fast and competent at everyday tasks. It sometimes mangles complex code, but you can run it again and again until it
-      gets there. It does well at research, tweaking system settings and scripts, and at agent work (better than GLM). A good
-      in-editor helper for small functions. Its writing style is not to everyone's taste.
-
-  # If Qwen 3.6 won't run: a fallback, with a warning.
+      The current king of getting shit done on a single GPU. A Mixture-of-Experts model that only activates 3B of its 35B parameters;
+      exceptional tool calling for its size. Very AI-esque conversation, but the default pick.
+  - id: Gemma-4-26B-A4B-it-MTP-GGUF
+    title: Gemma-4-26B-A4B-it (MTP)
+    size_gb: 18.5
+    tools: true
+    vision: true
+    take: >-
+      The alternate to Qwen 3.6. Slightly smaller, but excellent at long-context tasks, multilingual work and reasoning; not as good at
+      Qwen at coding tasks.
   - id: GLM-4.7-Flash-GGUF
-    label: Only if you can't run Qwen 3.6
+    title: GLM-4.7-Flash
+    size_gb: 17.5
+    tools: true
     take: >-
-      Fast, but a confident bluffer: it makes things up often, so I would not trust it to write code. It improves a lot when you
-      give it skills in a harness like OpenCode or Hermes, but pick it only if Qwen 3.6 is out of reach.
-
-  # Bigger and slower: dense models. Good answers, but slower than the models above because every part of them works on every
-  # word. On a computer with a big graphics card and plenty of RAM, the Large models are faster than these.
+      A fast model but a prolific bullshitter. Hallucinates wildly, especially if you give it coding or tool-calling tasks. Run if you
+      prefer its writing style or can't run Qwen.
   - id: Gemma-4-31B-it-MTP-GGUF
-    label: Clear and concise
-    take: "I like the style: clear, concise and competent. It is simply slow next to the mixture-of-experts models."
-  - id: Qwen3.8-27B-GGUF
-    label: A thinker
+    title: Gemma-4-31B-it (MTP)
+    size_gb: 20.0
+    tools: true
+    vision: true
     take: >-
-      Competent, but it ruminates and refines its answers before it replies, and can think for ages unless you tell it to keep
-      its thinking and answers short.
+      Excels at conversation, writing, and general tasks; is not as good as the Qwen models at tool-calling, agentic work, or coding.
+      Good balance of speed and power; think of it as Gemini's Flash model in a box.
+  - id: Qwen3.8-27B-GGUF
+    title: Qwen3.8-27B
+    size_gb: 18.8
+    tools: true
+    vision: true
+    reasoning: true
+    take: >-
+      Excellent at coding for its size, but utterly neurotic and slow. Empires have risen and fallen in the time it takes to respond.
+      Use if you're very patient.
+
+# Large models are the `strata` list below. Models that are not ready yet show greyed out with a COMING SOON! label.
+coming_soon:
+  - title: LFM3
+    take: >-
+      Incredibly small, all-purpose models, extremely competent in my testing, punching well above their size. Will be included once
+      Lemonade updates its llama.cpp.
+  - title: GLM 5.3 Flash
+    take: >-
+      Much better model, but much slower. Comparable to Claude Opus 4.8 (which often did better work than Opus 5) and OpenAI GPT Terra 5.6
+      on many tasks. Will be added once I integrate Project Maya.
 
 # The first-run screen: "Choose your first model", one card per size. Each size shows the first model in `models` that this
 # computer can run. `recommended: true` marks the one Shoggoth suggests. The large card is Strata's suggestion (from `strata` below).
@@ -53,7 +104,7 @@ first_run:
     blurb: Answers fast and keeps it short. Runs on almost any computer.
     start: Ready in seconds
   - size: medium
-    models: [Qwen3.6-35B-A3B-MTP-GGUF, Gemma-4-26B-A4B-it-GGUF, Gemma-4-31B-it-MTP-GGUF]
+    models: [Qwen3.6-35B-A3B-MTP-GGUF, Gemma-4-26B-A4B-it-MTP-GGUF, Gemma-4-31B-it-MTP-GGUF]
     blurb: "My general pick: fast, and good at everyday tasks, research and simple code."
     start: Ready in seconds
     recommended: true
@@ -67,10 +118,27 @@ first_run:
 # fits. The suggestion is the first one, best quality first, that fits; `suggest: false` lists a model without ever suggesting it.
 strata:
   # Qwen3.8 Flash-Next from ISTA-DASLab, Strata's recommended provider (Strata's docs/MODELS.md, "Pick by memory").
-  - {family: qwen, model: IQ3_S, title: "Qwen3.8 Flash-Next, best quality", need_gb: 54.8, ctx: 131072}
+  - family: qwen
+    model: IQ3_S
+    title: "Qwen3.8 Flash-Next, best quality"
+    need_gb: 54.8
+    ctx: 131072
+    take: >-
+      One of the closest options we have to a frontier model experience at home, thanks to Strata. Blazing fast (often as fast as some of
+      the medium models), roughly comparable to Claude Sonnet 5 for agentic work and code. You need at least 64 GB of RAM and a 12 GB GPU
+      to run this.
   - {family: qwen, model: IQ3_XXS, title: "Qwen3.8 Flash-Next, great quality", need_gb: 47.0, ctx: 131072}
   - {family: qwen, model: IQ2_XS, title: "Qwen3.8 Flash-Next, balanced", need_gb: 39.2, ctx: 131072}
   - {family: qwen, model: Q2_0, title: "Qwen3.8 Flash-Next, fastest", need_gb: 37.6, ctx: 131072}
   # 257 GB of disk and a fixed 8K window: listed, never suggested.
-  - {family: deepseek41, model: IST-DAS-2.00bpw, title: "DeepSeek V4.1 Flash (very large, 8K window)", need_gb: 46.0, ctx: 8192,
-     min_vram_gb: 12, disk_gb: 270, suggest: false}
+  - family: deepseek41
+    model: IST-DAS-2.00bpw
+    title: "DeepSeek V4.1 Flash (very large, 8K window)"
+    need_gb: 46.0
+    ctx: 8192
+    min_vram_gb: 12
+    disk_gb: 270
+    suggest: false
+    take: >-
+      The darling of token-maxxers. DeepSeek approaches Claude Opus 5 quality (though not quite there), but expect it to be slow on all
+      but the most serious hardware. This one requires some serious hardware - if you need to run it, you need to do some reading.

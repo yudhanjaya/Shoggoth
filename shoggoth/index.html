@@ -683,6 +683,12 @@ details.aegrp>summary small{margin-left:auto;font:11.5px var(--mono);color:var(-
 .picktier .grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(310px,1fr));gap:16px}
 .ticknote{margin:0;background:var(--lemon-wash);border-radius:12px;padding:12px 16px;font-size:14px}
 .pickhead{margin:0}.take{margin:0;color:var(--muted);font-size:14.5px}
+.facts{display:flex;flex-wrap:wrap;gap:4px 14px;margin:0;padding:0;list-style:none;font-size:13px;color:var(--muted)}
+.card.soon{position:relative;overflow:hidden;min-height:190px;border-style:dashed}
+.card.soon>:not(.soonband){opacity:.5;filter:grayscale(1)}
+.card.soon .ctop{margin-bottom:34px}
+.soonband{position:absolute;left:-6%;right:-6%;top:44px;transform:rotate(-4deg);padding:7px 0;text-align:center;background:#f7d916;color:#17140a;
+  font:800 17px/1 var(--disp);letter-spacing:.06em;box-shadow:0 2px 0 rgba(0,0,0,.18);pointer-events:none}
 .warnbox{border:1px solid var(--warn-line);background:var(--warn-bg);color:var(--warn);border-radius:12px;padding:12px 16px;font-size:14px}
 .engrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(310px,1fr));gap:16px}
 .engcard{align-content:start}
@@ -1480,7 +1486,7 @@ h3.themesec{font:600 12px var(--sans);letter-spacing:.08em;text-transform:upperc
     <section class="view" id="v-models"><div class="pad"><div class="wrap">
       <div class="pagehead"><p class="lede">Everything your computer can run, in one place. Models you get stay on this computer and work without the internet.</p>
         <div class="pagebtns"><button class="btn ghost" type="button" data-pick>How do I choose a model?</button>
-        <button class="btn" id="libadd" type="button"><svg class="i" viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></svg>Add models</button></div></div>
+        <button class="btn" id="libadd" type="button"><svg class="i" viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></svg>Add models from other sources</button></div></div>
       <div id="libwhere"></div>
       <div id="modelsbanner"></div>
       <div id="libdl"></div>
@@ -1603,7 +1609,7 @@ h3.themesec{font:600 12px var(--sans);letter-spacing:.08em;text-transform:upperc
 </dialog>
 <dialog id="adddlg">
   <form method="dialog" id="addform">
-    <header><h3>Add models</h3><p>Bring in models from anywhere. Nothing is copied: Shoggoth reads them where they are.</p></header>
+    <header><h3>Add models from other sources</h3><p>Bring in models from anywhere. Nothing is copied: Shoggoth reads them where they are.</p></header>
     <div class="odbody" id="addbody"></div>
     <div class="actions"><button class="btn primary" value="close">Done</button></div>
   </form>
@@ -1810,14 +1816,19 @@ document.addEventListener("visibilitychange", tick);
 // Lemonade and llama.cpp errors are written for engineers. This turns the common ones into a sentence a person can act on.
 function friendlyProblem(raw, what){
   const r = String(raw || ""), t = r.toLowerCase();
-  if(/architecture|unsupported|not supported|unknown model|unrecogni[sz]ed|invalid gguf|bad magic|failed to load model|llama-server (exited|failed)|model.*(could not|couldn't) be loaded/.test(t))
-    return {title: "This model isn't supported yet", body: `${what || "This model"} uses a design (an “architecture”) that your copy of llama.cpp doesn't understand yet. This is common with brand-new models.`, hint: "Updating the engine often fixes it. Otherwise, pick a different model or a different version of this one.", engines: true};
+  if(/out of memory|cudamalloc|\boom\b|failed to allocate|insufficient memory|not enough memory|vram/.test(t))
+    return {title: "Not enough memory", body: `${what || "This model"} needs more graphics (or system) memory than is free right now.`, hint: "Close other programs that use the graphics card, unload other models, choose a smaller version, or shorten its context window under Settings for this model."};
+  const arch = (r.match(/unknown model architecture:?\s*['"“]?([\w.-]+)/i) || r.match(/architecture\s*['"“]([\w.-]+)['"”]?\s*(?:is )?(?:not supported|unsupported)/i) || [])[1];
+  if(arch || /unsupported.*architecture|architecture.*(not supported|unsupported)/.test(t))
+    return {title: "This model needs a newer engine", body: `${what || "This model"} is built on a design (an “architecture”)${arch ? ` called ${arch}` : ""} that the llama.cpp inside your Lemonade doesn't know yet. That's normal for a brand-new model: llama.cpp learns it first, then Lemonade picks up the new llama.cpp.`, hint: "Update Lemonade on Engines. If it still fails after that, this model isn't available on Lemonade yet. Pick another model for now.", engines: true};
+  if(/invalid gguf|bad magic|not a gguf|gguf.*(corrupt|truncated)|tensor.*(missing|out of range)/.test(t))
+    return {title: "The model file looks damaged", body: `${what || "This model"} didn't download completely, or the file is broken.`, hint: "Delete it from Models and get it again."};
+  if(/failed to load model|llama-server (exited|failed)|model.*(could not|couldn't) be loaded|unknown model/.test(t))
+    return {title: "The model wouldn't start", body: `${what || "This model"} couldn't be loaded, and the engine didn't say why in plain words.`, hint: "Unload other models and close other programs that use the graphics card, then try again. The details below usually say what the engine objected to.", engines: true};
   if(/\b(401|403)\b|gated|authori[sz]ation|access token|log ?in|accept.*(terms|license)/.test(t))
     return {title: "This model needs a login", body: "The owner of this model asks for you to sign in or accept terms on Hugging Face first. Shoggoth can't download models that need a login yet.", hint: "Pick a model that doesn't need one. Many popular models are also published, without a login, by other uploaders."};
   if(/\b404\b|not found|no such (repo|model)|repository/.test(t))
     return {title: "Couldn't find that model", body: "Hugging Face says that model or file doesn't exist.", hint: "Check the link or name, and that the repository holds GGUF files."};
-  if(/out of memory|cudamalloc|oom|failed to allocate|insufficient memory|not enough memory|vram/.test(t))
-    return {title: "Not enough memory", body: `${what || "This model"} needs more graphics (or system) memory than is free right now.`, hint: "Close other programs that use the graphics card, unload other models, choose a smaller version, or shorten its context window under Settings for this model."};
   if(/no space|disk full|enospc|not enough (disk|space)/.test(t))
     return {title: "Not enough disk space", body: "There isn't enough free space to store this model.", hint: "Free some space, or delete a model you no longer use from Models."};
   if(/timed? ?out|timeout|connection|network|unreachable|resolve/.test(t))
@@ -2265,7 +2276,7 @@ document.addEventListener("change", async e => {
   try{ await api("/ui/model/meta", {method: "POST", body: JSON.stringify({model: sel.dataset.hr, headroom_gb: sel.value})}); HR.set[sel.dataset.hr] = Number(sel.value); toast(Number(sel.value) ? `It will leave ${sel.value} GB free the next time it starts.` : "It won't keep any graphics memory free."); }
   catch(err){ toast(err.message); }
 });
-function cardHTML(m, extra){
+function cardHTML(m, extra, title){
   const f = fitInfo(m), isLoaded = m.id === S.loaded, job = dlJob(m.id);
   const tags = [m.recipe, ...(m.labels||[]).filter(l => l !== m.recipe)].map(l => `<span class="chip">${esc(l)}</span>`).join("");
   let act;
@@ -2277,7 +2288,7 @@ function cardHTML(m, extra){
   const sh = m.downloaded ? speedHistory(m.id) : null, [shWord, shCls] = sh ? speedWord(sh.tps) : ["", ""];
   const spLine = sh ? `<div class="speedline"><span class="sw ${shCls}">${shWord}</span><span>About <b class="num">${fmtRate(sh.tps)}</b> tok/s on this computer${sh.n > 1 ? ` <small>(from ${sh.n} answers)</small>` : ""}</span></div>` : "";
   return `<article class="card ${isLoaded?"loaded":""}" data-id="${esc(m.id)}">
-    <div class="ctop">${libPic(m.id)}<h3>${esc(friendly(m))}</h3>${isLoaded?'<span class="chip ok">Loaded</span>':m.downloaded?'<span class="chip">On this computer</span>':""}</div>
+    <div class="ctop">${libPic(m.id)}<h3>${esc(title || (recPick(m.id) || {}).title || friendly(m))}</h3>${isLoaded?'<span class="chip ok">Loaded</span>':m.downloaded?'<span class="chip">On this computer</span>':""}${m.downloaded && m.recipe === "llamacpp" ? tnTag("lemonade", m.id) : ""}</div>
     <p class="what">${esc(whatFor(m))}</p>${extra || ""}
     <div class="row"><span>${m.size ? `${sizeWord(m.size)} <span class="mono num">· ${m.size.toFixed(m.size<10?1:0)} GB</span>` : ""}</span></div>
     ${f ? `<div class="fitwrap"><div class="fit ${f.cls}" role="img" aria-label="${esc(f.note)}"><i style="width:${f.pct}%"></i></div><div class="fitnote ${f.cls}" style="margin-top:6px">${esc(f.note)}</div></div>` : ""}
@@ -2298,7 +2309,7 @@ function cardHTML(m, extra){
 /* ======================= my picks: shoggoth/recommendations/*.yaml (edit those files, not this code) ======================= */
 const RECS = {d: null};
 async function loadRecs(){ try{ RECS.d = await api("/ui/recommendations"); }catch{} }
-const recModels = () => ((RECS.d || {}).models) || {recommended: [], first_run: [], strata: []};
+const recModels = () => ((RECS.d || {}).models) || {recommended: [], first_run: [], strata: [], coming_soon: []};
 const recAllTools = () => (((RECS.d || {}).tools || {}).tools) || [];
 const recTools = place => recAllTools().filter(t => t.show.includes(place));
 const recPlace = place => ((((RECS.d || {}).tools || {}).places || {})[place]) || {title: "", blurb: ""};
@@ -2314,7 +2325,7 @@ function recProblems(){                  // a mistake in the files is said where
 const LIB = {d: null, t: 0, busy: false, tab: store.get("shoggoth.libtab", "installed"), kind: "all", q: "", notNow: false, picked: ""};
 const LIB_TIERS = [["small", "Small models", "Under 10 GB of graphics memory. They start in seconds."], ["medium", "Medium models", "10 to 24 GB of graphics memory."],
   ["large", "Large models", "For big computers. They take a couple of minutes to start."], ["other", "Pictures, speech and sound", ""]];
-const LIB_TABS = [["installed", "Installed"], ["recommended", "Recommended for this computer"], ["everything", "Everything"]];
+const LIB_TABS = [["installed", "Installed"], ["recommended", "Recommended for this computer"], ["everything", "All models"]];
 const LIB_KINDS = [["all", "All kinds"], ["chat", "Chat"], ["vision", "Sees pictures"], ["image", "Makes images"], ["audio", "Speech and sound"]];
 function libTips(){
   const ts = recTools("library"), pl = recPlace("library");
@@ -2330,7 +2341,7 @@ async function libLoad(fresh){
 /* while the first-run screen is up, keep the Large-model download state fresh */
 async function strRefreshWelcome(){ if(S.view !== "welcome") return; try{ STR.d = await api("/ui/strata"); }catch{} renderWelcome(); setTimeout(strRefreshWelcome, 3000); }
 function libShow(){
-  hrLoad().then(() => { if(S.view === "models") renderModels(); }); renderModels(); libLoad(); strRefresh(); pkLoad(true); loadRecs().then(() => { if(S.view === "models") renderModels(); }); }
+  hrLoad().then(() => { if(S.view === "models") renderModels(); }); tnQuiet(); renderModels(); libLoad(); strRefresh(); pkLoad(true); loadRecs().then(() => { if(S.view === "models") renderModels(); }); }
 function libFilters(){
   $("#filters").innerHTML = LIB_TABS.map(([k, l]) => `<button type="button" data-tab="${k}" aria-pressed="${LIB.tab === k}">${l}</button>`).join("") +
     (LIB.tab === "everything" ? `<select id="libkind" aria-label="Kind of model">${LIB_KINDS.map(([k, l]) => `<option value="${k}" ${LIB.kind === k ? "selected" : ""}>${l}</option>`).join("")}</select>` : "") +
@@ -2374,7 +2385,7 @@ function libFitHTML(e){
 function bigCard(e){          // an installed model that a Large-model engine runs (no per-engine settings to edit here)
   const startable = !!pkFind(e.ref), live = (S.ms || {}).loaded === e.ref;
   return `<article class="card ${live ? "loaded" : ""}" data-id="${esc(e.ref || e.id)}">
-    <div class="ctop">${libPic(e.ref)}<h3>${esc(e.title)}</h3>${live ? '<span class="chip ok">Ready</span>' : '<span class="chip">On this computer</span>'}</div>
+    <div class="ctop">${libPic(e.ref)}<h3>${esc(e.title)}</h3>${live ? '<span class="chip ok">Ready</span>' : '<span class="chip">On this computer</span>'}${tnTag("strata", e.ref)}</div>
     <p class="what">${esc(featLine(e))}</p>
     <div class="row"><span>Large <span class="mono num">· needs about ${Math.round(e.need_gb || 0)} GB of memory</span></span></div>
     ${libFitHTML(e)}
@@ -2389,6 +2400,7 @@ function bigCard(e){          // an installed model that a Large-model engine ru
 function getBigCard(o){        // a Large model that can be set up from here
   const busy = ((STR.d || {}).run || {}).state === "starting", no = o.fit === "no";
   return `<article class="card"><div class="ctop"><h3>${esc(o.title)}</h3></div>
+    ${o.take ? `<p class="take">${inline(o.take)}</p>` : ""}
     <p class="what">Needs about ${Math.round(o.need_gb)} GB of memory${o.download_gb ? ` · ${Math.round(o.download_gb)} GB to download` : ""} · remembers up to ${fmtTok(o.ctx)}</p>
     <div class="fitnote ${no ? "over" : o.fit === "tight" ? "tight" : "ok"}" style="margin-top:2px">${esc(no ? o.why : o.fit === "tight" ? "A snug fit: close other big programs first." : "Fits this computer.")}</div>
     <div class="act">${no ? "" : `<button class="btn primary" data-sget="${esc(o.family)}|${esc(o.model)}" ${busy ? "disabled" : ""}>Get it${o.download_gb ? " · " + Math.round(o.download_gb) + " GB" : ""}</button>`}</div>
@@ -2416,18 +2428,67 @@ function libInstalled(){
     by.tier[isChatModel(m) ? libTier(m.size) : "other"].push(libUnder(cardHTML(m, "")));
   return LIB_TIERS.map(t => libSection(t, by.tier[t[0]])).join("") || `<div class="empty-note">${q ? "Nothing matches." : "You don't have any models yet. Open <b>Recommended for this computer</b> to get one."}</div>`;
 }
+/* what a pick says about itself, from models.yaml: it is true of the model whether or not an engine is installed yet */
+function recFacts(it, gb){
+  const bits = [gb ? `Needs about ${gb < 10 ? gb.toFixed(1) : Math.round(gb)} GB of memory` : "", `Runs on ${it.provider || "Lemonade"}`, it.tools ? "Can use tools" : "", it.vision ? "Understands pictures" : "", it.reasoning ? "Thinks before it answers" : ""].filter(Boolean);
+  return `<ul class="facts">${bits.map(b => `<li>${esc(b)}</li>`).join("")}</ul>`;
+}
+const recExtra = (it, gb) => `${it.label ? `<p class="pickhead"><span class="chip lem">${esc(it.label)}</span></p>` : ""}${it.take ? `<p class="take">${inline(it.take)}</p>` : ""}${recFacts(it, gb)}`;
+const lemReady = () => !!(SU.st && SU.st.lemonade.reachable);
+/* a pick the engine does not list (Lemonade is not installed yet, or the model is a custom one): the card is drawn from models.yaml */
+function recGetCard(it){
+  const gb = it.size_gb || 0, job = dlJob(it.id), f = fitInfo({size: gb, recipe: "llamacpp"}), size = gb < 10 ? gb.toFixed(1) : Math.round(gb);
+  const act = job ? `<div class="dlrow" style="flex:1"><div class="prog" style="flex:1"><i style="width:${job.percent}%"></i></div>${job.percent}%</div><button class="btn" data-canceldl="${esc(it.id)}">Cancel</button>`
+    : PICK.id === it.id ? `<button class="btn" disabled>Getting ready…</button>`
+    : `<button class="btn primary" data-recget="${esc(it.id)}">${lemReady() ? "Get it" : "Set up and get it"} · ${size} GB</button>`;
+  return `<article class="card" data-id="${esc(it.id)}"><div class="ctop"><h3>${esc(it.title || friendly(it.id))}</h3></div>
+    ${recExtra(it, gb)}
+    <div class="row"><span>${sizeWord(gb)} <span class="mono num">· ${size} GB</span></span></div>
+    ${f ? `<div class="fitwrap"><div class="fit ${f.cls}" role="img" aria-label="${esc(f.note)}"><i style="width:${f.pct}%"></i></div><div class="fitnote ${f.cls}" style="margin-top:6px">${esc(f.note)}</div></div>` : ""}
+    <div class="act">${act}</div>
+    <details class="more"><summary>Details<span class="eng">Runs on ${esc(it.provider || "Lemonade")}</span></summary><div class="mbody"><div class="mono mid">${esc(it.id)}</div>${it.download ? `<div class="mono mid">${esc(it.download.checkpoint)}</div>` : ""}</div></details></article>`;
+}
+const recSoonCard = c => `<article class="card soon" aria-label="${esc(c.title)}, coming soon"><span class="soonband" aria-hidden="true">COMING SOON!</span><div class="ctop"><h3>${esc(c.title)}</h3></div>${c.take ? `<p class="take">${inline(c.take)}</p>` : ""}</article>`;
+/* the person chose a pick before Lemonade was installed: set up, then fetch it */
+const PICK = {id: store.get("shoggoth.pendingpick", "")};
+async function recFetch(it){
+  const room = await diskProblem(it.size_gb);
+  if(room){ toast("Not enough room for that download"); showPlain("Not enough room", room, ""); return; }
+  if(!it.download) return startDownload(it.id);
+  const body = {model_name: it.id, checkpoint: it.download.checkpoint, recipe: it.download.recipe || "llamacpp", stream: true, subscribe: false};
+  if(it.download.mmproj) body.mmproj = it.download.mmproj;
+  try{ await api("/api/v1/pull", {method: "POST", headers: {"Content-Type": "application/json"}, body: JSON.stringify(body)}); await loadModels(); await pollDownloads(); if(S.view === "models") renderModels(); }
+  catch(e){ toast("Couldn't start the download"); showProblem(e.message, it.title || friendly(it.id)); }
+}
+async function recGet(id){
+  const it = recModels().recommended.find(x => x.id === id); if(!it) return;
+  if(lemReady()) return recFetch(it);
+  PICK.id = id; store.set("shoggoth.pendingpick", id); W.go = true; toast("Shoggoth will set itself up, then get " + (it.title || id) + ".");
+  show("welcome");
+}
+/* once Lemonade is running and fitted to the graphics card, fetch the pick that started the setup */
+function recResume(){
+  if(!PICK.id || !lemReady() || !backendsInstalled().length || PICK.busy) return;
+  const it = recModels().recommended.find(x => x.id === PICK.id);
+  PICK.busy = true; const id = PICK.id; PICK.id = ""; store.set("shoggoth.pendingpick", "");
+  if(!it){ PICK.busy = false; return; }
+  recFetch(it).finally(() => { PICK.busy = false; LIB.tab = "recommended"; show("models"); toast("Getting " + (it.title || id) + ". You can watch it on Models."); });
+}
 function libRecommended(){
-  const q = LIB.q.toLowerCase(), by = {small: [], medium: [], large: []}, have = new Set(((LIB.d || {}).models || []).map(e => (e.ids || {}).lemonade).filter(Boolean));
-  for(const it of recModels().recommended){
-    const m = recModel(it);
-    if(!m || !libMatch(m, q) || ((fitInfo(m) || {}).cls === "over" && !m.downloaded)) continue;
-    by[libTier(m.size)].push(libUnder(cardHTML(m, `<p class="pickhead"><span class="chip lem">${esc(it.label)}</span></p>${it.take ? `<p class="take">${inline(it.take)}</p>` : ""}`)));
+  const q = LIB.q.toLowerCase(), by = {small: [], medium: [], large: []}, rm = recModels();
+  for(const it of rm.recommended){
+    const m = recModel(it), gb = m ? m.size : it.size_gb, name = it.title || (m ? friendly(m) : friendly(it.id));
+    if(q && !(name.toLowerCase().includes(q) || it.id.toLowerCase().includes(q))) continue;
+    if(m && ((fitInfo(m) || {}).cls === "over" && !m.downloaded)) continue;
+    if(!m && ((fitInfo({size: gb, recipe: "llamacpp"}) || {}).cls === "over")) continue;
+    by[libTier(gb)].push(m ? libUnder(cardHTML(m, recExtra(it, gb), it.title)) : recGetCard(it));
   }
   for(const o of bigOptions().filter(o => o.fit !== "no" && !bigHave(o))){
     if(q && !o.title.toLowerCase().includes(q) && !o.model.toLowerCase().includes(q)) continue;
     by.large.push(getBigCard(o));
   }
-  const html = LIB_TIERS.slice(0, 3).map(t => libSection(t, by[t[0]])).join("");
+  const soon = (rm.coming_soon || []).filter(c => !q || c.title.toLowerCase().includes(q)).map(recSoonCard);
+  const html = LIB_TIERS.slice(0, 3).map(t => libSection(t, by[t[0]])).join("") + libSection(["soon", "Coming soon", "Not ready yet."], soon);
   return (html || `<div class="empty-note">Shoggoth is still looking at your computer…</div>`) + (q ? "" : libTips()) + recProblems();
 }
 function libEverything(){
@@ -2439,7 +2500,9 @@ function libEverything(){
     for(const e of ((LIB.d || {}).models || []).filter(e => e.provider && e.provider !== "lemonade" && (!q || e.title.toLowerCase().includes(q)))) by.large.push(bigCard(e));
     for(const o of bigOptions().filter(o => o.fit !== "no" && !bigHave(o) && (!q || o.title.toLowerCase().includes(q)))) by.large.push(getBigCard(o));
   }
-  return LIB_TIERS.map(t => libSection(t, by[t[0]])).join("") || `<div class="empty-note">Nothing matches.</div>`;
+  const note = `<p class="help" style="margin:0">Everything Lemonade offers, including models that haven't been tested here. Recommended for this computer has the ones that have.</p>`;
+  if(!S.models.length && !lemReady()) return note + `<div class="empty-note">Lemonade isn't set up yet, so there is no list to show. Pick a model under <b>Recommended for this computer</b> and Shoggoth sets it up first.</div>`;
+  return note + (LIB_TIERS.map(t => libSection(t, by[t[0]])).join("") || `<div class="empty-note">Nothing matches.</div>`);
 }
 function renderModels(){
   if(!LIB_TABS.some(t => t[0] === LIB.tab)) LIB.tab = "installed";
@@ -2514,6 +2577,7 @@ $("#v-models").addEventListener("click", async e => {
     return renderModels();
   }
   if(t.dataset.dl) startDownload(t.dataset.dl);
+  if(t.dataset.recget) recGet(t.dataset.recget);
   else if(t.dataset.canceldl) cancelDownload(t.dataset.canceldl);
   else if(t.dataset.opts) openOptions(t.dataset.opts);
   else if(t.dataset.delete) askDelete(t.dataset.delete);
@@ -3125,7 +3189,7 @@ function renderWelcome(force){
   const host = $("#welcome"); if(!SU.st){ host.innerHTML = `<div class="wcard"><div class="prog ind"><i></i></div></div>`; return; }
   const sig = JSON.stringify([SU.st, S.bk && S.bk.length, S.models.filter(m => m.downloaded).length, S.downloads, SU.busy, SU.msg, S.gpus.length, LIB.d && [LIB.d.chosen, LIB.d.models.length], LIB.notNow, LIB.picked, LIB.err, STR.rec && STR.rec.pick, STR.d && STR.d.run, S.pk.models.length]);
   if(!force && sig === SU.wsig) return; SU.wsig = sig;
-  const {rows, rec, go} = wRows(), ready = rows.every(r => r.s === "done"), have = downloadedChat().length > 0 || S.pk.models.length > 0;
+  const {rows, rec, go} = wRows(), ready = rows.every(r => r.s === "done"), wanted = PICK.id && recModels().recommended.find(x => x.id === PICK.id), have = downloadedChat().length > 0 || S.pk.models.length > 0;
   const q = libWhereHTML();
   const asking = !!q && !go;
   const pick = have ? wStartPick() : null;
@@ -3133,11 +3197,13 @@ function renderWelcome(force){
     <div class="brandbig"><svg viewBox="0 0 64 64" aria-hidden="true"><rect x="2" y="2" width="60" height="60" rx="14" fill="#f7d916"/><rect x="7" y="3.2" width="50" height="1.4" rx=".7" fill="#fff" fill-opacity=".45"/><path d="M7 62 C 6 50 8 40 12 33 C 13 26 18 18 26 17 C 31 13 39 14 43 19 C 50 20 55 27 54 35 C 58 40 58 49 55 56 C 56 59 57 61 58 62 Z" fill="#1d1d22"/><path d="M12 47 C 6 47 4 42 6 38 C 7 36 9 37 8 39 C 7 42 9 44 12 43" fill="none" stroke="#1d1d22" stroke-width="3.2" stroke-linecap="round"/><path d="M53 44 C 59 43 61 38 59 34 C 58 32 56 33 57 35 C 58 38 56 40 53 40" fill="none" stroke="#1d1d22" stroke-width="3" stroke-linecap="round"/><path d="M30 17 C 29 11 32 7 36 8 C 38 8.5 38 10.5 36.5 10.5 C 34.5 10.5 33.5 12.5 34 16" fill="none" stroke="#1d1d22" stroke-width="2.8" stroke-linecap="round"/><g fill="#efe8d2"><ellipse cx="25" cy="32" rx="7.2" ry="6.4"/><ellipse cx="41.5" cy="27" rx="4.8" ry="4.4"/><ellipse cx="38" cy="43" rx="4" ry="3.6"/><ellipse cx="19.5" cy="47" rx="3" ry="2.7"/><ellipse cx="48" cy="38" rx="2.6" ry="2.4"/><ellipse cx="30" cy="51" rx="2.2" ry="2"/></g><g fill="#f7d916"><circle cx="25.6" cy="32.4" r="4.4"/><circle cx="41.8" cy="27.4" r="3"/><circle cx="38.3" cy="43.3" r="2.4"/></g><g fill="#0e0e12"><ellipse cx="25.6" cy="32.4" rx="1.3" ry="3.8"/><ellipse cx="41.8" cy="27.4" rx=".9" ry="2.6"/><ellipse cx="38.3" cy="43.3" rx=".75" ry="2.1"/><ellipse cx="19.7" cy="47.2" rx=".7" ry="1.9"/><ellipse cx="48.1" cy="38.2" rx=".6" ry="1.7"/><ellipse cx="30.1" cy="51.1" rx=".55" ry="1.4"/></g><g fill="#fff" fill-opacity=".85"><circle cx="23" cy="30" r="1.4"/><circle cx="40.3" cy="25.7" r=".9"/></g></svg></div>
     <div class="wbody"><h2>Getting <span class="hl">ready</span></h2>
     <p class="wl">Shoggoth sets itself up. It asks one thing, and the rest happens by itself. Everything runs on this computer, so your chats stay private.</p>
+    ${wanted ? `<p class="wl">When it is ready, Shoggoth will get <b>${esc(wanted.title || wanted.id)}</b> for you.</p>` : ""}
     ${asking ? q : ""}
     <ol class="wlist" aria-label="Getting ready">${rows.map(wRowHTML).join("")}</ol>
     ${ready && go ? wModelCards() : ""}
     ${have && ready ? `<div class="wrow"><button class="btn primary xl" data-act="w-start">Start chatting${pick ? " with " + esc(pick.name) : ""}</button></div>` : ""}</div>
     <div class="wfoot"><button class="linkbtn" data-act="w-own">I run my own server</button><button class="linkbtn" data-act="finish">Skip this, I'll set things up myself</button></div></div>`;
+  if(ready && go) setTimeout(recResume, 0);
   wAuto(rec, go);
 }
 
@@ -3566,6 +3632,18 @@ const tnGain = t => t.state === "stale" ? '<span class="chip">Out of date: tune 
   : t.state === "not_tuned" || !t.has ? '<span class="chip">Not tuned</span>'
   : t.state === "default_best" ? `<span class="chip ok">Tuned: the defaults were already best${t.decode ? " · " + tnFmt(t.decode) + " tokens/s" : ""}</span>`
   : `<span class="chip lem">Tuned: ${t.gain_pct > 0 ? "+" : ""}${tnFmt(t.gain_pct || 0)}%${t.baseline && t.decode ? " (" + tnFmt(t.baseline) + " → " + tnFmt(t.decode) + " tokens/s)" : ""}</span>`;
+/* the short form of the same chip, for a model's card on Models: tuned, tuned (defaults were best), out of date, or not tuned. No speeds: those belong to the Tuning page. */
+const tnFor = (engine, id) => (((TN.d || {}).targets) || []).find(t => t.engine === engine && t.id === id);
+function tnTag(engine, id){
+  const t = tnFor(engine, id); if(!t) return "";
+  const u = t.tuned;
+  return u.state === "stale" ? '<span class="chip" title="Shoggoth changed since this was tuned. Tune again on the Tuning page.">Tuning out of date</span>'
+    : u.state === "not_tuned" || !u.has ? '<span class="chip">Not tuned</span>'
+    : u.state === "default_best" ? '<span class="chip ok" title="Tuning found the default settings were already the fastest.">Tuned</span>'
+    : `<span class="chip lem">Tuned${u.gain_pct > 0 ? " +" + Math.round(u.gain_pct) + "%" : ""}</span>`;
+}
+let tnQuietAt = 0;
+async function tnQuiet(){ if(Date.now() - tnQuietAt < 15000) return; tnQuietAt = Date.now(); try{ TN.d = await api("/ui/tuning"); }catch{} if(S.view === "models") renderModels(); }
 function tnPaint(){
   const host = $("#tuning"); if(!host) return;
   if(host.contains(document.activeElement) && /^(SELECT|INPUT)$/.test(document.activeElement.tagName)) return;
