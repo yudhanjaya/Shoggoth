@@ -83,7 +83,7 @@ If you already have models, or run your own Lemonade or Strata, Shoggoth finds t
 
 ### What you need
 
-- **Linux on x86_64.** The built-in Lemonade needs glibc 2.38 or newer: Ubuntu 24.04, Debian 13, Fedora 39 or later. On an older system, Shoggoth tells you so. You can then connect it to a Lemonade you install yourself.
+- **Linux on x86_64.** The AppImage carries the glibc 2.38+ its built-in Lemonade needs, so it runs on older systems too (Ubuntu 22.04 and the like). Running from source on a system older than glibc 2.38, Shoggoth says so and you can connect it to a Lemonade you install yourself.
 - **A few common system libraries:** OpenSSL 3, zstd and libdrm. Almost every desktop Linux has them. If one is missing, Shoggoth names it.
 - **Your graphics driver,** to use the GPU. Shoggoth and Lemonade download everything else.
 - **Internet access** for the first-run downloads: the backend and your models.
