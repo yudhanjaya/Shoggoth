@@ -27,6 +27,7 @@ You don't have to choose model servers and so on. Shoggoth starts the right one 
 
 Because the large language models we run are, effectively, shoggoths: 
 <img width="1357" height="758" alt="image" src="https://github.com/user-attachments/assets/9d30246f-b926-4e1a-a035-3e43bfb1b242" />
+<sub>The Shoggoth with a smiley face: [Know Your Meme](https://knowyourmeme.com/sensitive/memes/shoggoth-with-smiley-face-artificial-intelligence)</sub>
 indescribable alien intelligences that deal in madness and inhumane logic. See: (https://en.wikipedia.org/wiki/Shoggoth).
 
 And because I love it. Shoggoth draws every model as a many-eyed creature in a glass tube, wired to a bench of lab equipment. A model's name decides its shape and colour, and the bigger the model, the bigger the creature, with more eyes and more hands. You can turn them off.
