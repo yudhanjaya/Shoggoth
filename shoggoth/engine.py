@@ -47,6 +47,49 @@ def _downloaded_root():
     return os.path.join(store.data_dir(), "lemonade")
 
 
+NEEDS_GLIBC = (2, 38)
+
+
+def _glibc_dir():
+    """The glibc that ships inside the AppImage, which lets the built-in Lemonade run on older Linux."""
+    for c in (os.environ.get("SHOGGOTH_GLIBC_DIR"), os.path.join(HERE, "..", "..", "glibc")):
+        if c and os.path.isfile(os.path.join(c, "ld-linux-x86-64.so.2")):
+            return os.path.realpath(c)
+    return None
+
+
+def _shim(d, exe):
+    """Lemonade finds its resources next to its own executable, which through the loader is the loader. So the loader
+    runs from a folder of its own that looks like Lemonade's: a copy of the loader plus links to everything there."""
+    src = os.path.dirname(exe)
+    shim = os.path.join(store.data_dir(), "glibc-run", hashlib.sha1(src.encode()).hexdigest()[:12])
+    os.makedirs(shim, exist_ok=True)
+    loader = os.path.join(shim, "ld-linux-x86-64.so.2")
+    real = os.path.join(d, "ld-linux-x86-64.so.2")
+    if not os.path.isfile(loader) or os.path.getsize(loader) != os.path.getsize(real):
+        shutil.copy2(real, loader + ".part")
+        os.replace(loader + ".part", loader)
+    for name in os.listdir(src):
+        link = os.path.join(shim, name)
+        if name != "lemond" and os.path.realpath(link) != os.path.realpath(os.path.join(src, name)):
+            if os.path.lexists(link):
+                os.remove(link)
+            os.symlink(os.path.join(src, name), link)
+    return loader
+
+
+def _launcher(exe):
+    """The command that runs `exe`: directly, or through the bundled glibc when this system's is too old for Lemonade."""
+    g = _glibc()
+    d = _glibc_dir()
+    if g and g < NEEDS_GLIBC and d:
+        try:
+            return [_shim(d, exe), "--library-path", d, exe]
+        except OSError:
+            pass
+    return [exe]
+
+
 def _bundled_dirs():
     cands = [os.environ.get("SHOGGOTH_LEMONADE_DIR"), os.path.join(HERE, "..", "..", "lemonade")]  # the second: inside the AppImage
     out = []
@@ -80,7 +123,7 @@ def _version_of(directory):
         return None
 
     def read():
-        code, out = util.run([exe, "--version"], 10)
+        code, out = util.run(_launcher(exe) + ["--version"], 10)
         m = re.search(r"(\d+(?:\.\d+)+)", out)
         return m.group(1) if code == 0 and m else None
     return util.cached(key, 3600, read)
@@ -172,7 +215,8 @@ def _is_our_lemond(pid, port):
             argv = f.read().split(b"\0")
     except OSError:
         return False
-    return bool(argv) and os.path.basename(argv[0]) == b"lemond" and str(port).encode() in argv
+    # through the bundled glibc the loader is argv[0] and lemond follows it
+    return any(os.path.basename(a) == b"lemond" for a in argv[:4]) and str(port).encode() in argv
 
 
 def _recorded_pid(port):
@@ -199,7 +243,8 @@ def diagnose(directory, tail):
     if re.search(r"GLIBC(XX)?_[\d.]+['`]? not found|version `GLIBC", text):
         hints.append("This version of Linux is too old for the built-in Lemonade, which needs glibc 2.38 or newer "
                      "(for example Ubuntu 24.04, Fedora 39 or Debian 13). You can still connect Shoggoth to a Lemonade you install yourself.")
-    code, out = util.run(["ldd", os.path.join(directory, "lemond")], 10)
+    exe = os.path.join(directory, "lemond")
+    code, out = util.run(["ldd", exe], 10) if len(_launcher(exe)) == 1 else (1, "")
     missing = re.findall(r"^\s*(\S+) => not found", out, re.M)
     if missing:
         hints.append("Lemonade needs system libraries that aren't installed: " + ", ".join(missing) +
@@ -220,6 +265,10 @@ def start(settings):
         if running():
             return True
         _state.update(state="starting", error=None, proc=None, adopted=False)
+        g = _glibc()
+        if g and g < NEEDS_GLIBC and not _glibc_dir():    # known up front: a calm notice, not a crash
+            _state.update(state="unsupported", error=too_old_message(), tail=[])
+            return False
         prog = choose(settings)
         if not prog:
             return _fail("This copy of Shoggoth doesn't include Lemonade. Use “Download Lemonade” on the Setup page, or connect to a Lemonade you already run.")
@@ -245,7 +294,7 @@ def start(settings):
         logf = open(log_path(), "wb")
         env = dict(os.environ, LEMONADE_API_KEY=key)
         try:
-            proc = subprocess.Popen([exe, data, "--port", str(port), "--no-broadcast"], cwd=data, env=env,
+            proc = subprocess.Popen(_launcher(exe) + [data, "--port", str(port), "--no-broadcast"], cwd=data, env=env,
                                     stdout=logf, stderr=subprocess.STDOUT, start_new_session=True)
         except OSError as e:
             return _fail(f"Couldn't start Lemonade: {e}")
@@ -282,6 +331,20 @@ def _connected(settings, port, key):
     except Exception:  # noqa: BLE001 - a models-folder problem must not stop the engine from being usable
         pass
     return True
+
+
+def _glibc():
+    """The system's glibc as a (major, minor) tuple, or None when it can't be told (musl, non-Linux)."""
+    try:
+        m = re.match(r"(\d+)\.(\d+)", os.confstr("CS_GNU_LIBC_VERSION").split()[-1])
+        return (int(m.group(1)), int(m.group(2))) if m else None
+    except (AttributeError, OSError, ValueError, IndexError):
+        return None
+
+
+def too_old_message():
+    return ("The built-in Lemonade needs glibc 2.38 or newer (for example Ubuntu 24.04, Fedora 39 or Debian 13), "
+            "and this version of Linux is older. You can still connect Shoggoth to a Lemonade you install yourself.")
 
 
 def _fail(message, tail=None):

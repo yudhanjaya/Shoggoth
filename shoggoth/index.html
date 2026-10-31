@@ -1807,7 +1807,7 @@ async function loadModels(){
 function renderStatus(){
   const anyLoaded = S.loaded || (S.ms && S.ms.loaded) || null, up = S.up || !!anyLoaded;   // a model Strata runs counts even when Lemonade is off
   const eng = SU.st && SU.st.mode === "builtin" ? SU.st.engine : null;
-  S.engNote = up ? "" : eng ? (eng.state === "error" ? "The part that runs AI couldn't start. See Advanced > Engines." : "The part that runs AI is getting ready…") : "The part that runs AI isn't running.";
+  S.engNote = up ? "" : eng ? (eng.state === "unsupported" ? "Shoggoth's own engine needs a newer Linux. See Advanced > Engines." : eng.state === "error" ? "The part that runs AI couldn't start. See Advanced > Engines." : "The part that runs AI is getting ready…") : "The part that runs AI isn't running.";
   // Live speed: exact for Shoggoth's own chat, approximate (~) for other apps using the Server. It sits in the model bar.
   let sp = "";
   if(S.live && S.live.tFirst && S.live.tps) sp = fmtRate(S.live.tps) + " tok/s";
@@ -3141,7 +3141,8 @@ function wRows(){
     h = u.state === "error" ? {s: "problem", t: "Couldn't get the part that runs AI", x: u.error, a: [["Try again", "engine-update", true]]}
       : dl ? {s: "working", t: "Getting the part that runs AI", x: `Downloading… ${pct}%`, pct}
       : {s: go ? "working" : "waiting", t: "Getting the part that runs AI", x: "A small download, about 7 MB. Shoggoth keeps it up to date."};
-  }else if(eng.state === "error") h = {s: "problem", t: "The part that runs AI didn't start", x: eng.error, a: [["Try again", "engine-restart", true]]};
+  }else if(eng.state === "unsupported") h = {s: "waiting", t: "Shoggoth's own engine needs a newer Linux", x: eng.error, a: [["Use a Lemonade I already run", "mode-existing-pick", true]]};
+  else if(eng.state === "error") h = {s: "problem", t: "The part that runs AI didn't start", x: eng.error, a: [["Try again", "engine-restart", true]]};
   else h = st.lemonade.reachable ? {s: "done", t: "The part that runs AI is ready", x: ""} : {s: "working", t: "Starting the part that runs AI", x: "A few seconds."};
   rows.push(h);
   // 3. fitted to the graphics card
@@ -3237,7 +3238,7 @@ function engineStep(){
   const st = SU.st, eng = st.engine, b = SU.busy, mode = st.mode;
   const verLabel = eng.active ? `${eng.active.version} <span class="faint">(${eng.active.source === "bundled" ? "came with Shoggoth" : "downloaded update"})</span>` : "";
   const bi = mode === "builtin";
-  let chip = bi ? (eng.state === "error" ? `<span class="chip" style="color:var(--bad)">Needs attention</span>` : eng.running && st.lemonade.reachable ? `<span class="chip ok">Running</span>` : `<span class="chip lem">Starting…</span>`)
+  let chip = bi ? (eng.state === "unsupported" ? `<span class="chip">Needs newer Linux</span>` : eng.state === "error" ? `<span class="chip" style="color:var(--bad)">Needs attention</span>` : eng.running && st.lemonade.reachable ? `<span class="chip ok">Running</span>` : `<span class="chip lem">Starting…</span>`)
                 : (st.lemonade.reachable ? `<span class="chip ok">Connected</span>` : `<span class="chip" style="color:var(--bad)">Not reachable</span>`);
   const built = `<div class="choice" role="radio" aria-checked="${bi}" tabindex="0" data-act="mode-builtin">
       <div class="ct"><span class="rad"></span>Built-in Lemonade ${eng.bundled ? '<span class="chip lem">Recommended</span>' : ""}</div>
@@ -3256,7 +3257,8 @@ function engineStep(){
   if(bi){
     const u = eng.update, chk = SU.check;
     let status;
-    if(eng.state === "error") status = `<div class="line"><span class="stat-dot bad"></span><span class="grow"><b>Lemonade couldn't start.</b></span></div><div class="note-bad">${esc(eng.error)}</div>${eng.log_tail.length ? `<pre class="tail">${esc(eng.log_tail.join("\n"))}</pre>` : ""}<div class="line"><button class="btn" data-act="engine-restart">Try again</button><button class="btn" data-act="mode-existing-pick">Use a Lemonade I already run</button></div>`;
+    if(eng.state === "unsupported") status = `<div class="line"><span class="stat-dot"></span><span class="grow"><b>The built-in Lemonade can't run on this Linux.</b></span></div><p class="note">${esc(eng.error)}</p><div class="line"><button class="btn" data-act="mode-existing-pick">Use a Lemonade I already run</button></div>`;
+    else if(eng.state === "error") status = `<div class="line"><span class="stat-dot bad"></span><span class="grow"><b>Lemonade couldn't start.</b></span></div><div class="note-bad">${esc(eng.error)}</div>${eng.log_tail.length ? `<pre class="tail">${esc(eng.log_tail.join("\n"))}</pre>` : ""}<div class="line"><button class="btn" data-act="engine-restart">Try again</button><button class="btn" data-act="mode-existing-pick">Use a Lemonade I already run</button></div>`;
     else status = `<div class="line"><span class="stat-dot ${eng.running && st.lemonade.reachable ? "ok" : "busy"}"></span><span class="grow">${eng.running && st.lemonade.reachable ? `Running privately on port ${eng.port}` : "Starting Lemonade…"}</span>${b.restart ? "" : `<button class="btn" data-act="engine-restart">Restart</button>`}</div>`;
     let upd = "";
     if(["downloading", "verifying", "installing"].includes(u.state)){
@@ -3456,7 +3458,7 @@ $("#prefs").addEventListener("change", async e => {
 });
 $("#prefs").addEventListener("keydown", e => { if((e.key === "Enter" || e.key === " ") && e.target.matches(".choice[data-act]")){ e.preventDefault(); e.target.click(); } });
 async function waitLemonade(){
-  for(let i = 0; i < 60; i++){ await refreshSetup(true); if(SU.st.lemonade.reachable && (SU.st.mode !== "builtin" || SU.st.engine.running)) break; if(SU.st.engine.state === "error") break; await new Promise(r => setTimeout(r, 1000)); }
+  for(let i = 0; i < 60; i++){ await refreshSetup(true); if(SU.st.lemonade.reachable && (SU.st.mode !== "builtin" || SU.st.engine.running)) break; if(["error", "unsupported"].includes(SU.st.engine.state)) break; await new Promise(r => setTimeout(r, 1000)); }
   await pollServer(); await loadModels(); try{ S.bk = (await api("/ui/backends")).recipes; }catch{} renderStatus();
 }
 setInterval(() => { if(!document.hidden && SU.up && SU.up.state === "working") refreshUpdate(); }, 1500);
