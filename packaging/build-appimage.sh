@@ -23,7 +23,7 @@ $UB/g/glibc/libc6_2.39-0ubuntu8.9_amd64.deb ff5557d99b51f761c4b7c92368b9cc45565e
 $UB/g/gcc-14/libstdc++6_14.2.0-4ubuntu2~24.04.1_amd64.deb a51f8de7829211db961a31f02158058ad1a95f92ac6d0a5dff6350e2821c54c0
 $UB/g/gcc-14/libgcc-s1_14.2.0-4ubuntu2~24.04.1_amd64.deb aa7fadbe33b78bcf99885318040601c550c208929565b179891d9a3cc2aa68cd
 $UB/o/openssl/libssl3t64_3.0.13-0ubuntu3.16_amd64.deb 219f43b1cd836a4da550938db5fda93160d269d39a4edcf1f1ce698a470db797
-$UB/libz/zstd/libzstd1_1.5.5+dfsg2-2build1.1_amd64.deb dfcf25061e07aad7efd3f4f880ba5ad4d4d09ebe7fc8cc77ab6b8a161d6d4727
+$UB/libz/libzstd/libzstd1_1.5.5+dfsg2-2build1.1_amd64.deb dfcf25061e07aad7efd3f4f880ba5ad4d4d09ebe7fc8cc77ab6b8a161d6d4727
 $UB/z/zlib/zlib1g_1.3.dfsg-3.1ubuntu2.3_amd64.deb 376249c8de139568221dbb242318cc8cb8f02299e3a62b7432948e1754fbddf9
 $UB/libd/libdrm/libdrm2_2.4.125-1ubuntu0.1~24.04.2_amd64.deb 4d3e858dd57be617c49d87c5ddcdb35df744a4f0a559981256ae2ba174718584
 $UB/libd/libdrm/libdrm-amdgpu1_2.4.125-1ubuntu0.1~24.04.2_amd64.deb aa29b7898bae596bf07e55ba178cf8d5ea698fe83688e1b34520d86010251a7a
@@ -61,7 +61,7 @@ fetch "$PY_URL"  "$PY_SHA"  "$CACHE/python.tar.gz"
 fetch "$AIT_URL" "$AIT_SHA" "$CACHE/appimagetool"
 fetch "$LEM_URL" "$LEM_SHA" "$CACHE/lemonade.tar.gz"
 chmod +x "$CACHE/appimagetool"
-echo "$GLIBC_DEBS" | while read -r url sha; do [ -n "$url" ] && fetch "$url" "$sha" "$CACHE/$(basename "$url")"; done
+echo "$GLIBC_DEBS" | while read -r url sha; do if [ -n "$url" ]; then fetch "$url" "$sha" "$CACHE/$(basename "$url")"; fi; done
 
 rm -rf "$APPDIR"
 mkdir -p "$APPDIR/usr/python" "$APPDIR/usr/share/shoggoth/pi" "$APPDIR/usr/lemonade" "$APPDIR/usr/node/bin" \
@@ -95,9 +95,8 @@ rm -rf "$LEMTMP"
 chmod +x "$APPDIR/usr/lemonade/lemond"
 # The glibc and the libraries Lemonade links against, flat in one folder: the loader is pointed at it (see engine.py).
 GL="$APPDIR/usr/glibc"; GLTMP="$(mktemp -d)"; mkdir -p "$GL"
-echo "$GLIBC_DEBS" | while read -r url sha; do [ -n "$url" ] && dpkg-deb -x "$CACHE/$(basename "$url")" "$GLTMP"; done
+echo "$GLIBC_DEBS" | while read -r url sha; do if [ -n "$url" ]; then dpkg-deb -x "$CACHE/$(basename "$url")" "$GLTMP"; fi; done
 cp -a "$GLTMP"/usr/lib/x86_64-linux-gnu/*.so* "$GLTMP"/lib/x86_64-linux-gnu/*.so* "$GL/" 2>/dev/null || true
-cp -a "$GLTMP"/usr/lib64/ld-linux-x86-64.so.2 "$GLTMP"/lib64/ld-linux-x86-64.so.2 "$GL/" 2>/dev/null || true
 rm -rf "$GLTMP"
 [ -e "$GL/ld-linux-x86-64.so.2" ] && [ -e "$GL/libc.so.6" ] || { echo "glibc is missing from the image" >&2; exit 1; }
 cp packaging/AppRun packaging/shoggoth.desktop packaging/shoggoth.png "$APPDIR/"
