@@ -51,7 +51,7 @@ import websearch   # noqa: E402
 import zestup      # noqa: E402
 from util import cached, invalidate, run   # noqa: E402
 
-VERSION = "4.2.0"
+VERSION = "4.2.1"
 _last_ping = {"t": None}
 FORCED = {"addr": None}           # set by --lemonade: use exactly that server and skip the setup screen
 LOOPBACK_ONLY = {"on": True}
