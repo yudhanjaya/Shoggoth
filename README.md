@@ -1,7 +1,6 @@
-> [!WARNING]
-> Shoggoth is being tested and updated, more updates incoming this week. Please wait until this version is out of beta. Any issues you notice - if you're up for testing - are welcome!
-
 <h1 align="center"><img src="docs/readme/banner.png" alt="Shoggoth: run AI models on your own computer, and put them to work" width="100%"></h1>
+
+<p align="center"><img src="docs/readme/badge.png" alt="v 4.2: Hitchhiker’s Edition" width="380"></p>
 
 [![Release](https://img.shields.io/github/v/release/yudhanjaya/Shoggoth)](https://github.com/yudhanjaya/Shoggoth/releases)
 [![Downloads](https://img.shields.io/github/downloads/yudhanjaya/Shoggoth/total.svg)](https://github.com/yudhanjaya/Shoggoth/releases)
