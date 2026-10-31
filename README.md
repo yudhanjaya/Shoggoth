@@ -13,7 +13,7 @@
 
 **Run AI models on your own computer and put them to work, with one download.**
 
-Shoggoth is an app for running open-weights language models on your own hardware. You don't need technical know-how. You can chat, draw diagrams, write documents, or let a model read and change the files in a folder while you watch.
+Shoggoth is an app for running open-weights language models on your own hardware. You don't need technical know-how. You can chat, draw diagrams, write documents, or let a model read and change the files in a folder while you watch. (Shoggoth used to be called Zest).
 
 Under the hood, Shoggoth drives three open-source programs:
 
@@ -21,9 +21,14 @@ Under the hood, Shoggoth drives three open-source programs:
 - [Strata](https://github.com/Niko1221/Strata) runs very large ones.
 - [Pi](https://pi.dev) lets a model read files, edit them and run commands.
 
-You never choose an engine. Shoggoth starts the right one for the model you pick. The AppImage includes Lemonade and Pi, and sets up Strata the first time you want a large model. Shoggoth runs on Linux only, for now.
+You don't have to choose model servers and so on. Shoggoth starts the right one for the model you pick. The AppImage includes Lemonade and Pi, and sets up Strata the first time you want a large model. Shoggoth runs on Linux only, for now.
 
-Shoggoth used to be called Zest. It draws every model as a many-eyed creature in a glass tube, wired to a bench of lab equipment. A model's name decides its shape and colour, and the bigger the model, the bigger the creature, with more eyes and more hands. You can turn them off.
+## Why the name?
+
+Because the large language models we run are, effectively, shoggoths: 
+<img width="1357" height="758" alt="image" src="https://github.com/user-attachments/assets/9d30246f-b926-4e1a-a035-3e43bfb1b242" />
+indescribable alien intelligences that deal in madness and inhumane logic. See: (https://en.wikipedia.org/wiki/Shoggoth).
+And because I love it. Shoggoth draws every model as a many-eyed creature in a glass tube, wired to a bench of lab equipment. A model's name decides its shape and colour, and the bigger the model, the bigger the creature, with more eyes and more hands. You can turn them off.
 
 ![Shoggoth working in a folder: the model's answer after it fixed a bug, with the model in its tube at the top](docs/screenshots/chat.png)
 
