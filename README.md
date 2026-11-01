@@ -122,11 +122,13 @@ Everything stays on your computer. Chats, jobs, skills and settings live in `~/.
 
 | | |
 | --- | --- |
-| [Docs (in the app, too)](shoggoth/docs.md) | Everything in plain language: chatting, jobs, models, tuning, skills, troubleshooting. |
-| [Chats and jobs](docs/COWORK.md) | How working in a folder and background jobs behave. |
-| [Add an engine](docs/ENGINES.md) | Write a `provider.yaml` in ten minutes. |
-| [Privacy and data](docs/PRIVACY.md) | Where things are kept, and every service Shoggoth contacts. |
-| [Developing Shoggoth](docs/DEVELOPING.md) | Run from source, security model, how it works, build the AppImage. |
+| [User guide](shoggoth/docs.md) | The in-app guide: chat, jobs, models, tuning, skills, troubleshooting. |
+| [Architecture](docs/ARCHITECTURE.md) | Components, request flow, engine integration, platform support. |
+| [Agent runtime](docs/AGENT-RUNTIME.md) | Pi integration, approval gate, jobs, work copies, skills. |
+| [Engines](docs/ENGINES.md) | Add an engine with a `provider.yaml`. |
+| [Security model](docs/SECURITY.md) | Authentication, network exposure, and the limits of the approval gate. |
+| [Privacy and data](docs/PRIVACY.md) | On-disk layout and every network destination. |
+| [Development](docs/DEVELOPMENT.md) | Run from source, test, build, release. |
 
 Linux with NVIDIA GPUs is what's tested so far. Vulkan and ROCm paths follow Lemonade's own data but haven't run on real hardware yet, and reports are welcome as [issues](https://github.com/yudhanjaya/Shoggoth/issues).
 

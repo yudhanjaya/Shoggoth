@@ -242,7 +242,7 @@ Shoggoth goes online only to: download models you ask for, check for Shoggoth, e
 
 **A diagram did not draw.** Press **Ask the model to fix it**. If it still fails, ask for a simpler diagram with fewer boxes.
 
-**"The Pi agent isn't installed."** This only happens when running Shoggoth from source rather than the AppImage. [docs/DEVELOPING.md](https://github.com/yudhanjaya/Shoggoth/blob/main/docs/DEVELOPING.md) explains how to add it.
+**"The Pi agent isn't installed."** This only happens when running Shoggoth from source rather than the AppImage. [docs/DEVELOPMENT.md](https://github.com/yudhanjaya/Shoggoth/blob/main/docs/DEVELOPMENT.md) explains how to add it.
 
 **Something else is off.** **Advanced**, then **Server**, shows the activity log at the bottom. **Help**, then **Restart the helper** restarts the engine Shoggoth started.
 

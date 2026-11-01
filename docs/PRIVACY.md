@@ -1,8 +1,8 @@
-# Your data and privacy
+# Privacy and data
 
-Moved from the README. The short version is in the [README](../README.md#your-data-and-privacy); the Docs tab in the app has a plain-language version.
+Shoggoth runs inference locally. Chat content is not sent to any remote service. The only exception is web search, which requires per-query approval. This document lists what is stored, where, and every network destination Shoggoth or its bundled engines may contact.
 
-## Where Shoggoth keeps things
+## Data locations
 
 | What | Where |
 | --- | --- |
@@ -18,15 +18,15 @@ Moved from the README. The short version is in the [README](../README.md#your-da
 | Chat conversations, jobs, their transcripts, the folders Shoggoth has worked in (and the commands you always allow there), work copies of folders awaiting review, and Pi's configuration (rewritten at each start) | `~/.local/share/shoggoth/cowork/` |
 | Display preferences | your browser's local storage |
 
-Shoggoth respects `XDG_CONFIG_HOME` and `XDG_DATA_HOME`.
+`XDG_CONFIG_HOME` and `XDG_DATA_HOME` are honored.
 
-**Coming from Zest?** The first time Shoggoth starts, it moves `~/.config/zest` and `~/.local/share/zest` to the names above. It keeps everything in them: chats, skills, settings and keys. Apps that use a `zest-` key keep working, and Shoggoth still reads old `ZEST_*` environment variables.
+**Migration from Zest.** On first start, Shoggoth moves `~/.config/zest` and `~/.local/share/zest` to the paths above, preserving chats, skills, settings, and keys. Clients using a `zest-` key continue to work, and legacy `ZEST_*` environment variables are still read.
 
-To start from scratch, delete `~/.config/shoggoth` and `~/.local/share/shoggoth`. Downloaded models are not in there, unless you chose a folder inside them.
+To reset, delete `~/.config/shoggoth` and `~/.local/share/shoggoth`. Downloaded models are stored elsewhere unless the chosen models folder is inside those paths.
 
-## Privacy
+## Network behavior
 
-Nothing you type into a chat leaves your computer, with one exception you control: web search.
+Chat content stays on the machine. The single exception is web search.
 
 - The model has a web search tool. Every search asks first and shows the exact words it wants to search for. Those words, and only those, go to the search provider.
 - You can switch web search off for good in the chat's **Details** panel.
@@ -34,7 +34,7 @@ Nothing you type into a chat leaves your computer, with one exception you contro
 
 Apart from search, a chat with a folder runs locally. Pi starts offline, with telemetry and update checks off, and talks only to your Lemonade. If you add your own extensions, MCP servers or web tools to Pi, those can reach the network.
 
-Shoggoth and Lemonade contact these services:
+Destinations contacted by Shoggoth and the bundled engines:
 
 - **html.duckduckgo.com, api.search.brave.com or api.tavily.com:** only when you let the model search the web, and only with the words of that search.
 - **codeload.github.com:** only when you paste a link under Skills, to download that repository's skills.
