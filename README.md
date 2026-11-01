@@ -99,8 +99,9 @@ Fifteen themes, from the calm cream default to Braun T3, Teenage Engineering, Mo
 
 Because the large language models we run are, effectively, shoggoths:
 <img width="1357" height="758" alt="image" src="https://github.com/user-attachments/assets/9d30246f-b926-4e1a-a035-3e43bfb1b242" />
-<sub>The Shoggoth with a smiley face: [Know Your Meme](https://knowyourmeme.com/sensitive/memes/shoggoth-with-smiley-face-artificial-intelligence)</sub>
-indescribable alien intelligences that deal in madness and inhumane logic. See: (https://en.wikipedia.org/wiki/Shoggoth).
+<sub>Source: [Know Your Meme](https://knowyourmeme.com/sensitive/memes/shoggoth-with-smiley-face-artificial-intelligence)</sub>
+
+indescribable alien intelligences that deal in madness and inhumane logics. See also: (https://en.wikipedia.org/wiki/Shoggoth) and (https://www.stilldrinking.org/programming-sucks) for why what we're doing is insane.
 
 And because I love it. (Shoggoth used to be called Zest.)
 
@@ -137,6 +138,7 @@ Linux with NVIDIA GPUs is what's tested so far. Vulkan and ROCm paths follow Lem
 - **[Pi](https://github.com/earendil-works/pi)** (MIT), bundled unmodified in the AppImage. Its licence is included alongside it.
 - **[Lemonade](https://github.com/lemonade-sdk/lemonade)** (Apache-2.0), bundled unmodified in the AppImage. Its licence is included alongside it.
 - **[llama.cpp](https://github.com/ggml-org/llama.cpp)** (MIT) and the other backends, which Lemonade downloads when you install them.
+- **[Strata](https://github.com/Niko1221/Strata)** (MIT) which does some ingenious stuff to make larger models work on consumer hardware.
 - **[Chakra Petch](https://github.com/m4rc1e/Chakra-Petch), [Doto](https://github.com/oliverlalan/Doto), [Inter](https://rsms.me/inter/) and [JetBrains Mono](https://www.jetbrains.com/lp/mono/)** (SIL Open Font License), embedded in the page. Their licences are in `docs/plans/assets/fonts` and ship in the AppImage.
 - **[Python](https://www.python.org)** (PSF licence), via a relocatable build from [python-build-standalone](https://github.com/astral-sh/python-build-standalone), bundled so the AppImage needs no system Python.
 
