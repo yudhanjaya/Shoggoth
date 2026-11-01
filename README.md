@@ -23,7 +23,6 @@
 ## What you get
 
 | | |
-| --- | --- |
 | **Private by default** | Chats run on your computer. The one exception is web search, and the model asks before every search. |
 | **It works on your files** | Choose a folder. The model reads, searches, edits and runs things there while you watch, and asks before it changes anything. |
 | **Bigger jobs, in the background** | Describe the work and how to tell it is done, such as a passing test. The job runs round after round. You review its changes before they touch your folder. |
