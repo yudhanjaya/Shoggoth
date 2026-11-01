@@ -1,8 +1,13 @@
 # Add an engine in ten minutes
 
-An **engine** is a program that loads a model and answers questions with it. Shoggoth ships with two ([Lemonade](https://lemonade-server.ai) for small and medium models, [Strata](https://github.com/Niko1221/Strata) for very large ones), and you can add your own. An engine is **one folder with one YAML file**. You do not touch Shoggoth's code.
+An **engine** is a program that loads a model and serves inference. Shoggoth bundles two: [Lemonade](https://lemonade-server.ai) for small and medium models, and [Strata](https://github.com/Niko1221/Strata) for very large ones. Additional engines are defined by **one folder containing one YAML file**, with no change to Shoggoth's source.
 
-Shoggoth does the rest for any engine you add: it shows it under **Advanced > Engines**, finds it if it is already running, starts it when you pick one of its models, frees the memory of whatever else was running first, stops it after it has been idle, and lists its models in the **Library** next to everyone else's.
+For any registered engine, Shoggoth:
+
+- lists it under **Advanced > Engines** and detects an instance that is already running;
+- starts it when one of its models is selected, after freeing memory held by conflicting engines;
+- stops it after an idle period; and
+- lists its models in the **Library** alongside those of other engines.
 
 ## Ten minutes, start to finish
 
