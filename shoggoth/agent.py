@@ -291,7 +291,9 @@ def write_config(models, default, ctx=0):
     _write(os.path.join(d, "models.json"), {"providers": providers})
     chosen = router.info(default) or {}
     settings = {"defaultProvider": chosen.get("pi_provider", "lemonade"), "defaultProjectTrust": "never", "quietStartup": True,
-                "enableInstallTelemetry": False, "autoCompaction": True}
+                "enableInstallTelemetry": False, "autoCompaction": True,
+                # Pi's resizer needs photon-node, which the AppImage doesn't ship, and fails every picture without it; the chat box already shrinks them
+                "images": {"autoResize": False}}
     if default:
         settings["defaultModel"] = chosen.get("pi_model", default)
     _write(os.path.join(d, "settings.json"), settings)
