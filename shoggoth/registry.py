@@ -14,12 +14,13 @@ HERE = os.path.dirname(os.path.abspath(__file__))
 sys.path.insert(0, os.path.join(HERE, "_vendor"))       # Shoggoth's Python has no site-packages
 import yaml  # noqa: E402
 
+import expert  # noqa: E402
 import provbase  # noqa: E402
 import store  # noqa: E402
 
 ID_RE = re.compile(r"^[a-z][a-z0-9_-]{1,31}$")
 KNOWN = {"id", "name", "summary", "tier", "api_version", "detect", "install", "update", "run", "endpoint", "models", "memory",
-         "capabilities", "options", "docs"}
+         "capabilities", "options", "docs", "expert"}
 # The settings Shoggoth reads inside each group. Anything else is probably a typo, and is pointed out (never silently ignored).
 SECTIONS = {
     "detect": {"binaries", "ports", "health"},
@@ -274,11 +275,16 @@ class Registry:
         p.approved = True
 
     # -- what the rest of Shoggoth uses
+    def _offered(self, p):
+        """An engine marked `expert: true` is not offered while Expert Mode is off."""
+        return not p.spec.get("expert") or expert.on()
+
     def get(self, pid):
-        return self.providers.get(pid)
+        p = self.providers.get(pid)
+        return p if p and self._offered(p) else None
 
     def all(self):
-        return list(self.providers.values())
+        return [p for p in self.providers.values() if self._offered(p)]
 
     def summary(self):
         out = []

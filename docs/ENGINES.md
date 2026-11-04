@@ -109,3 +109,13 @@ A step an engine can't do raises `NotImplementedError` and Shoggoth shows it as 
 `providers check` covers the file. To test the behaviour, copy the approach in `tests/test_providers.py`: a YAML-only fake engine that starts `tests/fixtures/openai_server.py` (a small OpenAI-style server), `registry.approve(id)`, then `ensure`, `models`, `stop`. Run all tests with `python3 -m unittest discover tests`.
 
 `providers list` shows every engine Shoggoth has loaded and every folder it could not. `providers doctor` asks the engines that are installed and running the questions Shoggoth asks and checks the answers still have the fields Shoggoth reads. An engine written in Python can answer it by defining `selftest()`.
+
+## Maya
+
+`providers/maya/` is bundled and marked `expert: true`, so it is offered only while Expert Mode is on (any provider YAML may say this). Shoggoth does
+not install Maya. It finds a running one (its `/health` names `model_label` or `version` and has no `service` field, which is how it is told from
+Strata), swaps its model with `POST /models/load`, frees memory with `POST /models/unload` (409 while it is answering; 403 when its model
+management is off, which Shoggoth reports and does not work around), and reads `/slots` for activity. A Maya that is not running is started only from a
+launch script the person gives under `POST /ui/providers/maya/launch`; saving it is the approval, and a changed script is not approved. A Maya Shoggoth
+did not start is never signalled. The tests run against `tests/fixtures/fake_maya.py`, written from the plan's description of the API: no recording of
+a real Maya was available, so the contract against a real one is still to be checked on the two-GPU machine.

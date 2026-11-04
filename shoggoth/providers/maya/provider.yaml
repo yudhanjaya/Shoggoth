@@ -1,0 +1,37 @@
+# Maya: a large-model engine that runs one model at a time on the graphics cards, with its own model management.
+# Shoggoth does not install it (Maya installs itself). It finds a running Maya, can ask it to load, swap or unload a model, and can start it
+# from a launch script the person has approved. Shown only with Expert Mode on.
+id: maya
+name: Maya
+summary: Runs one very large model at a time on your graphics cards, with its own model manager.
+tier: large
+api_version: 1
+expert: true
+
+detect:
+  ports: 8080-8089
+  health: {path: /health}
+
+run:
+  mode: managed
+  port_range: 8080-8089
+  ready: {path: /health, timeout: 900}
+
+endpoint:
+  base_url: "http://127.0.0.1:{port}/v1"
+  models: {path: /v1/models, id: "$.data[*].id", context: "$.data[*].meta.n_ctx"}
+
+models:
+  formats: [gguf]
+  download: {mode: provider}
+
+memory:
+  group: gpu
+  exclusive: true
+  idle_stop_minutes: 0
+  start_estimate: {seconds: 90}
+
+capabilities:
+  context: fixed
+  multi_model: false
+  activity: {path: /slots, busy: "$[*].is_processing"}
