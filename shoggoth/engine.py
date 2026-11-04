@@ -15,15 +15,13 @@ import shutil
 import signal
 import socket
 import subprocess
-import tarfile
 import threading
 import time
-import urllib.error
-import urllib.request
 
 import lem
 import ownership
 import store
+import updater
 import util
 
 HERE = os.path.dirname(os.path.abspath(__file__))
@@ -435,14 +433,9 @@ def summary(settings):
 
 # ---------------------------------------------------------------- updates
 def _get_json(url):
-    req = urllib.request.Request(url, headers={"User-Agent": "Shoggoth", "Accept": "application/vnd.github+json"})
-    try:
-        with urllib.request.urlopen(req, timeout=15) as r:
-            return json.load(r)
-    except urllib.error.HTTPError as e:
-        raise RuntimeError(f"GitHub answered {e.code}. If this keeps happening, you may be rate-limited; try again later.")
-    except (urllib.error.URLError, OSError, ValueError) as e:
-        raise RuntimeError(f"Couldn't reach GitHub to look for updates ({getattr(e, 'reason', e)}). Check your internet connection.")
+    return updater.get_json(url, "application/vnd.github+json",
+                            "GitHub answered %s. If this keeps happening, you may be rate-limited; try again later.",
+                            "Couldn't reach GitHub to look for updates (%s). Check your internet connection.")
 
 
 def latest_release():
@@ -475,33 +468,7 @@ def check(settings):
 
 def _safe_extract(tar_path, dest):
     """Unpack a Lemonade tarball: regular files and folders only, nothing that escapes `dest`."""
-    real_dest = os.path.realpath(dest)
-    total = 0
-    with tarfile.open(tar_path, "r:gz") as tf:
-        members = tf.getmembers()
-        top = members[0].name.split("/")[0] if members else ""
-        for m in members:
-            parts = m.name.split("/")
-            if m.name.startswith("/") or ".." in parts:
-                raise RuntimeError("The download contains an unsafe path, so it was rejected.")
-            if not (m.isfile() or m.isdir()):
-                continue                           # skip links and device files
-            rel = "/".join(parts[1:]) if parts[0] == top else m.name
-            if not rel:
-                continue
-            target = os.path.realpath(os.path.join(dest, rel))
-            if not (target == real_dest or target.startswith(real_dest + os.sep)):
-                raise RuntimeError("The download contains an unsafe path, so it was rejected.")
-            if m.isdir():
-                os.makedirs(target, exist_ok=True)
-                continue
-            total += m.size
-            if total > 400 * 1024 * 1024:
-                raise RuntimeError("The download is far larger than expected, so it was rejected.")
-            os.makedirs(os.path.dirname(target), exist_ok=True)
-            with tf.extractfile(m) as src, open(target, "wb") as out:
-                shutil.copyfileobj(src, out)
-            os.chmod(target, 0o755 if os.path.basename(rel) in ("lemond", "lemonade") else 0o644)
+    updater.safe_extract(tar_path, dest, 400 * 1024 * 1024, chmod=lambda rel: 0o755 if os.path.basename(rel) in ("lemond", "lemonade") else 0o644)
 
 
 def _do_update(rel):
@@ -510,20 +477,7 @@ def _do_update(rel):
     tmp_tar = os.path.join(root, f".download-{rel['version']}.tar.gz")
     tmp_dir = os.path.join(root, f".unpack-{rel['version']}")
     try:
-        UPD.update(state="downloading", bytes=0, total=rel["size"], version=rel["version"], error=None)
-        req = urllib.request.Request(rel["url"], headers={"User-Agent": "Shoggoth"})
-        sha = hashlib.sha256()
-        with urllib.request.urlopen(req, timeout=30) as r, open(tmp_tar, "wb") as out:
-            while True:
-                chunk = r.read(65536)
-                if not chunk:
-                    break
-                out.write(chunk)
-                sha.update(chunk)
-                UPD["bytes"] += len(chunk)
-        UPD["state"] = "verifying"
-        if sha.hexdigest() != rel["sha256"]:
-            raise RuntimeError("The download didn't match GitHub's checksum, so it was thrown away. Try again.")
+        updater.download(rel["url"], tmp_tar, rel["sha256"], "GitHub's", UPD, verifying=True)
         UPD["state"] = "installing"
         shutil.rmtree(tmp_dir, ignore_errors=True)
         _safe_extract(tmp_tar, tmp_dir)
@@ -537,10 +491,7 @@ def _do_update(rel):
         final = os.path.join(root, rel["version"])
         shutil.rmtree(final, ignore_errors=True)
         os.replace(tmp_dir, final)
-        # keep the two newest downloaded copies, drop older ones
-        have = sorted((d for d in os.listdir(root) if os.path.isfile(os.path.join(root, d, "lemond"))), key=vkey, reverse=True)
-        for old in have[2:]:
-            shutil.rmtree(os.path.join(root, old), ignore_errors=True)
+        updater.keep_newest(root, lambda d: os.path.isfile(os.path.join(d, "lemond")), vkey)     # the two newest downloaded copies stay
         util.invalidate()
         UPD["state"] = "done"
     except Exception as e:  # noqa: BLE001
@@ -554,13 +505,4 @@ def _do_update(rel):
 
 
 def start_update():
-    if UPD["state"] in ("downloading", "verifying", "installing"):
-        return False
-    try:
-        rel = latest_release()
-    except RuntimeError as e:
-        UPD.update(state="error", error=str(e))
-        return False
-    UPD.update(state="downloading", bytes=0, total=rel["size"], version=rel["version"], error=None)
-    threading.Thread(target=_do_update, args=(rel,), daemon=True).start()
-    return True
+    return updater.begin(UPD, ("downloading", "verifying", "installing"), latest_release, _do_update)

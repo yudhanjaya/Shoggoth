@@ -4,20 +4,16 @@ Looks on the npm registry, downloads the new release, checks it against the chec
 Shoggoth's own data folder next to the copy that came with the AppImage (which is never touched), runs it once to make sure
 it starts and loads Shoggoth's extensions, and only then offers it. Standard library only.
 """
-import base64
-import hashlib
 import json
 import os
 import re
 import shutil
 import subprocess
-import tarfile
 import threading
 import time
-import urllib.error
-import urllib.request
 
 import store
+import updater
 import util
 
 HERE = os.path.dirname(os.path.abspath(__file__))
@@ -106,14 +102,8 @@ def summary(settings=None):
 
 # ---------------------------------------------------------------- looking for a release
 def _get_json(url):
-    req = urllib.request.Request(url, headers={"User-Agent": "Shoggoth", "Accept": "application/json"})
-    try:
-        with urllib.request.urlopen(req, timeout=15) as r:
-            return json.load(r)
-    except urllib.error.HTTPError as e:
-        raise RuntimeError("The npm registry answered %s. Try again later." % e.code)
-    except (urllib.error.URLError, OSError, ValueError) as e:
-        raise RuntimeError("Couldn't reach the npm registry to look for updates (%s). Check your internet connection." % getattr(e, "reason", e))
+    return updater.get_json(url, "application/json", "The npm registry answered %s. Try again later.",
+                            "Couldn't reach the npm registry to look for updates (%s). Check your internet connection.")
 
 
 def _node_version():
@@ -147,52 +137,13 @@ def check(settings=None):
 
 
 # ---------------------------------------------------------------- installing one
-def _sri(path):
-    h = hashlib.sha512()
-    with open(path, "rb") as f:
-        for chunk in iter(lambda: f.read(65536), b""):
-            h.update(chunk)
-    return "sha512-" + base64.b64encode(h.digest()).decode()
-
-
 def _download(url, dest, integrity, progress=False):
-    req = urllib.request.Request(url, headers={"User-Agent": "Shoggoth"})
-    with urllib.request.urlopen(req, timeout=30) as r, open(dest, "wb") as out:
-        if progress:
-            UPD["total"] = int(r.headers.get("Content-Length") or 0)
-        while True:
-            chunk = r.read(65536)
-            if not chunk:
-                break
-            out.write(chunk)
-            if progress:
-                UPD["bytes"] += len(chunk)
-    if _sri(dest) != integrity:
-        raise RuntimeError("The download didn't match npm's checksum, so it was thrown away. Try again.")
+    updater.download(url, dest, integrity, "npm's", UPD if progress else None, total_from_header=True)
 
 
 def _extract(tar_path, dest, only=None):
     """Unpack an npm tarball (its files sit under `package/`): regular files only, nothing that escapes `dest`."""
-    real, total = os.path.realpath(dest), 0
-    with tarfile.open(tar_path, "r:gz") as tf:
-        for m in tf:
-            parts = m.name.split("/")
-            if m.name.startswith("/") or ".." in parts:
-                raise RuntimeError("The download contains an unsafe path, so it was rejected.")
-            if not m.isfile() or parts[0] != "package":
-                continue
-            rel = "/".join(parts[1:])
-            if only and not any(rel == o or rel.startswith(o + "/") for o in only):
-                continue
-            target = os.path.realpath(os.path.join(dest, rel))
-            if not target.startswith(real + os.sep):
-                raise RuntimeError("The download contains an unsafe path, so it was rejected.")
-            total += m.size
-            if total > MAX_UNPACKED:
-                raise RuntimeError("The download is far larger than expected, so it was rejected.")
-            os.makedirs(os.path.dirname(target), exist_ok=True)
-            with tf.extractfile(m) as src, open(target, "wb") as out:
-                shutil.copyfileobj(src, out)
+    updater.safe_extract(tar_path, dest, MAX_UNPACKED, top="package", only=only, dirs=False)
 
 
 def _smoke_test(directory, version):
@@ -261,9 +212,7 @@ def _do_update(rel):
         final = os.path.join(root(), ver)
         shutil.rmtree(final, ignore_errors=True)
         os.replace(tmp, final)
-        have_dirs = sorted((d for d in os.listdir(root()) if os.path.isfile(os.path.join(root(), d, "dist", "bundle", "cli.js"))), key=vkey, reverse=True)
-        for old in have_dirs[2:]:
-            shutil.rmtree(os.path.join(root(), old), ignore_errors=True)
+        updater.keep_newest(root(), lambda d: os.path.isfile(os.path.join(d, "dist", "bundle", "cli.js")), vkey)
         util.invalidate()
         UPD["state"] = "done"
         for fn in on_installed:
@@ -288,14 +237,7 @@ def start_update():
     if not node_bin():
         UPD.update(state="error", error="Pi needs Node.js to run, and none was found. The Shoggoth AppImage includes it.")
         return False
-    try:
-        rel = latest_release()
-    except RuntimeError as e:
-        UPD.update(state="error", error=str(e))
-        return False
-    UPD.update(state="downloading", bytes=0, total=0, version=rel["version"], error=None)
-    threading.Thread(target=_do_update, args=(rel,), daemon=True).start()
-    return True
+    return updater.begin(UPD, ("downloading", "installing"), latest_release, _do_update, total_of=lambda rel: 0)
 
 
 def use(version):

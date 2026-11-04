@@ -4,20 +4,19 @@ Shoggoth ships as an AppImage, so an update is a new AppImage: download it from 
 against the checksum GitHub publishes, and save it next to the running one (which is never touched). Restarting hands
 over to the new file. Standard library only.
 """
-import hashlib
 import json
 import os
 import re
 import subprocess
 import threading
 import time
-import urllib.error
 import urllib.request
 
 import engine
 import piup
 import store
 import strata
+import updater
 
 REPO = "yudhanjaya/Shoggoth"
 UPD = {"state": "idle", "bytes": 0, "total": 0, "version": None, "error": None, "path": None}
@@ -81,19 +80,7 @@ def _do_update(rel):
     tmp = dest + ".part"
     try:
         UPD.update(state="downloading", bytes=0, total=rel["size"], version=rel["version"], error=None, path=None)
-        sha = hashlib.sha256()
-        req = urllib.request.Request(rel["url"], headers={"User-Agent": "Shoggoth"})
-        with urllib.request.urlopen(req, timeout=30) as r, open(tmp, "wb") as out:
-            while True:
-                chunk = r.read(262144)
-                if not chunk:
-                    break
-                out.write(chunk)
-                sha.update(chunk)
-                UPD["bytes"] += len(chunk)
-        UPD["state"] = "verifying"
-        if sha.hexdigest() != rel["sha256"]:
-            raise RuntimeError("The download didn't match GitHub's checksum, so it was thrown away. Try again.")
+        updater.download(rel["url"], tmp, rel["sha256"], "GitHub's", UPD, chunk=262144, verifying=True)
         os.chmod(tmp, 0o755)
         os.replace(tmp, dest)
         UPD.update(state="done", path=dest)
