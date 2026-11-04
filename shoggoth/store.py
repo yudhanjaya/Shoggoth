@@ -23,6 +23,8 @@ DEFAULTS = {
     "gateway": {"enabled": True, "port": 13308, "api_key": "", "lan": False, "capture": False},
     # Each model family's creature on this computer: {lineage: [form, tone]}, given once and never changed.
     "creatures": {},
+    # Expert Mode (Advanced): off by default. Gates the engine-control features; see expert.py.
+    "expert": {"on": False},
 }
 _lock = threading.RLock()
 

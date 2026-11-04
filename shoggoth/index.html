@@ -1733,7 +1733,7 @@ function show(v){
   if(v === "server") srvShow();
   if(v === "server" && pendingLogScroll){ pendingLogScroll = false; setTimeout(() => $("#srvlog").scrollIntoView({block:"start"}), 1200); }
   if(v === "help") renderHelp();
-  if(v === "advanced") renderAdvanced();
+  if(v === "advanced"){ renderAdvanced(); expertLoad(); }
   if(v === "themes") renderThemes();
   hdrPaint();
 }
@@ -3640,11 +3640,24 @@ const ADV_CARDS = [
   ["tuning", "Tuning", "Make a model run faster on this computer. Shoggoth measures the settings and keeps only what clearly helps."],
   ["themes", "Themes", "Change how Shoggoth looks. Light Touch is the default; there are fifteen to try."]
 ];
+const EXPERT = {on: false};
+async function expertLoad(){ try{ EXPERT.on = !!(await api("/ui/expert")).on; }catch{} if(S.view === "advanced") renderAdvanced(); }
 function renderAdvanced(){
   $("#advhub").innerHTML = `<p class="lede">The tools for people who like to look under the bonnet. You never need these to chat.</p>
-    <div class="advgrid">${ADV_CARDS.map(([k, t, d]) => `<button type="button" class="advcard" data-view2="${k}"><b>${t}</b><span>${d}</span></button>`).join("")}</div>`;
+    <div class="advgrid">${ADV_CARDS.map(([k, t, d]) => `<button type="button" class="advcard" data-view2="${k}"><b>${t}</b><span>${d}</span></button>`).join("")}</div>
+    <section class="panel" style="margin-top:24px"><h3>Expert mode</h3>
+      <p class="help" style="margin:0">Unlocks the controls for people who run several engines and graphics cards. While it is off, Shoggoth behaves as it always has. Turning it off again keeps your settings; they just stop applying.</p>
+      <div class="line"><label class="chk"><input type="checkbox" id="expertsw" ${EXPERT.on ? "checked" : ""}> Expert mode</label></div></section>`;
 }
 $("#advhub").addEventListener("click", e => { const c = e.target.closest("[data-view2]"); if(c) show(c.dataset.view2); });
+$("#advhub").addEventListener("change", async e => {
+  if(e.target.id !== "expertsw") return;
+  const want = e.target.checked;
+  if(want && !confirm("Turn on expert mode?\n\nShoggoth will be able to free, start and stop the engines you run (with your consent each time). Nothing changes until you use one of the new controls.")){ e.target.checked = false; return; }
+  try{ EXPERT.on = !!(await api("/ui/expert", {method: "POST", body: JSON.stringify({on: want})})).on; toast(EXPERT.on ? "Expert mode is on." : "Expert mode is off."); }
+  catch(err){ toast(err.message); EXPERT.on = !want; }
+  renderAdvanced();
+});
 
 /* ======================= tuning ======================= */
 const TN = {d: null, plan: null, sel: null, opts: {mode: "quick", use: "chat", goal: "speed"}, msg: "", timer: null};

@@ -61,6 +61,16 @@ class Door(unittest.TestCase):
         for old in ("/ui/backends", "/ui/engine/update", "/ui/args/schema", "/ui/config"):
             self.assertEqual(self.call("GET", old, auth)[0], 404, old)
 
+    def test_every_handler_the_post_table_names_exists(self):
+        import re
+        src = open(server.__file__).read()
+        named = set(re.findall(r"self\.((?:post|get)_[a-z_]+)", src))
+        self.assertEqual(sorted(n for n in named if not hasattr(server.Handler, n)), [])
+
+    def test_a_plain_post_reaches_its_handler(self):
+        auth = {"Authorization": "Bearer " + uiauth.token()}
+        self.assertEqual(self.call("POST", "/ui/setup/done", auth, '{"done": false}')[0], 200)
+
     def test_the_version_is_public_so_a_second_launch_can_find_this_zest(self):
         status, _, body = self.call("GET", "/ui/ping")
         self.assertEqual(status, 200)

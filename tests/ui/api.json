@@ -5630,5 +5630,8 @@
    "models": "/zest/recommendations/models.yaml",
    "tools": "/zest/recommendations/tools.yaml"
   }
+ },
+ "/ui/expert": {
+  "on": false
  }
 }
