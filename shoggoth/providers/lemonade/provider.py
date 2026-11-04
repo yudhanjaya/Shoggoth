@@ -83,6 +83,13 @@ class Provider(provbase.GenericProvider):
             self._mine(drop=model_id, clear=not model_id)
         return status == 200, "" if status == 200 else lem.error_text(payload, "Lemonade couldn't free the model.")
 
+    def release(self):
+        """Unload every model and leave Lemonade running (POST /v1/unload). Nobody is signalled."""
+        status, payload = lem.request("POST", "/v1/unload", {}, timeout=60)
+        if status == 200:
+            self._mine(clear=True)
+        return status == 200, "" if status == 200 else lem.error_text(payload, "Lemonade couldn't free the models.")
+
     def make_way(self):
         """Free memory for another engine. A Lemonade Shoggoth runs is Shoggoth's to empty. In one the person runs (a system service, say), Shoggoth only
         unloads the models it loaded there itself; one another program loaded is theirs, and is reported instead."""

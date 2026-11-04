@@ -41,6 +41,10 @@ class Provider(provbase.GenericProvider):
             return False, "Shoggoth didn't start Strata, so it leaves it running."
         return strata.stop(r["url"])
 
+    def release(self):
+        """`strata launch --stop`, which works on any instance `strata launch` manages, ours or not. One it didn't launch is refused with the reason."""
+        return strata.stop()
+
     def is_running(self):
         # only what holds this computer's memory: a Strata on another computer you saved the address of doesn't
         return any(r["state"] in ("ready", "loading") and r["source"] != "saved" for r in strata.running())

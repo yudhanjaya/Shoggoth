@@ -25,6 +25,7 @@ DEFAULTS = {
     "creatures": {},
     # Expert Mode (Advanced): off by default. Gates the engine-control features; see expert.py.
     "expert": {"on": False},
+    "authority": {},
 }
 _lock = threading.RLock()
 

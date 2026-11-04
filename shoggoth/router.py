@@ -8,6 +8,7 @@ Standard library only.
 import threading
 import time
 
+import authority
 import provbase
 import registry
 
@@ -172,6 +173,11 @@ def make_room(p, progress):
             raise provbase.ProviderError("%s is answering right now. Wait for it to finish, or stop it, then try again." % q.name)
         progress("Freeing memory: stopping %s…" % q.name)
         ok, msg = q.make_way()
+        if not ok and q.owned_instance() is None and authority.may(q.id):
+            progress("Freeing memory: asking %s to let go of it…" % q.name)
+            ok, msg = q.release()                                      # not ours, but the person said this engine may be freed
+        elif not ok and q.owned_instance() is None and authority.get(q.id) == authority.ASK:
+            raise provbase.NeedsAnswer(q.id, "%s is holding the memory %s needs. Free it? Shoggoth will unload it and leave it running." % (q.name, p.name))
         if not ok:
             if mem["exclusive"]:
                 raise provbase.ProviderError("%s is running something you started, and %s needs the memory to itself. %s" % (q.name, p.name, msg))

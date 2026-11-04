@@ -27,6 +27,7 @@ sys.path.insert(0, HERE)          # the AppImage runs Python in isolated mode, w
 
 import store       # noqa: E402  first: it maps old ZEST_* variables to their SHOGGOTH_* names
 import agent       # noqa: E402
+import authority   # noqa: E402
 import engine      # noqa: E402
 import expert      # noqa: E402
 import folders     # noqa: E402
@@ -300,6 +301,8 @@ class Handler(BaseHTTPRequestHandler):
             self.send_json({"sets": skills.scan()})
         elif p == "/ui/expert":
             self.send_json({"on": expert.on()})
+        elif p == "/ui/authority":
+            self.send_json(self.authority_state())
         elif p == "/ui/search":
             self.get_search(parse_qs(u.query))
         elif p == "/ui/model/headroom":
@@ -348,7 +351,7 @@ class Handler(BaseHTTPRequestHandler):
             handler = lambda body: self.provider_call("POST", p, body)
         handler = handler or {
             "/ui/setup/mode": self.post_mode, "/ui/setup/done": self.post_done,
-            "/ui/expert": self.post_expert, "/ui/gateway": self.post_gateway, "/ui/cowork/new": self.post_cowork_new,
+            "/ui/expert": self.post_expert, "/ui/authority": self.post_authority, "/ui/gateway": self.post_gateway, "/ui/cowork/new": self.post_cowork_new,
             "/ui/cowork/cmd": self.post_cowork_cmd, "/ui/cowork/answer": self.post_cowork_answer,
             "/ui/cowork/mode": self.post_cowork_mode, "/ui/cowork/delete": self.post_cowork_delete,
             "/ui/cowork/rename": self.post_cowork_rename, "/ui/cowork/model": self.post_cowork_model,
@@ -411,6 +414,23 @@ class Handler(BaseHTTPRequestHandler):
 
     def post_expert(self, body):
         self.send_json({"on": expert.set_on(body.get("on"))})
+
+    def authority_state(self):
+        ps = router.providers()
+        return {"expert": expert.on(), "engines": [{"id": p.id, "name": p.name, "authority": authority.get(p.id)} for p in ps]}
+
+    def post_authority(self, body):
+        """Set how far Shoggoth may go with an engine it did not start, or answer an Ask: {engine, authority} or {engine, answer: "free"}."""
+        pid = str(body.get("engine") or "")
+        if not router.get(pid):
+            raise ValueError("Unknown engine.")
+        if body.get("answer") == "free":
+            if authority.get(pid) != authority.ASK:
+                raise ValueError("That engine isn't set to ask.")
+            authority.grant_once(pid)
+        else:
+            authority.set_(pid, body.get("authority"))
+        self.send_json(self.authority_state())
 
     # ---- where models live
     def post_storage(self, body):

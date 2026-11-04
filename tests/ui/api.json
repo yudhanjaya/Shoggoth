@@ -5633,5 +5633,9 @@
  },
  "/ui/expert": {
   "on": false
+ },
+ "/ui/authority": {
+  "expert": false,
+  "engines": []
  }
 }

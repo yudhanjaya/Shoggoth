@@ -31,6 +31,15 @@ class ProviderError(Exception):
     """Something a person can act on, in plain words."""
 
 
+class NeedsAnswer(ProviderError):
+    """Shoggoth needs a yes before it frees an engine it did not start (authority: Ask). `engine` is that engine's id; the page asks, and on a
+    yes calls authority.grant_once(engine) and tries again."""
+
+    def __init__(self, engine, message):
+        super().__init__(message)
+        self.engine = engine
+
+
 # ---------------------------------------------------------------- small helpers shared by every provider
 def fill(template, **values):
     """Fill {name} placeholders in a string or list of strings. Unknown names are an error; missing values become empty."""
@@ -277,6 +286,11 @@ class Base:
         the memory is somebody else's. Default: stop()."""
         return self.stop()
 
+    def release(self):
+        """Free this engine's memory but keep its process, whoever started it (authority decides whether the router may ask this of an engine
+        Shoggoth did not start). Returns (ok, message). Default: it can't be done without stopping it, which only works for ours."""
+        return False, "%s can't free its memory without stopping, and Shoggoth only stops what it started." % self.name
+
     def endpoint(self, model_id=None):
         raise NotImplementedError
 
@@ -482,6 +496,10 @@ class GenericProvider(Base):
     def owned_instance(self):
         self._adopt_own()
         return self._port if (self._owned and self._alive()) else None
+
+    def release(self):
+        """Ours: stop it. One that was already there is left alone (there is no way to free its memory without signalling it)."""
+        return self.stop()
 
     def stop(self, model_id=None):
         """Stop what Shoggoth started. Returns (ok, message). Never stops an engine somebody else started."""

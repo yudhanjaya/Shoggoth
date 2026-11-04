@@ -99,6 +99,7 @@ Add a `provider.py` next to the YAML with `class Provider(provbase.GenericProvid
 - `activity()`, `owned_instance()`, `idle_minutes()`: so Shoggoth can stop it when idle, and only if it started it.
 - `ui(method, action, arg)`: the page's own calls to this engine, served at `/ui/providers/<id>/<action>`. Return `(status, payload)`, or `None` for an action the engine does not have. Strata and Lemonade use it for their setup, start, stop, update, backend and config actions; `provbase.HOST` lends them the app's setup mode and version.
 - `make_way()`: free memory for another engine. Defaults to `stop()`; return `(False, why)` when what holds the memory isn't Shoggoth's.
+- `release()`: free memory but keep the process, whoever started it. The router calls it for an engine Shoggoth did not start only when that engine's authority (Advanced, with Expert Mode on) is Allowed, or the person answered an Ask. Default: `stop()` (which only works on what Shoggoth started). Never signal a found process.
 - `tune_plan()`, `tune_run()`: Advanced > Tuning.
 
 A step an engine can't do raises `NotImplementedError` and Shoggoth shows it as unavailable. A `provider.py` runs inside Shoggoth with your permissions, so Shoggoth names that in the box you must allow.
