@@ -915,6 +915,12 @@ def main():
     if args[:1] == ["providers"]:
         import provcheck
         sys.exit(provcheck.main(args[1:]))
+    if args[:1] in (["status"], ["connect"]):
+        import cli
+        sys.exit(cli.main(args))
+    serving = args[:1] == ["serve"]                              # no browser tab and no quitting when one closes: a model server for other programs
+    if serving:
+        sys.argv = [sys.argv[0], "--no-browser"] + args[1:]
     if args[:1] == ["recommendations"]:
         sys.exit(recs.main(args[1:]))
     ap = argparse.ArgumentParser(description="Shoggoth: a console for Lemonade Server")
@@ -977,7 +983,11 @@ def main():
         print("Other apps can't connect yet: " + gateway.GATEWAY.error, flush=True)
 
     signal.signal(signal.SIGTERM, lambda *_: (_ for _ in ()).throw(SystemExit(0)))   # so the built-in Lemonade is stopped too
-    if a.app:
+    if serving:
+        g = s["gateway"]
+        print("Serving: page %s, gateway %s%s. Other programs: `shoggoth connect`. Check on it: `shoggoth status`." % (
+            url, "http://%s:%s/v1" % ("0.0.0.0" if g["lan"] else "127.0.0.1", g["port"]), " (open to your network)" if g["lan"] else ""), flush=True)
+    if a.app and not serving:
         threading.Thread(target=watchdog, args=(srv, int(os.environ.get("SHOGGOTH_APP_GRACE", "180"))), daemon=True).start()
     if not a.no_browser:
         threading.Timer(0.6, webbrowser.open, args=(url + "/?c=" + uiauth.new_code() if uiauth.enabled() else url,)).start()

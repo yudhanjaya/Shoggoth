@@ -119,3 +119,10 @@ management is off, which Shoggoth reports and does not work around), and reads `
 launch script the person gives under `POST /ui/providers/maya/launch`; saving it is the approval, and a changed script is not approved. A Maya Shoggoth
 did not start is never signalled. The tests run against `tests/fixtures/fake_maya.py`, written from the plan's description of the API: no recording of
 a real Maya was available, so the contract against a real one is still to be checked on the two-GPU machine.
+
+## From a terminal
+
+`shoggoth serve` is the server with no browser tab and no quit-when-the-tab-closes; it prints the page and gateway addresses. `shoggoth status [--json]`
+reads engines, loaded models, the gateway and requests in flight (exit 1 when the gateway is down, 2 when no Shoggoth answers). `shoggoth connect`
+prints the base URL, a masked key (`--reveal` shows it), the model names and a `curl` line. Both use `client.py`, which calls the same `/ui/*` routes
+as the page with the secret from the config folder.
