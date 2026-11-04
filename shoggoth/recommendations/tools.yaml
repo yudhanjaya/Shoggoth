@@ -56,24 +56,6 @@ tools:
     show: [library]
 
   # ------------------------------------------------------------ apps with setup steps on the Server page
-  - id: opencode
-    name: opencode
-    kind: app
-    links: [{label: opencode.ai, url: "https://opencode.ai/"}]
-    show: [server]
-    detect: [opencode]
-    connect:
-      help: Save this as `opencode.json` in your project, or add the `shoggoth` part to your existing config.
-      json:
-        $schema: https://opencode.ai/config.json
-        provider:
-          shoggoth:
-            npm: "@ai-sdk/openai-compatible"
-            name: Shoggoth
-            options: {baseURL: "{base_url}", apiKey: "{key}"}
-            models:
-              "{model}": {name: "{model_name}"}
-
   - id: hermes
     name: Hermes
     kind: app

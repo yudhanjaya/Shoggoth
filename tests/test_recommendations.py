@@ -47,9 +47,8 @@ class Shipped(Env):
         self.assertEqual([f["size"] for f in m["first_run"]], ["small", "medium", "large"])
         self.assertEqual(next(e for e in m["strata"] if e["family"] == "deepseek41")["suggest"], False)
         ids = {x["id"]: x for x in t["tools"]}
-        self.assertEqual([x["id"] for x in t["tools"] if "server" in x["show"]], ["opencode", "hermes"])
+        self.assertEqual([x["id"] for x in t["tools"] if "server" in x["show"]], ["hermes"])
         self.assertEqual(ids["hermes"]["connect"]["fields"], ["base_url", "key", "model"])
-        self.assertEqual(ids["opencode"]["connect"]["json"]["provider"]["shoggoth"]["options"]["baseURL"], "{base_url}")
         self.assertEqual(len([x for x in t["tools"] if "guides" in x["show"]]), 11)
 
 
@@ -129,7 +128,7 @@ class Yours(Env):
     def test_a_file_that_isnt_yaml_falls_back_to_zests_own(self):
         self.mine("tools", "tools: [\n")
         s = recs.summary()
-        self.assertIn("opencode", [t["id"] for t in s["tools"]["tools"]])
+        self.assertIn("hermes", [t["id"] for t in s["tools"]["tools"]])
         self.assertTrue(any("isn't valid YAML" in p for p in s["problems"]))
         self.assertTrue(any("using its own tools.yaml" in p for p in s["problems"]))
 

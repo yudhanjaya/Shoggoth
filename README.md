@@ -44,7 +44,7 @@ Shoggoth is not meant to be a replacement for various backends or front-ends. I 
 | **Skills** | A skill is a short instruction sheet that makes small models far more dependable. Add more by pasting a GitHub link. |
 | **Models that fit your computer** | Shoggoth tells you which models will run well on your hardware, and downloads them for you. |
 | **Small to enormous** | Small and medium models run on [Lemonade](https://lemonade-server.ai). Very large ones run on [Strata](https://github.com/Niko1221/Strata). Shoggoth starts the right one. |
-| **Use your models in other apps** | Share them with opencode, Hermes, or anything that talks to an OpenAI-style server. |
+| **Use your models in other apps** | Share them with Hermes, or anything that talks to an OpenAI-style server. |
 
 ## Install
 

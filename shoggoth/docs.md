@@ -1,6 +1,6 @@
 ## What Shoggoth is
 
-Shoggoth lets you use local AI on your own computer. You talk to it like a chat app, but nothing leaves your machine: the AI, your conversations and your files all stay here. The one exception is web search, which you control - if the model wants to look something up, it asks first and shows the words it will search for.
+Shoggoth lets you use local AI on your own computer. You talk to it like a chat app, but nothing leaves your machine: the AI, your conversations and your files all stay here. The one exception is web search, which you control. If the model wants to look something up, it asks first and shows the words it will search for.
 
 Every chat is a working session.
 
@@ -38,6 +38,8 @@ If you pick the recommended model you will be chatting within minutes, depending
 
 You can see the first-run screen again any time: go to **Help**, then **Run the welcome steps again**.
 
+Closing the browser tab quits Shoggoth after about three minutes, unless a job is still working.
+
 ## Model pictures
 
 Shoggoth draws every model as a creature, so you can tell your models apart at a glance. A creature is grown from the model's name, so the same model always looks the same:
@@ -72,7 +74,7 @@ A new chat works in your **home folder** unless you choose another, and says so 
 
 **Web search.** When a question needs something recent or the AI is unsure, it can search the web. Every search asks first and shows the exact words it wants to search for, so you decide what leaves your computer. Choose **Allow for this session** to stop being asked in that chat. You get only the titles, links and short snippets of the top results. 
 
-By default it uses DuckDuckGo. DuckDuckGo needs no key but has no official search service, so it can refuse. When that happens, Shoggoth does not keep retrying - we don't want to spam DuckDuckGo. It will tell you the search failed and carry on.
+By default it uses DuckDuckGo. DuckDuckGo needs no key but has no official search service, so it can refuse. When that happens, Shoggoth does not keep retrying, so it doesn't spam DuckDuckGo. It tells you the search failed and carries on.
 
 For search that works every time, get a free key from [Brave Search](https://brave.com/search/api/) or [Tavily](https://app.tavily.com/), then open the **Details** panel, find **Web search**, choose the provider, paste the key and press **Test search**. The key is kept on this computer and never shown again. You can also switch web search off there.
 
@@ -114,7 +116,7 @@ When a job on a copy finishes, open the **Changes** tab. Click a file to see exa
 
 If you close Shoggoth while a job is working, it comes back as **Interrupted** and **Continue** picks up where it stopped. Shoggoth stays open while a job is working, even if you close the tab.
 
-Smaller models make mistakes. They can misread a file, invent details, or fail to use a tool at all. That is why Shoggoth asks before it acts. Because of this, it's always worth maintaining a copy of whatever folder you ask it to work in. 
+Smaller models make mistakes. They can misread a file, invent details, or fail to use a tool at all. That is why Shoggoth asks before it acts. So keep a copy of any folder you ask it to work in.
 
 ## Staying in control
 
@@ -131,7 +133,7 @@ You can change the setting while a task is running. If the AI asks permission ou
 
 **Always allow** remembers a command for that folder, such as `python3 -m pytest`. It only counts when the whole line is made of commands you allowed, and it is never offered for commands that can do anything, like `rm`, `curl` or `sh`. To take one back, click the folder name at the top and press **Remove**. A folder set to **look only** can never be changed, in any setting except **Do everything**.
 
-This structure helps, but it cannot stop a harmful command that you allow. If you allow a command, remember that it it runs with your own permissions, the same as if you had typed it. Read what the card shows before pressing Allow.
+This structure helps, but it cannot stop a harmful command that you allow. If you allow a command, remember that it runs with your own permissions, the same as if you had typed it. Read what the card shows before pressing Allow.
 
 ## Skills
 
@@ -146,7 +148,7 @@ Shoggoth comes with:
 
 Open **Skills** to switch any of them on or off, one at a time or a whole set at once.
 
-**To add more skills, paste a link.** On the Skills page, paste the web address of a GitHub page that has skills in it, for example `https://github.com/owner/repository`, and press **Add skills**. You can also link to one folder inside a repository: open the folder on GitHub and copy the address. Shoggoth finds every skill in it and adds them. A skill is just a folder with a file called `SKILL.md`. [Hermes Atlas](https://hermesatlas.com/ecosystem/) lists many. 
+**To add more skills, paste a link.** On the Skills page, paste the web address of a GitHub page that has skills in it, for example `https://github.com/owner/repository`, and press **Add skills**. You can also link to one folder inside a repository: open the folder on GitHub and copy the address. Shoggoth finds every skill in it and adds them. A skill is just a folder with a file called `SKILL.md`. [Hermes Atlas](https://hermesatlas.com/ecosystem/) lists many.
 
 **Skills you made yourself** go in a folder called `mine` inside Shoggoth's data folder (`~/.local/share/shoggoth/skills/mine`). Put a folder with a `SKILL.md` file in it and it shows up on the Skills page as **My skills**, switched on, from the next message. No other files are needed.
 
@@ -243,6 +245,8 @@ Shoggoth goes online only to: download models you ask for, check for Shoggoth, e
 **A diagram did not draw.** Press **Ask the model to fix it**. If it still fails, ask for a simpler diagram with fewer boxes.
 
 **"The Pi agent isn't installed."** This only happens when running Shoggoth from source rather than the AppImage. [docs/DEVELOPMENT.md](https://github.com/yudhanjaya/Shoggoth/blob/main/docs/DEVELOPMENT.md) explains how to add it.
+
+**The app won't open.** Shoggoth needs Linux on x86_64 with a few common libraries: OpenSSL 3, zstd and libdrm. If the AppImage fails with a FUSE error, run it with `./Shoggoth-*-x86_64.AppImage --appimage-extract-and-run` instead.
 
 **Something else is off.** **Advanced**, then **Server**, shows the activity log at the bottom. **Help**, then **Restart the helper** restarts the engine Shoggoth started.
 

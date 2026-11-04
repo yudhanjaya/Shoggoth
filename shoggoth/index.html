@@ -2097,7 +2097,7 @@ function renderThread(scroll=true){
   const c = conv(); const box = $("#msgs");
   if(!c || !c.messages.length){
     const ready = chatModels().length;
-    box.innerHTML = ready ? `<div class="empty"><h2>What shall we <em>squeeze</em> today?</h2><p>Ask anything. Your chats stay on this computer and never go online.</p><div class="sugg">${SUGGEST.map(s=>`<button type="button">${esc(s)}</button>`).join("")}</div></div>`
+    box.innerHTML = ready ? `<div class="empty"><h2>What shall we <em>squeeze</em> today?</h2><p>Ask anything. Your chats stay on this computer.</p><div class="sugg">${SUGGEST.map(s=>`<button type="button">${esc(s)}</button>`).join("")}</div></div>`
       : S.up === false ? `<div class="empty"><h2>Shoggoth is <em>warming up</em></h2><p>The part that runs the AI isn't ready yet. This usually takes a few seconds.</p><button type="button" class="btn" data-go2="setup">See what's happening</button></div>`
       : `<div class="empty"><h2>Let's get you a <em>model</em></h2><p>A model is the AI that answers you. Pick one and it downloads to this computer, then you can chat without the internet.</p><button type="button" class="btn primary" data-go2="${SU.st && !SU.st.setup_done ? "setup" : "models"}">Choose a model</button></div>`;
   } else box.innerHTML = c.messages.map((m,i)=>msgHTML(m,i,false)).join("");
@@ -3603,7 +3603,7 @@ const FAQ = [
   ["How do I know which model to use?", "It depends on your computer and what you want to do. Start with <b>Recommended for this computer</b> in Models, where I explain each recommendation. <b>Everything</b> shows the rest, with a note on whether each one will fit. <p><button class=\"btn\" type=\"button\" data-pick>Show me how to compare models</button></p>"],
   ["What is the context window?", "It is how much of the conversation a model can see at once. Shoggoth uses <b>128k</b> tokens (about 100,000 words) by default. That's enough for long chats and agent work. You can change it for one model under <b>Details</b>, then <b>Settings for this model</b>. A bigger window needs more graphics memory."],
   ["How do I get more models?", "Open the <b>Models</b> and press <b>Get it</b> on any model. Models you already have somewhere else, or ones from Hugging Face, come in with <b>Add models</b>. Large models work the same way: Shoggoth sets up whatever they need and starts them when you pick one."],
-  ["Can other apps use my models?", "Yes. Open <b>Advanced</b>, then <b>Server</b>. Shoggoth gives you an address and a key that you can paste into opencode, Hermes, or any chat app or coding assistant that works with an OpenAI-style server."],
+  ["Can other apps use my models?", "Yes. Open <b>Advanced</b>, then <b>Server</b>. Shoggoth gives you an address and a key that you can paste into Hermes, or any chat app or coding assistant that works with an OpenAI-style server."],
   ["Answers are slow or the model won't start", "Close other programs that use your graphics card, such as games or video editors, and try again. If it still struggles, choose a smaller model in Models. Models marked “Probably too big” often fail on this computer. Large models take a couple of minutes to start; the bar at the top of the chat shows how far along they are."]
 ];
 let DOCS = null;
@@ -3621,7 +3621,7 @@ async function renderDocs(){
 }
 $("#docs").addEventListener("click", e => { const b = e.target.closest("[data-doc]"); if(b) document.getElementById("doc-" + b.dataset.doc).scrollIntoView({behavior: "smooth", block: "start"}); });
 function renderHelp(){
-  $("#help").innerHTML = `<div class="hero"><h2>Need a <span class="hl">hand</span>?</h2><p>The short answers to what people ask most. Nothing here needs any technical knowledge.</p></div>
+  $("#help").innerHTML = `<div class="hero"><h2>Need a <span class="hl">hand</span>?</h2><p>The short answers to what people ask most.</p></div>
     <div class="faq">${FAQ.map(([q, a]) => `<details><summary>${q}</summary><p>${a}</p></details>`).join("")}</div>
     <div class="helpacts"><button class="btn" data-hact="tour">Run the welcome steps again</button><button class="btn" data-hact="restart">Restart the helper</button><button class="btn" data-hact="docs">Read the full guide</button><button class="btn ghost" data-hact="advanced">Open Advanced</button></div>`;
 }
@@ -3633,7 +3633,7 @@ $("#help").addEventListener("click", async e => {
   if(b.dataset.hact === "restart"){ b.disabled = true; try{ await api("/ui/engine/restart", {method:"POST", headers:{"Content-Type":"application/json"}, body:"{}"}); toast("Restarting. This takes a few seconds."); }catch(err){ toast(err.message); } b.disabled = false; }
 });
 const ADV_CARDS = [
-  ["server", "Server", "Let other apps use your models, like opencode, Hermes or any chat app. See who is asking, live, and read the activity log."],
+  ["server", "Server", "Let other apps use your models, like Hermes or any chat app. See who is asking, live, and read the activity log."],
   ["hardware", "Hardware", "Watch your graphics card fill up as models load, and choose which one Shoggoth uses."],
   ["backends", "Engines", "Pick how models run on your computer, or install a faster option."],
   ["settings", "Engine settings", "Every setting the engine offers, searchable. Changes save as you make them."],
@@ -3748,7 +3748,7 @@ $("#themes").addEventListener("click", e => { const c = e.target.closest("[data-
 
 /* ======================= server page ======================= */
 let pendingLogScroll = false;
-const SRV = {g: null, reqs: new Map(), off: 0, tab: "opencode", showKey: false, filter: "all", open: new Set(), timer: null, fast: null, err: "", built: false, confirmKey: false};
+const SRV = {g: null, reqs: new Map(), off: 0, tab: "hermes", showKey: false, filter: "all", open: new Set(), timer: null, fast: null, err: "", built: false, confirmKey: false};
 async function srvFetch(){
   try{
     const live = [...SRV.reqs.values()].filter(q => q.state === "thinking" || q.state === "answering").map(q => q.id);
@@ -3803,7 +3803,7 @@ function srvBuild(){
       <details class="codebox"><summary>Show me as code</summary><div class="codetabs">${["curl", "python"].map(t => `<button type="button" class="chiptab" data-sact="code" data-t="${t}" aria-pressed="${SRV.code === t || (!SRV.code && t === "curl")}">${t}</button>`).join("")}</div><pre class="snip"><code>${esc(snippet(SRV.code || "curl", true))}</code></pre><button class="btn" type="button" data-sact="copy" data-val="${esc(snippet(SRV.code || "curl"))}">Copy code</button></details>`;
   $("#server").innerHTML = `
     <div class="hero srvhero"><h2>Share your models with <span class="hl">other apps</span></h2>
-      <p>Shoggoth can lend the models on this computer to other programs, such as opencode, Hermes, or any chat app or coding assistant. Paste the address and key below into the other app and it works as if it were talking to an online service, except nothing leaves your machine.</p></div>
+      <p>Shoggoth can lend the models on this computer to other programs, such as Hermes, or any chat app or coding assistant. Paste the address and key below into the other app and it works as if it were talking to an online service, except nothing leaves your machine.</p></div>
     ${g.error ? `<p class="errline">Other apps can't connect right now: ${esc(g.error)}. Close whatever is using that port and reopen Shoggoth.</p>` : ""}
     <section class="panel srvconn ${g.enabled ? "" : "off"}">
       <div class="connhead"><h3>Connect an app</h3>
