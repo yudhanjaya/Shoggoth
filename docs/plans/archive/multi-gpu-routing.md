@@ -1,6 +1,6 @@
 # Multi-GPU placement and routing plan
 
-> **Superseded** by [three-engine-rework.md](three-engine-rework.md), which keeps per-GPU assignment, the dispatcher idea and the decision layer, and covers Maya and engine control. Kept for the original investigation.
+> **Superseded** by [three-engine-rework.md](../three-engine-rework.md), which keeps per-GPU assignment, the dispatcher idea and the decision layer, and covers Maya and engine control. Kept for the original investigation.
 
 Covers issue #40 (pick-and-place, one port per model) and the decision-model idea in #18. Goal: a small fast model on one GPU, a large slow model on another, and a decision layer that sends each request to the right one (compaction and summaries to the small model).
 

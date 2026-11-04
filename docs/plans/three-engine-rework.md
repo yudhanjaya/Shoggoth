@@ -1,6 +1,6 @@
 # Three-engine rework: Lemonade, Strata and Maya under one controller
 
-Status: plan only, nothing built. Supersedes [multi-gpu-routing.md](multi-gpu-routing.md). Changes a rule that [strata-integration.md](strata-integration.md) and [weak-points.md](weak-points.md) treat as fixed ("never touch what Shoggoth didn't start"). Sources for the routing ideas: [Switch](https://github.com/osolmaz/switch) (decision models, traces, replay) and [vllm-project/semantic-router](https://github.com/vllm-project/semantic-router) (signals, eligibility, cascade); both read, neither run.
+Status: plan only, nothing built. Supersedes [multi-gpu-routing.md](archive/multi-gpu-routing.md). Changes a rule that [strata-integration.md](strata-integration.md) and [weak-points.md](weak-points.md) treat as fixed ("never touch what Shoggoth didn't start"). Sources for the routing ideas: [Switch](https://github.com/osolmaz/switch) (decision models, traces, replay) and [vllm-project/semantic-router](https://github.com/vllm-project/semantic-router) (signals, eligibility, cascade); both read, neither run.
 
 ## Decisions taken
 

@@ -1,0 +1,9 @@
+[
+ {"id":"mutable-default","what":"mutable default argument items=[] shared between instances","keywords":["mutable","default argument","items=[]","shared between","default list"]},
+ {"id":"add-overwrites","what":"add_item sets qty = qty instead of adding to the existing quantity","keywords":["+= qty","increase","overwrite","replaces the","instead of adding","not add","sets the quantity","should add"]},
+ {"id":"total-plus","what":"total_value adds qty + price instead of multiplying","keywords":["qty *","multipl","quantity * price","+ item[\"price\"]","instead of *"]},
+ {"id":"low-stock-compare","what":"low_stock uses <= but spec says BELOW threshold (<)","keywords":["<=","strictly","below","less than","off-by-one","inclusive"]},
+ {"id":"sort-returns-none","what":"list.sort() returns None, so low_stock returns None","keywords":["returns none","sort()","sorted(","in place","in-place"]},
+ {"id":"self-item-typo","what":"average_price uses self.item (typo for self.items); also divides by zero on empty shop","keywords":["self.item ","self.item)","attributeerror","typo","empty","zero","zerodivision"]},
+ {"id":"report-skips-first","what":"report loops from range(1, ...) and skips the first item","keywords":["range(1","skips the first","first item","index 0","off-by-one"]}
+]
