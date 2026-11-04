@@ -93,6 +93,10 @@ def port_range(spec):
     return out
 
 
+# What the application lends to providers that answer the page's calls (the setup mode, the version). The server fills it in at start.
+HOST = {}
+
+
 class Context:
     """What a provider may ask Shoggoth for: where things live. Providers never reach into Shoggoth's modules."""
     def __init__(self, library="", data="", settings=None, save=None):

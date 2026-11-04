@@ -135,6 +135,9 @@ def get_info():
     return hardware.info(current_mode(), VERSION)
 
 
+provbase.HOST.update(mode=current_mode, version=VERSION, effective_mode=effective_mode)      # what the engines' page calls may ask of the app
+
+
 # ---------------------------------------------------------------- http
 class Handler(BaseHTTPRequestHandler):
     server_version = "Shoggoth/" + VERSION
@@ -241,17 +244,8 @@ class Handler(BaseHTTPRequestHandler):
             self.send_json({"gpus": library.models_on_cards(hardware.all_gpus()), "t": time.time()})
         elif p == "/ui/info":
             self.send_json(self._info())
-        elif p == "/ui/backends":
-            self.send_json({"recipes": cached("backends", 4, hardware.backends)})
-        elif p == "/ui/config":
-            self.send_json({"config": lem.get("/internal/config"), "defaults": lem.get("/internal/config/defaults")})
-        elif p == "/ui/args/schema":
-            schema = llamaargs.args_schema(self._info().get("llama_bin"))
-            self.send_json({"entries": schema or [], "verified": bool(schema)})
         elif p == "/ui/setup":
             self.send_json(setup_state())
-        elif p == "/ui/engine/update":
-            self.send_json(dict(engine.UPD))
         elif p == "/ui/models/scan":
             self.send_json({"sources": modelscan.scan()})
         elif p == "/ui/models/source":
@@ -350,12 +344,7 @@ class Handler(BaseHTTPRequestHandler):
         if p.startswith("/ui/providers/") and p.count("/") == 4:
             handler = lambda body: self.provider_call("POST", p, body)
         handler = handler or {
-            "/ui/device": self.post_device, "/ui/config": self.post_config,
-            "/ui/args/parse": self.post_args_parse, "/ui/args/check": self.post_args_check,
-            "/ui/backend": self.post_backend, "/ui/backend/install": self.post_backend_install,
             "/ui/setup/mode": self.post_mode, "/ui/setup/done": self.post_done,
-            "/ui/engine/check": self.post_engine_check, "/ui/engine/update": self.post_engine_update,
-            "/ui/engine/use": self.post_engine_use, "/ui/engine/restart": self.post_engine_restart,
             "/ui/gateway": self.post_gateway, "/ui/cowork/new": self.post_cowork_new,
             "/ui/cowork/cmd": self.post_cowork_cmd, "/ui/cowork/answer": self.post_cowork_answer,
             "/ui/cowork/mode": self.post_cowork_mode, "/ui/cowork/delete": self.post_cowork_delete,
@@ -386,67 +375,6 @@ class Handler(BaseHTTPRequestHandler):
 
     do_DELETE = do_POST
 
-    # ---- settings the UI edits in Lemonade
-    def post_device(self, body):
-        dev = body.get("device", "")
-        if not isinstance(dev, str) or not re.fullmatch(r"([a-z]+\d+(,[a-z]+\d+)*)?", dev):
-            return self.send_json({"error": "device must look like cuda1 or cuda0,cuda1 (empty = automatic)"}, 400)
-        ok, msg = lem.set_config({"llamacpp": {"device": dev}})
-        invalidate("info")
-        if not ok and "nknown" in msg:
-            msg = ("This Lemonade doesn't have the llamacpp.device setting yet, so devices can't be chosen from here. "
-                   "The built-in Lemonade has it.")
-        self.send_json({"ok": ok, "error": msg, "output": msg}, 200 if ok else 400)
-
-    def post_config(self, body):
-        if not body:
-            return self.send_json({"error": "expected a JSON object"}, 400)
-        status, payload = lem.request("POST", "/internal/set", body, timeout=15)
-        invalidate()
-        if status == 200:
-            return self.send_json({"ok": True, "updated": payload.get("updated")})
-        self.send_json({"ok": False, "error": lem.error_text(payload, "Lemonade rejected the change")}, 400 if status else 502)
-
-    def post_args_parse(self, body):
-        self.send_json(llamaargs.parse_args(str(body.get("args", "")), self._info().get("llama_bin")))
-
-    def post_args_check(self, body):
-        self.send_json(llamaargs.check_args(str(body.get("args", "")), self._info().get("llama_bin")))
-
-    def _recipe(self, body):
-        return next((r for r in cached("backends", 4, hardware.backends) if r["recipe"] == body.get("recipe")), None)
-
-    def post_backend(self, body):
-        rec, backend = self._recipe(body), body.get("backend")
-        if not rec:
-            return self.send_json({"error": "unknown recipe"}, 400)
-        if not rec["selectable"]:
-            return self.send_json({"error": "this engine doesn't support choosing a backend"}, 400)
-        if backend != "auto" and not any(x["name"] == backend for x in rec["backends"]):
-            return self.send_json({"error": "unknown backend"}, 400)
-        ok, msg = lem.set_config({rec["recipe"].replace("-", ""): {"backend": backend}})
-        invalidate()
-        self.send_json({"ok": ok, "error": msg}, 200 if ok else 400)
-
-    def post_backend_install(self, body):
-        rec, backend = self._recipe(body), body.get("backend")
-        if not rec:
-            return self.send_json({"error": "unknown recipe"}, 400)
-        b = next((x for x in rec["backends"] if x["name"] == backend), None)
-        if not b or b["state"] not in ("installable", "update_required"):
-            return self.send_json({"error": "that backend can't be installed"}, 400)
-        ok, msg = lem.install_backend(rec["recipe"], backend)
-        invalidate()
-        switched = None
-        if ok and rec["selectable"] and rec["current"] == "auto":
-            # "auto" prefers the engine's default backend. If that one isn't installed, point Lemonade at the one
-            # that was just installed so loading a model actually works.
-            fresh = next((r for r in hardware.backends() if r["recipe"] == rec["recipe"]), None)
-            if fresh and not any(b["name"] == fresh["default"] and b["state"] == "installed" for b in fresh["backends"]):
-                if lem.set_config({rec["recipe"].replace("-", ""): {"backend": backend}})[0]:
-                    switched = backend
-                    invalidate()
-        self.send_json({"ok": ok, "error": msg, "switched": switched}, 200 if ok else 500)
 
     # ---- setup: which Lemonade, and the built-in engine
     def post_mode(self, body):
@@ -477,35 +405,6 @@ class Handler(BaseHTTPRequestHandler):
         s["setup_done"] = bool(body.get("done", True))
         store.save(s)
         self.send_json({"ok": True})
-
-    def post_engine_check(self, body):
-        try:
-            self.send_json({"ok": True, **engine.check(store.load())})
-        except RuntimeError as e:
-            self.send_json({"ok": False, "error": str(e)}, 502)
-
-    def post_engine_update(self, body):
-        s = store.load()
-        s["builtin"]["version"] = ""          # asking for an update means "use the newest"
-        store.save(s)
-        started = engine.start_update()
-        self.send_json({"started": started, **engine.UPD})
-
-    def post_engine_use(self, body):
-        version = str(body.get("version", ""))
-        s = store.load()
-        if version not in ("", "bundled") and not any(p["version"] == version for p in engine.programs()):
-            raise ValueError("That version isn't installed.")
-        s["builtin"]["version"] = version
-        store.save(s)
-        self.post_engine_restart({})
-
-    def post_engine_restart(self, body):
-        s = store.load()
-        if effective_mode(s) == "builtin":
-            threading.Thread(target=engine.restart, args=(s,), daemon=True).start()
-            time.sleep(0.3)
-        self.send_json({"ok": True, **{"engine": engine.summary(s)}})
 
     # ---- where models live
     def post_storage(self, body):

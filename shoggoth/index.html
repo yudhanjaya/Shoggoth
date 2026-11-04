@@ -2804,7 +2804,7 @@ async function checkArgs(k, given){
   const text = (given !== undefined ? given : ta.value).trim();
   if(!text){ box.innerHTML = ""; OD.argErrors = false; return updateOptButtons(); }
   try{
-    const r = await api("/ui/args/check", {method:"POST", headers:{"Content-Type":"application/json"}, body:JSON.stringify({args:text})});
+    const r = await api("/ui/providers/lemonade/args_check", {method:"POST", headers:{"Content-Type":"application/json"}, body:JSON.stringify({args:text})});
     if(!OD || !$("#argcheck-" + k)) return;
     if(r.error){ box.innerHTML = `<div class="p error">${esc(r.error)}</div>`; OD.argErrors = true; }
     else {
@@ -2824,7 +2824,7 @@ async function openOptions(id){
   const m = S.models.find(x => x.id === id); if(!m) return;
   let data; try{ data = await api(`/api/v1/models/${encodeURIComponent(id)}/options`); }
   catch(e){ toast("Couldn't read this model's options: " + e.message); return; }
-  let bk = []; try{ bk = (await api("/ui/backends")).recipes; }catch{}
+  let bk = []; try{ bk = (await api("/ui/providers/lemonade/backends")).recipes; }catch{}
   OD = {m, data, dirty:{}, bk, argErrors:false};
   if(data.recipe === "llamacpp") await aeLoad((data.saved || {}).llamacpp_args || ""); else AE = null;
   $("#odname").textContent = friendly(m);
@@ -3036,9 +3036,9 @@ document.addEventListener("toggle", ev => {
 async function aeLoad(saved){
   AE = null;
   try{
-    const sch = await api("/ui/args/schema");
+    const sch = await api("/ui/providers/lemonade/args_schema");
     if(!sch.entries.length) return;
-    const parsed = await api("/ui/args/parse", {method:"POST", headers:{"Content-Type":"application/json"}, body:JSON.stringify({args: saved || ""})});
+    const parsed = await api("/ui/providers/lemonade/args_parse", {method:"POST", headers:{"Content-Type":"application/json"}, body:JSON.stringify({args: saved || ""})});
     AE = {entries: sch.entries, byId: Object.fromEntries(sch.entries.map(e => [e.id, e])), values: parsed.values || {}, custom: parsed.custom || ""};
   }catch{ AE = null; }
 }
@@ -3060,7 +3060,7 @@ async function refreshSetup(force){
   if(SU.st.mode === "builtin" && autoCheckOn() && !SU.autoChecked && SU.st.engine.running){ SU.autoChecked = true; doCheck(true); }
   if(autoCheckOn() && !SU.strChecked){ SU.strChecked = true; strUpdFetch(); }
   if(!inSetup()) return;
-  if(force || !S.bk){ try{ S.bk = (await api("/ui/backends")).recipes; }catch{} }
+  if(force || !S.bk){ try{ S.bk = (await api("/ui/providers/lemonade/backends")).recipes; }catch{} }
   renderSetup(force);
 }
 function updateNavDot(){
@@ -3107,7 +3107,7 @@ function piPanel(){
 }
 async function doCheck(silent){
   SU.busy.check = true; if(!silent) renderSetup(true);
-  try{ SU.check = await api("/ui/engine/check", {method:"POST", headers:{"Content-Type":"application/json"}, body:"{}"}); SU.checkErr = ""; }
+  try{ SU.check = await api("/ui/providers/lemonade/check", {method:"POST", headers:{"Content-Type":"application/json"}, body:"{}"}); SU.checkErr = ""; }
   catch(e){ SU.check = null; SU.checkErr = silent ? "" : e.message; }
   SU.busy.check = false; updateNavDot(); if(inSetup()) renderSetup(true);
 }
@@ -3160,15 +3160,15 @@ function wRows(){
 function wAuto(rec, go){
   const st = SU.st, eng = st.engine;
   if(!go) return;
-  if(st.mode === "builtin" && !eng.available && eng.update.state === "idle" && !W.auto.helper){ W.auto.helper = true; suBusy("update", async () => { await suPost("/ui/engine/update"); }); }
+  if(st.mode === "builtin" && !eng.available && eng.update.state === "idle" && !W.auto.helper){ W.auto.helper = true; suBusy("update", async () => { await suPost("/ui/providers/lemonade/update"); }); }
   if(st.lemonade.reachable && llamaRecipe() && !backendsInstalled().length && rec && !SU.busy["inst-" + rec.name] && !W.auto["fit-" + rec.name] && !SU.msg.backend){ W.auto["fit-" + rec.name] = true; wFit(rec.name); }
   if(!STR.rec && !W.auto.rec){ W.auto.rec = true; api("/ui/providers/strata/recommend").then(r => { STR.rec = r; if(S.view === "welcome") renderWelcome(true); }).catch(() => {}); }
 }
 function wFit(name){
   return suBusy("inst-" + name, async () => {
     SU.msg.backend = "";
-    try{ const r = await suPost("/ui/backend/install", {recipe: "llamacpp", backend: name}); if(r.switched) toast(`Shoggoth will use the ${r.switched.toUpperCase()} setting for your graphics card.`); }catch(err){ SU.msg.backend = err.message; }
-    S.bk = (await api("/ui/backends")).recipes; S.info = await api("/ui/info").catch(() => S.info);
+    try{ const r = await suPost("/ui/providers/lemonade/backend_install", {recipe: "llamacpp", backend: name}); if(r.switched) toast(`Shoggoth will use the ${r.switched.toUpperCase()} setting for your graphics card.`); }catch(err){ SU.msg.backend = err.message; }
+    S.bk = (await api("/ui/providers/lemonade/backends")).recipes; S.info = await api("/ui/info").catch(() => S.info);
   });
 }
 const wIcon = s => ({done: "✓", working: "…", waiting: "·", problem: "!"})[s];
@@ -3419,19 +3419,19 @@ const setupClick = async e => {
   if(a === "mode-existing-pick"){ $("#exhost")?.focus(); return; }
   if(a === "mode-existing") return suBusy("mode", async () => { SU.st = await suPost("/ui/setup/mode", {mode: "existing", host: $("#exhost").value.trim(), port: +$("#export").value, api_key: $("#exkey").value}); await waitLemonade(); await loadModels(); });
   if(a === "engine-check") return doCheck(false);
-  if(a === "engine-update") return suBusy("update", async () => { await suPost("/ui/engine/update"); SU.check = null; });
-  if(a === "engine-restart") return suBusy("restart", async () => { await suPost("/ui/engine/restart"); await waitLemonade(); });
+  if(a === "engine-update") return suBusy("update", async () => { await suPost("/ui/providers/lemonade/update"); SU.check = null; });
+  if(a === "engine-restart") return suBusy("restart", async () => { await suPost("/ui/providers/lemonade/restart"); await waitLemonade(); });
   if(a === "update-all"){ SU.up = await suPost("/ui/update/all"); renderSetup(true); return; }
   if(a === "update-restart") return suBusy("restart", async () => { await suPost("/ui/update/restart"); toast("Restarting Shoggoth… this page reloads in a few seconds."); setTimeout(() => location.reload(), 8000); });
   if(a === "pi-check") return doPiCheck(false);
   if(a === "pi-update") return suBusy("pupdate", async () => { SU.pi.check = null; await suPost("/ui/pi/update"); });
   if(a === "pi-use-bundled") return suBusy("pi", async () => { await suPost("/ui/pi/use", {version: "bundled"}); toast("Using the Pi that came with Shoggoth."); });
   if(a === "pi-use-newest") return suBusy("pi", async () => { await suPost("/ui/pi/use", {version: ""}); });
-  if(a === "engine-use-bundled") return suBusy("restart", async () => { await suPost("/ui/engine/use", {version: "bundled"}); await waitLemonade(); });
+  if(a === "engine-use-bundled") return suBusy("restart", async () => { await suPost("/ui/providers/lemonade/use", {version: "bundled"}); await waitLemonade(); });
   if(a === "install") return suBusy("inst-" + el.dataset.backend, async () => {
     SU.msg.backend = "";
-    try{ const r = await suPost("/ui/backend/install", {recipe: "llamacpp", backend: el.dataset.backend}); if(r.switched) toast(`Lemonade will use the ${r.switched.toUpperCase()} backend. You can change this on the Engines page.`); }catch(err){ SU.msg.backend = err.message; }
-    S.bk = (await api("/ui/backends")).recipes; S.info = await api("/ui/info").catch(() => S.info);
+    try{ const r = await suPost("/ui/providers/lemonade/backend_install", {recipe: "llamacpp", backend: el.dataset.backend}); if(r.switched) toast(`Lemonade will use the ${r.switched.toUpperCase()} backend. You can change this on the Engines page.`); }catch(err){ SU.msg.backend = err.message; }
+    S.bk = (await api("/ui/providers/lemonade/backends")).recipes; S.info = await api("/ui/info").catch(() => S.info);
   });
   if(a === "dl") return startDownload(el.dataset.model);
   if(a === "cancel-dl") return cancelDownload(el.dataset.model);
@@ -3459,7 +3459,7 @@ $("#prefs").addEventListener("change", async e => {
 $("#prefs").addEventListener("keydown", e => { if((e.key === "Enter" || e.key === " ") && e.target.matches(".choice[data-act]")){ e.preventDefault(); e.target.click(); } });
 async function waitLemonade(){
   for(let i = 0; i < 60; i++){ await refreshSetup(true); if(SU.st.lemonade.reachable && (SU.st.mode !== "builtin" || SU.st.engine.running)) break; if(["error", "unsupported"].includes(SU.st.engine.state)) break; await new Promise(r => setTimeout(r, 1000)); }
-  await pollServer(); await loadModels(); try{ S.bk = (await api("/ui/backends")).recipes; }catch{} renderStatus();
+  await pollServer(); await loadModels(); try{ S.bk = (await api("/ui/providers/lemonade/backends")).recipes; }catch{} renderStatus();
 }
 setInterval(() => { if(!document.hidden && SU.up && SU.up.state === "working") refreshUpdate(); }, 1500);
 setInterval(() => { if(!document.hidden && (inSetup() || (SU.st && ["downloading","verifying","installing"].includes(SU.st.engine.update.state)) || (SU.pi.info && ["downloading","installing"].includes(SU.pi.info.update.state)))) refreshSetup(); }, 1500);
@@ -3630,7 +3630,7 @@ $("#help").addEventListener("click", async e => {
   if(b.dataset.hact === "tour") return show("welcome");
   if(b.dataset.hact === "advanced") return show("advanced");
   if(b.dataset.hact === "docs") return show("docs");
-  if(b.dataset.hact === "restart"){ b.disabled = true; try{ await api("/ui/engine/restart", {method:"POST", headers:{"Content-Type":"application/json"}, body:"{}"}); toast("Restarting. This takes a few seconds."); }catch(err){ toast(err.message); } b.disabled = false; }
+  if(b.dataset.hact === "restart"){ b.disabled = true; try{ await api("/ui/providers/lemonade/restart", {method:"POST", headers:{"Content-Type":"application/json"}, body:"{}"}); toast("Restarting. This takes a few seconds."); }catch(err){ toast(err.message); } b.disabled = false; }
 });
 const ADV_CARDS = [
   ["server", "Server", "Let other apps use your models, like opencode, Hermes or any chat app. See who is asking, live, and read the activity log."],
@@ -4138,8 +4138,8 @@ async function loadSettings(){
   try{ STR.d = await api("/ui/providers/strata/summary"); }catch{}
   renderStrataSettings();
   try{
-    if(!S.bk){ try{ S.bk = (await api("/ui/backends")).recipes; }catch{} }
-    const r = await api("/ui/config"); SET.cfg = r.config; SET.defaults = r.defaults; renderSettings(); $("#setq").parentElement.hidden = !$$("#settings .setrow").length;
+    if(!S.bk){ try{ S.bk = (await api("/ui/providers/lemonade/backends")).recipes; }catch{} }
+    const r = await api("/ui/providers/lemonade/config"); SET.cfg = r.config; SET.defaults = r.defaults; renderSettings(); $("#setq").parentElement.hidden = !$$("#settings .setrow").length;
   }catch(e){
     $("#settings").innerHTML = `<div class="empty-note">${STR.d && STR.d.installed ? "Lemonade isn't running, so its settings aren't shown. Strata's are above." : "Couldn't read Lemonade's settings: " + esc(e.message)}</div>`;
     $("#setcount").textContent = ""; $("#setq").parentElement.hidden = true;
@@ -4149,7 +4149,7 @@ async function saveSetting(key, value, row, revert){
   const path = key.split("."), st = $(".st", row); st.className = "st"; st.textContent = "Saving…";
   const nested = path.reduceRight((acc, k) => ({[k]: acc}), value);
   try{
-    await api("/ui/config", {method:"POST", headers:{"Content-Type":"application/json"}, body:JSON.stringify(nested)});
+    await api("/ui/providers/lemonade/config", {method:"POST", headers:{"Content-Type":"application/json"}, body:JSON.stringify(nested)});
     let o = SET.cfg; for(const k of path.slice(0, -1)) o = o[k]; o[path.at(-1)] = value;
     st.textContent = "Saved"; setTimeout(() => { if(st.textContent === "Saved") st.textContent = ""; }, 2500);
     S.info = await api("/ui/info").catch(() => S.info); renderStatus();
@@ -5204,7 +5204,7 @@ $("#applybar").addEventListener("click", async e => {
   if(b.hasAttribute("data-revert")){ S.draft = null; return renderHardware(); }
   const dev = b.hasAttribute("data-auto") ? "" : editing().join(",");
   try{
-    await api("/ui/device", {method:"POST", headers:{"Content-Type":"application/json"}, body:JSON.stringify({device:dev})});
+    await api("/ui/providers/lemonade/device", {method:"POST", headers:{"Content-Type":"application/json"}, body:JSON.stringify({device:dev})});
     toast(S.loaded ? "Saved. Unload and reload the model to move it." : "Saved. Applies to the next model you load.");
     S.draft = null; S.info = await api("/ui/info"); renderHardware(); renderStatus(); renderThread(false);
   }catch(err){ toast("Couldn't save: " + err.message); }
@@ -5212,7 +5212,7 @@ $("#applybar").addEventListener("click", async e => {
 
 /* ======================= backends ======================= */
 async function loadBackends(){
-  try{ S.bk = (await api("/ui/backends")).recipes; }catch(e){ $("#bk").innerHTML = `<div class="empty-note">Couldn't read backends: ${esc(e.message)}</div>`; return; }
+  try{ S.bk = (await api("/ui/providers/lemonade/backends")).recipes; }catch(e){ $("#bk").innerHTML = `<div class="empty-note">Couldn't read backends: ${esc(e.message)}</div>`; return; }
   renderBackends();
 }
 const STATE_LABEL = {installed:"installed", update_required:"update needed", installable:"not installed"};
@@ -5258,7 +5258,7 @@ $("#bk").addEventListener("click", async e => {
   if(set){
     const [recipe, backend] = set.dataset.set.split(":");
     try{
-      await api("/ui/backend", {method:"POST", headers:{"Content-Type":"application/json"}, body:JSON.stringify({recipe, backend})});
+      await api("/ui/providers/lemonade/backend", {method:"POST", headers:{"Content-Type":"application/json"}, body:JSON.stringify({recipe, backend})});
       toast(`${S.bk.find(r => r.recipe===recipe)?.name} will use ${backend === "auto" ? "automatic selection" : backend} on the next load.`);
       await loadBackends(); S.info = await api("/ui/info"); S.draft = null; renderStatus();
     }catch(err){ toast("Couldn't change backend: " + err.message); }
@@ -5275,7 +5275,7 @@ $("#instdlg form").addEventListener("submit", async e => {
   if(e.submitter?.value !== "ok" || !pendingInstall) return;
   const {recipe, backend, btn} = pendingInstall; btn.disabled = true; btn.textContent = "Installing…"; toast("Installing " + backend + "…");
   try{
-    await api("/ui/backend/install", {method:"POST", headers:{"Content-Type":"application/json"}, body:JSON.stringify({recipe, backend})});
+    await api("/ui/providers/lemonade/backend_install", {method:"POST", headers:{"Content-Type":"application/json"}, body:JSON.stringify({recipe, backend})});
     toast(backend + " installed");
   }catch(err){ toast("Install failed: " + err.message); }
   await loadBackends();
@@ -5305,7 +5305,7 @@ setInterval(() => fetch("/ui/ping", {method:"POST"}).catch(() => {}), 5000); fet
 /* ======================= boot ======================= */
 (async function boot(){
   await Promise.all([loadModels(), pollGpu(), pollServer(), pollDownloads(), loadRecs()]);
-  try{ SU.st = await api("/ui/setup"); S.bk = (await api("/ui/backends")).recipes; }catch{}
+  try{ SU.st = await api("/ui/setup"); S.bk = (await api("/ui/providers/lemonade/backends")).recipes; }catch{}
   if(!S.convs.length || !conv()) { if(S.convs.length) S.cur = S.convs[0].id; else { const c = {id:uid(), title:"New chat", messages:[], system:"", created:Date.now()}; S.convs.push(c); S.cur = c.id; } }
   renderConvs(); syncModelSelect(); renderStatus(); setSendState();
   let h = location.hash.slice(1); if(h === "logs"){ pendingLogScroll = true; h = "server"; } if(h === "setup" || h === "prefs") h = "backends";

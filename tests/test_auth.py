@@ -56,6 +56,10 @@ class Door(unittest.TestCase):
         self.assertEqual(self.call("POST", "/ui/providers/nobody/stop", auth, "{}")[0], 404)
         self.assertEqual(self.call("GET", "/ui/providers/strata/summary")[0], 401)
         self.assertEqual(self.call("GET", "/ui/strata", auth)[0], 404)             # the old per-engine path is gone
+        self.assertEqual(self.call("GET", "/ui/providers/lemonade/update", auth)[0], 200)
+        self.assertEqual(self.call("POST", "/ui/providers/lemonade/device", auth, '{"device": "not a device"}')[0], 400)
+        for old in ("/ui/backends", "/ui/engine/update", "/ui/args/schema", "/ui/config"):
+            self.assertEqual(self.call("GET", old, auth)[0], 404, old)
 
     def test_the_version_is_public_so_a_second_launch_can_find_this_zest(self):
         status, _, body = self.call("GET", "/ui/ping")

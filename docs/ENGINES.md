@@ -97,7 +97,7 @@ Add a `provider.py` next to the YAML with `class Provider(provbase.GenericProvid
 - `model_id(entry)`, `can_run(entry)`, `need_gb(entry)`, `fit(entry, machine)`, `library_models()`, `model_folders()`: how library models map onto your engine.
 - `install(progress)`, `update_check()`, `update(progress)`, `update_status()`: keeping it current.
 - `activity()`, `owned_instance()`, `idle_minutes()`: so Shoggoth can stop it when idle, and only if it started it.
-- `ui(method, action, arg)`: the page's own calls to this engine, served at `/ui/providers/<id>/<action>`. Return `(status, payload)`, or `None` for an action the engine does not have. Strata uses it for its setup, start, stop, update, connect and key actions.
+- `ui(method, action, arg)`: the page's own calls to this engine, served at `/ui/providers/<id>/<action>`. Return `(status, payload)`, or `None` for an action the engine does not have. Strata and Lemonade use it for their setup, start, stop, update, backend and config actions; `provbase.HOST` lends them the app's setup mode and version.
 - `make_way()`: free memory for another engine. Defaults to `stop()`; return `(False, why)` when what holds the memory isn't Shoggoth's.
 - `tune_plan()`, `tune_run()`: Advanced > Tuning.
 

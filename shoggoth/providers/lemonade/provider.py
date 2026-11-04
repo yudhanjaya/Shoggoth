@@ -1,10 +1,17 @@
 """Lemonade as a provider, answered by the code that already talks to it (lem.py, engine.py). Nothing here changes behaviour."""
+import re
+import threading
+import time
+
 import engine
+import hardware
 import lem
 import lemtune
+import llamaargs
 import provbase
 import store
 import uiauth
+from util import cached, invalidate
 
 
 class Provider(provbase.GenericProvider):
@@ -230,3 +237,116 @@ class Provider(provbase.GenericProvider):
         return {"state": "working" if working else "done" if u.get("state") == "done" else "error" if u.get("state") == "error" else "idle",
                 "text": text or ("Lemonade %s is installed. It starts the next time Lemonade restarts." % u.get("version") if u.get("state") == "done" else ""),
                 "error": u.get("error"), "bytes": u.get("bytes"), "total": u.get("total")}
+
+    # -- the page's calls (/ui/providers/lemonade/<action>)
+    def ui(self, method, action, arg):
+        fn = getattr(self, "_ui_%s_%s" % (method.lower(), action), None)
+        return fn(arg) if fn else None
+
+    @staticmethod
+    def _llama_bin():
+        return cached("info", 4, lambda: hardware.info(provbase.HOST["mode"](), provbase.HOST["version"])).get("llama_bin")
+
+    @staticmethod
+    def _recipe(body):
+        return next((r for r in cached("backends", 4, hardware.backends) if r["recipe"] == body.get("recipe")), None)
+
+    def _ui_get_backends(self, q):
+        return 200, {"recipes": cached("backends", 4, hardware.backends)}
+
+    def _ui_get_config(self, q):
+        return 200, {"config": lem.get("/internal/config"), "defaults": lem.get("/internal/config/defaults")}
+
+    def _ui_get_args_schema(self, q):
+        schema = llamaargs.args_schema(self._llama_bin())
+        return 200, {"entries": schema or [], "verified": bool(schema)}
+
+    def _ui_get_update(self, q):
+        return 200, dict(engine.UPD)
+
+    def _ui_post_args_parse(self, body):
+        return 200, llamaargs.parse_args(str(body.get("args", "")), self._llama_bin())
+
+    def _ui_post_args_check(self, body):
+        return 200, llamaargs.check_args(str(body.get("args", "")), self._llama_bin())
+
+    def _ui_post_device(self, body):
+        dev = body.get("device", "")
+        if not isinstance(dev, str) or not re.fullmatch(r"([a-z]+\d+(,[a-z]+\d+)*)?", dev):
+            return 400, {"error": "device must look like cuda1 or cuda0,cuda1 (empty = automatic)"}
+        ok, msg = lem.set_config({"llamacpp": {"device": dev}})
+        invalidate("info")
+        if not ok and "nknown" in msg:
+            msg = ("This Lemonade doesn't have the llamacpp.device setting yet, so devices can't be chosen from here. "
+                   "The built-in Lemonade has it.")
+        return (200 if ok else 400), {"ok": ok, "error": msg, "output": msg}
+
+    def _ui_post_config(self, body):
+        if not body:
+            return 400, {"error": "expected a JSON object"}
+        status, payload = lem.request("POST", "/internal/set", body, timeout=15)
+        invalidate()
+        if status == 200:
+            return 200, {"ok": True, "updated": payload.get("updated")}
+        return (400 if status else 502), {"ok": False, "error": lem.error_text(payload, "Lemonade rejected the change")}
+
+    def _ui_post_backend(self, body):
+        rec, backend = self._recipe(body), body.get("backend")
+        if not rec:
+            return 400, {"error": "unknown recipe"}
+        if not rec["selectable"]:
+            return 400, {"error": "this engine doesn't support choosing a backend"}
+        if backend != "auto" and not any(x["name"] == backend for x in rec["backends"]):
+            return 400, {"error": "unknown backend"}
+        ok, msg = lem.set_config({rec["recipe"].replace("-", ""): {"backend": backend}})
+        invalidate()
+        return (200 if ok else 400), {"ok": ok, "error": msg}
+
+    def _ui_post_backend_install(self, body):
+        rec, backend = self._recipe(body), body.get("backend")
+        if not rec:
+            return 400, {"error": "unknown recipe"}
+        b = next((x for x in rec["backends"] if x["name"] == backend), None)
+        if not b or b["state"] not in ("installable", "update_required"):
+            return 400, {"error": "that backend can't be installed"}
+        ok, msg = lem.install_backend(rec["recipe"], backend)
+        invalidate()
+        switched = None
+        if ok and rec["selectable"] and rec["current"] == "auto":
+            # "auto" prefers the engine's default backend. If that one isn't installed, point Lemonade at the one
+            # that was just installed so loading a model actually works.
+            fresh = next((r for r in hardware.backends() if r["recipe"] == rec["recipe"]), None)
+            if fresh and not any(b["name"] == fresh["default"] and b["state"] == "installed" for b in fresh["backends"]):
+                if lem.set_config({rec["recipe"].replace("-", ""): {"backend": backend}})[0]:
+                    switched = backend
+                    invalidate()
+        return (200 if ok else 500), {"ok": ok, "error": msg, "switched": switched}
+
+    def _ui_post_check(self, body):
+        try:
+            return 200, {"ok": True, **engine.check(store.load())}
+        except RuntimeError as e:
+            return 502, {"ok": False, "error": str(e)}
+
+    def _ui_post_update(self, body):
+        s = store.load()
+        s["builtin"]["version"] = ""          # asking for an update means "use the newest"
+        store.save(s)
+        started = engine.start_update()
+        return 200, {"started": started, **engine.UPD}
+
+    def _ui_post_use(self, body):
+        version = str(body.get("version", ""))
+        s = store.load()
+        if version not in ("", "bundled") and not any(p["version"] == version for p in engine.programs()):
+            raise ValueError("That version isn't installed.")
+        s["builtin"]["version"] = version
+        store.save(s)
+        return self._ui_post_restart({})
+
+    def _ui_post_restart(self, body):
+        s = store.load()
+        if provbase.HOST["effective_mode"](s) == "builtin":
+            threading.Thread(target=engine.restart, args=(s,), daemon=True).start()
+            time.sleep(0.3)
+        return 200, {"ok": True, "engine": engine.summary(s)}
