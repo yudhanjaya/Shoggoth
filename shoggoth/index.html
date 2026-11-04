@@ -3640,9 +3640,10 @@ const ADV_CARDS = [
   ["tuning", "Tuning", "Make a model run faster on this computer. Shoggoth measures the settings and keeps only what clearly helps."],
   ["themes", "Themes", "Change how Shoggoth looks. Light Touch is the default; there are fifteen to try."]
 ];
-const EXPERT = {on: false, engines: []};
+const EXPERT = {on: false, engines: [], gpus: [], devs: {}};
 async function expertLoad(){
-  try{ EXPERT.on = !!(await api("/ui/expert")).on; EXPERT.engines = EXPERT.on ? (await api("/ui/authority")).engines : []; }catch{}
+  try{ EXPERT.on = !!(await api("/ui/expert")).on; EXPERT.engines = EXPERT.on ? (await api("/ui/authority")).engines : [];
+    if(EXPERT.on){ const d = await api("/ui/devices"); EXPERT.gpus = d.gpus; EXPERT.devs = Object.fromEntries(d.engines.map(e => [e.id, e.devices])); } }catch{}
   if(S.view === "advanced") renderAdvanced();
 }
 /* an engine is holding the memory a model needs and Shoggoth is set to ask: one card, answered once */
@@ -3674,10 +3675,20 @@ function renderAdvanced(){
       <div class="line"><label class="chk"><input type="checkbox" id="expertsw" ${EXPERT.on ? "checked" : ""}> Expert mode</label></div>
       ${EXPERT.on ? `<h4 style="margin:18px 0 4px">Engines Shoggoth did not start</h4>
         <p class="help" style="margin:0 0 8px">When another engine is holding the memory a model needs, this is how far Shoggoth may go. It never interrupts an engine that is answering, and it only asks the engine to let go; it never stops a program it didn't start.</p>
-        ${EXPERT.engines.map(e => `<div class="line"><label>${esc(e.name)} <select data-authority="${esc(e.id)}">${Object.entries(AUTH_WORDS).map(([k, t]) => `<option value="${k}" ${e.authority === k ? "selected" : ""}>${t}</option>`).join("")}</select></label></div>`).join("")}` : ""}</section>`;
+        ${EXPERT.engines.map(e => `<div class="line"><label>${esc(e.name)} <select data-authority="${esc(e.id)}">${Object.entries(AUTH_WORDS).map(([k, t]) => `<option value="${k}" ${e.authority === k ? "selected" : ""}>${t}</option>`).join("")}</select></label></div>`).join("")}
+        ${EXPERT.gpus.length ? `<h4 style="margin:18px 0 4px">Graphics cards each engine may use</h4>
+          <p class="help" style="margin:0 0 8px">Applies the next time the engine starts; one that is running keeps the cards it has. Two engines on different cards no longer free each other's memory.</p>
+          ${EXPERT.engines.map(e => { const cur = EXPERT.devs[e.id]; const pick = Array.isArray(cur) && cur.length === 1 ? cur[0] : cur;
+            return `<div class="line"><label>${esc(e.name)} <select data-devices="${esc(e.id)}"><option value="all" ${pick === "all" ? "selected" : ""}>All cards</option><option value="none" ${pick === "none" ? "selected" : ""}>No cards (processor and RAM only)</option>${EXPERT.gpus.map(g => `<option value="${esc(g.uuid)}" ${pick === g.uuid ? "selected" : ""}>Only ${esc(g.name)} (${g.gb} GB)</option>`).join("")}</select></label></div>`; }).join("")}` : ""}` : ""}</section>`;
 }
 $("#advhub").addEventListener("click", e => { const c = e.target.closest("[data-view2]"); if(c) show(c.dataset.view2); });
 $("#advhub").addEventListener("change", async e => {
+  if(e.target.dataset.devices){
+    const v = e.target.value, devices = v === "all" || v === "none" ? v : [v];
+    try{ const d = await api("/ui/devices", {method: "POST", body: JSON.stringify({engine: e.target.dataset.devices, devices})}); EXPERT.devs = Object.fromEntries(d.engines.map(x => [x.id, x.devices])); toast("Saved. It applies the next time the engine starts."); }
+    catch(err){ toast(err.message); }
+    return;
+  }
   if(e.target.dataset.authority){
     try{ EXPERT.engines = (await api("/ui/authority", {method: "POST", body: JSON.stringify({engine: e.target.dataset.authority, authority: e.target.value})})).engines; toast("Saved."); }
     catch(err){ toast(err.message); }

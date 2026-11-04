@@ -19,6 +19,7 @@ import urllib.error
 import urllib.parse
 import urllib.request
 
+import devices
 import ownership
 
 API_VERSION = 1
@@ -474,7 +475,8 @@ class GenericProvider(Base):
             ctx = int((opts or {}).get("ctx") or self.ctx.settings(self.id).get("context") or 131072)
             cmd = fill(run["start"], **self._vals(model=model_id, model_file=self._files.get(model_id, ""), port=free, context=ctx))
             progress("Starting %s…" % self.name)
-            self._proc = subprocess.Popen(cmd, stdin=subprocess.DEVNULL, stdout=subprocess.DEVNULL, stderr=subprocess.STDOUT, start_new_session=True)
+            self._proc = subprocess.Popen(cmd, stdin=subprocess.DEVNULL, stdout=subprocess.DEVNULL, stderr=subprocess.STDOUT, start_new_session=True,
+                                          env=dict(os.environ, **devices.env(self.id)))
             self._claim.set(pid=self._proc.pid, port=free, t=_start_time(self._proc.pid))
             deadline = time.time() + float((run.get("ready") or {}).get("timeout", 120))
             while time.time() < deadline:

@@ -21,6 +21,7 @@ import urllib.error
 import urllib.request
 
 import hardware
+import devices
 import ownership
 import recs
 import store
@@ -449,7 +450,8 @@ def _do_start(preset, port, force=False, model=None):
 
         def launch(extra):
             p = subprocess.Popen([binary(), "launch", "--preset", preset, "--yes", "--no-tui"] + extra, stdin=subprocess.DEVNULL,
-                                 stdout=subprocess.PIPE, stderr=subprocess.STDOUT, text=True, start_new_session=True)
+                                 stdout=subprocess.PIPE, stderr=subprocess.STDOUT, text=True, start_new_session=True,
+                                 env=dict(os.environ, **devices.env("strata")))
             for line in p.stdout:
                 RUN["log"] = (RUN["log"] + [line.rstrip()])[-40:]
             return p.wait()

@@ -27,6 +27,7 @@ sys.path.insert(0, HERE)          # the AppImage runs Python in isolated mode, w
 
 import store       # noqa: E402  first: it maps old ZEST_* variables to their SHOGGOTH_* names
 import agent       # noqa: E402
+import devices     # noqa: E402
 import authority   # noqa: E402
 import engine      # noqa: E402
 import expert      # noqa: E402
@@ -303,6 +304,8 @@ class Handler(BaseHTTPRequestHandler):
             self.send_json({"on": expert.on()})
         elif p == "/ui/authority":
             self.send_json(self.authority_state())
+        elif p == "/ui/devices":
+            self.send_json(dict(devices.state([q.id for q in router.providers()]), expert=expert.on()))
         elif p == "/ui/search":
             self.get_search(parse_qs(u.query))
         elif p == "/ui/model/headroom":
@@ -351,7 +354,7 @@ class Handler(BaseHTTPRequestHandler):
             handler = lambda body: self.provider_call("POST", p, body)
         handler = handler or {
             "/ui/setup/mode": self.post_mode, "/ui/setup/done": self.post_done,
-            "/ui/expert": self.post_expert, "/ui/authority": self.post_authority, "/ui/gateway": self.post_gateway, "/ui/cowork/new": self.post_cowork_new,
+            "/ui/expert": self.post_expert, "/ui/authority": self.post_authority, "/ui/devices": self.post_devices, "/ui/gateway": self.post_gateway, "/ui/cowork/new": self.post_cowork_new,
             "/ui/cowork/cmd": self.post_cowork_cmd, "/ui/cowork/answer": self.post_cowork_answer,
             "/ui/cowork/mode": self.post_cowork_mode, "/ui/cowork/delete": self.post_cowork_delete,
             "/ui/cowork/rename": self.post_cowork_rename, "/ui/cowork/model": self.post_cowork_model,
@@ -419,6 +422,14 @@ class Handler(BaseHTTPRequestHandler):
         ps = router.providers()
         asks = [dict(v, engine=k, name=getattr(router.get(k), "name", k)) for k, v in router.ASKS.items() if authority.get(k) == authority.ASK]
         return {"expert": expert.on(), "asks": asks, "engines": [{"id": p.id, "name": p.name, "authority": authority.get(p.id)} for p in ps]}
+
+    def post_devices(self, body):
+        """Choose which cards an engine may use: {engine, devices: "all" | "none" | [uuid, ...]}. It applies the next time the engine starts."""
+        pid = str(body.get("engine") or "")
+        if not router.get(pid):
+            raise ValueError("Unknown engine.")
+        devices.set_(pid, body.get("devices"))
+        self.send_json(dict(devices.state([q.id for q in router.providers()]), expert=expert.on()))
 
     def post_authority(self, body):
         """Set how far Shoggoth may go with an engine it did not start, or answer an Ask: {engine, authority} or {engine, answer: "free"}."""

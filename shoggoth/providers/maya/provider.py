@@ -7,6 +7,7 @@ import shlex
 import subprocess
 import time
 
+import devices
 import provbase
 from provbase import ProviderError, http_json, port_open, port_range
 
@@ -110,7 +111,8 @@ class Provider(provbase.GenericProvider):
             raise ProviderError("Maya's launch script hasn't been approved yet.")
         with self._lock:
             progress("Starting Maya…")
-            self._proc = subprocess.Popen(cmd, stdin=subprocess.DEVNULL, stdout=subprocess.DEVNULL, stderr=subprocess.STDOUT, start_new_session=True)
+            self._proc = subprocess.Popen(cmd, stdin=subprocess.DEVNULL, stdout=subprocess.DEVNULL, stderr=subprocess.STDOUT, start_new_session=True,
+                                          env=dict(os.environ, **devices.env(self.id)))
             self._claim.set(pid=self._proc.pid, port=None, t=provbase._start_time(self._proc.pid))
         return self._wait_for(model_id, progress, float((self.spec.get("run") or {}).get("ready", {}).get("timeout", 900)), launched=True)
 

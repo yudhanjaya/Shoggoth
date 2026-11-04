@@ -5634,6 +5634,11 @@
  "/ui/expert": {
   "on": false
  },
+ "/ui/devices": {
+  "expert": false,
+  "gpus": [],
+  "engines": []
+ },
  "/ui/authority": {
   "expert": false,
   "engines": []

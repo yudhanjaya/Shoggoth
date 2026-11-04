@@ -126,3 +126,11 @@ a real Maya was available, so the contract against a real one is still to be che
 reads engines, loaded models, the gateway and requests in flight (exit 1 when the gateway is down, 2 when no Shoggoth answers). `shoggoth connect`
 prints the base URL, a masked key (`--reveal` shows it), the model names and a `curl` line. Both use `client.py`, which calls the same `/ui/*` routes
 as the page with the secret from the config folder.
+
+## Which cards an engine uses (Expert Mode)
+
+`devices.py` keeps a choice per engine: all cards (default), none, or cards by UUID. It is applied when Shoggoth starts the engine, as
+`CUDA_VISIBLE_DEVICES` (with `CUDA_DEVICE_ORDER=PCI_BUS_ID`), for Lemonade's `lemond`, Strata's `launch`, and Maya's launch script and generic YAML
+engines. A running engine keeps its cards until it restarts. Two engines with their own, non-overlapping cards (or one on none) no longer free each
+other's memory in `router.make_room`. NVIDIA only so far. Not yet built: the RAM guard, the offer to restart a running engine with new cards, the
+check that an engine really sees only its cards, and Strata's own `--gpu` flag (the environment variable is used instead; unconfirmed on a two-GPU machine).

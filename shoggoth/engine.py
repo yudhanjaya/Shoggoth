@@ -19,6 +19,7 @@ import threading
 import time
 
 import lem
+import devices
 import ownership
 import store
 import updater
@@ -312,7 +313,7 @@ def start(settings):
         _seed_config(data)
         os.makedirs(os.path.dirname(log_path()), exist_ok=True)
         logf = open(log_path(), "wb")
-        env = dict(os.environ, LEMONADE_API_KEY=key)
+        env = dict(os.environ, LEMONADE_API_KEY=key, **devices.env("lemonade"))
         try:
             proc = subprocess.Popen(_launcher(exe) + [data, "--port", str(port), "--no-broadcast"], cwd=data, env=env,
                                     stdout=logf, stderr=subprocess.STDOUT, start_new_session=True)

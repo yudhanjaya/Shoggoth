@@ -9,6 +9,7 @@ import threading
 import time
 
 import authority
+import devices
 import provbase
 import registry
 
@@ -164,6 +165,8 @@ def make_room(p, progress):
         mq = q.memory()
         if q is p or mq["group"] != mem["group"] or not (mem["exclusive"] or mq["exclusive"]):
             continue
+        if devices.disjoint(p.id, q.id):
+            continue                                  # each has its own cards (Expert Mode): neither needs the other's memory
         try:
             running = q.is_running()
         except NotImplementedError:
