@@ -3645,6 +3645,26 @@ async function expertLoad(){
   try{ EXPERT.on = !!(await api("/ui/expert")).on; EXPERT.engines = EXPERT.on ? (await api("/ui/authority")).engines : []; }catch{}
   if(S.view === "advanced") renderAdvanced();
 }
+/* an engine is holding the memory a model needs and Shoggoth is set to ask: one card, answered once */
+async function askPoll(){
+  if(document.hidden) return;
+  let d; try{ if(!EXPERT.on) EXPERT.on = !!(await api("/ui/expert")).on; if(!EXPERT.on) return; d = await api("/ui/authority"); }catch{ return; }
+  let box = $("#askcard"), a = (d.asks || [])[0];
+  if(!a){ if(box) box.remove(); return; }
+  if(box && box.dataset.engine === a.engine) return;
+  if(!box){ box = document.createElement("div"); box.id = "askcard"; box.className = "panel"; box.setAttribute("role", "alertdialog");
+    box.style.cssText = "position:fixed;right:16px;bottom:16px;max-width:380px;z-index:50;box-shadow:0 6px 24px rgba(0,0,0,.25)"; document.body.appendChild(box); }
+  box.dataset.engine = a.engine;
+  box.innerHTML = `<p style="margin:0 0 10px">${esc(a.message)}</p><p class="help" style="margin:0 0 10px">After it is freed, send your message again.</p>
+    <div class="line"><button type="button" class="btn" data-ask="free">Free it</button> <button type="button" class="btn" data-ask="later">Not now</button> <button type="button" class="btn" data-ask="allowed">Always for ${esc(a.name)}</button></div>`;
+  box.onclick = async e => {
+    const w = e.target.dataset.ask; if(!w) return;
+    const body = w === "allowed" ? {engine: a.engine, authority: "allowed"} : {engine: a.engine, answer: w};
+    try{ await api("/ui/authority", {method: "POST", body: JSON.stringify(body)}); toast(w === "later" ? "Left as it is." : "Done. Send your message again."); }catch(err){ toast(err.message); }
+    box.remove(); expertLoad();
+  };
+}
+setInterval(askPoll, 3000);
 const AUTH_WORDS = {ask: "Ask me first", allowed: "Allowed to free it", hands_off: "Hands off"};
 function renderAdvanced(){
   $("#advhub").innerHTML = `<p class="lede">The tools for people who like to look under the bonnet. You never need these to chat.</p>

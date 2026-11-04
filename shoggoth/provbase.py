@@ -199,6 +199,10 @@ class Base:
         """(busy?, a counter that moves when it produces output) for idle detection, or (None, None) when it can't tell."""
         return None, None
 
+    def found_activity(self):
+        """Like activity(), for an engine Shoggoth did not start. (None, None) when it can't tell, and then it is never released for being idle."""
+        return None, None
+
     def owned_instance(self):
         """An identifier of the running thing Shoggoth itself started (so it may stop it when idle), or None."""
         return None

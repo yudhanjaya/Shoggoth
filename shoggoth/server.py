@@ -417,7 +417,8 @@ class Handler(BaseHTTPRequestHandler):
 
     def authority_state(self):
         ps = router.providers()
-        return {"expert": expert.on(), "engines": [{"id": p.id, "name": p.name, "authority": authority.get(p.id)} for p in ps]}
+        asks = [dict(v, engine=k, name=getattr(router.get(k), "name", k)) for k, v in router.ASKS.items() if authority.get(k) == authority.ASK]
+        return {"expert": expert.on(), "asks": asks, "engines": [{"id": p.id, "name": p.name, "authority": authority.get(p.id)} for p in ps]}
 
     def post_authority(self, body):
         """Set how far Shoggoth may go with an engine it did not start, or answer an Ask: {engine, authority} or {engine, answer: "free"}."""
@@ -428,8 +429,12 @@ class Handler(BaseHTTPRequestHandler):
             if authority.get(pid) != authority.ASK:
                 raise ValueError("That engine isn't set to ask.")
             authority.grant_once(pid)
+            router.ASKS.pop(pid, None)
+        elif body.get("answer") == "later":
+            router.ASKS.pop(pid, None)
         else:
             authority.set_(pid, body.get("authority"))
+            router.ASKS.pop(pid, None)
         self.send_json(self.authority_state())
 
     # ---- where models live

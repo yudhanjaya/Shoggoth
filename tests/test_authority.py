@@ -44,6 +44,17 @@ class Fake(provbase.Base):
             return True, ""
         return False, "it is running something you started."
 
+    minutes, found_busy = 5, (False, 1)
+
+    def idle_minutes(self):
+        return self.minutes
+
+    def found_activity(self):
+        return self.found_busy
+
+    def activity(self):
+        return None, None
+
     def release(self):
         self.log.append("release")
         self.running = False
@@ -130,6 +141,35 @@ class Authority(unittest.TestCase):
         with self.assertRaises(provbase.ProviderError):
             self.room()
 
+    def test_an_ask_waits_for_the_person_until_it_is_answered(self):
+        expert.set_on(True)
+        router.ASKS.clear()
+        with self.assertRaises(provbase.NeedsAnswer):
+            self.room()
+        self.assertEqual(list(router.ASKS), ["maya"])
+
+    def idle(self, t):
+        router.idle_tick(now=t)
+        return self.other.log
+
+    def test_an_allowed_engine_that_reports_idle_is_released_after_its_minutes_never_stopped(self):
+        expert.set_on(True)
+        authority.set_("maya", "allowed")
+        router._idle.clear()
+        self.idle(1000)
+        self.assertEqual(self.idle(1000 + 4 * 60), [])
+        self.assertEqual(self.idle(1000 + 5 * 60), ["release"])
+
+    def test_found_engines_on_ask_or_hands_off_or_unable_to_report_are_never_released_when_idle(self):
+        expert.set_on(True)
+        for setting, report in (("ask", (False, 1)), ("hands_off", (False, 1)), ("allowed", (None, None)), ("allowed", (True, 1))):
+            authority.set_("maya", setting)
+            self.other.found_busy = report
+            router._idle.clear()
+            self.idle(0)
+            self.idle(100000)
+            self.assertEqual(self.other.log, [], (setting, report))
+
     def test_a_bad_choice_is_refused(self):
         with self.assertRaises(ValueError):
             authority.set_("maya", "whatever")
@@ -157,7 +197,10 @@ class Authority(unittest.TestCase):
             self.assertEqual(call("POST", '{"engine": "maya", "answer": "free"}')[0], 400)       # only an engine on Ask can be answered
             self.assertEqual(call("POST", '{"engine": "nobody", "authority": "ask"}')[0], 400)
             self.assertEqual(call("POST", '{"engine": "maya", "authority": "bogus"}')[0], 400)
+            router.ASKS["lemonade"] = {"message": "Free it?", "since": 1}
+            self.assertEqual([a["engine"] for a in call("GET")[1]["asks"]], ["lemonade"])
             self.assertEqual(call("POST", '{"engine": "lemonade", "answer": "free"}')[0], 200)
+            self.assertEqual(router.ASKS, {})
             self.assertTrue(authority.spend("lemonade"))
         finally:
             router.get = real_get

@@ -18,6 +18,7 @@ STATE = {"ref": None, "provider": None, "step": "", "since": 0}      # what is b
 busy_checks = []          # callables(provider id) -> bool; True when something of Shoggoth's (a chat answering) is using that provider
 holds = []                # callables() -> "" or why no model may be started or used right now (a tune has the graphics cards)
 on_change = []            # callables run after an activation or a stop, so cached model lists are re-read
+ASKS = {}                 # engine id -> {message, since}: questions waiting for the person (authority: Ask), shown by the page
 _idx = {"t": 0, "v": None}
 _idle = {}
 
@@ -177,7 +178,9 @@ def make_room(p, progress):
             progress("Freeing memory: asking %s to let go of it…" % q.name)
             ok, msg = q.release()                                      # not ours, but the person said this engine may be freed
         elif not ok and q.owned_instance() is None and authority.get(q.id) == authority.ASK:
-            raise provbase.NeedsAnswer(q.id, "%s is holding the memory %s needs. Free it? Shoggoth will unload it and leave it running." % (q.name, p.name))
+            msg = "%s is holding the memory %s needs. Free it? Shoggoth will unload it and leave it running." % (q.name, p.name)
+            ASKS[q.id] = {"message": msg, "since": time.time()}
+            raise provbase.NeedsAnswer(q.id, msg)
         if not ok:
             if mem["exclusive"]:
                 raise provbase.ProviderError("%s is running something you started, and %s needs the memory to itself. %s" % (q.name, p.name, msg))
@@ -273,7 +276,7 @@ def deactivate(ref=None):
 # ---------------------------------------------------------------- stopping what Shoggoth started once it has been idle
 def idle_tick(now=None):
     """One look at every provider: restart its idle clock if it is working, stop what Shoggoth started once it has been idle for the chosen
-    time. Only what Shoggoth itself started is ever stopped this way. Returns {provider id: "stopped" | "busy" | "idle"}."""
+    time. An engine Shoggoth did not start is only released (never stopped), only when it is set to Allowed and reports its own activity. Returns {provider id: "stopped" | "busy" | "idle"}."""
     now = now or time.time()
     out = {}
     for p in providers():
@@ -281,18 +284,27 @@ def idle_tick(now=None):
             minutes, inst = p.idle_minutes(), p.owned_instance()
         except NotImplementedError:
             continue
-        st = _idle.get(p.id)
-        if not minutes or inst is None:
+        found = inst is None                    # not ours: only an engine set to Allowed, and only one that can say whether it is busy
+        if found:
+            try:
+                if not minutes or authority.get(p.id) != authority.ALLOWED or not p.is_running():
+                    _idle.pop(p.id, None)
+                    continue
+            except NotImplementedError:
+                continue
+            inst = "found"
+        elif not minutes:
             _idle.pop(p.id, None)
             continue
+        st = _idle.get(p.id)
         if not st or st["inst"] != inst:
             st = _idle[p.id] = {"inst": inst, "since": now, "tokens": None}     # a new instance: its clock starts now
-        busy, tokens = p.activity()
+        busy, tokens = p.found_activity() if found else p.activity()
         if busy is None or busy or tokens != st["tokens"] or any(chk(p.id) for chk in busy_checks):
             st.update(since=now, tokens=tokens)
             out[p.id] = "busy"
         elif now - st["since"] >= minutes * 60:
-            p.stop()
+            (p.release if found else p.stop)()
             _idle.pop(p.id, None)
             invalidate()
             out[p.id] = "stopped"

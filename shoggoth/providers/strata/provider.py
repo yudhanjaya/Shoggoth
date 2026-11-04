@@ -70,6 +70,10 @@ class Provider(provbase.GenericProvider):
         r = strata.zest_server()
         return strata.activity(r["url"]) if r else (None, None)
 
+    def found_activity(self):
+        r = next((r for r in strata.running() if r["state"] == "ready" and r["source"] != "saved"), None)
+        return strata.activity(r["url"]) if r else (None, None)
+
     def selftest(self):
         return strata.selftest()
 
