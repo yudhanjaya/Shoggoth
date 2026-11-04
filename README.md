@@ -20,9 +20,13 @@
 
 ****
 
-The goal of Shoggoth is to be an easy on-ramp to running models locally for new users. The local AI space can be hard to decipher sometimes - llama, lemonade, strata, maya, VLLM, sglang, the millions of *what agent? what harness?* questions . . . a lot of people want to tinker aren't used to the various terminals, programs and jargon that we use in the local AI space. 
+## Why?
 
-Shoggoth makes that task easier. It also bundles in help docs so that you understand how this stuff works over and under the hood.
+The goal of Shoggoth is to be an easy on-ramp to running models locally for new users. I built this to help a friend get local AI models running on their own hardware without having to deal with a million different options, command-line configurations and Reddit posts.
+
+The local AI space can be hard to decipher sometimes - llama, lemonade, strata, maya, VLLM, sglang, the millions of *what agent? what harness?* questions . . . a lot of people want to tinker aren't used to the various terminals, programs and jargon that we use in the local AI space. 
+
+Shoggoth makes that task easier. It also bundles in help docs so that you understand how this stuff works over and under the hood. 
 
 Shoggoth is not meant to be a replacement for various backends or front-ends. I hope that users will graduate to being comfortable setting up Strata, Maya, or whatever complex VLLM setup they want . . .and running OpenCode or DeepSeek Harness or Hermes Agent to their heart's content. Shoggoth is meant to make it easier for new users and to help them "graduate". 
 
