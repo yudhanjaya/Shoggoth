@@ -10,13 +10,22 @@
 
 # Run AI on your own computer, and put it to work.
 
-**Shoggoth is one download that runs open-weights language models on your own hardware.** Chat with them, draw diagrams, write documents, or let a model read and change the files in a folder while you watch. No cloud account, no technical know-how, and nothing you type leaves your machine.
+**Shoggoth is one download that runs open-weights language models on your own hardware.** Chat with them, draw diagrams, write documents, or let a model read and change the files in a folder while you watch. Shoggoth gives you the complete setup - backend, agent, harness, monitoring - without needing much technical know-how.
 
 **[⬇ Download for Linux](../../releases/latest)** · [Install in three steps](#install) · [Read the docs](shoggoth/docs.md)
 
 ![Shoggoth working in a folder: the model's answer after it fixed a bug, with the model in its tube at the top](docs/screenshots/chat.png)
 
 *Working in a folder: the model found why two tests failed, fixed it with a one-line change (shown as a diff) and ran the tests again.*
+
+****
+
+The goal of Shoggoth is to be an easy on-ramp to running models locally for new users. The local AI space can be hard to decipher sometimes - llama, lemonade, strata, maya, VLLM, sglang, the millions of *what agent? what harness?* questions . . . a lot of people want to tinker aren't used to the various terminals, programs and jargon that we use in the local AI space. 
+
+Shoggoth makes that task easier. It also bundles in help docs so that you understand how this stuff works over and under the hood.
+
+Shoggoth is not meant to be a replacement for various backends or front-ends. I hope that users will graduate to being comfortable setting up Strata, Maya, or whatever complex VLLM setup they want . . .and running OpenCode or DeepSeek Harness or Hermes Agent to their heart's content. Shoggoth is meant to make it easier for new users and to help them "graduate". 
+
 
 ---
 
