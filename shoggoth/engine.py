@@ -22,6 +22,7 @@ import urllib.error
 import urllib.request
 
 import lem
+import ownership
 import store
 import util
 
@@ -219,13 +220,34 @@ def _is_our_lemond(pid, port):
     return any(os.path.basename(a) == b"lemond" for a in argv[:4]) and str(port).encode() in argv
 
 
-def _recorded_pid(port):
+def _read_pid():
     try:
         with open(_pidfile()) as f:
-            pid = int(f.read().strip())
+            return {"pid": int(f.read().strip())}
     except (OSError, ValueError):
         return None
-    return pid if _is_our_lemond(pid, port) else None
+
+
+def _write_pid(rec):
+    if rec is None:
+        try:
+            os.remove(_pidfile())
+        except OSError:
+            pass
+        return
+    try:
+        with open(_pidfile(), "w") as f:
+            f.write(str(rec["pid"]))
+    except OSError:
+        pass
+
+
+_claim = ownership.Claim(_read_pid, _write_pid, lambda rec, port: _is_our_lemond(rec["pid"], port), forget_stale=False)
+
+
+def _recorded_pid(port):
+    _claim.owned = False                      # always look again: the file is the truth, this is a different Lemonade each time
+    return _claim.pid if _claim.restore(port=port) else None
 
 
 def _log_tail(n=14):
@@ -301,11 +323,7 @@ def start(settings):
         finally:
             logf.close()
         _state.update(proc=proc, pid=proc.pid, port=port, key=key, program=prog)
-        try:
-            with open(_pidfile(), "w") as f:
-                f.write(str(proc.pid))
-        except OSError:
-            pass
+        _claim.set(pid=proc.pid)
         for _ in range(80):
             if proc.poll() is not None:
                 tail = _log_tail()
@@ -385,10 +403,7 @@ def stop():
                 proc.wait(timeout=1)
             except subprocess.TimeoutExpired:
                 pass
-        try:
-            os.remove(_pidfile())
-        except OSError:
-            pass
+        _claim.clear()
         _state.update(state="stopped", proc=None, pid=None, adopted=False)
 
 

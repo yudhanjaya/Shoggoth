@@ -19,6 +19,8 @@ import urllib.error
 import urllib.parse
 import urllib.request
 
+import ownership
+
 API_VERSION = 1
 # The only names a command or URL in a provider.yaml may use. Anything else is a mistake, not a feature.
 VARIABLES = {"bin", "host", "port", "model", "model_file", "preset", "family", "name", "context", "library", "data", "profile", "key"}
@@ -106,14 +108,7 @@ class Context:
         self._save(pid, **kv)
 
 
-def _start_time(pid):
-    """When process `pid` began (clock ticks since boot, from /proc), or None when there is no such process. Tells a process from a later one
-    that was given the same number."""
-    try:
-        with open("/proc/%d/stat" % pid) as f:
-            return int(f.read().rsplit(")", 1)[1].split()[19])
-    except (OSError, ValueError, IndexError):
-        return None
+_start_time = ownership.start_time
 
 
 # ---------------------------------------------------------------- the interface
@@ -298,22 +293,26 @@ class GenericProvider(Base):
         self._proc = None
         self._lock = threading.RLock()
         self._port = None
-        self._owned = False             # did Shoggoth start the process now serving?
-        self._pid = None                # its process number (kept across restarts of Shoggoth, so what Shoggoth started is still Shoggoth's)
-        self._t = None                  # when that process began: a later process given the same number is not Shoggoth's
+        # did Shoggoth start the process now serving? Its number and start time are kept across restarts of Shoggoth, so what Shoggoth
+        # started is still Shoggoth's, and a later process given the same number is not.
+        self._claim = ownership.Claim(lambda: self.ctx.settings(self.id).get("started") or None,
+                                      lambda rec: self.ctx.remember(self.id, started=rec), self._still_ours)
         self._files = {}                # model name -> its file, learned as the library asks for names (models.serve: file)
 
     # -- helpers
+    _owned = property(lambda self: self._claim.owned, lambda self, v: setattr(self._claim, "owned", v))
+    _pid = property(lambda self: self._claim.pid, lambda self, v: setattr(self._claim, "pid", v))
+    _t = property(lambda self: self._claim.t, lambda self, v: setattr(self._claim, "t", v))
+
+    @staticmethod
+    def _still_ours(rec):
+        pid, port = rec.get("pid"), rec.get("port")
+        return bool(pid and port and _start_time(int(pid)) == rec.get("t") and port_open(int(port)))
+
     def _adopt_own(self):
         """After a restart of Shoggoth (or a reload of the engines) find the process Shoggoth started last time, if it is still there."""
-        if self._owned:
-            return
-        rec = self.ctx.settings(self.id).get("started") or {}
-        pid, port = rec.get("pid"), rec.get("port")
-        if pid and port and _start_time(int(pid)) == rec.get("t") and port_open(int(port)):
-            self._pid, self._port, self._owned, self._t = int(pid), int(port), True, rec.get("t")
-        elif rec:
-            self.ctx.remember(self.id, started=None)             # it has gone
+        if not self._claim.owned and self._claim.restore():
+            self._port = int(self._claim.port)
 
     def _alive(self):
         if self._proc is not None:
@@ -449,13 +448,11 @@ class GenericProvider(Base):
             cmd = fill(run["start"], **self._vals(model=model_id, model_file=self._files.get(model_id, ""), port=free, context=ctx))
             progress("Starting %s…" % self.name)
             self._proc = subprocess.Popen(cmd, stdin=subprocess.DEVNULL, stdout=subprocess.DEVNULL, stderr=subprocess.STDOUT, start_new_session=True)
-            self._owned, self._pid, self._t = True, self._proc.pid, _start_time(self._proc.pid)
-            self.ctx.remember(self.id, started={"pid": self._pid, "port": free, "t": self._t})
+            self._claim.set(pid=self._proc.pid, port=free, t=_start_time(self._proc.pid))
             deadline = time.time() + float((run.get("ready") or {}).get("timeout", 120))
             while time.time() < deadline:
                 if self._proc.poll() is not None:
-                    self._owned, self._pid = False, None
-                    self.ctx.remember(self.id, started=None)
+                    self._claim.clear()
                     raise ProviderError("%s stopped right after starting." % self.name)
                 if self._health(free) is not None:
                     ep = self.endpoint(model_id) or self.endpoint(None)
@@ -495,8 +492,8 @@ class GenericProvider(Base):
                         self._wait_gone(5)
             except (OSError, subprocess.SubprocessError):
                 pass
-            self._proc, self._owned, self._pid, self._t = None, False, None, None
-            self.ctx.remember(self.id, started=None)
+            self._proc = None
+            self._claim.clear()
             return True, ""
 
     def _end(self, sig):

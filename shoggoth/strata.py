@@ -21,6 +21,7 @@ import urllib.error
 import urllib.request
 
 import hardware
+import ownership
 import recs
 import store
 
@@ -115,6 +116,26 @@ def _save(mutate):
     store.save(s)
 
 
+def _load_owned():
+    o = _settings()["owned"]
+    return {"port": o["port"], "preset": o.get("preset", "")} if o.get("port") else None
+
+
+def _save_owned(rec):
+    _save(lambda st: st["owned"].update(preset=rec["preset"], port=int(rec["port"])) if rec else st["owned"].update(preset="", port=0))
+
+
+def _owned():
+    """The server Shoggoth started: its port and preset, or an empty claim. Whether that server is still there is _discover's to say."""
+    c = ownership.Claim(_load_owned, _save_owned)
+    c.restore()
+    return c
+
+
+def _remember_owned(preset, port):
+    ownership.Claim(_load_owned, _save_owned).set(port=int(port), preset=preset)
+
+
 def _http_json(url, key="", timeout=3):
     h = {"Authorization": "Bearer " + key, "x-api-key": key} if key else {}
     try:
@@ -168,8 +189,9 @@ def _discover():
     for u in saved:
         h = health[u]
         found[u] = {"name": (h or {}).get("model") or u, "port": 0, "state": ("ready" if h.get("loaded") else "loading") if h else "unreachable", "source": "saved"}
-    owned = st["owned"].get("port")
-    mine = profile_of(st["owned"]["preset"]) if st["owned"].get("preset") else ""
+    claim = _owned()
+    owned = claim.port
+    mine = profile_of(claim.extra["preset"]) if claim.extra.get("preset") else ""
     launched = [u for u, r in found.items() if r["source"] == "launch"]
     # `launch --show-key` names no server: its key is only known to be that server's when `strata launch` manages just one
     shown = _show_key() if len(launched) == 1 and not st["keys"].get(launched[0]) else ""
@@ -192,7 +214,7 @@ def _discover():
         ours = bool(owned) and r["port"] == owned and r["source"] == "launch" and (not r.get("profile") or not mine or r["profile"] == mine)
         out.append(dict(r, url=u, key=key, needs_key=status in (401, 403), models=models, owner="zest" if ours else "yours"))
     if owned and not any(r["owner"] == "zest" for r in out):
-        _save(lambda s: s["owned"].update(preset="", port=0))       # the one Shoggoth started has gone: forget it
+        claim.clear()                                               # the one Shoggoth started has gone: forget it
     return out
 
 
@@ -441,7 +463,7 @@ def _do_start(preset, port, force=False, model=None):
             tail = [l for l in RUN["log"] if l.strip()][-2:]
             raise RuntimeError(" ".join(tail) or "Strata stopped with code %d." % code)
         if port:
-            _save(lambda st: st["owned"].update(preset=preset, port=int(port)))
+            _remember_owned(preset, port)
             _changed()
             for _ in range(20):                      # the server may need a moment to list its model
                 r = next((r for r in running() if r["port"] == int(port) and r["models"]), None)
@@ -466,7 +488,7 @@ def stop(url=None):
         return False, "Shoggoth can't stop that one, because it wasn't started with `strata launch`. Stop it where you started it."
     code, out = _run(["launch", "--stop"], 60)
     RUN.update(state="idle", error=None)
-    _save(lambda s: s["owned"].update(preset="", port=0))
+    _owned().clear()
     _changed()
     return code == 0, "" if code == 0 else (out.strip().splitlines() or ["Strata didn't stop."])[-1]
 
@@ -684,7 +706,7 @@ def _do_setup(entry, force=False):
             tail = [l for l in RUN["log"] if l.strip()][-2:]
             raise RuntimeError(" ".join(tail) or "Strata stopped with code %d." % p.returncode)
         _pc["t"] = 0
-        _save(lambda st: st["owned"].update(preset=name, port=port))
+        _remember_owned(name, port)
         _changed()
         for _ in range(40):
             r = next((r for r in running() if r["port"] == port and r["models"]), None)
