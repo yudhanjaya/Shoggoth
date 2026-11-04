@@ -48,6 +48,15 @@ class Door(unittest.TestCase):
                              ("POST", "/ui/ping"), ("POST", "/ui/code"), ("GET", "/api/v1/models"), ("DELETE", "/ui/cowork/delete")):
             self.assertEqual(self.call(method, path, body="{}")[0], 401, (method, path))
 
+    def test_an_engines_own_calls_live_under_its_id(self):
+        auth = {"Authorization": "Bearer " + uiauth.token()}
+        self.assertEqual(self.call("GET", "/ui/providers/strata/summary", auth)[0], 200)
+        self.assertEqual(self.call("GET", "/ui/providers/strata/nope", auth)[0], 404)
+        self.assertEqual(self.call("GET", "/ui/providers/nobody/summary", auth)[0], 404)
+        self.assertEqual(self.call("POST", "/ui/providers/nobody/stop", auth, "{}")[0], 404)
+        self.assertEqual(self.call("GET", "/ui/providers/strata/summary")[0], 401)
+        self.assertEqual(self.call("GET", "/ui/strata", auth)[0], 404)             # the old per-engine path is gone
+
     def test_the_version_is_public_so_a_second_launch_can_find_this_zest(self):
         status, _, body = self.call("GET", "/ui/ping")
         self.assertEqual(status, 200)

@@ -147,3 +147,62 @@ class Provider(provbase.GenericProvider):
     def update_status(self):
         u = dict(strata.SUPD)
         return {"state": u.get("state") or "idle", "text": u.get("text") or "", "error": u.get("error")}
+
+    # -- the page's calls (/ui/providers/strata/<action>)
+    def ui(self, method, action, arg):
+        fn = getattr(self, "_ui_%s_%s" % (method.lower(), action), None)
+        return fn(arg) if fn else None
+
+    def _ui_get_summary(self, q):
+        return 200, strata.summary()
+
+    def _ui_get_recommend(self, q):
+        return 200, strata.recommend()
+
+    def _ui_get_update(self, q):
+        """The last look at Strata's feed (kept six hours; ?fresh=1 looks again), and where an update stands."""
+        try:
+            check, err = strata.update_check(0 if q.get("fresh") else 6 * 3600), ""
+        except RuntimeError as e:
+            check, err = {"installed": bool(strata.binary())}, str(e)
+        return 200, {"check": check, "error": err, "update": dict(strata.SUPD)}
+
+    def _ui_post_update(self, body):
+        return 200, {"started": strata.start_update(), "update": dict(strata.SUPD)}
+
+    def _ui_post_start(self, body):
+        """Start a saved Strata preset. A big model and Lemonade's models compete for memory, so Lemonade's are freed first
+        when the page says so (`free_lemonade`)."""
+        preset = str(body.get("preset", "")).strip()
+        return 200, {"started": strata.start(preset, bool(body.get("force"))), **strata.summary()}
+
+    def _ui_post_setup(self, body):
+        """Get a big model in one step: install Strata if needed, download, save as a Shoggoth preset, start. Lemonade's models are
+        freed first because they share the memory."""
+        family, model = str(body.get("family", "")), str(body.get("model", ""))
+        if not any(e["family"] == family and e["model"] == model for e in strata.catalog()):
+            raise ValueError("Shoggoth doesn't know that model.")
+        return 200, {"started": strata.setup(family, model, bool(body.get("force"))), **strata.summary()}
+
+    def _ui_post_install(self, body):
+        return 200, {"started": strata.install(), **strata.summary()}
+
+    def _ui_post_idle(self, body):
+        strata.set_idle_minutes(body.get("minutes", 20))
+        return 200, {"ok": True, **strata.summary()}
+
+    def _ui_post_connect(self, body):
+        ok, msg = strata.connect(body.get("url", ""), str(body.get("key", "")).strip())
+        return (200 if ok else 400), {"ok": ok, "error": msg, "_restart": True, **strata.summary()}
+
+    def _ui_post_forget(self, body):
+        strata.forget(body.get("url", ""))
+        return 200, {"ok": True, "_restart": True, **strata.summary()}
+
+    def _ui_post_key(self, body):
+        strata.set_key(body.get("url", ""), body.get("key", ""))
+        return 200, {"ok": True, "_restart": True, **strata.summary()}
+
+    def _ui_post_stop(self, body):
+        ok, msg = strata.stop(body.get("url") or None)
+        return (200 if ok else 409), {"ok": ok, "error": msg, "_restart": True}

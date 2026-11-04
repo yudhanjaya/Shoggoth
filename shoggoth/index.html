@@ -2358,7 +2358,7 @@ async function libLoad(fresh){
   LIB.busy = false; if(S.view === "models") renderModels(); if(S.view === "welcome") renderWelcome(true); if(S.view === "backends") renderPrefs(true);
 }
 /* while the first-run screen is up, keep the Large-model download state fresh */
-async function strRefreshWelcome(){ if(S.view !== "welcome") return; try{ STR.d = await api("/ui/strata"); }catch{} renderWelcome(); setTimeout(strRefreshWelcome, 3000); }
+async function strRefreshWelcome(){ if(S.view !== "welcome") return; try{ STR.d = await api("/ui/providers/strata/summary"); }catch{} renderWelcome(); setTimeout(strRefreshWelcome, 3000); }
 function libShow(){
   hrLoad().then(() => { if(S.view === "models") renderModels(); }); tnQuiet(); renderModels(); libLoad(); strRefresh(); pkLoad(true); loadRecs().then(() => { if(S.view === "models") renderModels(); }); }
 function libFilters(){
@@ -2592,13 +2592,13 @@ $("#v-models").addEventListener("click", async e => {
   if(t.dataset.sget){
     const [family, model] = t.dataset.sget.split("|");
     if(!confirm("Get this model? It can be tens of gigabytes. Shoggoth frees the memory your other models are using, and the first start can take a few minutes.")) return;
-    try{ STR.d = await api("/ui/strata/setup", {method: "POST", body: JSON.stringify({family, model})}); }catch(err){ toast(err.message); }
+    try{ STR.d = await api("/ui/providers/strata/setup", {method: "POST", body: JSON.stringify({family, model})}); }catch(err){ toast(err.message); }
     return renderModels();
   }
   if(t.dataset.sanyway){
     const rt = ((STR.d || {}).run || {}).retry || {};
     if(!confirm("Start anyway? The computer may slow right down or run out of memory.")) return;
-    try{ STR.d = await api(rt.kind === "setup" ? "/ui/strata/setup" : "/ui/strata/start", {method: "POST", body: JSON.stringify(Object.assign({}, rt, {force: true}))}); }catch(err){ toast(err.message); }
+    try{ STR.d = await api(rt.kind === "setup" ? "/ui/providers/strata/setup" : "/ui/providers/strata/start", {method: "POST", body: JSON.stringify(Object.assign({}, rt, {force: true}))}); }catch(err){ toast(err.message); }
     return renderModels();
   }
   if(t.dataset.dl) startDownload(t.dataset.dl);
@@ -3162,7 +3162,7 @@ function wAuto(rec, go){
   if(!go) return;
   if(st.mode === "builtin" && !eng.available && eng.update.state === "idle" && !W.auto.helper){ W.auto.helper = true; suBusy("update", async () => { await suPost("/ui/engine/update"); }); }
   if(st.lemonade.reachable && llamaRecipe() && !backendsInstalled().length && rec && !SU.busy["inst-" + rec.name] && !W.auto["fit-" + rec.name] && !SU.msg.backend){ W.auto["fit-" + rec.name] = true; wFit(rec.name); }
-  if(!STR.rec && !W.auto.rec){ W.auto.rec = true; api("/ui/strata/recommend").then(r => { STR.rec = r; if(S.view === "welcome") renderWelcome(true); }).catch(() => {}); }
+  if(!STR.rec && !W.auto.rec){ W.auto.rec = true; api("/ui/providers/strata/recommend").then(r => { STR.rec = r; if(S.view === "welcome") renderWelcome(true); }).catch(() => {}); }
 }
 function wFit(name){
   return suBusy("inst-" + name, async () => {
@@ -3394,10 +3394,10 @@ function hwMemoryPaint(){
     <p class="help" style="margin:4px 0 12px">Models use your computer's memory while they are ready. Shoggoth frees the memory of whatever else was running when you choose another model.</p>
     ${big ? `<div class="line"><label class="grow help" style="margin:0">Free the memory of large models after <input id="stridle" type="number" min="0" max="1440" value="${+(STR.d.idle_minutes ?? 20)}" style="width:70px"> idle minutes (0 keeps them ready). This only applies to large models Shoggoth started itself.</label><button class="btn" data-hwidle="save">Save</button></div>` : `<p class="help" style="margin:0">Large models are not set up on this computer, so there is nothing to time out here.</p>`}</section>`;
 }
-async function hwMemoryShow(){ try{ STR.d = await api("/ui/strata"); }catch{} hwMemoryPaint(); }
+async function hwMemoryShow(){ try{ STR.d = await api("/ui/providers/strata/summary"); }catch{} hwMemoryPaint(); }
 $("#hwmemory").addEventListener("click", async e => {
   if(!e.target.closest("[data-hwidle]")) return;
-  try{ await api("/ui/strata/idle", {method: "POST", body: JSON.stringify({minutes: +$("#stridle").value || 0})}); toast("Saved."); await hwMemoryShow(); }catch(err){ toast(err.message); }
+  try{ await api("/ui/providers/strata/idle", {method: "POST", body: JSON.stringify({minutes: +$("#stridle").value || 0})}); toast("Saved."); await hwMemoryShow(); }catch(err){ toast(err.message); }
 });
 
 async function suPost(path, body){ return api(path, {method: "POST", headers: {"Content-Type": "application/json"}, body: JSON.stringify(body || {})}); }
@@ -3411,7 +3411,7 @@ const setupClick = async e => {
   if(el.dataset.lib) return wLibAct(el.dataset.lib);
   if(el.dataset.canceldl) return cancelDownload(el.dataset.canceldl);
   if(el.dataset.sanyway){ const rt = ((STR.d || {}).run || {}).retry || {}; if(!confirm("Start anyway? The computer may slow right down or run out of memory.")) return;
-    try{ STR.d = await api(rt.kind === "setup" ? "/ui/strata/setup" : "/ui/strata/start", {method: "POST", body: JSON.stringify(Object.assign({}, rt, {force: true}))}); }catch(err){ toast(err.message); } return renderWelcome(true); }
+    try{ STR.d = await api(rt.kind === "setup" ? "/ui/providers/strata/setup" : "/ui/providers/strata/start", {method: "POST", body: JSON.stringify(Object.assign({}, rt, {force: true}))}); }catch(err){ toast(err.message); } return renderWelcome(true); }
   if(el.dataset.go) return show(el.dataset.go);
   const a = el.dataset.act;
   if(a === "autocheck") { store.set("shoggoth.autocheck", el.checked); return; }
@@ -3440,7 +3440,7 @@ const setupClick = async e => {
   if(a === "w-own"){ show("backends"); setTimeout(() => { const d = $("#ownserver"); if(d){ d.open = true; d.scrollIntoView({block: "start"}); } }, 400); return; }
   if(a === "sget"){
     if(!confirm("Get this model? It can be tens of gigabytes, and the first start takes a few minutes.")) return;
-    try{ STR.d = await api("/ui/strata/setup", {method: "POST", body: JSON.stringify({family: el.dataset.family, model: el.dataset.model})}); }catch(err){ toast(err.message); }
+    try{ STR.d = await api("/ui/providers/strata/setup", {method: "POST", body: JSON.stringify({family: el.dataset.family, model: el.dataset.model})}); }catch(err){ toast(err.message); }
     return renderWelcome(true);
   }
   if(a === "finish"){ await suPost("/ui/setup/done", {done: true}); SU.st.setup_done = true; show("cowork"); }
@@ -3467,14 +3467,14 @@ setInterval(() => { if(!document.hidden && (inSetup() || (SU.st && ["downloading
 /* ======================= Strata: bigger models ======================= */
 const STR = {d: null, msg: "", rec: null, recAt: 0};
 async function strUpdFetch(fresh){
-  try{ SU.strUpd = await api("/ui/strata/update" + (fresh ? "?fresh=1" : "")); }catch{ SU.strUpd = null; }
+  try{ SU.strUpd = await api("/ui/providers/strata/update" + (fresh ? "?fresh=1" : "")); }catch{ SU.strUpd = null; }
   updateNavDot(); if(S.view === "models") strPaint();
 }
 async function strRefresh(){
   if(S.view !== "models" && S.view !== "backends" && S.view !== "hardware") return;
-  try{ STR.d = await api("/ui/strata"); }catch{ STR.d = null; }
+  try{ STR.d = await api("/ui/providers/strata/summary"); }catch{ STR.d = null; }
   if(STR.d && STR.d.installed && (!SU.strUpd || (SU.strUpd.update || {}).state === "working")) await strUpdFetch();
-  if(Date.now() - STR.recAt > 60000 && !(STR.d && STR.d.run && String(STR.d.run.state).startsWith("start"))){ STR.recAt = Date.now(); try{ STR.rec = await api("/ui/strata/recommend"); }catch{} }
+  if(Date.now() - STR.recAt > 60000 && !(STR.d && STR.d.run && String(STR.d.run.state).startsWith("start"))){ STR.recAt = Date.now(); try{ STR.rec = await api("/ui/providers/strata/recommend"); }catch{} }
   strPaint();
   if(S.view === "models" && !document.activeElement?.closest?.("#grid, #filters, #adddlg")) renderModels();
   if(S.view === "backends") renderPrefs();
@@ -3531,24 +3531,24 @@ $("#stratabox").addEventListener("click", async e => {
   STR.msg = "";
   try{
     const act = b.dataset.str, u = b.dataset.url;
-    if(act === "install") STR.d = await api("/ui/strata/install", {method: "POST", body: "{}"});
-    else if(act === "stop"){ if(!confirm("Stop Strata? Anything that is using the model right now, here or in another app, will stop answering.")) return; b.disabled = true; await api("/ui/strata/stop", {method: "POST", body: JSON.stringify({url: u})}); STR.d = await api("/ui/strata"); }
-    else if(act === "forget"){ STR.d = await api("/ui/strata/forget", {method: "POST", body: JSON.stringify({url: u})}); }
-    else if(act === "key"){ const k = box_key(u); if(!k) return; STR.d = await api("/ui/strata/key", {method: "POST", body: JSON.stringify({url: u, key: k})}); }
-    else if(act === "update"){ SU.strUpd = await api("/ui/strata/update", {method: "POST", body: "{}"}); }
-    else if(act === "idle"){ STR.d = await api("/ui/strata/idle", {method: "POST", body: JSON.stringify({minutes: +$("#stridle").value || 0})}); toast("Saved."); }
+    if(act === "install") STR.d = await api("/ui/providers/strata/install", {method: "POST", body: "{}"});
+    else if(act === "stop"){ if(!confirm("Stop Strata? Anything that is using the model right now, here or in another app, will stop answering.")) return; b.disabled = true; await api("/ui/providers/strata/stop", {method: "POST", body: JSON.stringify({url: u})}); STR.d = await api("/ui/providers/strata/summary"); }
+    else if(act === "forget"){ STR.d = await api("/ui/providers/strata/forget", {method: "POST", body: JSON.stringify({url: u})}); }
+    else if(act === "key"){ const k = box_key(u); if(!k) return; STR.d = await api("/ui/providers/strata/key", {method: "POST", body: JSON.stringify({url: u, key: k})}); }
+    else if(act === "update"){ SU.strUpd = await api("/ui/providers/strata/update", {method: "POST", body: "{}"}); }
+    else if(act === "idle"){ STR.d = await api("/ui/providers/strata/idle", {method: "POST", body: JSON.stringify({minutes: +$("#stridle").value || 0})}); toast("Saved."); }
     else if(act === "anyway"){
       const rt = (STR.d.run || {}).retry || {};
       if(!confirm("Start anyway? The computer may slow right down or run out of memory, and other programs could be closed by the system.")) return;
-      STR.d = await api(rt.kind === "setup" ? "/ui/strata/setup" : "/ui/strata/start", {method: "POST", body: JSON.stringify(Object.assign({}, rt, {force: true}))});
+      STR.d = await api(rt.kind === "setup" ? "/ui/providers/strata/setup" : "/ui/providers/strata/start", {method: "POST", body: JSON.stringify(Object.assign({}, rt, {force: true}))});
     }
     else if(act === "setup"){
       if(!confirm("Download and set up this model? It can be tens of gigabytes, and Shoggoth frees the memory your other models are using first.")) return;
-      STR.d = await api("/ui/strata/setup", {method: "POST", body: JSON.stringify({family: b.dataset.family, model: b.dataset.model})});
+      STR.d = await api("/ui/providers/strata/setup", {method: "POST", body: JSON.stringify({family: b.dataset.family, model: b.dataset.model})});
     }
     else if(act === "start"){
       const free = !!(S.ms && S.ms.loaded && !String(S.ms.loaded).startsWith("strata/"));
-      STR.d = await api("/ui/strata/start", {method: "POST", body: JSON.stringify({preset: b.dataset.preset, free_lemonade: free})});
+      STR.d = await api("/ui/providers/strata/start", {method: "POST", body: JSON.stringify({preset: b.dataset.preset, free_lemonade: free})});
     }
   }catch(err){ STR.msg = err.message; }
   strPaint();
@@ -3556,7 +3556,7 @@ $("#stratabox").addEventListener("click", async e => {
 const box_key = u => [...document.querySelectorAll(".strkey")].find(i => i.dataset.url === u)?.value.trim() || "";
 $("#stratabox").addEventListener("submit", async e => {
   if(e.target.id !== "strform") return; e.preventDefault(); STR.msg = "";
-  try{ STR.d = await api("/ui/strata/connect", {method: "POST", body: JSON.stringify({url: $("#strurl").value.trim(), key: $("#strk").value.trim()})}); }catch(err){ STR.msg = err.message; }
+  try{ STR.d = await api("/ui/providers/strata/connect", {method: "POST", body: JSON.stringify({url: $("#strurl").value.trim(), key: $("#strk").value.trim()})}); }catch(err){ STR.msg = err.message; }
   strPaint();
 });
 setInterval(() => { if((S.view === "models" || S.view === "backends" || S.view === "hardware") && !document.hidden) strRefresh(); }, 3000);
@@ -4135,7 +4135,7 @@ function renderStrataSettings(){
   </div></details>`;
 }
 async function loadSettings(){
-  try{ STR.d = await api("/ui/strata"); }catch{}
+  try{ STR.d = await api("/ui/providers/strata/summary"); }catch{}
   renderStrataSettings();
   try{
     if(!S.bk){ try{ S.bk = (await api("/ui/backends")).recipes; }catch{} }

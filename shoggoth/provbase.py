@@ -121,6 +121,11 @@ class Base:
         self.approved = True
 
     # -- identity and what it is for
+    def ui(self, method, action, arg):
+        """The page's own calls to this engine, reached at `/ui/providers/<id>/<action>`. `arg` is the query (GET) or the body (POST).
+        Returns (status, payload), or None when the engine has no such action. A payload with `_restart` set also restarts idle chats."""
+        return None
+
     def summary(self):
         return {"id": self.id, "name": self.name, "summary": self.spec.get("summary", ""), "tier": self.spec.get("tier", ""),
                 "trusted": self.trusted, "approved": self.approved, "mode": (self.spec.get("run") or {}).get("mode", "managed"),

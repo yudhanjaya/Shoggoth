@@ -4064,7 +4064,7 @@
    }
   ]
  },
- "/ui/strata": {
+ "/ui/providers/strata/summary": {
   "installed": true,
   "version": "0.2.7",
   "presets": [
@@ -4224,7 +4224,7 @@
    }
   ]
  },
- "/ui/strata/update": {
+ "/ui/providers/strata/update": {
   "check": {
    "installed": true,
    "version": "0.2.7",
@@ -4761,7 +4761,7 @@
    }
   }
  },
- "/ui/strata/recommend": {
+ "/ui/providers/strata/recommend": {
   "machine": {
    "ram_gb": 62.7,
    "vram_gb": 26,
