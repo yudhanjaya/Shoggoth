@@ -1,6 +1,22 @@
 # Three-engine rework: Lemonade, Strata and Maya under one controller
 
-Status: plan only, nothing built. Supersedes [multi-gpu-routing.md](archive/multi-gpu-routing.md). Changes a rule that [strata-integration.md](strata-integration.md) and [weak-points.md](weak-points.md) treat as fixed ("never touch what Shoggoth didn't start"). Sources for the routing ideas: [Switch](https://github.com/osolmaz/switch) (decision models, traces, replay) and [vllm-project/semantic-router](https://github.com/vllm-project/semantic-router) (signals, eligibility, cascade); both read, neither run.
+Status: partly built (see "Build status" below). Supersedes [multi-gpu-routing.md](archive/multi-gpu-routing.md). Changes a rule that [strata-integration.md](strata-integration.md) and [weak-points.md](weak-points.md) treat as fixed ("never touch what Shoggoth didn't start"). Sources for the routing ideas: [Switch](https://github.com/osolmaz/switch) (decision models, traces, replay) and [vllm-project/semantic-router](https://github.com/vllm-project/semantic-router) (signals, eligibility, cascade); both read, neither run.
+
+## Build status
+
+Built and tested (against fakes where an engine is needed; nothing here has been run against a real Maya or on the two-GPU machine):
+
+| Piece | Where | Notes |
+| --- | --- | --- |
+| Milestone 0: S1 (Strata and Lemonade), S2, S3 (shared steps), S5, S7, S9 | see commits | S5 and S7: Tuning and Engine settings are reachable from Advanced only with Expert Mode on; S9: the skills link form likewise. The search settings and test are not gated yet |
+| Expert Mode | `expert.py`, Advanced | |
+| Authority (Ask / Allowed / Hands off), `release()`, Ask card, idle release of found engines | `authority.py`, `router.py` | Lemonade `/v1/unload`, Strata `launch --stop`, Maya `/models/unload`. `idle_tick` releases a found engine only when it is Allowed and reports its own activity (Strata and Maya do). The ownership gates inside each provider's `stop()` are kept: `release()` is the way around them |
+| Maya provider | `providers/maya/` | Tested against `tests/fixtures/fake_maya.py`, written from the API described here; no recording of a real Maya |
+| Per-GPU device setting | `devices.py` | Environment variable at start; engines on their own cards no longer free each other. NVIDIA only |
+| Flows (rules only) | `flows.py`, `gateway._auto` | Validate, explain, dry run, saved flows, `auto`. Text editor, no canvas |
+| Terminal mode (no TUI) | `client.py`, `cli.py` | `shoggoth serve`, `status`, `connect` |
+
+Not built: the rest of S1 (`/ui/model/*`, tuning and the `/api/*` passthrough), S4, S6, S8, S10, S11 (four plans wait for the owner), the Models page work in 3a, engine `metrics()` and footprints, the RAM guard, restart-with-new-cards, swap steps with a confirmation, flow canvas / shadow mode / headers / layouts / live test / templates, `serve --engines start`, and the Textual TUI. Phase 0 spikes need the two-GPU machine.
 
 ## Decisions taken
 
