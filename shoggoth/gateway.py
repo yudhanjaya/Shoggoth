@@ -20,6 +20,7 @@ import time
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from urllib.parse import urlparse
 
+import flows
 import lem
 import provbase
 import recs
@@ -309,6 +310,10 @@ def _route(path, body):
     model, _ = describe(body)
     if not model or not INFER.match(norm(path)):
         return "http", host, port, key, path, body, None
+    if model == "auto":                                           # a routing flow picks the model (Expert Mode, an active flow)
+        picked = _auto(path, body)
+        if picked:
+            model, body = picked
     provider, mid = router.resolve(model)
     if provider is None or not router.known(model):
         return "http", host, port, key, path, body, None              # not a chat model Shoggoth knows: the default engine decides
@@ -331,6 +336,37 @@ def _route(path, body):
     return scheme, u.hostname, u.port or (443 if scheme == "https" else 80), ep.get("key") or "", out_path, body, None
 
 
+def _auto(path, body):
+    """For the model name `auto`: the active flow's choice, as (the model's name, the body naming it), or None when no flow applies. A request is
+    never moved to another engine silently: when the chosen target isn't loaded and another is, the loaded one answers (swap: ask / never)."""
+    d = flows.active()
+    if not d:
+        return None
+    refs = {}
+    for name, t in d["targets"].items():
+        p = router.get(t["engine"])
+        if p:
+            refs[name] = p.ref(t["model"])
+    if not refs:
+        return None
+    resident = {n for n, r in refs.items() if router.loaded(r)[0]}
+    target, trail = flows.decide(d, flows.features(body, norm(path)), resident)
+    if target not in refs:
+        return None
+    if target not in resident and resident:
+        stay = next(n for n in d["targets"] if n in resident)
+        trail += " (%s isn't loaded; staying on %s)" % (target, stay)
+        target = stay
+    flows.note(target, trail)
+    try:
+        o = json.loads(body)
+        o["model"] = refs[target]
+        body = json.dumps(o).encode()
+    except (ValueError, TypeError):
+        return None
+    return refs[target], body
+
+
 def _models_for_apps(h):
     """GET /v1/models for other apps: the default engine's list plus the models other engines can serve. Returns True when answered."""
     status, d = lem.request("GET", "/api/v1/models", timeout=15)
@@ -338,6 +374,8 @@ def _models_for_apps(h):
         return False
     dflt = router.default_provider()
     d["data"] += [{"id": m["id"], "object": "model", "created": 0, "owned_by": m["engine"]} for m in router.chat_models() if m["engine"] != getattr(dflt, "id", "")]
+    if flows.active():
+        d["data"].append({"id": "auto", "object": "model", "created": 0, "owned_by": "shoggoth"})
     h.send_json(d)
     return True
 

@@ -134,3 +134,12 @@ as the page with the secret from the config folder.
 engines. A running engine keeps its cards until it restarts. Two engines with their own, non-overlapping cards (or one on none) no longer free each
 other's memory in `router.make_room`. NVIDIA only so far. Not yet built: the RAM guard, the offer to restart a running engine with new cards, the
 check that an engine really sees only its cards, and Strata's own `--gpu` flag (the environment variable is used instead; unconfirmed on a two-GPU machine).
+
+## Routing flows (Expert Mode)
+
+`flows.py` reads a flow (YAML: `targets`, a tree of `match` nodes with conditions from a closed list, a `default`, a `policy`), validates it, and
+decides a target for a request with the path that led there. It applies only to the model name `auto`, only with Expert Mode on and a flow active
+(`gateway._auto`). A request is never silently moved to an engine that isn't loaded when another target is: the loaded one answers and the path
+says so. Targets that cannot handle images or tools are never chosen. Flows are saved in the settings (`/ui/flows`, with explain and dry-run, none
+of which calls a model) and edited as text under Advanced. The request fingerprints for compaction and title are guesses until Pi's real requests
+are recorded. Not built: the canvas, shadow mode, response headers for the path, applying a flow's layout, the live test job, templates.

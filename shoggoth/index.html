@@ -3641,7 +3641,7 @@ const ADV_CARDS = [
   ["tuning", "Tuning", "Make a model run faster on this computer. Shoggoth measures the settings and keeps only what clearly helps."],
   ["themes", "Themes", "Change how Shoggoth looks. Light Touch is the default; there are fifteen to try."]
 ];
-const EXPERT = {on: false, engines: [], gpus: [], devs: {}};
+const EXPERT = {on: false, engines: [], gpus: [], devs: {}, flows: null, flowMsg: ""};
 /* the engine knobs: llama.cpp settings and per-model tuning show only with Expert mode on (the pages still open if you go to them directly) */
 const EXPERT_ONLY = ["settings", "tuning"];
 function applyExpertNav(){
@@ -3649,7 +3649,7 @@ function applyExpertNav(){
 }
 async function expertLoad(){
   try{ EXPERT.on = !!(await api("/ui/expert")).on; EXPERT.engines = EXPERT.on ? (await api("/ui/authority")).engines : [];
-    if(EXPERT.on){ const d = await api("/ui/devices"); EXPERT.gpus = d.gpus; EXPERT.devs = Object.fromEntries(d.engines.map(e => [e.id, e.devices])); } }catch{}
+    if(EXPERT.on){ EXPERT.flows = await api("/ui/flows"); const d = await api("/ui/devices"); EXPERT.gpus = d.gpus; EXPERT.devs = Object.fromEntries(d.engines.map(e => [e.id, e.devices])); } }catch{}
   applyExpertNav();
   if(S.view === "advanced") renderAdvanced();
 }
@@ -3684,12 +3684,36 @@ function renderAdvanced(){
       ${EXPERT.on ? `<h4 style="margin:18px 0 4px">Engines Shoggoth did not start</h4>
         <p class="help" style="margin:0 0 8px">When another engine is holding the memory a model needs, this is how far Shoggoth may go. It never interrupts an engine that is answering, and it only asks the engine to let go; it never stops a program it didn't start.</p>
         ${EXPERT.engines.map(e => `<div class="line"><label>${esc(e.name)} <select data-authority="${esc(e.id)}">${Object.entries(AUTH_WORDS).map(([k, t]) => `<option value="${k}" ${e.authority === k ? "selected" : ""}>${t}</option>`).join("")}</select></label></div>`).join("")}
+        ${EXPERT.flows ? `<h4 style="margin:18px 0 4px">Routing flows</h4>
+          <p class="help" style="margin:0 0 8px">A flow decides which model answers when an app asks for the model <code>auto</code>. Anything that names a model goes there as before. Test a flow with Explain before you rely on it; nothing here calls a model.</p>
+          ${EXPERT.flows.saved.map(f => `<div class="line"><b>${esc(f.name)}</b> ${EXPERT.flows.active === f.name ? '<span class="chip">Active</span>' : `<button type="button" class="btn" data-flow="activate" data-name="${esc(f.name)}" ${f.problems.length ? "disabled" : ""}>Use it</button>`}
+            <button type="button" class="btn" data-flow="load" data-name="${esc(f.name)}">Edit</button> <button type="button" class="btn" data-flow="delete" data-name="${esc(f.name)}">Delete</button>
+            ${f.problems.length ? `<span class="help">${esc(f.problems[0])}</span>` : ""}</div>`).join("") || '<p class="help">No saved flows yet.</p>'}
+          ${EXPERT.flows.active ? `<div class="line"><button type="button" class="btn" data-flow="deactivate">Stop using a flow</button></div>` : ""}
+          <div class="line"><input id="flowname" type="text" placeholder="Name" aria-label="Flow name"></div>
+          <div class="line"><textarea id="flowtext" rows="12" spellcheck="false" aria-label="Flow (YAML)" style="width:100%;font-family:var(--mono,monospace)"></textarea></div>
+          <div class="line"><button type="button" class="btn primary" data-flow="save">Save</button></div>
+          <div class="line"><textarea id="flowreq" rows="3" spellcheck="false" aria-label="A request to explain (JSON)" placeholder='{"messages":[{"role":"user","content":"hello"}]}' style="width:100%"></textarea></div>
+          <div class="line"><button type="button" class="btn" data-flow="explain">Explain this request</button> <span class="help" id="flowmsg">${esc(EXPERT.flowMsg)}</span></div>` : ""}
         ${EXPERT.gpus.length ? `<h4 style="margin:18px 0 4px">Graphics cards each engine may use</h4>
           <p class="help" style="margin:0 0 8px">Applies the next time the engine starts; one that is running keeps the cards it has. Two engines on different cards no longer free each other's memory.</p>
           ${EXPERT.engines.map(e => { const cur = EXPERT.devs[e.id]; const pick = Array.isArray(cur) && cur.length === 1 ? cur[0] : cur;
             return `<div class="line"><label>${esc(e.name)} <select data-devices="${esc(e.id)}"><option value="all" ${pick === "all" ? "selected" : ""}>All cards</option><option value="none" ${pick === "none" ? "selected" : ""}>No cards (processor and RAM only)</option>${EXPERT.gpus.map(g => `<option value="${esc(g.uuid)}" ${pick === g.uuid ? "selected" : ""}>Only ${esc(g.name)} (${g.gb} GB)</option>`).join("")}</select></label></div>`; }).join("")}` : ""}` : ""}</section>`;
 }
 $("#advhub").addEventListener("click", e => { const c = e.target.closest("[data-view2]"); if(c) show(c.dataset.view2); });
+$("#advhub").addEventListener("click", async e => {
+  const b = e.target.closest("[data-flow]"); if(!b) return;
+  const act = b.dataset.flow, name = b.dataset.name || ($("#flowname") || {}).value, say = t => { EXPERT.flowMsg = t; const m = $("#flowmsg"); if(m) m.textContent = t; };
+  try{
+    if(act === "load"){ const f = EXPERT.flows.saved.find(x => x.name === name); $("#flowname").value = f.name; $("#flowtext").value = f.text; return; }
+    if(act === "explain"){
+      const r = await api("/ui/flows", {method: "POST", body: JSON.stringify({action: "explain", text: $("#flowtext").value, request: JSON.parse($("#flowreq").value || "{}")})});
+      say("Goes to " + r.target + ": " + r.path); return; }
+    if(act === "delete" && !confirm("Delete the flow " + name + "?")) return;
+    const r = await api("/ui/flows", {method: "POST", body: JSON.stringify({action: act, name, text: ($("#flowtext") || {}).value})});
+    EXPERT.flows = r; say(act === "save" ? "Saved." + (r.warnings.length ? " " + r.warnings.join(" ") : "") : ""); renderAdvanced();
+  }catch(err){ say(err.message); }
+});
 $("#advhub").addEventListener("change", async e => {
   if(e.target.dataset.devices){
     const v = e.target.value, devices = v === "all" || v === "none" ? v : [v];

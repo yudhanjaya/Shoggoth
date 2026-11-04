@@ -5634,6 +5634,12 @@
  "/ui/expert": {
   "on": false
  },
+ "/ui/flows": {
+  "expert": false,
+  "active": null,
+  "saved": [],
+  "recent": []
+ },
  "/ui/devices": {
   "expert": false,
   "gpus": [],

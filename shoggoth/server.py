@@ -31,6 +31,7 @@ import devices     # noqa: E402
 import authority   # noqa: E402
 import engine      # noqa: E402
 import expert      # noqa: E402
+import flows       # noqa: E402
 import folders     # noqa: E402
 import gateway     # noqa: E402
 import hardware    # noqa: E402
@@ -304,6 +305,8 @@ class Handler(BaseHTTPRequestHandler):
             self.send_json({"on": expert.on()})
         elif p == "/ui/authority":
             self.send_json(self.authority_state())
+        elif p == "/ui/flows":
+            self.send_json(self.flows_state())
         elif p == "/ui/devices":
             self.send_json(dict(devices.state([q.id for q in router.providers()]), expert=expert.on()))
         elif p == "/ui/search":
@@ -354,7 +357,7 @@ class Handler(BaseHTTPRequestHandler):
             handler = lambda body: self.provider_call("POST", p, body)
         handler = handler or {
             "/ui/setup/mode": self.post_mode, "/ui/setup/done": self.post_done,
-            "/ui/expert": self.post_expert, "/ui/authority": self.post_authority, "/ui/devices": self.post_devices, "/ui/gateway": self.post_gateway, "/ui/cowork/new": self.post_cowork_new,
+            "/ui/expert": self.post_expert, "/ui/authority": self.post_authority, "/ui/devices": self.post_devices, "/ui/flows": self.post_flows, "/ui/gateway": self.post_gateway, "/ui/cowork/new": self.post_cowork_new,
             "/ui/cowork/cmd": self.post_cowork_cmd, "/ui/cowork/answer": self.post_cowork_answer,
             "/ui/cowork/mode": self.post_cowork_mode, "/ui/cowork/delete": self.post_cowork_delete,
             "/ui/cowork/rename": self.post_cowork_rename, "/ui/cowork/model": self.post_cowork_model,
@@ -422,6 +425,36 @@ class Handler(BaseHTTPRequestHandler):
         ps = router.providers()
         asks = [dict(v, engine=k, name=getattr(router.get(k), "name", k)) for k, v in router.ASKS.items() if authority.get(k) == authority.ASK]
         return {"expert": expert.on(), "asks": asks, "engines": [{"id": p.id, "name": p.name, "authority": authority.get(p.id)} for p in ps]}
+
+    def flows_state(self):
+        out = []
+        for name, text in sorted(flows.saved().items()):
+            try:
+                problems, warnings = flows.validate(flows.parse(text))
+            except ValueError as e:
+                problems, warnings = [str(e)], []
+            out.append({"name": name, "text": text, "problems": problems, "warnings": warnings})
+        return {"expert": expert.on(), "active": flows.active_name(), "saved": out, "recent": list(flows.RECENT)}
+
+    def post_flows(self, body):
+        """{action: save | activate | deactivate | delete | explain | dry_run, ...}. Everything here is data; no model is called."""
+        act, name = body.get("action"), body.get("name")
+        if act == "explain":
+            return self.send_json(flows.explain(body.get("text") or "", body.get("request") or {}))
+        if act == "dry_run":
+            return self.send_json(flows.dry_run(body.get("text") or "", body.get("requests") or []))
+        warnings = []
+        if act == "save":
+            warnings = flows.save(name, body.get("text") or "")
+        elif act == "activate":
+            flows.activate(name)
+        elif act == "deactivate":
+            flows.activate(None)
+        elif act == "delete":
+            flows.delete(name)
+        else:
+            raise ValueError("Unknown action.")
+        self.send_json(dict(self.flows_state(), warnings=warnings))
 
     def post_devices(self, body):
         """Choose which cards an engine may use: {engine, devices: "all" | "none" | [uuid, ...]}. It applies the next time the engine starts."""
