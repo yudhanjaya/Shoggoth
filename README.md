@@ -144,7 +144,11 @@ Everything stays on your computer. Chats, jobs, skills and settings live in `~/.
 | [Privacy and data](docs/PRIVACY.md) | On-disk layout and every network destination. |
 | [Development](docs/DEVELOPMENT.md) | Run from source, test, build, release. |
 
-Linux with NVIDIA GPUs is what's tested so far. Vulkan and ROCm paths follow Lemonade's own data but haven't run on real hardware yet, and reports are welcome as [issues](https://github.com/yudhanjaya/Shoggoth/issues).
+## Tested on:
+
+- Dikkenek: an Intel Xeon CPU E5-2697 v2, 128 GB of DDR 3 RAM, two AMD Radeon VII GPUs for 32 GB VRAM
+- Leviathan: An AMD Ryzen 5800X3D, 64 GB of DDR4 VRAM, an Nvidia RTX 4080 Super and an RTX 3080 for a combined 26 GB VRAM
+- Minarchist: A 6th generation Intel i5 chip I pulled from an old HP office PC, 24 GB of DDR4 RAM, a GTX 1080 GPU for 10 GB of VRAM
 
 ## Shoggoth is built on
 
