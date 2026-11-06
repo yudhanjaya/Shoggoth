@@ -26,7 +26,7 @@ The UI is served at <http://127.0.0.1:13306> and opens in a browser unless `--no
 | `--host` | `SHOGGOTH_HOST` | `127.0.0.1` | UI bind address. See [SECURITY.md](SECURITY.md). |
 | `--lemonade HOST:PORT` | `LEMONADE_API_KEY` (its key) | Saved setting | Use this Lemonade and skip first-run |
 | `--no-browser` | | | Do not open a browser tab |
-| `--app` | `SHOGGOTH_APP_GRACE` (seconds, default 180) | | Exit after the last tab closes (used by the AppImage) |
+| `--app` | `SHOGGOTH_APP_GRACE` (seconds, default 180) | | Exit about two seconds after the last tab closes (used by the AppImage). A tab that vanished without saying goodbye, like a crashed browser, times out after the grace period |
 | | `SHOGGOTH_LEMONADE_DIR` | | Directory containing a `lemond` to use as the built-in Lemonade |
 | | `SHOGGOTH_PI` | | Path to a `pi` binary |
 | | `SHOGGOTH_AUTH=off` | | Disable UI authentication |

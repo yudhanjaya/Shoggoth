@@ -5205,7 +5205,10 @@ setInterval(() => { if(S.view === "server" && $("#logauto").checked && !document
 window.addEventListener("hashchange", () => { let h = location.hash.slice(1); if(h === "logs"){ pendingLogScroll = true; h = "server"; } if(h === "setup" || h === "prefs") h = "backends"; if(TITLES[h] && h !== S.view) show(h); });
 
 /* keep-alive so the desktop (AppImage) build knows the tab is still open */
-setInterval(() => fetch("/ui/ping", {method:"POST"}).catch(() => {}), 5000); fetch("/ui/ping", {method:"POST"}).catch(() => {});
+const TAB = Math.random().toString(36).slice(2);
+const ping = () => fetch("/ui/ping", {method:"POST", headers:{"X-Tab":TAB}}).catch(() => {});
+setInterval(ping, 5000); ping();
+window.addEventListener("pagehide", () => { try{ navigator.sendBeacon("/ui/bye?tab=" + TAB); }catch(e){} });   /* closing the last tab quits Shoggoth at once */
 
 /* ======================= boot ======================= */
 (async function boot(){
