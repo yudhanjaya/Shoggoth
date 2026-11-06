@@ -433,7 +433,7 @@ details.adv summary{cursor:pointer;font-size:13.5px;color:var(--muted);min-heigh
 details.adv[open] summary{margin-bottom:12px}
 .errline{margin:0;padding:12px 12px;border:1px solid color-mix(in srgb,var(--bad) 50%,transparent);color:var(--bad);border-radius:10px;font-size:13.5px}
 .errline[hidden]{display:none}
-.card .optline{font:12px var(--mono);color:var(--faint);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.card .optline{font:12px var(--mono);color:var(--faint);overflow-wrap:anywhere}
 .card .optline b{color:var(--lemon-text);font-weight:600}
 .btn.icon{flex:0 0 44px!important;padding:0}
 .setbar{display:flex;gap:12px;align-items:center;margin-bottom:20px;flex-wrap:wrap}
@@ -568,7 +568,8 @@ a:not([class]){color:var(--lemon-text);text-underline-offset:3px}
 .addfound small{display:block;color:var(--muted)}
 .libwhere{display:flex;flex-wrap:wrap;gap:8px 16px;align-items:center;font-size:13px;color:var(--muted);margin:-4px 0 16px}
 .libwhere b{color:var(--text);font-weight:600;overflow-wrap:anywhere}
-.libplaces{display:grid;gap:8px;margin:12px 0}
+.libplaces{display:grid;gap:8px;margin:12px 0;min-width:0}
+.libplaces label{min-width:0;flex-wrap:wrap}.libplaces label span,.libplaces label b{min-width:0;overflow-wrap:anywhere}
 .libplaces label{display:flex;gap:12px;align-items:center;padding:8px 12px;border:1px solid var(--line);border-radius:10px;background:var(--surface);cursor:pointer;font-size:13.5px}
 .libplaces label:has(input:checked){border-color:var(--text);background:var(--surface-2)}
 .libplaces small{color:var(--muted);margin-left:auto;white-space:nowrap}
@@ -2227,10 +2228,30 @@ async function generate(){
 /* ======================= models ======================= */
 function renderFilters(){ libFilters(); }
 /* ---- plain-language helpers ---- */
+const NAME_ACRONYMS = new Set(["gpt", "oss", "bge", "moe", "mtp", "ud", "tts", "en"]);
+/* a lowercase word from a model id, written the way people write it: sizes and versions in capitals, acronyms in capitals, the rest capitalised */
+function niceWord(w){
+  if(/[A-Z]/.test(w) || !/[a-z]/.test(w)) return w;
+  if(NAME_ACRONYMS.has(w) || /^\d+(\.\d+)?[a-z]$/.test(w) || /^[a-z]{1,2}\d+([a-z]|\.\d+)?$/.test(w) || /^[a-z]\d+[a-z]$/.test(w)) return w.toUpperCase();
+  return w[0].toUpperCase() + w.slice(1);
+}
 function friendly(m){
   const id = typeof m === "string" ? m : m.id;
-  const t = id.replace(/^user\./, "").replace(/-GGUF$/i, "").replace(/[-_](instruct|it|chat)\b/ig, "").replace(/[-_]+/g, " ").replace(/\s+/g, " ").trim();
+  const t = id.replace(/^user\./, "").replace(/-GGUF$/i, "").replace(/[-_](instruct|it|chat)\b/ig, "").replace(/[-_]+/g, " ").replace(/\s+/g, " ").trim().split(" ").map(niceWord).join(" ");
   return t || id;
+}
+/* the title for every model in a list, never the same for two of them: a second "SD Turbo" says what is different about it */
+function libTitles(models){
+  const base = {}, count = {};
+  for(const m of models){ base[m.id] = friendly(m); count[base[m.id]] = (count[base[m.id]] || 0) + 1; }
+  const out = {}, seen = {};
+  for(const m of models){
+    let t = base[m.id];
+    if(count[t] > 1) t += " (" + (/gguf$/i.test(m.id) ? "GGUF" : m.recipe || "other") + ")";
+    if(seen[t]) t = m.id;
+    seen[t] = true; out[m.id] = t;
+  }
+  return out;
 }
 const sizeWord = gb => !gb ? "" : {small: "Small", medium: "Medium", large: "Large"}[libTier(gb)];            // the same words as the groups on Models
 function whatFor(m){
@@ -2260,7 +2281,7 @@ function fitInfo(m){
   else if(r <= 1) note = "Will run, but it's a snug fit. Keep chats short.";
   else if(need <= v.total) note = v.live && v.avail < 0.6 ? `Your graphics memory is almost full${who ? " (" + who + " is using it)" : ""}. Close that app, then try again.`
     : `Fits, but ${who || "other apps"} ${who ? "is" : "are"} using the graphics memory right now.`;
-  else note = "Probably too big for your computer. It may be very slow, or not start at all.";
+  else note = `Probably too big for your computer: it needs about ${Math.round(need)} GB and you have ${Math.round(v.total)} GB of graphics memory. It may run partly on the processor, very slowly, or not start at all.`;
   return {cls, pct: Math.min(100, r * 100), note, need, vram: v.avail};
 }
 /* One line summing up what has been saved for a model (context size, arguments, backend…). */
@@ -2414,16 +2435,16 @@ function libSection(t, cards, note){ return cards.length ? `<section class="pick
 const libMatch = (m, q) => !q || m.id.toLowerCase().includes(q) || friendly(m).toLowerCase().includes(q) || (m.labels || []).some(l => l.includes(q));
 const libKind = (m, k) => k === "all" || (k === "chat" ? isChatModel(m) : k === "vision" ? (m.labels || []).includes("vision") : k === "image" ? m.recipe === "sd-cpp" : ["whispercpp", "kokoro", "moonshine", "acestep", "thinksound"].includes(m.recipe));
 function libInstalled(){
-  const q = LIB.q.toLowerCase(), cat = (LIB.d || {}).models || [], by = {tier: {small: [], medium: [], large: [], other: []}};
+  const q = LIB.q.toLowerCase(), cat = (LIB.d || {}).models || [], by = {tier: {small: [], medium: [], large: [], other: []}}, titles = libTitles(S.models);
   const seen = new Set();
   for(const e of cat){
     if(!(!q || e.title.toLowerCase().includes(q) || e.stem.toLowerCase().includes(q))) continue;
     const lid = (e.ids || {}).lemonade, lm = lid && S.models.find(x => x.id === lid);
-    if(lm){ seen.add(lm.id); by.tier[e.tier || libTier(e.size_bytes / 1e9)].push(libUnder(cardHTML(lm, ""))); }
+    if(lm){ seen.add(lm.id); by.tier[e.tier || libTier(e.size_bytes / 1e9)].push(libUnder(cardHTML(lm, "", titles[lm.id]))); }
     else if(e.provider && e.provider !== "lemonade" && e.ref !== undefined) by.tier[e.tier || "large"].push(bigCard(e));
   }
   for(const m of S.models.filter(m => m.downloaded && !seen.has(m.id) && libMatch(m, q)))
-    by.tier[isChatModel(m) ? libTier(m.size) : "other"].push(libUnder(cardHTML(m, "")));
+    by.tier[isChatModel(m) ? libTier(m.size) : "other"].push(libUnder(cardHTML(m, "", titles[m.id])));
   return LIB_TIERS.map(t => libSection(t, by.tier[t[0]])).join("") || `<div class="empty-note">${q ? "Nothing matches." : "You don't have any models yet. Open <b>Recommended for this computer</b> to get one."}</div>`;
 }
 /* what a pick says about itself, from models.yaml: it is true of the model whether or not an engine is installed yet */
@@ -2476,8 +2497,6 @@ function libRecommended(){
   for(const it of rm.recommended){
     const m = recModel(it), gb = m ? m.size : it.size_gb, name = it.title || (m ? friendly(m) : friendly(it.id));
     if(q && !(name.toLowerCase().includes(q) || it.id.toLowerCase().includes(q))) continue;
-    if(m && ((fitInfo(m) || {}).cls === "over" && !m.downloaded)) continue;
-    if(!m && ((fitInfo({size: gb, recipe: "llamacpp"}) || {}).cls === "over")) continue;
     by[libTier(gb)].push(m ? libUnder(cardHTML(m, recExtra(it, gb), it.title)) : recGetCard(it));
   }
   const soon = (rm.coming_soon || []).filter(c => !q || c.title.toLowerCase().includes(q)).map(recSoonCard);
@@ -2485,9 +2504,9 @@ function libRecommended(){
   return (html || `<div class="empty-note">Shoggoth is still looking at your computer…</div>`) + (q ? "" : libTips()) + recProblems();
 }
 function libEverything(){
-  const q = LIB.q.toLowerCase(), by = {small: [], medium: [], large: [], other: []};
+  const q = LIB.q.toLowerCase(), by = {small: [], medium: [], large: [], other: []}, titles = libTitles(S.models);
   for(const m of S.models.filter(m => libKind(m, LIB.kind) && libMatch(m, q)).sort((a, b) => b.downloaded - a.downloaded || a.id.localeCompare(b.id)))
-    by[isChatModel(m) ? libTier(m.size) : "other"].push(libUnder(cardHTML(m, "")));
+    by[isChatModel(m) ? libTier(m.size) : "other"].push(libUnder(cardHTML(m, "", titles[m.id])));
   if(["all", "chat"].includes(LIB.kind)){
     for(const e of ((LIB.d || {}).models || []).filter(e => e.provider && e.provider !== "lemonade" && (!q || e.title.toLowerCase().includes(q)))) by.large.push(bigCard(e));
   }
@@ -3130,7 +3149,8 @@ function wRowHTML(r){
 }
 /* the first model: one suggestion per size, whichever the computer can take */
 function wFirstModels(){
-  const out = [], fits = m => (fitInfo(m) || {}).cls !== "over", pick = ids => ids.map(id => S.models.find(m => m.id === id && m.recipe === "llamacpp" && m.size)).find(m => m && fits(m));
+  const out = [], fits = m => (fitInfo(m) || {}).cls !== "over", listed = ids => ids.map(id => S.models.find(m => m.id === id && m.recipe === "llamacpp" && m.size)).filter(Boolean),
+    pick = ids => listed(ids).find(fits) || listed(ids)[0];                    // one that fits if there is one; otherwise the first, with a note, rather than no card
   const TIER = {small: "Small", medium: "Medium", large: "Large"};
   for(const f of recModels().first_run){
     const m = pick(f.models);
@@ -3143,7 +3163,7 @@ function wModelCards(){
   const active = libDlItems().length, cards = wFirstModels().map(o => {
     const m = o.m, j = m && dlJob(m.id), have = m && m.downloaded, name = friendly(m), size = m.size.toFixed(m.size < 10 ? 1 : 0) + " GB";
     const btn = j ? `<button class="btn" data-act="cancel-dl" data-model="${esc(m.id)}">Cancel</button>` : have ? `<button class="btn" disabled>Got it</button>` : `<button class="btn ${o.rec ? "primary" : ""}" data-act="dl" data-model="${esc(m.id)}" ${active ? "disabled" : ""}>Get it</button>`;
-    return `<div class="tier"><div><b>${o.tier}${o.rec ? ' <span class="chip lem">Recommended</span>' : ""}</b><span class="tn">${esc(name)}${size ? " · " + size : ""}</span><p>${esc(o.blurb)} <span class="faint">${esc(o.start)}.</span></p>${j ? `<div class="prog"><i style="width:${j.percent}%"></i></div><small class="wsmall">${j.percent}%</small>` : ""}</div>${btn}</div>`;
+    return `<div class="tier"><div><b>${o.tier}${o.rec ? ' <span class="chip lem">Recommended</span>' : ""}</b><span class="tn">${esc(name)}${size ? " · " + size : ""}</span><p>${esc(o.blurb)} <span class="faint">${esc(o.start)}.</span></p>${j ? `<div class="prog"><i style="width:${j.percent}%"></i></div><small class="wsmall">${j.percent}%</small>` : ""}${(() => { const f = fitInfo(m); return f && f.cls !== "ok" ? `<small class="wsmall fitnote ${f.cls}">${esc(f.note)}</small>` : ""; })()}</div>${btn}</div>`;
   }).join("");
   return `<h3 class="wh3">Choose your first model</h3><p class="wl">A model is the AI that answers you. It downloads once, then lives on this computer. You can add more any time.</p>
     <div class="tiers">${cards || '<p class="wsmall">Shoggoth is still looking at your computer…</p>'}</div>${libDlHTML()}
