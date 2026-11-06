@@ -52,7 +52,7 @@ import websearch   # noqa: E402
 import zestup      # noqa: E402
 from util import cached, invalidate, run   # noqa: E402
 
-VERSION = "4.2.3"
+VERSION = "4.3.0"
 _last_ping = {"t": None}
 
 
