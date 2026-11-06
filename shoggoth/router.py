@@ -174,7 +174,7 @@ def make_room(p, progress):
         ok, msg = q.make_way()
         if not ok:
             if mem["exclusive"]:
-                raise provbase.ProviderError("%s is running something you started, and %s needs the memory to itself. %s" % (q.name, p.name, msg))
+                raise provbase.ProviderError("%s is running something you started. %s needs the memory to itself. %s" % (q.name, p.name, msg))
             progress("%s is still running something you started; memory may be tight." % q.name)
         else:
             time.sleep(1)                                                  # let the memory come back before the next step measures it

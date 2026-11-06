@@ -18,7 +18,7 @@ A job is bigger work that Shoggoth keeps doing in the background, round after ro
 2. If you do not know, ask at most two short questions, one at a time: what should be true when it is finished, and is there a command that shows it.
 3. When you have tools and a folder, look at the project (a Makefile, `package.json`, a tests folder) and suggest the real check command. In a plain chat with no folder, ask the user for it instead of guessing.
 4. Call `propose_job` once with the goal in the user's words, the check command if there is one (otherwise `done_when`), and a sensible number of rounds.
-5. Say in one sentence what you filled in, and that they can change it and press **Start job**.
+5. Say in one sentence what you filled in. Tell them they can change it and press **Start job**.
 
 ## Rules
 

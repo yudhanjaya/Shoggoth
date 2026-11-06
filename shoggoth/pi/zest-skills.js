@@ -8,7 +8,7 @@ import { readFileSync } from "node:fs";
 const MARK = "zest:injected-skills";
 const tools = `## How skills work here
 
-Skills are listed by name and description. When one applies and you have a \`read\` tool, read its SKILL.md first and follow it. Pi's tools are lowercase: \`read\`, \`write\`, \`edit\`, \`bash\`, \`grep\`, \`find\`, \`ls\`. There are no subagents and no task-list tool: do the work yourself in this conversation, and keep a checklist in a plan file or TODO.md when you need one.`;
+Skills are listed by name and description. When one applies and you have a \`read\` tool, read its SKILL.md first and follow it. Pi's tools are lowercase: \`read\`, \`write\`, \`edit\`, \`bash\`, \`grep\`, \`find\`, \`ls\`. There are no subagents and no task-list tool: do the work yourself in this conversation. Keep a checklist in a plan file or TODO.md when you need one.`;
 
 function load() {
   let list = [];

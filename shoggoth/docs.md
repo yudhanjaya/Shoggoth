@@ -46,13 +46,13 @@ Shoggoth draws every model as a creature, so you can tell your models apart at a
 
 - **Shape and colour** come from the name. Models of one family share them, whatever their size. There are 17 shapes.
 - **Size** follows the biggest number before a "B" in the name (the parameter count). The bigger the model, the bigger the creature.
-- **Camera eyes.** Every creature has large camera eyes, and more of them as it grows.
-- **Hands.** Every creature holds pens. Bigger ones have more hands, and take up papers and then keyboards.
+- **Camera eyes.** Every creature has large camera eyes. It gets more of them as it grows.
+- **Hands.** Every creature holds pens. Bigger ones have more hands. They take up papers and then keyboards.
 - **Skin** shows compression. Rougher skin is smaller and a little less exact.
 
 They are pictures, not measurements: the eyes and hands say nothing about what a model can see or do. The model's card says that.
 
-The creature for the chat's model sits in a glass tube at the top of the Chat page, wired to the model bar. The tube is empty until a model is loaded. The creature drops in when it loads, and the liquid shows how full your graphics memory is. Click the tube to open the model list, which is the same as the model menu in the bar.
+The creature for the chat's model sits in a glass tube at the top of the Chat page, wired to the model bar. The tube is empty until a model is loaded. The creature drops in when it loads. The liquid shows how full your graphics memory is. Click the tube to open the model list, which is the same as the model menu in the bar.
 
 The **Hardware** and **Server** pages use the same creatures, on a lab bench. Don't like them? Turn them off with the **Model pictures** switch in the chat's right sidebar. Everything still works the same way.
 
@@ -70,7 +70,7 @@ The first answer takes a little longer; subsequent answers arrive much faster. *
 - Adding a note: if an answer is taking a while, you can type again. Your note is passed along when the AI is ready for it. Press **Stop** to cancel what it is doing.
 - The side panel (top right) has three tabs. **Jobs** shows background jobs, **Changes** shows what a job changed, and **Details** shows the folder, how careful it is, which model is answering, how full its memory is, and which skills are on.
 
-A new chat works in your **home folder** unless you choose another, and says so at the top. Your home folder holds everything you own, so it starts on **Ask first** and a job (which works on a copy of a folder) needs a project folder. For focused work, choose the project's folder with the folder button under the message box.
+A new chat works in your **home folder** unless you choose another. It says so at the top. Your home folder holds everything you own, so it starts on **Ask first** and a job (which works on a copy of a folder) needs a project folder. For focused work, choose the project's folder with the folder button under the message box.
 
 **Web search.** When a question needs something recent or the AI is unsure, it can search the web. Every search asks first and shows the exact words it wants to search for, so you decide what leaves your computer. Choose **Allow for this session** to stop being asked in that chat. You get only the titles, links and short snippets of the top results. 
 
@@ -131,7 +131,7 @@ Under **How careful** in the Details panel, choose how much the AI may do withou
 
 You can change the setting while a task is running. If the AI asks permission outside the folder you chose, the card says so in plain words.
 
-**Always allow** remembers a command for that folder, such as `python3 -m pytest`. It only counts when the whole line is made of commands you allowed, and it is never offered for commands that can do anything, like `rm`, `curl` or `sh`. To take one back, click the folder name at the top and press **Remove**. A folder set to **look only** can never be changed, in any setting except **Do everything**.
+**Always allow** remembers a command for that folder, such as `python3 -m pytest`. It only counts when the whole line is made of commands you allowed. It is never offered for commands that can do anything, like `rm`, `curl` or `sh`. To take one back, click the folder name at the top and press **Remove**. A folder set to **look only** can never be changed, in any setting except **Do everything**.
 
 This structure helps, but it cannot stop a harmful command that you allow. If you allow a command, remember that it runs with your own permissions, the same as if you had typed it. Read what the card shows before pressing Allow.
 
@@ -148,13 +148,13 @@ Shoggoth comes with:
 
 Open **Skills** to switch any of them on or off, one at a time or a whole set at once.
 
-**To add more skills, paste a link.** On the Skills page, paste the web address of a GitHub page that has skills in it, for example `https://github.com/owner/repository`, and press **Add skills**. You can also link to one folder inside a repository: open the folder on GitHub and copy the address. Shoggoth finds every skill in it and adds them. A skill is just a folder with a file called `SKILL.md`. [Hermes Atlas](https://hermesatlas.com/ecosystem/) lists many.
+**To add more skills, paste a link.** On the Skills page, paste the web address of a GitHub page that has skills in it, for example `https://github.com/owner/repository`. Then press **Add skills**. You can also link to one folder inside a repository: open the folder on GitHub and copy the address. Shoggoth finds every skill in it and adds them. A skill is just a folder with a file called `SKILL.md`. [Hermes Atlas](https://hermesatlas.com/ecosystem/) lists many.
 
 **Skills you made yourself** go in a folder called `mine` inside Shoggoth's data folder (`~/.local/share/shoggoth/skills/mine`). Put a folder with a `SKILL.md` file in it and it shows up on the Skills page as **My skills**, switched on, from the next message. No other files are needed.
 
 Good to know:
 
-- **Only add skills from people you trust.** A skill is instructions the AI follows, and some include scripts. While you are on *Ask first*, every command still asks you.
+- **Only add skills from people you trust.** A skill is instructions the AI follows. Some include scripts. While you are on *Ask first*, every command still asks you.
 - Fewer is better for small models. Every skill you switch on adds a line the AI reads before every answer. A handful of well-chosen skills beats a hundred.
 - In a conversation with a folder, type `/` to pick a skill by name and make the AI use it. You can see when it used one: a **Skill** card appears in the conversation.
 - Skills work in every chat.
@@ -173,12 +173,12 @@ Replies can also contain tables, lists, links, quotes and code blocks, shown nea
 Open **Models**. It lists every model on your computer, whichever program runs it. Models are grouped by size. **Small** ones use under 10 GB of graphics memory and are ready in seconds. **Medium** ones use 10 to 24 GB. **Large** ones are for big computers and take a couple of minutes to start.
 
 - **Installed** is what you have. **Recommended for this computer** has the models I have tried and recommend on systems from 10 GB of VRAM to 26 GB of VRAM, and any Large model that will fit yours. The Large picks are Qwen3.8 Flash-Next (IQ3_S, and the smaller IQ2_XS), plus Coder (code only) and Swift 1.5, which are offered but never suggested. You can pick one before Lemonade is installed: Shoggoth sets Lemonade up, then gets the model. Models that aren't ready yet are greyed out under **Coming soon**. **All models** is everything Lemonade offers, tested or not, with a filter for pictures, speech and sound. Each model shows whether it is tuned.
-- **Get it** downloads a model in the background while you carry on. Every download shows together in one "Getting models" strip, and a model that needs something extra (the first Large model, for example) sets that up for you as part of the same step.
+- **Get it** downloads a model in the background while you carry on. Every download shows together in one "Getting models" strip. A model that needs something extra (the first Large model, for example) sets that up for you as part of the same step.
 - **Add models from other sources** brings in a model from a Hugging Face link, from a folder you choose, or from the usual places other programs keep them (LM Studio, Ollama and so on). Nothing is copied.
-- **Chat with it** starts a chat with a model, and **Settings** on a model edits how it runs. Choosing a model in the chat gets it ready, and frees the memory of whatever else was running.
-- Shoggoth keeps your models in one folder you choose (change it at the top of the **Models** page), with a subfolder for each engine, and moves nothing you already have. The name of the engine that runs a model is shown, small, at the foot of its card.
+- **Chat with it** starts a chat with a model. **Settings** on a model edits how it runs. Choosing a model in the chat gets it ready, and frees the memory of whatever else was running.
+- Shoggoth keeps your models in one folder you choose (change it at the top of the **Models** page), with a subfolder for each engine. It moves nothing you already have. The name of the engine that runs a model is shown, small, at the foot of its card.
 
-- Will it fit? Shoggoth compares a model's size with the memory that is free on your graphics card right now, and marks it comfortable, snug or too big.
+- Will it fit? Shoggoth compares a model's size with the memory that is free on your graphics card right now. It marks it comfortable, snug or too big.
 - For working in a folder, pick a model that handles tools well. Look for tool-calling in its description. The recommended ones lean that way. Models that are very small can still chat well but often fumble tools.
 - Memory (the context window): this is how much the AI can keep in mind at once. Shoggoth sets a roomy 128k by default. Working in a folder can use a lot of it, because the AI reads files. The Details panel shows how full it is, with a **Make room** button that tidies the older part of the conversation. The **Memory** menu in the chat's model bar changes the size.
 - **Settings for one model** (the **Settings** button on its card) let you change which devices it uses, backend options and more. The defaults are fine for nearly everyone. Chat always loads a model with the context size in its model bar.
@@ -188,7 +188,7 @@ Open **Models**. It lists every model on your computer, whichever program runs i
 Shoggoth runs Lemonade by itself. If you already run another server, you can use its models in Chat and in your other apps.
 
 - Open **Advanced > Engines** and find **Connect a server**. Pick Ollama, LM Studio, llama.cpp, Strata, Maya, Unsloth, or **Another server** for anything that speaks the OpenAI API.
-- The address fills in with the usual one for that server. Change it if yours is different, add the API key if it has one, and press **Test**. Shoggoth tells you whether it answered and which models it has. **Connect** saves it. **Probe and connect** looks at the usual address of each server in the list, on this computer, and connects the ones that answer. It skips any that want a key (add those with the form) and any you already connected.
+- The address fills in with the usual one for that server. Change it if yours is different, and add the API key if it has one. Then press **Probe and connect**. Shoggoth looks at that address and at the usual address of each server in the list. It connects the ones that answer. It skips any that want a key (add those with the form) and any you already connected.
 - Its models appear in the model picker as `<server name>/<model>`.
 - **Shoggoth never starts, stops, updates or installs a connected server.** Start it yourself first. It does not free memory for it either, so if it shares a graphics card with Lemonade, you manage that. **Remove** forgets the address and leaves the server alone.
 
@@ -197,21 +197,21 @@ Shoggoth runs Lemonade by itself. If you already run another server, you can use
 **Advanced > Tuning** makes a model answer faster on your computer. It measures the model as it is, tries changes one at a time, and keeps only those that clearly help. Answers stay the same: tuning never changes how a model is compressed.
 
 - **Models on Lemonade** are tuned by Shoggoth: batch sizes, flash attention, threads, which backend and which graphics cards. Each is tried by loading the model with it, and a change is kept only if it beats the measuring noise (and at least 3%). **Undo** puts the old settings back.
-- Every model shows one of four states: tuned (with its speed and gain), tuned but the standard settings were already the fastest, out of date, or not tuned. **Test speed** measures a small or medium model without changing anything, and every model card has **Leave some graphics memory free**. Each reply in Chat shows how fast it was written.
-- Tuning needs the graphics cards to itself, so Shoggoth shows the plan first (time, and what it will stop) and waits for your go-ahead. It stops what Shoggoth started, and waits while a chat is answering. It will not start while a large model you started yourself is running. You can cancel at any time and nothing is changed.
+- Every model shows one of four states: tuned (with its speed and gain), tuned but the standard settings were already the fastest, out of date, or not tuned. **Test speed** measures a small or medium model without changing anything. Every model card has **Leave some graphics memory free**. Each reply in Chat shows how fast it was written.
+- Tuning needs the graphics cards to itself, so Shoggoth shows the plan first (time, and what it will stop) and waits for your go-ahead. It stops what Shoggoth started. It waits while a chat is answering. It will not start while a large model you started yourself is running. You can cancel at any time and nothing is changed.
 
 ## Using your models in other apps
 
-**Advanced**, then **Server**, gives you an address and a key to paste into other tools (coding assistants, chat apps, anything that talks to an OpenAI-style server). The same page shows live what those apps are asking for: the model sits in a jar on a bench, and each app's request is a flask that bubbles while the model thinks and fills as it writes. **Send a test message** shows one. It only listens on this computer unless you turn on sharing.
+**Advanced**, then **Server**, gives you an address and a key to paste into other tools (coding assistants, chat apps, anything that talks to an OpenAI-style server). The same page shows live what those apps are asking for: the model sits in a jar on a bench. Each app's request is a flask that bubbles while the model thinks and fills as it writes. **Send a test message** shows one. It only listens on this computer unless you turn on sharing.
 
 ## Under the bonnet
 
 Everything in **Advanced** is optional.
 
-- **Hardware** is a lab bench. Each machine at the back is one graphics card, with lights for how hard it is working and the name of the model on it. The beaker shows memory used across all your cards, the gauge shows the hottest card, and the coil and radio show how hard they compute. Below the bench you choose which cards Shoggoth uses, and in what order.
-- **Engines** has a card for Lemonade, with its version, whether it is running, an update check, and which hardware each kind of model uses (CUDA, Vulkan, ROCm or the processor). Under it, **Connect a server** adds one you run yourself, and each connected server has its own card. You can also add an engine Shoggoth starts for you by putting a folder with a `provider.yaml` file in the engines folder shown at the bottom of the page, then pressing **Reload**. Shoggoth asks once before an engine you added runs a program. The repository's `docs/ENGINES.md` explains how, and `providers check <folder>` (run the AppImage with those words) tells you what to fix before you reload.
+- **Hardware** is a lab bench. Each machine at the back is one graphics card, with lights for how hard it is working and the name of the model on it. The beaker shows memory used across all your cards. The gauge shows the hottest card. The coil and radio show how hard they compute. Below the bench you choose which cards Shoggoth uses, and in what order.
+- **Engines** has a card for Lemonade, with its version, whether it is running, an update check, and which hardware each kind of model uses (CUDA, Vulkan, ROCm or the processor). Under it, **Connect a server** adds one you run yourself. Each connected server has its own card. You can also add an engine Shoggoth starts for you by putting a folder with a `provider.yaml` file in the engines folder shown at the bottom of the page, then pressing **Reload**. Shoggoth asks once before an engine you added runs a program. The repository's `docs/ENGINES.md` explains how. `providers check <folder>` (run the AppImage with those words) tells you what to fix before you reload.
 - **Engine settings** is every setting Lemonade has, searchable.
-- **Themes** changes how Shoggoth looks. **Light Touch** is the default; **Braun T3** and **Teenage Engineering** are softer and bolder takes on the same idea, and the rest borrow colour schemes from popular code editors (Dracula, Nord, Monokai Pro, GitHub Light and more). Nothing moves when you switch, and your choice is remembered on this computer.
+- **Themes** changes how Shoggoth looks. **Light Touch** is the default; **Braun T3** and **Teenage Engineering** are softer and bolder takes on the same idea. The rest borrow colour schemes from popular code editors (Dracula, Nord, Monokai Pro, GitHub Light and more). Nothing moves when you switch. Your choice is remembered on this computer.
 - **Advanced > Engines** is where **Check and update everything** lives. Its **My own server** section is for the rare case where you run Lemonade yourself, for example as a system service: connect Shoggoth to it there instead of using the one Shoggoth starts.
 
 ## Where things live, and privacy
@@ -226,7 +226,7 @@ Everything stays on your computer.
 
 Shoggoth goes online only to: download models you ask for, check for Shoggoth, engine and Pi updates (you can turn that off), and fetch skills when you paste a link. Pi runs offline and sends nothing anywhere. To start from scratch, delete `~/.config/shoggoth` and `~/.local/share/shoggoth`.
 
-**Coming from Zest?** Shoggoth used to be called Zest. The first time it starts, it moves `~/.config/zest` and `~/.local/share/zest` to the new names, and keeps your chats, skills, settings and keys. Apps that use a `zest-` key keep working.
+**Coming from Zest?** Shoggoth used to be called Zest. The first time it starts, it moves `~/.config/zest` and `~/.local/share/zest` to the new names. It keeps your chats, skills, settings and keys. Apps that use a `zest-` key keep working.
 
 ## When something goes wrong
 
@@ -249,7 +249,7 @@ Shoggoth goes online only to: download models you ask for, check for Shoggoth, e
 ## Terms used
 
 - **Model**: the AI itself, a big file on your computer.
-- **Engine**: a program that runs the model. Shoggoth runs Lemonade. A server you run yourself and connect also counts as an engine, and Shoggoth never starts or stops it.
+- **Engine**: a program that runs the model. Shoggoth runs Lemonade. A server you run yourself and connect also counts as an engine. Shoggoth never starts or stops it.
 - **Small, Medium, Large**: how Shoggoth groups models by what they need. Small fits under 10 GB of graphics memory, Medium 10 to 24 GB, and Large needs more than that.
 - **Models**: the list of every model on your computer, and where you get new ones.
 - **Pi**: the helper that lets a model read files, make edits and run steps.

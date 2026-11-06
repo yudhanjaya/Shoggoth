@@ -94,5 +94,5 @@ LOCKED_PAGE = b"""<!doctype html><meta charset="utf-8"><meta name="viewport" con
 <title>Shoggoth</title><body style="font:16px/1.5 system-ui,sans-serif;max-width:34em;margin:12vh auto;padding:0 20px;color:#333">
 <h1 style="font-weight:600">Shoggoth is running</h1>
 <p>This browser hasn't been let in yet. To keep other programs and people on this computer from using it, Shoggoth only opens for the window it starts itself.</p>
-<p><b>Start Shoggoth again</b> (open the app, or run the AppImage again). It opens a window that is let in, and this address works in that browser afterwards.</p>
+<p><b>Start Shoggoth again</b> (open the app, or run the AppImage again). It opens a window that is let in. This address works in that browser afterwards.</p>
 </body>"""

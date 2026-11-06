@@ -76,7 +76,7 @@ def lookup(text, timeout=12):
     except (urllib.error.URLError, OSError, ValueError):
         raise ValueError("Couldn't reach Hugging Face. Check your internet connection.")
     if info.get("gated"):
-        raise ValueError("This model is gated: you have to accept its licence on Hugging Face first, and Shoggoth can't log in for you yet.")
+        raise ValueError("This model is gated: you have to accept its licence on Hugging Face first. Shoggoth can't log in for you yet.")
     vs, vision = versions(info.get("siblings"))
     return {"repo": repo, "wanted": quant, "versions": vs, "vision": bool(vision), "mmproj": vision or None, "likes": info.get("likes"),
             "downloads": info.get("downloads"), "tags": (info.get("tags") or [])[:12], "pipeline": info.get("pipeline_tag"),

@@ -3,7 +3,7 @@
 - id: ollama
   name: Ollama
   url: http://127.0.0.1:11434
-  hint: Ollama's usual address. Start Ollama first, and pull a model with `ollama pull`.
+  hint: Ollama's usual address. Start Ollama first. Pull a model with `ollama pull`.
 - id: lmstudio
   name: LM Studio
   url: http://127.0.0.1:1234

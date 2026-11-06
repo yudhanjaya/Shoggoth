@@ -23,7 +23,7 @@ Shoggoth's UI can change settings, start engines, and run commands inside a fold
 
 - The UI server rejects requests whose `Host` header does not name the local machine. This mitigates DNS rebinding.
 - Use `--host 0.0.0.0` only on a trusted network. The UI is authenticated, but traffic is not encrypted.
-- The gateway can be opened to the local network from **Advanced > Server**. Any holder of the API key can then use the loaded models, and traffic is unencrypted. **Make a new key** invalidates the previous key immediately.
+- The gateway can be opened to the local network from **Advanced > Server**. Any holder of the API key can then use the loaded models. Traffic is unencrypted. **Make a new key** invalidates the previous key immediately.
 - The gateway cannot download, delete, or install anything, or change settings.
 
 ## Agent approval gate

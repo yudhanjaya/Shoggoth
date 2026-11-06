@@ -243,7 +243,7 @@ def _do_update(rel):
         need = rel["node"].lstrip(">=") if rel["node"].startswith(">=") else ""
         have = _node_version()
         if need and have and vkey(have) < vkey(need):
-            raise RuntimeError("Pi %s needs Node %s or newer, and this Shoggoth has Node %s. A newer Shoggoth will bring a newer Node." % (ver, need, have))
+            raise RuntimeError("Pi %s needs Node %s or newer. This Shoggoth has Node %s. A newer Shoggoth will bring a newer Node." % (ver, need, have))
         if not re.fullmatch(r"\d+\.\d+\.\d+", rel["jiti"]):
             raise RuntimeError("Pi %s needs a different version of one of its parts than this Shoggoth knows how to fetch. A newer Shoggoth will handle it." % ver)
         UPD.update(state="downloading", bytes=0, total=0, version=ver, error=None)
@@ -286,7 +286,7 @@ def start_update():
     if UPD["state"] in ("downloading", "installing"):
         return False
     if not node_bin():
-        UPD.update(state="error", error="Pi needs Node.js to run, and none was found. The Shoggoth AppImage includes it.")
+        UPD.update(state="error", error="Pi needs Node.js to run. None was found. The Shoggoth AppImage includes it.")
         return False
     try:
         rel = latest_release()

@@ -1526,7 +1526,7 @@ h3.themesec{font:600 13px var(--sans);color:var(--faint);margin:0 0 12px}
     <section class="view" id="v-specimens"><div class="pad"><div class="wrap" id="specimens"></div></div></section>
     <section class="view" id="v-hardware"><div class="pad"><div class="wrap">
       <p class="lede">Watch your graphics memory fill as models load. If you have more than one card, choose which ones Shoggoth uses and in what order. Changes apply the next time a model loads.</p>
-      <p class="help" id="hwintro" hidden>Each machine at the back is one graphics card. Its lights show how hard it's working. The beaker shows memory used across all your cards. The gauge shows the hottest card. The coil sparks as the cards work harder, and the radio has a meter for each one.</p>
+      <p class="help" id="hwintro" hidden>Each machine at the back is one graphics card. Its lights show how hard it's working. The beaker shows memory used across all your cards. The gauge shows the hottest card. The coil sparks as the cards work harder. The radio has a meter for each one.</p>
       <div class="rig" id="hwrig" hidden></div>
       <div class="applybar" id="applybar" hidden></div>
       <div class="gpus" id="gpus"></div>
@@ -1543,7 +1543,7 @@ h3.themesec{font:600 13px var(--sans);color:var(--faint);margin:0 0 12px}
       <div id="prefs"></div>
       <div id="engparts" hidden>
         <div id="bkpart">
-          <p class="help" style="margin:0 0 10px">Lemonade runs several kinds of model (chat, speech, pictures and more), and each kind can run on different hardware, called a <b>backend</b>. Pick the one you want, or install one that's missing. Changes apply the next time a model loads.</p>
+          <p class="help" style="margin:0 0 10px">Lemonade runs several kinds of model (chat, speech, pictures and more). Each kind can run on different hardware, called a <b>backend</b>. Pick the one you want, or install one that's missing. Changes apply the next time a model loads.</p>
           <details class="panel bkhelp"><summary>Which backend should I pick?</summary>
         <dl class="bkdl">
           <dt>Auto</dt><dd>Let Lemonade choose the best one for your computer. This is the right answer for almost everyone.</dd>
@@ -1583,7 +1583,7 @@ h3.themesec{font:600 13px var(--sans);color:var(--faint);margin:0 0 12px}
 
     <!-- SETTINGS -->
     <section class="view" id="v-settings"><div class="pad"><div class="wrap">
-      <p class="lede">Every setting Lemonade offers. Lemonade runs your small and medium models. Changes save as you make them, and you'll rarely need this page. Settings for a single model are in Models, on its card under <b>Settings</b>.</p>
+      <p class="lede">Every setting Lemonade offers. Lemonade runs your small and medium models. Changes save as you make them. You'll rarely need this page. Settings for a single model are in Models, on its card under <b>Settings</b>.</p>
       <div class="setbar"><input type="search" id="setq" placeholder="Search settings" aria-label="Search settings"><span class="chip" id="setcount"></span></div>
       <div id="settings"></div>
     </div></div></section>
@@ -1625,7 +1625,7 @@ h3.themesec{font:600 13px var(--sans);color:var(--faint);margin:0 0 12px}
 <dialog id="pickdlg">
   <form method="dialog" id="pickform">
     <header><h3>How do I know which model to use?</h3>
-      <p>There is no single best model. Each one is good at different things, and the answer depends on your computer and what you want to do.</p></header>
+      <p>There is no single best model. Each one is good at different things. The answer depends on your computer and what you want to do.</p></header>
     <div class="odbody" id="pickbody"></div>
     <div class="actions"><button class="btn primary" value="close">Done</button></div>
   </form>
@@ -1847,16 +1847,16 @@ function friendlyProblem(raw, what){
   if(/invalid gguf|bad magic|not a gguf|gguf.*(corrupt|truncated)|tensor.*(missing|out of range)/.test(t))
     return {title: "The model file looks damaged", body: `${what || "This model"} didn't download completely, or the file is broken.`, hint: "Delete it from Models and get it again."};
   if(/failed to load model|llama-server (exited|failed)|model.*(could not|couldn't) be loaded|unknown model/.test(t))
-    return {title: "The model wouldn't start", body: `${what || "This model"} couldn't be loaded, and the engine didn't say why in plain words.`, hint: "Unload other models and close other programs that use the graphics card, then try again. The details below usually say what the engine objected to.", engines: true};
+    return {title: "The model wouldn't start", body: `${what || "This model"} couldn't be loaded. The engine didn't say why in plain words.`, hint: "Unload other models and close other programs that use the graphics card, then try again. The details below usually say what the engine objected to.", engines: true};
   if(/\b(401|403)\b|gated|authori[sz]ation|access token|log ?in|accept.*(terms|license)/.test(t))
     return {title: "This model needs a login", body: "The owner of this model asks for you to sign in or accept terms on Hugging Face first. Shoggoth can't download models that need a login yet.", hint: "Pick a model that doesn't need one. Many popular models are also published, without a login, by other uploaders."};
   if(/\b404\b|not found|no such (repo|model)|repository/.test(t))
-    return {title: "Couldn't find that model", body: "Hugging Face says that model or file doesn't exist.", hint: "Check the link or name, and that the repository holds GGUF files."};
+    return {title: "Couldn't find that model", body: "Hugging Face says that model or file doesn't exist.", hint: "Check the link or name. Make sure the repository holds GGUF files."};
   if(/no space|disk full|enospc|not enough (disk|space)/.test(t))
     return {title: "Not enough disk space", body: "There isn't enough free space to store this model.", hint: "Free some space, or delete a model you no longer use from Models."};
   if(/timed? ?out|timeout|connection|network|unreachable|resolve/.test(t))
     return {title: "Couldn't reach the internet", body: "The download couldn't connect.", hint: "Check your connection and try again."};
-  return {title: "Something went wrong", body: "That didn't work, and there isn't a simpler explanation for it.", hint: "Details are below. If it keeps happening, the Activity log (Advanced > Server) may say more."};
+  return {title: "Something went wrong", body: "That didn't work. There isn't a simpler explanation for it.", hint: "Details are below. If it keeps happening, the Activity log (Advanced > Server) may say more."};
 }
 function showProblem(raw, what){
   const p = friendlyProblem(raw, what);
@@ -1907,7 +1907,7 @@ async function diskProblem(gb){
   try{
     const d = await api("/ui/disk");
     if(d.missing) return `The models folder ${d.where} can't be found. Connect its disk, or choose another folder in Models.`;
-    if(d.free_gb < gb + 5) return `This is about ${gb.toFixed(gb < 10 ? 1 : 0)} GB, and the disk it goes on has ${d.free_gb} GB free (${d.where}). Free some space or choose another folder in Models, then try again.`;
+    if(d.free_gb < gb + 5) return `This is about ${gb.toFixed(gb < 10 ? 1 : 0)} GB. The disk it goes on has ${d.free_gb} GB free (${d.where}). Free some space or choose another folder in Models, then try again.`;
   }catch{}
   return "";
 }
@@ -2408,7 +2408,7 @@ function libWhereHTML(){
   if(LIB.notNow) return `<div class="libwhere">Models are kept wherever each program puts them. <button class="linkbtn" type="button" data-lib="again">Choose one folder for all of them</button></div>`;
   const ps = d.places || [], pick = LIB.picked || ((ps.find(p => p.suggested) || ps[0] || {}).folder || "");
   return `<section class="panel" style="margin-bottom:14px"><h3>Where should your models live?</h3>
-    <p class="help" style="margin:0">Models are big, so pick a disk with room. Shoggoth keeps everything in one folder called Models there, and moves nothing you already have.</p>
+    <p class="help" style="margin:0">Models are big, so pick a disk with room. Shoggoth keeps everything in one folder called Models there. It moves nothing you already have.</p>
     <div class="libplaces" role="radiogroup" aria-label="Where models should live">${libPlace(ps.slice(0, 3), pick)}${ps.length > 3 ? `<details class="libmore"><summary>${ps.length - 3} more ${ps.length - 3 === 1 ? "place" : "places"}</summary>${libPlace(ps.slice(3), pick)}</details>` : ""}</div>
     <div class="line"><button class="btn primary" type="button" data-lib="use">Use this folder</button><button class="btn" type="button" data-lib="pick">Choose another folder…</button><button class="btn ghost" type="button" data-lib="later">Not now</button></div>
     ${LIB.err ? `<p class="errline" role="alert">${esc(LIB.err)}</p>` : ""}</section>`;
@@ -2908,7 +2908,7 @@ const ARG_CATALOG = [
   {title: "Several GPUs", items: [
     {id: "--split-mode", l: "How to share the model between GPUs", h: "Layer splitting is the safe default. “One GPU only” ignores the others.", labels: {none: "One GPU only", layer: "Split by layers (default)", row: "Split by rows", tensor: "Split every tensor in parallel"}},
     {id: "--tensor-split", l: "Share of the model per GPU", h: "Proportions in device order, for example 3,1 puts three quarters on the first device. Handy when your GPUs have different amounts of VRAM."},
-    {id: "--main-gpu", l: "Main GPU", h: "The GPU that holds intermediate results, and the whole model when only one GPU is used. Counts from 0."}
+    {id: "--main-gpu", l: "Main GPU", h: "The GPU that holds intermediate results. It also holds the whole model when only one GPU is used. Counts from 0."}
   ]},
   {title: "Thinking and tool calls", items: [
     {id: "--reasoning", l: "Let the model think before answering", h: "Reasoning models write out their thinking first. Automatic follows the model's template; turn it off for quicker, shorter replies.", labels: {on: "On", off: "Off", auto: "Automatic"}},
@@ -3202,7 +3202,7 @@ function renderWelcome(force){
   host.innerHTML = `<div class="wcard">
     <div class="brandbig"><svg viewBox="0 0 64 64" aria-hidden="true"><rect x="2" y="2" width="60" height="60" rx="14" fill="#f7d916"/><rect x="7" y="3.2" width="50" height="1.4" rx=".7" fill="#fff" fill-opacity=".45"/><path d="M7 62 C 6 50 8 40 12 33 C 13 26 18 18 26 17 C 31 13 39 14 43 19 C 50 20 55 27 54 35 C 58 40 58 49 55 56 C 56 59 57 61 58 62 Z" fill="#1d1d22"/><path d="M12 47 C 6 47 4 42 6 38 C 7 36 9 37 8 39 C 7 42 9 44 12 43" fill="none" stroke="#1d1d22" stroke-width="3.2" stroke-linecap="round"/><path d="M53 44 C 59 43 61 38 59 34 C 58 32 56 33 57 35 C 58 38 56 40 53 40" fill="none" stroke="#1d1d22" stroke-width="3" stroke-linecap="round"/><path d="M30 17 C 29 11 32 7 36 8 C 38 8.5 38 10.5 36.5 10.5 C 34.5 10.5 33.5 12.5 34 16" fill="none" stroke="#1d1d22" stroke-width="2.8" stroke-linecap="round"/><g fill="#efe8d2"><ellipse cx="25" cy="32" rx="7.2" ry="6.4"/><ellipse cx="41.5" cy="27" rx="4.8" ry="4.4"/><ellipse cx="38" cy="43" rx="4" ry="3.6"/><ellipse cx="19.5" cy="47" rx="3" ry="2.7"/><ellipse cx="48" cy="38" rx="2.6" ry="2.4"/><ellipse cx="30" cy="51" rx="2.2" ry="2"/></g><g fill="#f7d916"><circle cx="25.6" cy="32.4" r="4.4"/><circle cx="41.8" cy="27.4" r="3"/><circle cx="38.3" cy="43.3" r="2.4"/></g><g fill="#0e0e12"><ellipse cx="25.6" cy="32.4" rx="1.3" ry="3.8"/><ellipse cx="41.8" cy="27.4" rx=".9" ry="2.6"/><ellipse cx="38.3" cy="43.3" rx=".75" ry="2.1"/><ellipse cx="19.7" cy="47.2" rx=".7" ry="1.9"/><ellipse cx="48.1" cy="38.2" rx=".6" ry="1.7"/><ellipse cx="30.1" cy="51.1" rx=".55" ry="1.4"/></g><g fill="#fff" fill-opacity=".85"><circle cx="23" cy="30" r="1.4"/><circle cx="40.3" cy="25.7" r=".9"/></g></svg></div>
     <div class="wbody"><h2>Getting <span class="hl">ready</span></h2>
-    <p class="wl">Shoggoth sets itself up. It asks one thing, and the rest happens by itself. Everything runs on this computer, so your chats stay private.</p>
+    <p class="wl">Shoggoth sets itself up. Everything runs on this computer, so your chats stay private.</p>
     ${wanted ? `<p class="wl">When it is ready, Shoggoth will get <b>${esc(wanted.title || wanted.id)}</b> for you.</p>` : ""}
     ${asking ? q : ""}
     <ol class="wlist" aria-label="Getting ready">${rows.map(wRowHTML).join("")}</ol>
@@ -3305,7 +3305,7 @@ function engConnect(){                   // the form that connects one
       <input id="srvurl" type="text" inputmode="url" value="${esc(first.url || "")}" placeholder="http://192.168.1.20:8000" autocomplete="off" spellcheck="false" aria-label="Server address">
       <input id="srvkey" type="password" placeholder="API key (if it has one)" autocomplete="off" aria-label="API key">
       <button class="btn primary" type="submit">Probe and connect</button></form>
-    <p class="help" style="margin:6px 0 0">Looks at the address above and at the usual address of each server in the list, and connects the ones that answer.</p>
+    <p class="help" style="margin:6px 0 0">Looks at the address above and at the usual address of each server in the list. Connects the ones that answer.</p>
     <p class="help" id="srvhint" style="margin:6px 0 0">${esc(first.hint || "")}</p>
     <p class="help" id="srvresult" style="margin:6px 0 0" role="status">${esc(ENG.probeMsg || "")}</p></section>`;
 }
@@ -3352,7 +3352,7 @@ function renderEngines(){
   const form = ["#srvpre", "#srvurl", "#srvkey"].map(q => { const n = $(q); return n ? n.value : null; });
   $("#engadd").innerHTML = engConnect() + engMore() + `<section class="panel engine"><div class="ehead"><h3>Add an engine</h3></div>
     <p class="help" style="margin:0">An engine is a folder with a <span class="mono">provider.yaml</span> file in it that says how to start the program, where to reach it and which models it can run. Put the folder in <span class="mono" style="overflow-wrap:anywhere">${esc(d.user_folder || "")}</span>, then press Reload. Shoggoth asks before it lets an added engine run a program.</p>
-    <p class="help" style="margin:0">In a terminal, <span class="mono">Shoggoth-*.AppImage providers new my-engine</span> makes a starting folder, and <span class="mono">providers check &lt;folder&gt;</span> tells you what to fix before you press Reload. The guide is <span class="mono">docs/ENGINES.md</span> in the Shoggoth repository.</p>
+    <p class="help" style="margin:0">In a terminal, <span class="mono">Shoggoth-*.AppImage providers new my-engine</span> makes a starting folder. <span class="mono">providers check &lt;folder&gt;</span> tells you what to fix before you press Reload. The guide is <span class="mono">docs/ENGINES.md</span> in the Shoggoth repository.</p>
     <div class="erow"><button class="btn" data-eng="reload">Reload engines</button></div>
     ${(d.errors || []).length ? `<div class="engerr"><b>Engines Shoggoth couldn't load</b>${d.errors.map(e => `<div class="note-bad"><code>${esc(e.folder)}</code><br>${esc(e.error)}</div>`).join("")}</div>` : ""}
     ${ENG.msg ? `<div class="note-bad">${esc(ENG.msg)}</div>` : ""}</section>`;
@@ -3387,7 +3387,7 @@ document.addEventListener("click", async e => {
   try{
     if(act === "check"){ ENG.checks["_busy_" + id] = true; renderEngines(); ENG.checks[id] = await api("/ui/providers/check", {method: "POST", body: JSON.stringify({id})}); ENG.checks["_busy_" + id] = false; }
     else if(act === "update"){ await api("/ui/providers/update", {method: "POST", body: JSON.stringify({id})}); delete ENG.checks[id]; }
-    else if(act === "stop"){ if(!confirm("Stop it? It frees the memory it is using, and starts again when a model needs it.")) return; await api("/ui/providers/stop", {method: "POST", body: JSON.stringify({id})}); toast("Stopped."); await Promise.all([pollServer(), pkLoad(true)]); }
+    else if(act === "stop"){ if(!confirm("Stop it? It frees the memory it is using. It starts again when a model needs it.")) return; await api("/ui/providers/stop", {method: "POST", body: JSON.stringify({id})}); toast("Stopped."); await Promise.all([pollServer(), pkLoad(true)]); }
     else if(act === "approve"){ await api("/ui/providers/approve", {method: "POST", body: JSON.stringify({id})}); toast("Allowed."); }
     else if(act === "srvremove"){ if(!confirm("Remove this server? Shoggoth forgets the address; the server itself is untouched.")) return; await api("/ui/servers", {method: "POST", body: JSON.stringify({action: "remove", id})}); toast("Removed."); }
     else if(act === "reload"){ await api("/ui/providers/reload", {method: "POST", body: "{}"}); toast("Engines reloaded."); }
@@ -3408,7 +3408,7 @@ function renderPrefs(force){
   const typing = host.contains(document.activeElement) && /^(INPUT|TEXTAREA|SELECT)$/.test(document.activeElement.tagName);
   if(!force && (sig === SU.sig || typing)) return; SU.sig = sig;
   host.innerHTML = `${updatePanel()}
-    <details class="panel" id="ownserver"><summary><b>My own server, and the first-run screen</b></summary><div style="margin-top:12px;display:grid;gap:14px">
+    <details class="panel" id="ownserver"><summary><b>My own server and the first-run screen</b></summary><div style="margin-top:12px;display:grid;gap:14px">
       <p class="help" style="margin:0">Most people never need this. Shoggoth runs its own copy of what runs AI. If you run one yourself, for example as a system service, you can point Shoggoth at it here.</p>
       ${engineStep()}
       <div class="line"><button class="btn" type="button" data-go="welcome">Show the first-run screen again</button></div></div></details>`;
@@ -3500,7 +3500,7 @@ function renderPick(){
   $("#pickbody").innerHTML = `
     <h4>Start with three questions</h4>
     <ol class="picklist">
-      <li><b>Will it fit?</b> Shoggoth's Models page lists <b>Recommended for this computer</b> first, and hides anything that won't run comfortably in your free graphics memory. A model that doesn't fit will be slow or fail to start.</li>
+      <li><b>Will it fit?</b> Shoggoth's Models page lists <b>Recommended for this computer</b> first. It marks anything that won't run comfortably in your free graphics memory as “Probably too big”. A model that doesn't fit will be slow or fail to start.</li>
       <li><b>What is it for?</b> Chat and writing, coding, tool use, or understanding pictures. The labels on each card say what a model is good at.</li>
       <li><b>How much does it need to remember?</b> The context window is how much conversation the model can see. 128k tokens is enough for long chats and agent work. It's Shoggoth's default.</li>
     </ol>
@@ -3508,20 +3508,20 @@ function renderPick(){
     <p class="help2">A benchmark is a standard test, like an exam. It measures one narrow skill, so a high score tells you about that use case and nothing more. Many can be gamed: models can be trained on the questions, or tuned to look good on the test. Scores are often run on a different computer from yours, too. Use them to draw up a shortlist, then <b>try two or three models yourself, on your own questions. That is the best way to find out what works for you.</b></p>
     <h4>${esc(recPlace("guides").title || "Places to compare models")}</h4>
     <ul class="picksites">${recTools("guides").filter(t => t.links.length).map(t => `<li><a href="${esc(t.links[0].url)}" target="_blank" rel="noopener noreferrer">${esc(t.name)}</a><span>${inline(t.take)}</span></li>`).join("")}</ul>
-    <p class="help2">These links open in your browser, and only when you click them. Shoggoth doesn't contact these sites by itself.</p>`;
+    <p class="help2">These links open in your browser. They open only when you click them. Shoggoth doesn't contact these sites by itself.</p>`;
 }
 document.addEventListener("click", e => { if(e.target.closest("[data-pick]")){ e.preventDefault(); renderPick(); $("#pickdlg").showModal(); } });
 
 /* ======================= help + advanced hub ======================= */
 const FAQ = [
   ["What is a model?", "A model is the AI that answers you. It is a big file, usually a few gigabytes, that lives on this computer. Bigger models tend to write better but need a stronger computer and answer more slowly. Shoggoth marks each one as comfortable, snug or too big for your machine."],
-  ["Is my data private?", "Yes. Shoggoth and the models run on this computer. Your conversations are saved on this computer, in Shoggoth's own folder, and are never sent anywhere. Shoggoth only goes online to download a model you ask for, check for updates, fetch skills when you paste a link, or search the web when you allow the model to (it asks first, every time, and you can switch it off in the chat's Details panel). The <a href=\"#docs\" data-go=\"docs\">Docs</a> page explains where everything is kept."],
+  ["Is my data private?", "Yes. Shoggoth and the models run on this computer. Your conversations are saved on this computer, in Shoggoth's own folder. They are never sent anywhere. Shoggoth only goes online to download a model you ask for, check for updates, fetch skills when you paste a link, or search the web when you allow the model to. It asks first, every time. You can switch it off in the chat's Details panel. The <a href=\"#docs\" data-go=\"docs\">Docs</a> page explains where everything is kept."],
   ["Why is the first answer slow?", "The model has to be loaded into your computer's memory before it can answer. That takes a few seconds to a minute, depending on its size. After that, answers start right away."],
   ["How do I know which model to use?", "It depends on your computer and what you want to do. Start with <b>Recommended for this computer</b> in Models, where I explain each recommendation. <b>Everything</b> shows the rest, with a note on whether each one will fit. <p><button class=\"btn\" type=\"button\" data-pick>Show me how to compare models</button></p>"],
   ["What is the context window?", "It is how much of the conversation a model can see at once. Shoggoth uses <b>128k</b> tokens (about 100,000 words) by default. That's enough for long chats and agent work. You can change it for one model under <b>Details</b>, then <b>Settings for this model</b>. A bigger window needs more graphics memory."],
   ["How do I get more models?", "Open the <b>Models</b> and press <b>Get it</b> on any model. Models you already have somewhere else, or ones from Hugging Face, come in with <b>Add models</b>. Large models work the same way: Shoggoth sets up whatever they need and starts them when you pick one."],
   ["Can other apps use my models?", "Yes. Open <b>Advanced</b>, then <b>Server</b>. Shoggoth gives you an address and a key that you can paste into Hermes, or any chat app or coding assistant that works with an OpenAI-style server."],
-  ["Answers are slow or the model won't start", "Close other programs that use your graphics card, such as games or video editors, and try again. If it still struggles, choose a smaller model in Models. Models marked “Probably too big” often fail on this computer. Large models take a couple of minutes to start; the bar at the top of the chat shows how far along they are."]
+  ["Answers are slow or the model won't start", "Close other programs that use your graphics card, such as games or video editors. Then try again. If it still struggles, choose a smaller model in Models. Models marked “Probably too big” often fail on this computer. Large models take a couple of minutes to start; the bar at the top of the chat shows how far along they are."]
 ];
 let DOCS = null;
 async function renderDocs(){
@@ -3550,8 +3550,8 @@ $("#help").addEventListener("click", async e => {
   if(b.dataset.hact === "restart"){ b.disabled = true; try{ await api("/ui/engine/restart", {method:"POST", headers:{"Content-Type":"application/json"}, body:"{}"}); toast("Restarting. This takes a few seconds."); }catch(err){ toast(err.message); } b.disabled = false; }
 });
 const ADV_CARDS = [
-  ["server", "Server", "Let other apps use your models, like Hermes or any chat app. See who is asking, live, and read the activity log."],
-  ["hardware", "Hardware", "Watch your graphics card fill up as models load, and choose which one Shoggoth uses."],
+  ["server", "Server", "Let other apps use your models, like Hermes or any chat app. See who is asking, live. Read the activity log."],
+  ["hardware", "Hardware", "Watch your graphics card fill up as models load. Choose which one Shoggoth uses."],
   ["backends", "Engines", "Pick how models run on your computer, or install a faster option."],
   ["settings", "Engine settings", "Every setting the engine offers, searchable. Changes save as you make them."],
   ["tuning", "Tuning", "Make a model run faster on this computer. Shoggoth measures the settings and keeps only what clearly helps."],
@@ -3755,7 +3755,7 @@ function srvBuild(){
     </section>
     <section class="panel srvshare">
       <h3>Who can connect</h3>
-      <div class="swrow"><div><b>Other devices on my network</b><span>Off means only programs on this computer can connect. Turn it on to use your models from a phone, a laptop or another desktop at home. Anyone on your network who has the key could use them, and traffic on a home network isn't encrypted.</span>${g.lan && g.lan_url ? `<div class="crow2"><span class="cl">Network address</span><code class="cv">${esc(g.lan_url)}</code><button class="btn" type="button" data-sact="copy" data-val="${esc(g.lan_url)}">Copy</button></div>` : ""}</div>
+      <div class="swrow"><div><b>Other devices on my network</b><span>Off means only programs on this computer can connect. Turn it on to use your models from a phone, a laptop or another desktop at home. Anyone on your network who has the key could use them. Traffic on a home network isn't encrypted.</span>${g.lan && g.lan_url ? `<div class="crow2"><span class="cl">Network address</span><code class="cv">${esc(g.lan_url)}</code><button class="btn" type="button" data-sact="copy" data-val="${esc(g.lan_url)}">Copy</button></div>` : ""}</div>
         <button class="sw" type="button" role="switch" aria-checked="${g.lan}" data-sact="lan"><i></i>${g.lan ? "On" : "Off"}</button></div>
       <div class="swrow"><div><b>Show what models are saying</b><span>Off by default. When on, the request list above keeps the questions and answers so you can read them. They are only held in memory and disappear when you close Shoggoth.</span></div>
         <button class="sw" type="button" role="switch" aria-checked="${g.capture}" data-sact="capture"><i></i>${g.capture ? "On" : "Off"}</button></div>
@@ -3863,7 +3863,7 @@ function srvPaint(){
   if(gl && gl.dataset.sig !== sig){
     gl.dataset.sig = sig;
     gl.innerHTML = live.length ? live.slice(0, 6).map(glassHTML).join("") + (live.length > 6 ? `<div class="gmore">+${live.length - 6} more</div>` : "")
-      : `<p class="quiet2">Nothing is being asked right now. When an app uses your models, a card appears here for each request: it bubbles while the model thinks, and fills as the answer is written.${SRV.g && !SRV.g.capture ? " Turn on “Show what models are saying” to see a line of what it is saying, too." : ""}</p>`;
+      : `<p class="quiet2">Nothing is being asked right now. When an app uses your models, a card appears here for each request: it bubbles while the model thinks. It fills as the answer is written.${SRV.g && !SRV.g.capture ? " Turn on “Show what models are saying” to see a line of what it is saying, too." : ""}</p>`;
   }
   $$("#glasses .nowdetail").forEach(el => { const r = SRV.reqs.get(+el.dataset.rid); if(r) el.textContent = nowDetail(r, now); });
   const tc = $("#todaycount"); if(tc) tc.textContent = SRV.today != null ? `${SRV.today.toLocaleString()} request${SRV.today === 1 ? "" : "s"} today` : "";
@@ -5075,7 +5075,7 @@ function renderHardware(){
           </div>
         </div>
       </article>`;
-    }).join("") : `<div class="empty-note" style="grid-column:1/-1">${S.info?.needs_backend ? "No llama.cpp backend is installed yet, so there are no devices to show. Finish setting up on the <a href=\"#backends\" data-go=\"backends\">Engines page</a>, and your graphics cards will appear here." : S.info?.backend?.resolved === "cpu" ? "You're using the CPU backend, which doesn't use a graphics card. Install a graphics-card engine on the Engines page to see your cards here." : "No devices found. Shoggoth couldn\'t see a graphics card. Make sure an engine is installed (see Engines) and the helper is running."}</div>`;
+    }).join("") : `<div class="empty-note" style="grid-column:1/-1">${S.info?.needs_backend ? "No llama.cpp backend is installed yet, so there are no devices to show. Finish setting up on the <a href=\"#backends\" data-go=\"backends\">Engines page</a>. Your graphics cards will appear here." : S.info?.backend?.resolved === "cpu" ? "You're using the CPU backend, which doesn't use a graphics card. Install a graphics-card engine on the Engines page to see your cards here." : "No devices found. Shoggoth couldn\'t see a graphics card. Make sure an engine is installed (see Engines) and the helper is running."}</div>`;
     host.parentElement.querySelector(".warn-note")?.remove();
     if(note) host.insertAdjacentHTML("beforebegin", note);
   }
@@ -5122,8 +5122,8 @@ const ENGINE_INFO = {
   moonshine: "A small, quick speech-to-text engine that works well on ordinary processors.",
   kokoro: "Reads text aloud with a natural voice (text-to-speech).",
   openmoss: "Reads text aloud (text-to-speech) with a larger, more expressive voice model.",
-  "sd-cpp": "Makes pictures from a written description, and edits images.",
-  sdcpp: "Makes pictures from a written description, and edits images.",
+  "sd-cpp": "Makes pictures from a written description. Edits images.",
+  sdcpp: "Makes pictures from a written description. Edits images.",
   thinksound: "Creates sound effects and audio to go with a description or a video.",
   acestep: "Composes music from a written description.",
   onnxruntime: "Runs small specialised models, such as ones that sort text into categories.",
@@ -5306,7 +5306,7 @@ function cwRenderHero(){
   const hero = recent.join("|") + CW.folder + CW.home + missing + S.up;
   if(m._hero === hero && m.querySelector(".cwhero")) return; m._hero = hero;
   m.innerHTML = `<div class="cwhero"><h2>What shall we <span class="hl">work on</span>?</h2>
-    <p>Ask a question, or give it a task. It can read and search files, edit them and run commands on this computer, and it asks before it changes anything.</p>
+    <p>Ask a question, or give it a task. It can read and search files, edit them and run commands on this computer. It asks before it changes anything.</p>
     <div class="herocards one"><button type="button" id="hero-folder"><b><span class="em" aria-hidden="true">${glyph("crypt")}</span> ${CW.folder ? "Working in " + esc(cwDir(CW.folder)) : "Working in your home folder"}</b><span class="mono">${esc(CW.folder || CW.home || "~")}</span><span>${CW.folder ? "Click to choose a different folder." : "Click to pick a project folder instead, so it stays focused."}</span></button></div>
     <div class="recent">${recent.map(p => `<button type="button" data-folder="${esc(p)}" title="${esc(p)}">${esc(cwDir(p))}</button>`).join("")}</div>
     <p class="cwnote" style="margin-top:18px">Skills teach it new ways of working. Add a set by pasting a GitHub link under <a href="#skills" data-go="skills">Skills</a>.</p>
@@ -5318,7 +5318,7 @@ function cwRenderHero(){
 function cwHomeNote(){
   const t = cwChat(), m = cwEl("cwmsgs"); if(!t || !t.home || m.querySelector(".cwhome")) return;
   const d = document.createElement("div"); d.className = "cwnote cwhome";
-  d.innerHTML = `<span class="em" aria-hidden="true">${glyph("crypt")}</span><span>Working in your home folder, <code>${esc(t.cwd)}</code>. It can read files and run commands here, and asks before it changes anything. <button class="linkbtn" type="button" data-fc-change="1">Choose a different folder…</button></span>`;
+  d.innerHTML = `<span class="em" aria-hidden="true">${glyph("crypt")}</span><span>Working in your home folder, <code>${esc(t.cwd)}</code>. It can read files and run commands here. It asks before it changes anything. <button class="linkbtn" type="button" data-fc-change="1">Choose a different folder…</button></span>`;
   m.insertBefore(d, m.firstChild);
 }
 function cwSetTitle(t){ cwEl("cwtitle").textContent = t; }
@@ -6075,7 +6075,7 @@ function cwJobForm(prefill, spec){
   if(!f.hidden && prefill === undefined){ f.hidden = true; return; }
   spec = spec || {};
   const goal = prefill !== undefined ? prefill : cwEl("cwinput").value.trim(), folder = cwJobFolder();
-  f.innerHTML = `<h3>Start a job</h3><p class="help" style="margin:-6px 0 0">It works on this in the background, round after round, and checks its own progress. You can keep chatting.</p>
+  f.innerHTML = `<h3>Start a job</h3><p class="help" style="margin:-6px 0 0">It works on this in the background, round after round. It checks its own progress. You can keep chatting.</p>
     <div class="note-warn" id="jf-nofolder" ${folder ? "hidden" : ""}>A job needs a project folder to work in. <button class="linkbtn" type="button" id="jf-pick">Choose a folder…</button></div>
     <p class="help" style="margin:0" ${folder ? "" : "hidden"}>It will work in <b>${esc(cwDir(folder || ""))}</b>. <button class="linkbtn" type="button" id="jf-pick2">Change</button></p>
     <label class="f">What should it get done?<textarea id="jf-goal" placeholder="e.g. Make the importer tests pass without changing the tests">${esc(goal)}</textarea></label>
@@ -6142,7 +6142,7 @@ function cwJobsTab(chat){
 }
 function cwChangesTab(chat){
   const jobs = ((chat && chat.jobs) || []).filter(j => (j.copy ? !["applied", "discarded"].includes(j.copy_state) : j.watched) && CW.chgs[j.id] && CW.chgs[j.id].files.length);
-  if(!jobs.length) return `<p class="help" style="margin:0">Nothing to review. When a job has changed files, they show up here: a job working on a copy waits for you to apply them, and a job working in the folder itself shows what it already changed.</p>`;
+  if(!jobs.length) return `<p class="help" style="margin:0">Nothing to review. When a job has changed files, they show up here: a job working on a copy waits for you to apply them. A job working in the folder itself shows what it already changed.</p>`;
   if(!CW.chgId || !jobs.some(j => j.id === CW.chgId)) CW.chgId = jobs[jobs.length - 1].id;
   const j = jobs.find(x => x.id === CW.chgId), c = CW.chgs[j.id], busy = ["working", "paused", "queued"].includes(j.state);
   const sel = CW.sel || (CW.sel = new Set()), ro = !j.copy;
@@ -6226,7 +6226,7 @@ cwEl("cwside").addEventListener("change", async e => {
       if(CW.id){ await api("/ui/cowork/mode", {method: "POST", body: JSON.stringify({id: CW.id, mode: t.value})}); await cwLoad(); }
       else cwRenderSide();
     }else if(t.id === "cwsearch"){
-      await cwSearchSet({enabled: t.checked}); toast(t.checked ? "The model can search the web, and asks first each time." : "Web search is off.");
+      await cwSearchSet({enabled: t.checked}); toast(t.checked ? "The model can search the web. It asks first each time." : "Web search is off.");
       if(CW.id){ const id = CW.id; await cwLoad(); cwOpen(id); }
     }else if(t.id === "cwsprov"){ CW.searchMsg = ""; await cwSearchSet({provider: t.value });
     }else if(t.id === "cwthink") await cwSend({type: "set_thinking_level", level: t.value});
@@ -6396,13 +6396,13 @@ function paintSkills(){
   $("#skills").innerHTML = `<p class="lede">Skills are short instruction sheets a model reads when a job calls for them: how to plan before building, how to debug, how to draw a diagram, how to write good Markdown. <b>${on} switched on.</b></p>
     <section class="panel">
       <h3>Add skills from a link</h3>
-      <p class="help" style="margin:0">Paste the link to a GitHub page that has skills in it, and Shoggoth adds them all. It works with a whole repository, or with one folder inside it (open the folder on GitHub and copy the address). A skill is a folder with a <code>SKILL.md</code> file.</p>
+      <p class="help" style="margin:0">Paste the link to a GitHub page that has skills in it. Shoggoth adds them all. It works with a whole repository, or with one folder inside it (open the folder on GitHub and copy the address). A skill is a folder with a <code>SKILL.md</code> file.</p>
       <form class="skinst" id="skform"><input id="sklink" type="text" inputmode="url" autocomplete="off" spellcheck="false" placeholder="https://github.com/owner/repository" value="${esc(SK.link)}" aria-label="Link to a skills repository"><button class="btn primary" type="submit" ${SK.busy ? "disabled" : ""}>${SK.busy ? "Adding…" : "Add skills"}</button></form>
       ${SK.msg ? `<p class="help" role="status" style="margin:0;color:${SK.msg.startsWith("!") ? "var(--bad)" : "var(--leaf)"}">${esc(SK.msg.replace(/^!/, ""))}</p>` : ""}
-      <details><summary class="help" style="cursor:pointer">Ideas, and what to know first</summary>
+      <details><summary class="help" style="cursor:pointer">Ideas and what to know first</summary>
         <div class="skeg" style="margin:10px 0">${SK_IDEAS.map(([u, n, d]) => `<button type="button" data-skidea="${esc(u)}"><b>${n}</b><span>${esc(d)}</span></button>`).join("")}</div>
         <p class="help">Find more on <a href="https://hermesatlas.com/ecosystem/" target="_blank" rel="noopener noreferrer">Hermes Atlas</a>. Anything that follows the <a href="https://agentskills.io" target="_blank" rel="noopener noreferrer">Agent Skills</a> format works.</p>
-        <p class="help"><b>Only add skills from people you trust.</b> A skill is instructions the model follows, and some come with scripts. While a task is on <i>Ask first</i>, every command still asks you.</p>
+        <p class="help"><b>Only add skills from people you trust.</b> A skill is instructions the model follows. Some come with scripts. While a task is on <i>Ask first</i>, every command still asks you.</p>
         <p class="help"><b>Fewer is better for small models.</b> Each skill you switch on adds a line the model reads before every answer. A handful of well-chosen skills beats a hundred.</p>
         <p class="help">Skills are fetched from github.com when you add them. Skills work in a conversation with a folder; the diagram and writing skills also work in a plain chat. Changes apply from the next message.</p></details>
     </section>
