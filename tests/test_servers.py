@@ -7,6 +7,7 @@ import tempfile
 import threading
 import time
 import unittest
+from pathlib import Path
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 
 sys.path.insert(0, os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", "shoggoth"))
@@ -91,6 +92,40 @@ class Saving(Env):
         self.assertTrue({"ollama", "lmstudio", "llama-server", "strata", "maya", "unsloth", "other"} <= names)
         for p in servers.presets():
             self.assertLessEqual(set(p), {"id", "name", "url", "hint"})
+
+
+class Migrating(Env):
+    def old(self, remote, keys):
+        store.update(lambda s: s.__setitem__("strata", {"remote": remote, "keys": keys, "owned": {"preset": "", "port": 0}, "known": {}, "idle_minutes": 20}))
+
+    def test_remote_addresses_and_keys_carry_over(self):
+        self.old([{"url": "http://10.0.0.5:8080/"}, {"url": "http://10.0.0.6:8080"}], {"http://10.0.0.5:8080": "k1", "http://10.0.0.6:8080": "k2"})
+        self.assertEqual(servers.migrate_strata(), 2)
+        got = {s["id"]: (s["url"], s["key"]) for s in servers.all()}
+        self.assertEqual(got, {"strata": ("http://10.0.0.5:8080", "k1"), "strata-2": ("http://10.0.0.6:8080", "k2")})
+
+    def test_a_second_run_changes_nothing(self):
+        self.old([{"url": "http://10.0.0.5:8080"}], {})
+        servers.migrate_strata()
+        before = Path(os.path.join(store.config_dir(), "settings.json")).read_text()
+        self.assertEqual(servers.migrate_strata(), 0)
+        self.assertEqual(Path(os.path.join(store.config_dir(), "settings.json")).read_text(), before)
+
+    def test_a_server_removed_afterwards_does_not_come_back(self):
+        self.old([{"url": "http://10.0.0.5:8080"}], {})
+        servers.migrate_strata()
+        servers.remove("strata")
+        servers.migrate_strata()
+        self.assertEqual(servers.all(), [])
+
+    def test_a_half_written_block_is_skipped_not_fatal(self):
+        store.update(lambda s: s.__setitem__("strata", {"remote": [{}, "x", {"url": "file:///x"}, {"url": "http://10.0.0.5:8080"}], "keys": None}))
+        self.assertEqual(servers.migrate_strata(), 1)
+        store.update(lambda s: (s.__setitem__("migrated", []), s.__setitem__("strata", "nonsense"), s.__setitem__("servers", [])))
+        self.assertEqual(servers.migrate_strata(), 0)
+
+    def test_a_fresh_install_has_nothing_to_migrate(self):
+        self.assertEqual(servers.migrate_strata(), 0)
 
 
 class Probing(Env):

@@ -1087,6 +1087,10 @@ def main():
         sys.exit(f"Can't listen on {a.host}:{a.port}: {e}\nTry --port.")
     srv.daemon_threads = True
 
+    try:
+        servers.migrate_strata()          # a Strata typed in before Strata was removed becomes a connected server
+    except Exception as e:  # noqa: BLE001 - never stop Shoggoth starting over old settings
+        sys.stderr.write("Shoggoth: couldn't carry the saved Strata servers over: %r\n" % e)
     agent.set_zest_port(a.port)
     agent.recover()
     piup.on_installed.append(agent.restart_idle)

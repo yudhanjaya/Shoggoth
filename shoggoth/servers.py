@@ -72,28 +72,56 @@ def get(sid):
     return next((s for s in all() if s["id"] == sid), None)
 
 
-def add(preset, url, key="", name=""):
-    """Save a server. ValueError, in plain words, when the address is bad or already connected."""
-    pre = next((p for p in presets() if p["id"] == preset), None)
-    if not pre:
-        raise ValueError("That isn't one of the servers Shoggoth knows by name. Choose 'Another server'.")
-    url = normalise(url or pre.get("url"))
-    taken = {s["id"] for s in all()} | RESERVED
+def _append(s, pre, url, key, name):
+    """Add a server to the settings `s` (not saved here). ValueError when the address is already connected."""
+    have = s.setdefault("servers", [])
+    for h in have:
+        if isinstance(h, dict) and h.get("url") and _canon(normalise(h["url"])) == _canon(url):
+            raise ValueError("%s is already connected at that address." % (h.get("name") or h["id"]))
+    taken = {h["id"] for h in have if isinstance(h, dict) and h.get("id")} | RESERVED
     n, sid = 1, pre["id"]
     while sid in taken:
         n += 1
         sid = "%s-%d" % (pre["id"], n)
     entry = {"id": sid, "preset": pre["id"], "name": (name or "").strip()[:60] or pre["name"] + (" %d" % n if n > 1 else ""),
              "url": url, "key": str(key or "").strip()}
+    have.append(entry)
+    return entry
+
+
+def add(preset, url, key="", name=""):
+    """Save a server. ValueError, in plain words, when the address is bad or already connected."""
+    pre = next((p for p in presets() if p["id"] == preset), None)
+    if not pre:
+        raise ValueError("That isn't one of the servers Shoggoth knows by name. Choose 'Another server'.")
+    url, out = normalise(url or pre.get("url")), []
+    store.update(lambda s: out.append(_append(s, pre, url, key, name)))
+    return dict(out[0])
+
+
+def migrate_strata():
+    """Earlier versions kept the Strata servers a person typed in (and their keys) in the `strata` settings. Carry them over as connected
+    servers, once, so a Strata they use keeps working (the first is still called `strata`, so chats that name strata/<model> still open).
+    The old settings are left where they are. Returns how many servers were added."""
+    added = []
 
     def put(s):
-        have = s.setdefault("servers", [])
-        for h in have:
-            if isinstance(h, dict) and h.get("url") and _canon(normalise(h["url"])) == _canon(url):
-                raise ValueError("%s is already connected at that address." % (h.get("name") or h["id"]))
-        have.append(entry)
+        done = s.setdefault("migrated", [])
+        if "strata" in done:
+            return
+        old = s.get("strata") if isinstance(s.get("strata"), dict) else {}
+        keys = old.get("keys") if isinstance(old.get("keys"), dict) else {}
+        pre = next(p for p in presets() if p["id"] == "strata")
+        for r in old.get("remote") if isinstance(old.get("remote"), list) else []:
+            raw = str((r or {}).get("url", "")).strip() if isinstance(r, dict) else ""
+            try:
+                url = normalise(raw)
+                added.append(_append(s, pre, url, keys.get(raw) or keys.get(raw.rstrip("/")) or keys.get(url) or ""  , ""))
+            except ValueError:
+                continue
+        done.append("strata")
     store.update(put)
-    return dict(entry)
+    return len(added)
 
 
 def remove(sid):
