@@ -15,6 +15,7 @@ sys.path.insert(0, os.path.join(HERE, "_vendor"))       # Shoggoth's Python has 
 import yaml  # noqa: E402
 
 import provbase  # noqa: E402
+import servers  # noqa: E402
 import store  # noqa: E402
 
 ID_RE = re.compile(r"^[a-z][a-z0-9_-]{1,31}$")
@@ -189,7 +190,19 @@ class Registry:
                 folder = os.path.join(root, name)
                 if os.path.isfile(os.path.join(folder, "provider.yaml")) and not name.startswith("_"):
                     self._load_one(folder, trusted)
+        self._load_servers()
         return self
+
+    def _load_servers(self):
+        """Servers the person connected come after the engines Shoggoth ships, so the default engine stays Lemonade."""
+        for entry in servers.all():
+            sid = entry["id"]
+            if not ID_RE.match(sid):
+                self.errors.append({"folder": "servers", "error": "The connected server %r has an id Shoggoth can't use. Remove it and connect it again." % sid})
+            elif sid in self.providers:
+                self.errors.append({"folder": "servers", "error": "The connected server %r uses the id of an engine that is already there, so it was skipped. Remove it and connect it again." % sid})
+            else:
+                self.providers[sid] = servers.ConnectedServer(entry, self.context())
 
     def _load_one(self, folder, trusted):
         try:
