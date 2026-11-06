@@ -754,7 +754,9 @@ class Handler(BaseHTTPRequestHandler):
         act = body.get("action")
         if act == "test":
             return self.send_json(servers.probe(str(body.get("url", "")), str(body.get("key", "")).strip()))
-        if act == "add":
+        if act == "probe":
+            result = dict(servers.connect_found(), ok=True)
+        elif act == "add":
             url, key = str(body.get("url", "")), str(body.get("key", "")).strip()
             entry = servers.add(str(body.get("preset", "")), url, key, str(body.get("name", "")))
             result = {"ok": True, "server": next(s for s in servers.public() if s["id"] == entry["id"])}

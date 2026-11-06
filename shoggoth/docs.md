@@ -188,7 +188,7 @@ Open **Models**. It lists every model on your computer, whichever program runs i
 Shoggoth runs Lemonade by itself. If you already run another server, you can use its models in Chat and in your other apps.
 
 - Open **Advanced > Engines** and find **Connect a server**. Pick Ollama, LM Studio, llama.cpp, Strata, Maya, Unsloth, or **Another server** for anything that speaks the OpenAI API.
-- The address fills in with the usual one for that server. Change it if yours is different, add the API key if it has one, and press **Test**. Shoggoth tells you whether it answered and which models it has. **Connect** saves it.
+- The address fills in with the usual one for that server. Change it if yours is different, add the API key if it has one, and press **Test**. Shoggoth tells you whether it answered and which models it has. **Connect** saves it. **Probe and connect** looks at the usual address of each server in the list, on this computer, and connects the ones that answer. It skips any that want a key (add those with the form) and any you already connected.
 - Its models appear in the model picker as `<server name>/<model>`.
 - **Shoggoth never starts, stops, updates or installs a connected server.** Start it yourself first. It does not free memory for it either, so if it shares a graphics card with Lemonade, you manage that. **Remove** forgets the address and leaves the server alone.
 

@@ -11,7 +11,7 @@ For any registered engine, Shoggoth:
 
 ## Connect a server you already run
 
-Under **Advanced > Engines**, **Connect a server** takes the address of a server you run yourself. Pick a name for the usual address (Ollama `http://127.0.0.1:11434`, LM Studio `http://127.0.0.1:1234`, llama.cpp `http://127.0.0.1:8080`, Strata, Maya, Unsloth, or **Another server**), add the API key if it has one, press **Test**, then **Connect**.
+Under **Advanced > Engines**, **Connect a server** takes the address of a server you run yourself. Pick a name for the usual address (Ollama `http://127.0.0.1:11434`, LM Studio `http://127.0.0.1:1234`, llama.cpp `http://127.0.0.1:8080`, Strata, Maya, Unsloth, or **Another server**), add the API key if it has one, press **Test**, then **Connect**. **Probe and connect** asks each preset's usual address on this computer for its model list (`/v1/models`, nothing else) and connects what answers, skipping servers that want a key and ones already connected. An address several presets share (8080) is connected as "Server at 127.0.0.1:8080".
 
 - A connected server is an engine that is only an address (`shoggoth/servers.py`). Its models are named `<server id>/<model>`, so two servers that both have `llama3` stay apart. Saved servers live in the `servers` setting.
 - Shoggoth never installs, starts, stops, updates, tunes or frees memory for it. If it shares a graphics card with Lemonade, you manage that.

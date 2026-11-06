@@ -3270,8 +3270,9 @@ function engConnect(){                   // the form that connects one
       <input id="srvurl" type="text" inputmode="url" value="${esc(first.url || "")}" placeholder="http://192.168.1.20:8000" autocomplete="off" spellcheck="false" aria-label="Server address">
       <input id="srvkey" type="password" placeholder="API key (if it has one)" autocomplete="off" aria-label="API key">
       <button class="btn" type="button" data-eng="srvtest">Test</button><button class="btn primary" type="submit">Connect</button></form>
+    <div class="line" style="margin-top:10px"><button class="btn" type="button" data-eng="srvprobe">Probe and connect</button><span class="help" style="margin:0">Looks on this computer at the usual address of each server above and connects the ones that answer.</span></div>
     <p class="help" id="srvhint" style="margin:6px 0 0">${esc(first.hint || "")}</p>
-    <p class="help" id="srvresult" style="margin:6px 0 0" role="status"></p></section>`;
+    <p class="help" id="srvresult" style="margin:6px 0 0" role="status">${esc(ENG.probeMsg || "")}</p></section>`;
 }
 function engCard(p){
   if(p.connected) return engConnCard(p);
@@ -3303,7 +3304,7 @@ function engMount(){                     // the engine-specific parts live in a 
 }
 function renderEngines(){
   const d = ENG.d, host = $("#engcards"); if(!d) return;
-  const sig = JSON.stringify([d, ENG.srv, ENG.checks, ENG.msg]);
+  const sig = JSON.stringify([d, ENG.srv, ENG.checks, ENG.msg, ENG.probeMsg]);
   if(sig === ENG.sig) return;
   if(host.contains(document.activeElement) && /^(INPUT|SELECT|TEXTAREA)$/.test(document.activeElement.tagName)) return;
   ENG.sig = sig;
@@ -3325,7 +3326,7 @@ function renderEngines(){
 function srvPreset(){ return (ENG.srv.presets || []).find(x => x.id === $("#srvpre").value) || {}; }
 document.addEventListener("change", e => {
   if(e.target.id !== "srvpre") return;
-  const x = srvPreset(); $("#srvurl").value = x.url || ""; $("#srvhint").textContent = x.hint || ""; $("#srvresult").textContent = "";
+  const x = srvPreset(); $("#srvurl").value = x.url || ""; $("#srvhint").textContent = x.hint || ""; $("#srvresult").textContent = ENG.probeMsg = "";
 });
 document.addEventListener("submit", async e => {
   if(e.target.id !== "srvform") return;
@@ -3350,6 +3351,17 @@ document.addEventListener("click", async e => {
         : r.needs_key ? "It answered, but it wants an API key."
         : r.models.length ? "Found it. Models: " + r.models.slice(0, 8).join(", ") + (r.models.length > 8 ? "…" : "") : "Found it. It has no models loaded right now.";
       return;
+    }
+    else if(act === "srvprobe"){
+      const out = $("#srvresult"); out.textContent = "Looking at the usual addresses…"; ENG.probeMsg = ""; b.disabled = true;
+      let r; try{ r = await api("/ui/servers", {method: "POST", body: JSON.stringify({action: "probe"})}); } finally { b.disabled = false; }
+      const names = r.connected.map(c => `${c.name} (${c.url})`);
+      ENG.probeMsg = [r.connected.length ? "Connected: " + names.join(", ") + "." : "",
+        r.needs_key.length ? "Wants a key, so not connected: " + r.needs_key.join(", ") + ". Use the form above with its key." : "",
+        r.already.length ? "Already connected: " + r.already.join(", ") + "." : "",
+        r.found ? "" : "Nothing answered at the usual addresses. Start your server, or type its address above."].filter(Boolean).join(" ");
+      out.textContent = ENG.probeMsg;
+      if(r.connected.length) toast("Connected " + r.connected.length + ".");
     }
     else if(act === "srvremove"){ if(!confirm("Remove this server? Shoggoth forgets the address; the server itself is untouched.")) return; await api("/ui/servers", {method: "POST", body: JSON.stringify({action: "remove", id})}); toast("Removed."); }
     else if(act === "reload"){ await api("/ui/providers/reload", {method: "POST", body: "{}"}); toast("Engines reloaded."); }

@@ -141,6 +141,51 @@ def probe(url, key=""):
     return {"reachable": status != 0, "needs_key": status in (401, 403), "models": [str(m) for m in models]}
 
 
+def discover(connected=None):
+    """Look for servers on this computer at the usual address of each preset, all at once. Only asks `/v1/models`; changes nothing.
+    Returns [{url, preset, name, reachable, needs_key, models, already}] for every address that answered. An address that more than one
+    preset uses (several servers default to 8080) can't be told apart, so it is offered as 'Another server' named by its address."""
+    pres = presets()
+    by_url = {}
+    for p in pres:
+        if p.get("url"):
+            by_url.setdefault(normalise(p["url"]), []).append(p)
+    have = {_canon(normalise(h["url"])) for h in (connected if connected is not None else all())}
+    import concurrent.futures
+    urls = sorted(by_url)
+    with concurrent.futures.ThreadPoolExecutor(max_workers=8) as pool:
+        got = dict(zip(urls, pool.map(probe, urls)))
+    out = []
+    for u in urls:
+        r = got[u]
+        if not r["reachable"]:
+            continue
+        owners = by_url[u]
+        pre = owners[0] if len(owners) == 1 else next(p for p in pres if p["id"] == "other")
+        name = pre["name"] if len(owners) == 1 else "Server at " + urllib.parse.urlsplit(u).netloc
+        out.append(dict(r, url=u, preset=pre["id"], name=name, already=_canon(u) in have))
+    return out
+
+
+def connect_found(found=None):
+    """Connect every server `discover` found that is not connected yet and does not need a key. Returns
+    {connected: [{id, name, url}], needs_key: [url], already: [url], found: n}."""
+    found = discover() if found is None else found
+    res = {"connected": [], "needs_key": [], "already": [], "found": len(found)}
+    for f in found:
+        if f["already"]:
+            res["already"].append(f["url"])
+        elif f["needs_key"]:
+            res["needs_key"].append(f["url"])
+        else:
+            try:
+                e = add(f["preset"], f["url"], "", f["name"])
+                res["connected"].append({"id": e["id"], "name": e["name"], "url": e["url"]})
+            except ValueError:
+                res["already"].append(f["url"])
+    return res
+
+
 class ConnectedServer(provbase.GenericProvider):
     """An engine that is only an address. It lists what the server has, hands out its address, and never starts or stops anything."""
 

@@ -94,6 +94,58 @@ class Saving(Env):
             self.assertLessEqual(set(p), {"id", "name", "url", "hint"})
 
 
+class Discovering(Env):
+    """The "Probe and connect" button: look at each preset's usual address, connect what answers."""
+    def presets_at(self, **urls):
+        from unittest import mock
+        pre = [{"id": k, "name": k.title(), "url": u, "hint": ""} for k, u in urls.items()] + [{"id": "other", "name": "Another server", "url": "", "hint": ""}]
+        return mock.patch.object(servers, "presets", lambda: pre)
+
+    def test_it_connects_what_answers_and_skips_the_rest(self):
+        (a, sa), (b, sb) = fake_server(models=("m1",)), fake_server(status=401)
+        sc = fake_server()
+        sc[1]()                                                   # a closed port
+        try:
+            with self.presets_at(ollama=a, lmstudio=b, unsloth=sc[0]):
+                r = servers.connect_found()
+            self.assertEqual((r["found"], [c["id"] for c in r["connected"]], r["needs_key"]), (2, ["ollama"], [b]))
+            self.assertEqual([s["id"] for s in servers.all()], ["ollama"])
+        finally:
+            sa()
+            sb()
+
+    def test_a_second_press_connects_nothing_new(self):
+        a, sa = fake_server()
+        try:
+            with self.presets_at(ollama=a):
+                servers.connect_found()
+                r = servers.connect_found()
+            self.assertEqual((r["connected"], r["already"]), ([], [servers.normalise(a)]))
+            self.assertEqual(len(servers.all()), 1)
+        finally:
+            sa()
+
+    def test_an_address_several_servers_use_is_offered_as_another_server_named_by_address(self):
+        a, sa = fake_server()
+        try:
+            with self.presets_at(strata=a, maya=a, llama_server=a):
+                found = servers.discover()
+            self.assertEqual([(f["preset"], f["name"]) for f in found], [("other", "Server at " + a.split("//")[1])])
+        finally:
+            sa()
+
+    def test_nothing_answering_is_not_an_error(self):
+        a, sa = fake_server()
+        sa()
+        with self.presets_at(ollama=a):
+            self.assertEqual(servers.connect_found(), {"connected": [], "needs_key": [], "already": [], "found": 0})
+
+    def test_it_finds_nothing_on_a_computer_with_no_servers_without_waiting(self):
+        t = time.time()
+        servers.discover()
+        self.assertLess(time.time() - t, 4.0)
+
+
 class Migrating(Env):
     def old(self, remote, keys):
         store.update(lambda s: s.__setitem__("strata", {"remote": remote, "keys": keys, "owned": {"preset": "", "port": 0}, "known": {}, "idle_minutes": 20}))
@@ -269,6 +321,18 @@ class Routes(Env):
             self.assertEqual(servers.all(), [])
         finally:
             stop()
+
+    def test_probe_connects_what_answers(self):
+        from unittest import mock
+        a, sa = fake_server(models=("m1",))
+        try:
+            with mock.patch.object(servers, "presets", lambda: [{"id": "ollama", "name": "Ollama", "url": a, "hint": ""}, {"id": "other", "name": "Another server", "url": "", "hint": ""}]):
+                st, raw = self.call("POST", "/ui/servers", {"action": "probe"})
+            d = json.loads(raw)
+            self.assertEqual((st, [c["id"] for c in d["connected"]], [s["id"] for s in d["servers"]]), (200, ["ollama"], ["ollama"]))
+            self.assertEqual([m["id"] for p in json.loads(self.call("GET", "/ui/providers")[1])["providers"] if p["id"] == "ollama" for m in [{"id": x} for x in p["models"]]], ["m1"])
+        finally:
+            sa()
 
     def test_it_needs_the_page_key(self):
         for m, path in (("GET", "/ui/servers"), ("POST", "/ui/servers")):
