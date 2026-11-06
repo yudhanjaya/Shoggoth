@@ -42,7 +42,6 @@ import recs        # noqa: E402
 import registry    # noqa: E402
 import router      # noqa: E402
 import skills      # noqa: E402
-import strata      # noqa: E402
 import servers     # noqa: E402
 import modelmeta  # noqa: E402
 import tuning      # noqa: E402
@@ -298,14 +297,8 @@ class Handler(BaseHTTPRequestHandler):
             self.send_json({"targets": tuning.targets(), "job": tuning.status()})
         elif p == "/ui/tuning/job":
             self.send_json(tuning.status())
-        elif p == "/ui/strata/update":
-            self.get_strata_update(parse_qs(u.query))
         elif p == "/ui/recommendations":
             self.send_json(recs.summary())
-        elif p == "/ui/strata/recommend":
-            self.send_json(strata.recommend())
-        elif p == "/ui/strata":
-            self.send_json(strata.summary())
         elif p == "/ui/update":
             self.send_json(zestup.status())
         elif p == "/ui/skills":
@@ -369,7 +362,7 @@ class Handler(BaseHTTPRequestHandler):
             "/ui/cowork/job/apply": self.post_job_apply, "/ui/cowork/job/discard": self.post_job_discard,
             "/ui/cowork/folders": self.post_cowork_folders, "/ui/cowork/seen": self.post_cowork_seen,
             "/ui/cowork/allow/remove": self.post_allow_remove, "/ui/cowork/folder": self.post_cowork_folder, "/ui/skills/install": self.post_skills_install, "/ui/pi/check": self.post_pi_check,
-            "/ui/pi/update": self.post_pi_update, "/ui/strata/start": self.post_strata_start, "/ui/strata/stop": self.post_strata_stop, "/ui/library/root": self.post_library_root, "/ui/library/folder": self.post_library_folder, "/ui/providers/approve": self.post_provider_approve, "/ui/providers/check": self.post_provider_check, "/ui/providers/update": self.post_provider_update, "/ui/providers/stop": self.post_provider_stop, "/ui/providers/reload": self.post_provider_reload, "/ui/servers": self.post_servers, "/ui/tuning/plan": self.post_tuning_plan, "/ui/model/meta": self.post_model_meta, "/ui/tuning/run": self.post_tuning_run, "/ui/tuning/cancel": self.post_tuning_cancel, "/ui/tuning/action": self.post_tuning_action, "/ui/strata/setup": self.post_strata_setup, "/ui/strata/update": self.post_strata_update, "/ui/strata/idle": self.post_strata_idle, "/ui/strata/connect": self.post_strata_connect, "/ui/strata/forget": self.post_strata_forget, "/ui/strata/key": self.post_strata_key, "/ui/strata/install": self.post_strata_install, "/ui/update/all": self.post_update_all, "/ui/update/restart": self.post_update_restart, "/ui/pi/use": self.post_pi_use,
+            "/ui/pi/update": self.post_pi_update, "/ui/library/root": self.post_library_root, "/ui/library/folder": self.post_library_folder, "/ui/providers/approve": self.post_provider_approve, "/ui/providers/check": self.post_provider_check, "/ui/providers/update": self.post_provider_update, "/ui/providers/stop": self.post_provider_stop, "/ui/providers/reload": self.post_provider_reload, "/ui/servers": self.post_servers, "/ui/tuning/plan": self.post_tuning_plan, "/ui/model/meta": self.post_model_meta, "/ui/tuning/run": self.post_tuning_run, "/ui/tuning/cancel": self.post_tuning_cancel, "/ui/tuning/action": self.post_tuning_action, "/ui/update/all": self.post_update_all, "/ui/update/restart": self.post_update_restart, "/ui/pi/use": self.post_pi_use,
             "/ui/skills/remove": self.post_skills_remove, "/ui/skills/toggle": self.post_skills_toggle,
             "/ui/models/storage": self.post_storage, "/ui/models/imports": self.post_imports,
         }.get(p)
@@ -683,12 +676,6 @@ class Handler(BaseHTTPRequestHandler):
     def post_pi_update(self, body):
         self.send_json({"started": piup.start_update(), "update": dict(piup.UPD)})
 
-    def post_strata_start(self, body):
-        """Start a saved Strata preset. A big model and Lemonade's models compete for memory, so Lemonade's are freed first
-        when the page says so (`free_lemonade`)."""
-        preset = str(body.get("preset", "")).strip()
-        self.send_json({"started": strata.start(preset, bool(body.get("force"))), **strata.summary()})
-
     @staticmethod
     def library_summary():
         d = library.summary()
@@ -783,7 +770,7 @@ class Handler(BaseHTTPRequestHandler):
     @staticmethod
     def _tune_args(body):
         engine, target = str(body.get("engine", "")), str(body.get("target", ""))
-        if engine not in ("strata", "lemonade") or not target:
+        if engine != "lemonade" or not target:
             raise ValueError("Choose something to tune.")
         return engine, target, {k: body.get(k) for k in ("mode", "use", "goal", "kind")}
 
@@ -812,53 +799,6 @@ class Handler(BaseHTTPRequestHandler):
         engine, target, _ = self._tune_args(body)
         ok, msg = tuning.action(engine, target, str(body.get("act", "")))
         self.send_json({"ok": ok, "error": msg, "targets": tuning.targets()}, 200 if ok else 409)
-
-    def get_strata_update(self, q):
-        """The last look at Strata's feed (kept six hours; ?fresh=1 looks again), and where an update stands."""
-        try:
-            check = strata.update_check(0 if q.get("fresh") else 6 * 3600)
-            err = ""
-        except RuntimeError as e:
-            check, err = {"installed": bool(strata.binary())}, str(e)
-        self.send_json({"check": check, "error": err, "update": dict(strata.SUPD)})
-
-    def post_strata_update(self, body):
-        self.send_json({"started": strata.start_update(), "update": dict(strata.SUPD)})
-
-    def post_strata_idle(self, body):
-        strata.set_idle_minutes(body.get("minutes", 20))
-        self.send_json({"ok": True, **strata.summary()})
-
-    def post_strata_setup(self, body):
-        """Get a big model in one step: install Strata if needed, download, save as a Shoggoth preset, start. Lemonade's models are
-        freed first because they share the memory."""
-        family, model = str(body.get("family", "")), str(body.get("model", ""))
-        if not any(e["family"] == family and e["model"] == model for e in strata.catalog()):
-            raise ValueError("Shoggoth doesn't know that model.")
-        self.send_json({"started": strata.setup(family, model, bool(body.get("force"))), **strata.summary()})
-
-    def post_strata_connect(self, body):
-        ok, msg = strata.connect(body.get("url", ""), str(body.get("key", "")).strip())
-        agent.restart_idle()
-        self.send_json({"ok": ok, "error": msg, **strata.summary()}, 200 if ok else 400)
-
-    def post_strata_forget(self, body):
-        strata.forget(body.get("url", ""))
-        agent.restart_idle()
-        self.send_json({"ok": True, **strata.summary()})
-
-    def post_strata_key(self, body):
-        strata.set_key(body.get("url", ""), body.get("key", ""))
-        agent.restart_idle()
-        self.send_json({"ok": True, **strata.summary()})
-
-    def post_strata_stop(self, body):
-        ok, msg = strata.stop(body.get("url") or None)
-        agent.restart_idle()
-        self.send_json({"ok": ok, "error": msg}, 200 if ok else 409)
-
-    def post_strata_install(self, body):
-        self.send_json({"started": strata.install(), **strata.summary()})
 
     def post_update_all(self, body):
         self.send_json({"started": zestup.start_all(VERSION, current_mode()), **zestup.status()})
@@ -1032,17 +972,6 @@ def watchdog(srv, grace):
             return
 
 
-def _strata_make_room():
-    """Before Strata loads a model (also from the Models page, which doesn't go through the router): free memory the way the router
-    does, so nothing that is answering is cut off and nothing somebody else loaded is unloaded."""
-    p = router.get("strata")
-    if p:
-        try:
-            router.make_room(p, lambda t: None)
-        except provbase.ProviderError as e:
-            raise RuntimeError(str(e))
-
-
 def main():
     args = [a for a in sys.argv[1:] if a != "--app"]            # the AppImage adds --app; `Shoggoth.AppImage providers check <folder>` is the tool for engine authors
     if args[:1] == ["providers"]:
@@ -1094,8 +1023,6 @@ def main():
     agent.set_zest_port(a.port)
     agent.recover()
     piup.on_installed.append(agent.restart_idle)
-    strata.on_change.append(agent.restart_idle)
-    strata.before_launch.append(_strata_make_room)
     threading.Thread(target=agent.reaper, daemon=True).start()
     threading.Thread(target=router.watch, daemon=True).start()
     s = store.load()

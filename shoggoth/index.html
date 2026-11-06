@@ -447,7 +447,6 @@ details.setgrp>summary::before{content:"";width:7px;height:7px;border-right:1.8p
 details.setgrp[open]>summary::before{transform:rotate(45deg)}
 details.setgrp>summary small{font:12px var(--mono);color:var(--faint);font-weight:400;margin-left:auto}
 .setrows{border-top:1px solid var(--line-soft)}
-#setstrata:not(:empty){margin-bottom:16px}
 .gpu .ctl[hidden]{display:none}
 .card .ctop h3{flex:1;min-width:0}.cthumb{width:72px;height:64px;flex:none;display:grid;place-items:center}.cthumb svg{width:100%;height:100%}
 .setrow{display:grid;grid-template-columns:minmax(0,1fr) minmax(220px,340px);gap:12px 28px;padding:16px 20px;border-bottom:1px solid var(--line-soft);align-items:start}
@@ -1536,7 +1535,6 @@ h3.themesec{font:600 13px var(--sans);color:var(--faint);margin:0 0 12px}
       <div id="engadd"></div>
       <div id="prefs"></div>
       <div id="engparts" hidden>
-        <div id="stratabox"></div>
         <div id="bkpart">
           <p class="help" style="margin:0 0 10px">Lemonade runs several kinds of model (chat, speech, pictures and more), and each kind can run on different hardware, called a <b>backend</b>. Pick the one you want, or install one that's missing. Changes apply the next time a model loads.</p>
           <details class="panel bkhelp"><summary>Which backend should I pick?</summary>
@@ -1579,7 +1577,6 @@ h3.themesec{font:600 13px var(--sans);color:var(--faint);margin:0 0 12px}
     <!-- SETTINGS -->
     <section class="view" id="v-settings"><div class="pad"><div class="wrap">
       <p class="lede">Every setting Lemonade offers. Lemonade runs your small and medium models. Changes save as you make them, and you'll rarely need this page. Settings for a single model are in Models, on its card under <b>Settings</b>.</p>
-      <div id="setstrata"></div>
       <div class="setbar"><input type="search" id="setq" placeholder="Search settings" aria-label="Search settings"><span class="chip" id="setcount"></span></div>
       <div id="settings"></div>
     </div></div></section>
@@ -1722,11 +1719,11 @@ function show(v){
   if(v === "models") libShow();
   if(v === "hardware") renderHardware();
   if(v === "specimens") (async () => { await pkLoad(true); while(S.pk.busy) await new Promise(r => setTimeout(r, 200)); renderSpecimens(); })();
-  if(v === "backends"){ loadBackends(); strRefresh(); enginesExtras(); }
-  if(v === "hardware") hwMemoryShow();
+  if(v === "backends"){ loadBackends(); enginesExtras(); }
+  if(v === "hardware") hwMemoryPaint();
   if(v === "settings") loadSettings();
   if(v === "backends" || v === "welcome") refreshSetup(true);
-  if(v === "welcome"){ libLoad(); pkLoad(true); strRefreshWelcome(); }
+  if(v === "welcome"){ libLoad(); pkLoad(true); }
   if(v === "tuning") tnShow();
   placeChats();
   $(".app").classList.toggle("focus", v === "welcome");
@@ -1805,7 +1802,7 @@ async function loadModels(){
   }
 }
 function renderStatus(){
-  const anyLoaded = S.loaded || (S.ms && S.ms.loaded) || null, up = S.up || !!anyLoaded;   // a model Strata runs counts even when Lemonade is off
+  const anyLoaded = S.loaded || (S.ms && S.ms.loaded) || null, up = S.up || !!anyLoaded;   // a model another server runs counts even when Lemonade is off
   const eng = SU.st && SU.st.mode === "builtin" ? SU.st.engine : null;
   S.engNote = up ? "" : eng ? (eng.state === "unsupported" ? "Shoggoth's own engine needs a newer Linux. See Advanced > Engines." : eng.state === "error" ? "The part that runs AI couldn't start. See Advanced > Engines." : "The part that runs AI is getting ready…") : "The part that runs AI isn't running.";
   // Live speed: exact for Shoggoth's own chat, approximate (~) for other apps using the Server. It sits in the model bar.
@@ -2280,15 +2277,15 @@ function savedLine(m){
 }
 /* the model's creature, small, at the head of its card (when model pictures are on) */
 function libPic(id, extra){ if(!picturesOn() || !id) return ""; const m = Object.assign({id}, pkFind(id) || {}, extra || {}); return `<span class="cthumb" style="--tone:${crTone(m)}">${crPic(m, {crop: true, label: false})}</span>`; }
-/* "Leave some graphics memory free so my computer doesn't slow": the same row on every model card, whichever engine runs it. Large (Strata) models start with 1.5 GB kept free unless the person says otherwise. */
-const HR = {d: {strata: 1.5, lemonade: 0}, set: {}, t: 0};
+/* "Leave some graphics memory free so my computer doesn't slow": the same row on every model card, whichever engine runs it. */
+const HR = {d: {lemonade: 0}, set: {}, t: 0};
 async function hrLoad(){ if(Date.now() - HR.t < 4000) return; HR.t = Date.now(); try{ const r = await api("/ui/model/headroom"); HR.d = r.default || HR.d; HR.set = r.set || {}; }catch{} }
 const hrGb = (id, engine) => id in HR.set ? HR.set[id] : (HR.d[engine] || 0);
 function headroomRow(id, engine){
   const v = hrGb(id, engine), opts = [0, 1, 1.5, 2, 3, 4];
   if(!opts.includes(v)) opts.push(v), opts.sort((a, b) => a - b);
   return `<div class="hrrow"><label>Leave some graphics memory free so my computer doesn't slow <select data-hr="${esc(id)}" aria-label="Graphics memory to leave free">${opts.map(o => `<option value="${o}" ${o === v ? "selected" : ""}>${o ? o + " GB" : "None"}${o === (HR.d[engine] || 0) ? " (recommended)" : ""}</option>`).join("")}</select></label>
-    <small>${engine === "strata" ? "It applies the next time the model starts. If the model needs the whole card, it starts without this and says so." : "It applies the next time the model loads. The model may keep a little less on the card, which can make it a bit slower."}</small></div>`;
+    <small>It applies the next time the model loads. The model may keep a little less on the card, which can make it a bit slower.</small></div>`;
 }
 document.addEventListener("change", async e => {
   const sel = e.target.closest && e.target.closest("select[data-hr]"); if(!sel) return;
@@ -2328,7 +2325,7 @@ function cardHTML(m, extra, title){
 /* ======================= my picks: shoggoth/recommendations/*.yaml (edit those files, not this code) ======================= */
 const RECS = {d: null};
 async function loadRecs(){ try{ RECS.d = await api("/ui/recommendations"); }catch{} }
-const recModels = () => ((RECS.d || {}).models) || {recommended: [], first_run: [], strata: [], coming_soon: []};
+const recModels = () => ((RECS.d || {}).models) || {recommended: [], first_run: [], coming_soon: []};
 const recAllTools = () => (((RECS.d || {}).tools || {}).tools) || [];
 const recTools = place => recAllTools().filter(t => t.show.includes(place));
 const recPlace = place => ((((RECS.d || {}).tools || {}).places || {})[place]) || {title: "", blurb: ""};
@@ -2357,10 +2354,8 @@ async function libLoad(fresh){
   try{ LIB.d = await api("/ui/library"); LIB.t = Date.now(); }catch{}
   LIB.busy = false; if(S.view === "models") renderModels(); if(S.view === "welcome") renderWelcome(true); if(S.view === "backends") renderPrefs(true);
 }
-/* while the first-run screen is up, keep the Large-model download state fresh */
-async function strRefreshWelcome(){ if(S.view !== "welcome") return; try{ STR.d = await api("/ui/strata"); }catch{} renderWelcome(); setTimeout(strRefreshWelcome, 3000); }
 function libShow(){
-  hrLoad().then(() => { if(S.view === "models") renderModels(); }); tnQuiet(); renderModels(); libLoad(); strRefresh(); pkLoad(true); loadRecs().then(() => { if(S.view === "models") renderModels(); }); }
+  hrLoad().then(() => { if(S.view === "models") renderModels(); }); tnQuiet(); renderModels(); libLoad(); pkLoad(true); loadRecs().then(() => { if(S.view === "models") renderModels(); }); }
 function libFilters(){
   $("#filters").innerHTML = LIB_TABS.map(([k, l]) => `<button type="button" data-tab="${k}" aria-pressed="${LIB.tab === k}">${l}</button>`).join("") +
     (LIB.tab === "everything" ? `<select id="libkind" aria-label="Kind of model">${LIB_KINDS.map(([k, l]) => `<option value="${k}" ${LIB.kind === k ? "selected" : ""}>${l}</option>`).join("")}</select>` : "") +
@@ -2385,15 +2380,11 @@ document.addEventListener("change", e => { if(e.target.name === "libplace") LIB.
 function libDlItems(){
   const out = [];
   for(const j of (S.downloads || []).filter(isActiveJob)) out.push({title: friendly(j.model_name), percent: j.percent || 0, text: j.status === "paused" ? "Paused" : "", cancel: j.model_name});
-  const run = (STR.d || {}).run || {}, ins = (STR.d || {}).install || {};
-  if(ins.state === "installing") out.push({title: "Getting ready for large models", percent: null, text: (ins.log || []).filter(Boolean).slice(-1)[0] || "Installing…"});
-  if(run.state === "starting") out.push({title: ((bigOptions().find(o => o.preset === run.preset) || {}).title) || (run.preset || "A large model").replace(/^Shoggoth /, ""), percent: null, text: run.phase || (run.log || []).filter(Boolean).slice(-1)[0] || "Getting it ready. The first time can take a long while."});
   return out;
 }
 function libDlHTML(){
-  const items = libDlItems(), run = (STR.d || {}).run || {};
+  const items = libDlItems();
   let html = items.map(i => `<div class="line"><b>${esc(i.title)}</b><div class="prog ${i.percent == null ? "ind" : ""}"><i style="width:${i.percent || 0}%"></i></div><span class="mono faint">${i.percent != null ? i.percent + "%" : ""}</span>${i.cancel ? `<button class="btn" data-canceldl="${esc(i.cancel)}">Cancel</button>` : ""}</div>${i.text ? `<p class="help" style="margin:-4px 0 0">${esc(i.text)}</p>` : ""}`).join("");
-  if(run.state === "error" && run.error && !items.length) html += `<div class="note-bad">${esc(run.error)}${run.low_memory && run.retry ? ' <button class="btn" data-sanyway="1">Start anyway</button>' : ""}</div>`;
   return html ? `<section class="panel libdl"><h3 style="margin:0">Getting models</h3>${html}</section>` : "";
 }
 /* cards */
@@ -2402,29 +2393,19 @@ function libFitHTML(e){
   if(!e.why && e.fit === "fits") return `<div class="fitnote ok" style="margin-top:2px">Fits this computer</div>`;
   return `<div class="fitnote ${e.fit === "no" ? "over" : e.fit === "tight" ? "tight" : "ok"}" style="margin-top:2px">${esc(e.why || (e.fit === "tight" ? "A snug fit." : "Fits this computer."))}</div>`;
 }
-function bigCard(e){          // an installed model that a Large-model engine runs (no per-engine settings to edit here)
+function bigCard(e){          // an installed model that another engine runs (no per-engine settings to edit here)
   const startable = !!pkFind(e.ref), live = (S.ms || {}).loaded === e.ref;
   return `<article class="card ${live ? "loaded" : ""}" data-id="${esc(e.ref || e.id)}">
-    <div class="ctop">${libPic(e.ref, {title: e.title, size_gb: (e.size_bytes || 0) / 1e9})}<h3>${esc(e.title)}</h3>${live ? '<span class="chip ok">Ready</span>' : '<span class="chip">On this computer</span>'}${tnTag("strata", e.ref)}</div>
+    <div class="ctop">${libPic(e.ref, {title: e.title, size_gb: (e.size_bytes || 0) / 1e9})}<h3>${esc(e.title)}</h3>${live ? '<span class="chip ok">Ready</span>' : '<span class="chip">On this computer</span>'}</div>
     <p class="what">${esc(featLine(e))}</p>
     <div class="row"><span>Large <span class="mono num">· needs about ${Math.round(e.need_gb || 0)} GB of memory</span></span></div>
     ${libFitHTML(e)}
-    ${startable ? headroomRow(e.ref, "strata") : ""}
-    <div class="act">${startable ? `<button class="btn primary" data-chat="${esc(e.ref)}">Chat with it</button><button class="btn" data-go2="tuning">Make it faster</button>`
-      : `<span class="help" style="margin:0">It needs a saved setup before Shoggoth can start it. Run <span class="mono">strata launch</span> once and save one, or press Get it below.</span>`}</div>
+    <div class="act">${startable ? `<button class="btn primary" data-chat="${esc(e.ref)}">Chat with it</button>`
+      : `<span class="help" style="margin:0">Shoggoth can't start this one yet.</span>`}</div>
     <details class="more"><summary>Details</summary><div class="mbody"><div class="tags"><span class="chip">${esc(e.quant || "")}</span><span class="chip">${esc(e.architecture)}</span></div>
       <div class="mono mid">${esc(e.stem)}</div><div class="mid">${e.files.length} file${e.files.length === 1 ? "" : "s"} · ${(e.size_bytes / 1e9).toFixed(1)} GB on disk</div><div class="mid mono">${esc(e.folder)}</div>
       ${e.context ? `<div class="mid">Remembers up to ${fmtTok(e.context)} tokens of conversation</div>` : ""}
       <div class="undereng">Runs on ${esc(e.engine_name)}</div></div></details></article>`;
-}
-function getBigCard(o){        // a Large model that can be set up from here
-  const busy = ((STR.d || {}).run || {}).state === "starting", no = o.fit === "no";
-  return `<article class="card"><div class="ctop">${libPic(o.family + "/" + o.model, {title: o.title, size_gb: o.need_gb})}<h3>${esc(o.title)}</h3></div>
-    ${o.take ? `<p class="take">${inline(o.take)}</p>` : ""}
-    <p class="what">Needs about ${Math.round(o.need_gb)} GB of memory${o.download_gb ? ` · ${Math.round(o.download_gb)} GB to download` : ""} · remembers up to ${fmtTok(o.ctx)}</p>
-    <div class="fitnote ${no ? "over" : o.fit === "tight" ? "tight" : "ok"}" style="margin-top:2px">${esc(no ? o.why : o.fit === "tight" ? "A snug fit: close other big programs first." : "Fits this computer.")}</div>
-    <div class="act">${no ? "" : `<button class="btn primary" data-sget="${esc(o.family)}|${esc(o.model)}" ${busy ? "disabled" : ""}>Get it${o.download_gb ? " · " + Math.round(o.download_gb) + " GB" : ""}</button>`}</div>
-    <details class="more"><summary>Details</summary><div class="mbody"><div class="mid">Quality: ${esc(o.model)}</div><div class="undereng">Runs on Strata</div></div></details></article>`;
 }
 /* the engine's name sits at the right of a card's Details row */
 const libUnder = card => card.replace("<summary>Details</summary>", '<summary>Details<span class="eng">Runs on Lemonade</span></summary>');
@@ -2432,15 +2413,6 @@ function libGrid(items){ return items.length ? `<div class="grid">${items.join("
 function libSection(t, cards, note){ return cards.length ? `<section class="picktier"><div class="tierhead"><h3>${esc(t[1])}</h3>${t[2] ? `<p>${esc(t[2])}</p>` : ""}</div>${note || ""}<div class="grid">${cards.join("")}</div></section>` : ""; }
 const libMatch = (m, q) => !q || m.id.toLowerCase().includes(q) || friendly(m).toLowerCase().includes(q) || (m.labels || []).some(l => l.includes(q));
 const libKind = (m, k) => k === "all" || (k === "chat" ? isChatModel(m) : k === "vision" ? (m.labels || []).includes("vision") : k === "image" ? m.recipe === "sd-cpp" : ["whispercpp", "kokoro", "moonshine", "acestep", "thinksound"].includes(m.recipe));
-const bigOptions = () => (STR.rec || {}).options || [];
-/* is this Large model already on the computer? (Qwen sizes are told apart by quality; DeepSeek has one set up) */
-const bigHave = o => ((LIB.d || {}).models || []).some(e => {
-  if(!e.provider || e.provider === "lemonade") return false;
-  if(o.family === "deepseek41") return e.architecture === "deepseek41";
-  // Swift and Coder are Flash-Next files with the same quant names as the original, told apart by what the files are called
-  const name = `${e.stem || ""} ${e.title || ""}`.toLowerCase(), kind = /swift/.test(name) ? "swift" : /coder/.test(name) ? "coder" : "qwen";
-  return e.architecture === "qwen4exp" && e.quant === o.model && kind === o.family;
-});
 function libInstalled(){
   const q = LIB.q.toLowerCase(), cat = (LIB.d || {}).models || [], by = {tier: {small: [], medium: [], large: [], other: []}};
   const seen = new Set();
@@ -2508,10 +2480,6 @@ function libRecommended(){
     if(!m && ((fitInfo({size: gb, recipe: "llamacpp"}) || {}).cls === "over")) continue;
     by[libTier(gb)].push(m ? libUnder(cardHTML(m, recExtra(it, gb), it.title)) : recGetCard(it));
   }
-  for(const o of bigOptions().filter(o => o.fit !== "no" && !bigHave(o))){
-    if(q && !o.title.toLowerCase().includes(q) && !o.model.toLowerCase().includes(q)) continue;
-    by.large.push(getBigCard(o));
-  }
   const soon = (rm.coming_soon || []).filter(c => !q || c.title.toLowerCase().includes(q)).map(recSoonCard);
   const html = LIB_TIERS.slice(0, 3).map(t => libSection(t, by[t[0]])).join("") + libSection(["soon", "Coming soon", "Not ready yet."], soon);
   return (html || `<div class="empty-note">Shoggoth is still looking at your computer…</div>`) + (q ? "" : libTips()) + recProblems();
@@ -2521,9 +2489,7 @@ function libEverything(){
   for(const m of S.models.filter(m => libKind(m, LIB.kind) && libMatch(m, q)).sort((a, b) => b.downloaded - a.downloaded || a.id.localeCompare(b.id)))
     by[isChatModel(m) ? libTier(m.size) : "other"].push(libUnder(cardHTML(m, "")));
   if(["all", "chat"].includes(LIB.kind)){
-    const mine = new Set(((LIB.d || {}).models || []).filter(e => e.provider && e.provider !== "lemonade").map(e => e.stem));
     for(const e of ((LIB.d || {}).models || []).filter(e => e.provider && e.provider !== "lemonade" && (!q || e.title.toLowerCase().includes(q)))) by.large.push(bigCard(e));
-    for(const o of bigOptions().filter(o => o.fit !== "no" && !bigHave(o) && (!q || o.title.toLowerCase().includes(q)))) by.large.push(getBigCard(o));
   }
   const note = `<p class="help" style="margin:0">Everything Lemonade offers, including models that haven't been tested here. Recommended for this computer has the ones that have.</p>`;
   if(!S.models.length && !lemReady()) return note + `<div class="empty-note">Lemonade isn't set up yet, so there is no list to show. Pick a model under <b>Recommended for this computer</b> and Shoggoth sets it up first.</div>`;
@@ -2589,18 +2555,6 @@ $("#v-models").addEventListener("click", async e => {
   if(t.hasAttribute("data-hf")) return openHF();
   if(t.dataset.lib) return wLibAct(t.dataset.lib);
   if(t.dataset.go2) return show(t.dataset.go2);
-  if(t.dataset.sget){
-    const [family, model] = t.dataset.sget.split("|");
-    if(!confirm("Get this model? It can be tens of gigabytes. Shoggoth frees the memory your other models are using, and the first start can take a few minutes.")) return;
-    try{ STR.d = await api("/ui/strata/setup", {method: "POST", body: JSON.stringify({family, model})}); }catch(err){ toast(err.message); }
-    return renderModels();
-  }
-  if(t.dataset.sanyway){
-    const rt = ((STR.d || {}).run || {}).retry || {};
-    if(!confirm("Start anyway? The computer may slow right down or run out of memory.")) return;
-    try{ STR.d = await api(rt.kind === "setup" ? "/ui/strata/setup" : "/ui/strata/start", {method: "POST", body: JSON.stringify(Object.assign({}, rt, {force: true}))}); }catch(err){ toast(err.message); }
-    return renderModels();
-  }
   if(t.dataset.dl) startDownload(t.dataset.dl);
   if(t.dataset.recget) recGet(t.dataset.recget);
   else if(t.dataset.canceldl) cancelDownload(t.dataset.canceldl);
@@ -3058,13 +3012,12 @@ async function refreshSetup(force){
   try{ SU.pi.info = await api("/ui/pi"); }catch{}
   if(autoCheckOn() && !SU.pi.autoChecked && SU.pi.info && SU.pi.info.active){ SU.pi.autoChecked = true; doPiCheck(true); }
   if(SU.st.mode === "builtin" && autoCheckOn() && !SU.autoChecked && SU.st.engine.running){ SU.autoChecked = true; doCheck(true); }
-  if(autoCheckOn() && !SU.strChecked){ SU.strChecked = true; strUpdFetch(); }
   if(!inSetup()) return;
   if(force || !S.bk){ try{ S.bk = (await api("/ui/backends")).recipes; }catch{} }
   renderSetup(force);
 }
 function updateNavDot(){
-  const on = !!((SU.check && SU.check.update_available && SU.st && SU.st.mode === "builtin") || (SU.pi.check && SU.pi.check.update_available) || (SU.strUpd && SU.strUpd.check && SU.strUpd.check.available));
+  const on = !!((SU.check && SU.check.update_available && SU.st && SU.st.mode === "builtin") || (SU.pi.check && SU.pi.check.update_available));
   $("#navdot").hidden = !on;
 }
 async function doPiCheck(silent){
@@ -3074,9 +3027,9 @@ async function doPiCheck(silent){
   SU.busy.pcheck = false; updateNavDot(); if(inSetup()) renderSetup(true); if(S.view === "cowork") cwRenderSide();
 }
 function updatePanel(){
-  const u = SU.up || {state: "idle", items: {}}, working = u.state === "working", names = {zest: "Shoggoth", lemonade: "The part that runs AI (Lemonade)", pi: "The agent helper (Pi)", strata: "Large models (Strata)"};
+  const u = SU.up || {state: "idle", items: {}}, working = u.state === "working", names = {zest: "Shoggoth", lemonade: "The part that runs AI (Lemonade)", pi: "The agent helper (Pi)"};
   const dot = {current: "ok", updated: "ok", working: "busy", checking: "busy", error: "bad", manual: "busy", skipped: "ok"};
-  const rows = ["zest", "lemonade", "pi", "strata"].filter(k => u.items[k]).map(k => { const it = u.items[k];
+  const rows = ["zest", "lemonade", "pi"].filter(k => u.items[k]).map(k => { const it = u.items[k];
     return `<div class="line"><span class="stat-dot ${dot[it.state] || "busy"}"></span><span class="grow"><b>${names[k]}:</b> ${esc(it.text)}${it.page ? ` <a href="${esc(it.page)}" target="_blank" rel="noopener noreferrer">Releases</a>` : ""}</span></div>`; }).join("");
   return `<section class="step" id="step-upd"><header><span class="num">↻</span><h3>Update everything</h3></header><div class="sbody">
     <p class="lead">One button looks for newer versions of everything Shoggoth uses, checks each download, and installs what it finds. Nothing is replaced until the download has been verified.</p>
@@ -3162,7 +3115,6 @@ function wAuto(rec, go){
   if(!go) return;
   if(st.mode === "builtin" && !eng.available && eng.update.state === "idle" && !W.auto.helper){ W.auto.helper = true; suBusy("update", async () => { await suPost("/ui/engine/update"); }); }
   if(st.lemonade.reachable && llamaRecipe() && !backendsInstalled().length && rec && !SU.busy["inst-" + rec.name] && !W.auto["fit-" + rec.name] && !SU.msg.backend){ W.auto["fit-" + rec.name] = true; wFit(rec.name); }
-  if(!STR.rec && !W.auto.rec){ W.auto.rec = true; api("/ui/strata/recommend").then(r => { STR.rec = r; if(S.view === "welcome") renderWelcome(true); }).catch(() => {}); }
 }
 function wFit(name){
   return suBusy("inst-" + name, async () => {
@@ -3181,11 +3133,6 @@ function wFirstModels(){
   const out = [], fits = m => (fitInfo(m) || {}).cls !== "over", pick = ids => ids.map(id => S.models.find(m => m.id === id && m.recipe === "llamacpp" && m.size)).find(m => m && fits(m));
   const TIER = {small: "Small", medium: "Medium", large: "Large"};
   for(const f of recModels().first_run){
-    if(f.engine === "strata"){
-      const big = (((STR.rec || {}).options) || []).find(o => o.model === (STR.rec || {}).pick);
-      if(big) out.push({tier: TIER[f.size], big, blurb: f.blurb, start: f.start, rec: f.recommended});
-      continue;
-    }
     const m = pick(f.models);
     if(m) out.push({tier: TIER[f.size], m, blurb: f.blurb, start: f.start, rec: f.recommended});
   }
@@ -3194,10 +3141,8 @@ function wFirstModels(){
 }
 function wModelCards(){
   const active = libDlItems().length, cards = wFirstModels().map(o => {
-    const m = o.m, j = m && dlJob(m.id), have = m && m.downloaded, name = m ? friendly(m) : o.big.title, size = m ? m.size.toFixed(m.size < 10 ? 1 : 0) + " GB" : (o.big.download_gb ? Math.round(o.big.download_gb) + " GB to download" : "");
-    const btn = m ? (j ? `<button class="btn" data-act="cancel-dl" data-model="${esc(m.id)}">Cancel</button>` : have ? `<button class="btn" disabled>Got it</button>` : `<button class="btn ${o.rec ? "primary" : ""}" data-act="dl" data-model="${esc(m.id)}" ${active ? "disabled" : ""}>Get it</button>`)
-      : o.big.download_gb === 0 ? `<button class="btn" disabled>Got it</button>`
-      : `<button class="btn ${o.rec ? "primary" : ""}" data-act="sget" data-family="${esc(o.big.family)}" data-model="${esc(o.big.model)}" ${active ? "disabled" : ""}>Get it</button>`;
+    const m = o.m, j = m && dlJob(m.id), have = m && m.downloaded, name = friendly(m), size = m.size.toFixed(m.size < 10 ? 1 : 0) + " GB";
+    const btn = j ? `<button class="btn" data-act="cancel-dl" data-model="${esc(m.id)}">Cancel</button>` : have ? `<button class="btn" disabled>Got it</button>` : `<button class="btn ${o.rec ? "primary" : ""}" data-act="dl" data-model="${esc(m.id)}" ${active ? "disabled" : ""}>Get it</button>`;
     return `<div class="tier"><div><b>${o.tier}${o.rec ? ' <span class="chip lem">Recommended</span>' : ""}</b><span class="tn">${esc(name)}${size ? " · " + size : ""}</span><p>${esc(o.blurb)} <span class="faint">${esc(o.start)}.</span></p>${j ? `<div class="prog"><i style="width:${j.percent}%"></i></div><small class="wsmall">${j.percent}%</small>` : ""}</div>${btn}</div>`;
   }).join("");
   return `<h3 class="wh3">Choose your first model</h3><p class="wl">A model is the AI that answers you. It downloads once, then lives on this computer. You can add more any time.</p>
@@ -3213,7 +3158,7 @@ function wStartPick(){
 }
 function renderWelcome(force){
   const host = $("#welcome"); if(!SU.st){ host.innerHTML = `<div class="wcard"><div class="prog ind"><i></i></div></div>`; return; }
-  const sig = JSON.stringify([SU.st, S.bk && S.bk.length, S.models.filter(m => m.downloaded).length, S.downloads, SU.busy, SU.msg, S.gpus.length, LIB.d && [LIB.d.chosen, LIB.d.models.length], LIB.notNow, LIB.picked, LIB.err, STR.rec && STR.rec.pick, STR.d && STR.d.run, S.pk.models.length]);
+  const sig = JSON.stringify([SU.st, S.bk && S.bk.length, S.models.filter(m => m.downloaded).length, S.downloads, SU.busy, SU.msg, S.gpus.length, LIB.d && [LIB.d.chosen, LIB.d.models.length], LIB.notNow, LIB.picked, LIB.err, S.pk.models.length]);
   if(!force && sig === SU.wsig) return; SU.wsig = sig;
   const {rows, rec, go} = wRows(), ready = rows.every(r => r.s === "done"), wanted = PICK.id && recModels().recommended.find(x => x.id === PICK.id), have = downloadedChat().length > 0 || S.pk.models.length > 0;
   const q = libWhereHTML();
@@ -3330,7 +3275,7 @@ function engConnect(){                   // the form that connects one
 }
 function engCard(p){
   if(p.connected) return engConnCard(p);
-  const run = p.running || [], zestRuns = run.some(r => r.owner === "zest"), more = {strata: "Saved setups, connections and the large-model program", lemonade: "Kinds of model and the hardware they use"}[p.id];
+  const run = p.running || [], zestRuns = run.some(r => r.owner === "zest"), more = {lemonade: "Kinds of model and the hardware they use"}[p.id];
   const stat = [p.installed ? `<span><b>${p.version ? "Version " + esc(p.version) : "Installed"}</b></span>` : `<span><b>Not installed</b></span>`,
     run.length ? run.map(r => `<span><b>Running</b> · ${r.owner === "zest" ? "started by Shoggoth" : "started by you"}${r.port ? ", port " + r.port : ""}</span>`).join("") : `<span>Not running right now. Shoggoth starts it when a model needs it.</span>`].join("");
   const cons = p.consent ? `<div class="note-warn"><b>This engine wants to ${p.consent.will.map(esc).join(" and ")}.</b>${p.consent.code ? " It also runs its own Python code inside Shoggoth." : ""}${p.consent.unsafe_install ? " Its installer has no checksum to check." : ""}<details style="margin-top:6px"><summary>Exactly what it will run</summary><div class="mono mid">${p.consent.commands.map(c => esc(c.where) + ": " + esc((c.command || []).join(" "))).join("<br>")}</div></details><div class="erow" style="margin-top:8px"><button class="btn primary" data-eng="approve" data-id="${esc(p.id)}">Allow it</button></div></div>` : "";
@@ -3351,7 +3296,7 @@ function engMore(){                      // engines from tools.yaml that aren't 
 }
 function engMount(){                     // the engine-specific parts live in a holding area and move into their card
   const hold = $("#engparts");
-  for(const [id, node] of [["strata", $("#stratabox")], ["lemonade", $("#bkpart")]]){
+  for(const [id, node] of [["lemonade", $("#bkpart")]]){
     const slot = document.querySelector(`#engcards .engslot[data-slot="${id}"]`);
     if(slot && node && node.parentNode !== slot) slot.appendChild(node);
   }
@@ -3364,7 +3309,7 @@ function renderEngines(){
   ENG.sig = sig;
   const open = new Set([...document.querySelectorAll("#engcards details.engmore[open]")].map(x => x.dataset.part));
   const hold = $("#engparts");
-  for(const n of [$("#stratabox"), $("#bkpart")]) if(n && n.parentNode !== hold) hold.appendChild(n);     // keep them alive while the cards are rebuilt
+  for(const n of [$("#bkpart")]) if(n && n.parentNode !== hold) hold.appendChild(n);     // keep them alive while the cards are rebuilt
   host.innerHTML = d.providers.map(engCard).join("");
   engMount();
   document.querySelectorAll("#engcards details.engmore").forEach(x => { if(open.has(x.dataset.part)) x.open = true; });
@@ -3431,20 +3376,12 @@ function renderPrefs(force){
       <div class="line"><button class="btn" type="button" data-go="welcome">Show the first-run screen again</button></div></div></details>`;
   updateNavDot();
 }
-/* Hardware: how long Shoggoth keeps large models in memory when nobody is using them */
+/* Hardware: what memory is for */
 function hwMemoryPaint(){
   const host = $("#hwmemory"); if(!host) return;
-  if(host.contains(document.activeElement) && document.activeElement.tagName === "INPUT") return;
-  const big = STR.d && STR.d.installed;
   host.innerHTML = `<section class="panel"><h3>Memory</h3>
-    <p class="help" style="margin:4px 0 12px">Models use your computer's memory while they are ready. Shoggoth frees the memory of whatever else was running when you choose another model.</p>
-    ${big ? `<div class="line"><label class="grow help" style="margin:0">Free the memory of large models after <input id="stridle" type="number" min="0" max="1440" value="${+(STR.d.idle_minutes ?? 20)}" style="width:70px"> idle minutes (0 keeps them ready). This only applies to large models Shoggoth started itself.</label><button class="btn" data-hwidle="save">Save</button></div>` : `<p class="help" style="margin:0">Large models are not set up on this computer, so there is nothing to time out here.</p>`}</section>`;
+    <p class="help" style="margin:4px 0 12px">Models use your computer's memory while they are ready. Shoggoth frees the memory of whatever else was running when you choose another model.</p></section>`;
 }
-async function hwMemoryShow(){ try{ STR.d = await api("/ui/strata"); }catch{} hwMemoryPaint(); }
-$("#hwmemory").addEventListener("click", async e => {
-  if(!e.target.closest("[data-hwidle]")) return;
-  try{ await api("/ui/strata/idle", {method: "POST", body: JSON.stringify({minutes: +$("#stridle").value || 0})}); toast("Saved."); await hwMemoryShow(); }catch(err){ toast(err.message); }
-});
 
 async function suPost(path, body){ return api(path, {method: "POST", headers: {"Content-Type": "application/json"}, body: JSON.stringify(body || {})}); }
 async function suBusy(key, fn){
@@ -3453,11 +3390,9 @@ async function suBusy(key, fn){
   finally{ SU.busy[key] = false; await refreshSetup(true); }
 }
 const setupClick = async e => {
-  const el = e.target.closest("[data-act],[data-go],[data-lib],[data-canceldl],[data-sanyway]"); if(!el) return;
+  const el = e.target.closest("[data-act],[data-go],[data-lib],[data-canceldl]"); if(!el) return;
   if(el.dataset.lib) return wLibAct(el.dataset.lib);
   if(el.dataset.canceldl) return cancelDownload(el.dataset.canceldl);
-  if(el.dataset.sanyway){ const rt = ((STR.d || {}).run || {}).retry || {}; if(!confirm("Start anyway? The computer may slow right down or run out of memory.")) return;
-    try{ STR.d = await api(rt.kind === "setup" ? "/ui/strata/setup" : "/ui/strata/start", {method: "POST", body: JSON.stringify(Object.assign({}, rt, {force: true}))}); }catch(err){ toast(err.message); } return renderWelcome(true); }
   if(el.dataset.go) return show(el.dataset.go);
   const a = el.dataset.act;
   if(a === "autocheck") { store.set("shoggoth.autocheck", el.checked); return; }
@@ -3484,11 +3419,6 @@ const setupClick = async e => {
   if(a === "w-fit") { SU.msg.backend = ""; const r = llamaRecipe(); const rec = r && r.backends.find(x => ["installable", "update_required"].includes(x.state)); if(rec) W.auto["fit-" + rec.name] = false; return renderWelcome(true); }
   if(a === "w-add"){ show("models"); return libAddOpen(); }
   if(a === "w-own"){ show("backends"); setTimeout(() => { const d = $("#ownserver"); if(d){ d.open = true; d.scrollIntoView({block: "start"}); } }, 400); return; }
-  if(a === "sget"){
-    if(!confirm("Get this model? It can be tens of gigabytes, and the first start takes a few minutes.")) return;
-    try{ STR.d = await api("/ui/strata/setup", {method: "POST", body: JSON.stringify({family: el.dataset.family, model: el.dataset.model})}); }catch(err){ toast(err.message); }
-    return renderWelcome(true);
-  }
   if(a === "finish"){ await suPost("/ui/setup/done", {done: true}); SU.st.setup_done = true; show("cowork"); }
   if(a === "w-start"){
     const pick = wStartPick();
@@ -3509,103 +3439,6 @@ async function waitLemonade(){
 }
 setInterval(() => { if(!document.hidden && SU.up && SU.up.state === "working") refreshUpdate(); }, 1500);
 setInterval(() => { if(!document.hidden && (inSetup() || (SU.st && ["downloading","verifying","installing"].includes(SU.st.engine.update.state)) || (SU.pi.info && ["downloading","installing"].includes(SU.pi.info.update.state)))) refreshSetup(); }, 1500);
-
-/* ======================= Strata: bigger models ======================= */
-const STR = {d: null, msg: "", rec: null, recAt: 0};
-async function strUpdFetch(fresh){
-  try{ SU.strUpd = await api("/ui/strata/update" + (fresh ? "?fresh=1" : "")); }catch{ SU.strUpd = null; }
-  updateNavDot(); if(S.view === "models") strPaint();
-}
-async function strRefresh(){
-  if(S.view !== "models" && S.view !== "backends" && S.view !== "hardware") return;
-  try{ STR.d = await api("/ui/strata"); }catch{ STR.d = null; }
-  if(STR.d && STR.d.installed && (!SU.strUpd || (SU.strUpd.update || {}).state === "working")) await strUpdFetch();
-  if(Date.now() - STR.recAt > 60000 && !(STR.d && STR.d.run && String(STR.d.run.state).startsWith("start"))){ STR.recAt = Date.now(); try{ STR.rec = await api("/ui/strata/recommend"); }catch{} }
-  strPaint();
-  if(S.view === "models" && !document.activeElement?.closest?.("#grid, #filters, #adddlg")) renderModels();
-  if(S.view === "backends") renderPrefs();
-  if(S.view === "hardware") hwMemoryPaint();
-}
-function strPaint(){
-  const box = $("#stratabox"), d = STR.d; if(!box) return;
-  if(!d){ box.innerHTML = ""; return; }
-  if(box.contains(document.activeElement) && document.activeElement.tagName === "INPUT") return;      // don't repaint under someone typing
-  const wasOpen = box.querySelector("details")?.open;
-  const run = d.run || {}, ins = d.install || {}, servers = d.servers || [];
-  const busy = run.state === "starting", loaded = S.ms && S.ms.loaded && !String(S.ms.loaded).startsWith("strata/");
-  const who = {zest: "Started by Shoggoth", yours: "Yours", }, parts = [];
-  for(const r of servers){
-    const m = r.models[0] || {}, label = esc(m.id || r.name || r.url);
-    const tag = `<span class="chip ${r.owner === "zest" ? "lem" : ""}">${r.source === "saved" ? "Connected" : who[r.owner]}</span>`;
-    let line, act = "";
-    if(r.state === "unreachable") line = `<span class="stat-dot bad"></span><span class="grow"><b>${esc(r.url)}</b> isn't answering.</span>`;
-    else if(r.needs_key) line = `<span class="stat-dot busy"></span><span class="grow"><b>${esc(r.url)}</b> needs a key. <input class="strkey" data-url="${esc(r.url)}" type="password" placeholder="API key" autocomplete="off" aria-label="Strata API key" style="margin-left:6px"> <button class="btn" data-str="key" data-url="${esc(r.url)}">Use key</button></span>`;
-    else if(r.state !== "ready") line = `<span class="stat-dot busy"></span><span class="grow"><b>${label}</b> is still loading…</span>`;
-    else line = `<span class="stat-dot ok"></span><span class="grow"><b>${label}</b> is running${m.ctx ? " with " + fmtTok(m.ctx) + " of context" : ""}. In Chat, pick <b>strata/${esc(m.id || "")}</b>.</span>`;
-    if(r.source === "launch") act += `<button class="btn" data-str="stop" data-url="${esc(r.url)}">Stop</button>`;
-    if(r.source === "saved") act += `<button class="btn ghost" data-str="forget" data-url="${esc(r.url)}">Forget</button>`;
-    parts.push(`<div class="line">${line}${tag}${act}</div>`);
-  }
-  if(servers.some(r => r.owner === "yours" && r.state === "ready")) parts.push(`<p class="help" style="margin:0">Shoggoth found this Strata already running and uses it as it is. It never stops, restarts or updates one you started unless you press its button. Its memory is shared with your other models.</p>`);
-  const up = servers.some(r => ["ready", "loading"].includes(r.state) && r.source !== "saved");
-  if(run.notice && run.state !== "starting") parts.push(`<div class="note-warn">${esc(run.notice)}</div>`);
-  if(busy) parts.push(`<div class="line"><span class="stat-dot busy"></span><span class="grow">${esc(run.phase || ("Starting " + run.preset + "… the first start can take a few minutes while it loads."))} <span class="mono faint">${esc((run.log || []).filter(Boolean).slice(-1)[0] || "")}</span></span></div>`);
-  else if(d.installed && !up){
-    const ps = d.presets || [];
-    parts.push(ps.length ? `<p class="help" style="margin:0">Strata ${esc(d.version)} found on this computer. Your saved setups. ${loaded ? `Starting one frees <b>${esc(S.ms.loaded)}</b> from memory first.` : ""}</p>` + ps.map(p => `<div class="line"><span class="grow"><b>${esc(p.name)}</b> <span class="faint">${esc([p.model, p.context ? fmtTok(p.context) + " context" : ""].filter(Boolean).join(" · "))}</span></span><button class="btn primary" data-str="start" data-preset="${esc(p.name)}">Start</button></div>`).join("")
-      : STR.rec ? `<p class="help" style="margin:0">Strata ${esc(d.version)} found on this computer.</p>`
-      : `<p class="help" style="margin:0">Strata ${esc(d.version)} found on this computer, but it has no saved setup yet. In a terminal run <code>strata launch</code>, choose a model and save it as a preset. It will show up here.</p>`);
-  }else if(d.installed && up && (d.presets || []).length && !servers.some(r => r.owner === "zest")) parts.push(`<p class="help" style="margin:0">Strata ${esc(d.version)} found on this computer.</p>`);
-  if(d.installed && !up && !busy && STR.rec){
-    const rec = STR.rec, pick = rec.options.find(o => o.model === rec.pick), m = rec.machine;
-    const fitTxt = {fits: "fits", tight: "tight: close other big programs first", no: "won't fit"};
-    parts.push(`<div class="panel2"><p class="help" style="margin:0">This computer has ${Math.round(m.ram_gb)} GB of RAM and ${Math.round(m.vram_gb)} GB of graphics memory.</p>`
-      + (pick ? `<div class="line"><span class="grow"><b>Recommended: ${esc(pick.title)}</b><br><span class="faint">${pick.download_gb ? "About " + Math.round(pick.download_gb) + " GB to download. " : "Already on this computer. "}It runs with ${fmtTok(pick.ctx)} of context. Shoggoth starts it when a chat needs it.</span></span><button class="btn primary" data-str="setup" data-family="${esc(pick.family)}" data-model="${esc(pick.model)}">Get it</button></div>`
-        : `<div class="note-warn">No Strata model fits this computer comfortably. ${esc((rec.options.find(o => o.why) || {}).why || "")}</div>`)
-      + `<details><summary class="help" style="cursor:pointer">Other sizes</summary>${rec.options.map(o => `<div class="line"><span class="grow"><b>${esc(o.title)}</b> <span class="faint">${esc(o.model)} · needs about ${Math.round(o.need_gb)} GB${o.download_gb ? " · " + Math.round(o.download_gb) + " GB download" : ""} · ${fitTxt[o.fit]}${o.why ? " (" + esc(o.why) + ")" : ""}</span></span>${o.fit !== "no" ? `<button class="btn" data-str="setup" data-family="${esc(o.family)}" data-model="${esc(o.model)}">Get it</button>` : ""}</div>`).join("")}</details></div>`);
-  }
-  if(run.state === "error" && !busy && !up) parts.push(`<div class="note-bad">${esc(run.error)}${run.low_memory && run.retry ? ` <button class="btn" data-str="anyway">Start anyway</button>` : ""}</div>`);
-  if(!d.installed && !servers.length) parts.push(`<p class="help" style="margin:0">Strata runs models that are far too big for your graphics card by keeping part of them in RAM and on the SSD. It is a separate free program (<a href="https://github.com/Niko1221/Strata" target="_blank" rel="noopener noreferrer">Niko1221/Strata</a>). If you already run it, Shoggoth finds it by itself. If not, Shoggoth can install it and check the installer against the checksum Strata publishes. It works best with an NVIDIA RTX 20 series or newer, an AMD Radeon, or an AMD Ryzen AI Max, and a lot of RAM.</p>`
-    + (ins.state === "installing" ? `<div class="line"><span class="stat-dot busy"></span><span class="grow">Installing Strata… ${esc((ins.log || []).slice(-1)[0] || "")}</span></div>` : `<div class="line"><button class="btn" data-str="install">Install Strata</button></div>`)
-    + (ins.state === "error" ? `<div class="note-bad">${esc(ins.error)}</div>` : ""));
-  parts.push(`<details><summary class="help" style="cursor:pointer">Connect to a Strata on another computer</summary><form class="line" id="strform" style="margin-top:8px"><input id="strurl" type="text" inputmode="url" placeholder="http://192.168.1.20:8080" autocomplete="off" spellcheck="false" aria-label="Strata address"><input id="strk" type="password" placeholder="API key (if it has one)" autocomplete="off" aria-label="Strata API key"><button class="btn" type="submit">Connect</button></form></details>`);
-  box.innerHTML = `<section class="panel" style="margin-bottom:16px"><div class="skhead"><h3>Strata: large models</h3><span class="chip">Experimental</span></div>${parts.join("")}${STR.msg ? `<div class="note-bad">${esc(STR.msg)}</div>` : ""}</section>`;
-  if(wasOpen) box.querySelector("details").open = true;
-}
-$("#stratabox").addEventListener("click", async e => {
-  const b = e.target.closest("[data-str]"); if(!b) return;
-  STR.msg = "";
-  try{
-    const act = b.dataset.str, u = b.dataset.url;
-    if(act === "install") STR.d = await api("/ui/strata/install", {method: "POST", body: "{}"});
-    else if(act === "stop"){ if(!confirm("Stop Strata? Anything that is using the model right now, here or in another app, will stop answering.")) return; b.disabled = true; await api("/ui/strata/stop", {method: "POST", body: JSON.stringify({url: u})}); STR.d = await api("/ui/strata"); }
-    else if(act === "forget"){ STR.d = await api("/ui/strata/forget", {method: "POST", body: JSON.stringify({url: u})}); }
-    else if(act === "key"){ const k = box_key(u); if(!k) return; STR.d = await api("/ui/strata/key", {method: "POST", body: JSON.stringify({url: u, key: k})}); }
-    else if(act === "update"){ SU.strUpd = await api("/ui/strata/update", {method: "POST", body: "{}"}); }
-    else if(act === "idle"){ STR.d = await api("/ui/strata/idle", {method: "POST", body: JSON.stringify({minutes: +$("#stridle").value || 0})}); toast("Saved."); }
-    else if(act === "anyway"){
-      const rt = (STR.d.run || {}).retry || {};
-      if(!confirm("Start anyway? The computer may slow right down or run out of memory, and other programs could be closed by the system.")) return;
-      STR.d = await api(rt.kind === "setup" ? "/ui/strata/setup" : "/ui/strata/start", {method: "POST", body: JSON.stringify(Object.assign({}, rt, {force: true}))});
-    }
-    else if(act === "setup"){
-      if(!confirm("Download and set up this model? It can be tens of gigabytes, and Shoggoth frees the memory your other models are using first.")) return;
-      STR.d = await api("/ui/strata/setup", {method: "POST", body: JSON.stringify({family: b.dataset.family, model: b.dataset.model})});
-    }
-    else if(act === "start"){
-      const free = !!(S.ms && S.ms.loaded && !String(S.ms.loaded).startsWith("strata/"));
-      STR.d = await api("/ui/strata/start", {method: "POST", body: JSON.stringify({preset: b.dataset.preset, free_lemonade: free})});
-    }
-  }catch(err){ STR.msg = err.message; }
-  strPaint();
-});
-const box_key = u => [...document.querySelectorAll(".strkey")].find(i => i.dataset.url === u)?.value.trim() || "";
-$("#stratabox").addEventListener("submit", async e => {
-  if(e.target.id !== "strform") return; e.preventDefault(); STR.msg = "";
-  try{ STR.d = await api("/ui/strata/connect", {method: "POST", body: JSON.stringify({url: $("#strurl").value.trim(), key: $("#strk").value.trim()})}); }catch(err){ STR.msg = err.message; }
-  strPaint();
-});
-setInterval(() => { if((S.view === "models" || S.view === "backends" || S.view === "hardware") && !document.hidden) strRefresh(); }, 3000);
 
 /* ---- folder browser */
 const FS = {cb: null, path: ""};
@@ -3734,10 +3567,8 @@ function tnPaint(){
   const planBox = TN.plan && TN.sel ? `<section class="panel"><h3>Make ${esc(TN.sel.title)} faster</h3>
     ${TN.plan.blockers && TN.plan.blockers.length ? `<div class="note-warn">${TN.plan.blockers.map(esc).join("<br>")}</div>` : ""}
     <p class="help" style="margin:0">${esc(TN.plan.note || "")}</p>
-    ${TN.plan.minutes ? `<p class="help" style="margin:0"><b>About ${TN.plan.minutes} minutes</b>${TN.sel.engine === "strata" && TN.opts.mode === "thorough" ? " (up to)" : ""}. The graphics cards are busy the whole time.${TN.plan.stops && TN.plan.stops.length ? ` Shoggoth stops ${TN.plan.stops.map(esc).join(" and ")} first; ${TN.plan.stops.length > 1 ? "they start" : "it starts"} again when a chat needs ${TN.plan.stops.length > 1 ? "them" : "it"}.` : ""}</p>` : ""}
-    <div class="line">${TN.sel.engine === "strata" ? `<label class="help" style="margin:0">How long <select id="tnmode"><option value="quick" ${TN.opts.mode === "quick" ? "selected" : ""}>Quick (about 20 minutes)</option><option value="thorough" ${TN.opts.mode === "thorough" ? "selected" : ""}>Thorough (up to 2 hours)</option></select></label>
-      <label class="help" style="margin:0">Best for <select id="tngoal"><option value="speed" ${TN.opts.goal === "speed" ? "selected" : ""}>Speed</option><option value="room" ${TN.opts.goal === "room" ? "selected" : ""}>Leaving memory free</option></select></label>` : ""}
-      <label class="help" style="margin:0">Used for <select id="tnuse"><option value="chat" ${TN.opts.use === "chat" ? "selected" : ""}>Chat</option><option value="coding" ${TN.opts.use === "coding" ? "selected" : ""}>Coding (long prompts)</option></select></label></div>
+    ${TN.plan.minutes ? `<p class="help" style="margin:0"><b>About ${TN.plan.minutes} minutes</b>. The graphics cards are busy the whole time.${TN.plan.stops && TN.plan.stops.length ? ` Shoggoth stops ${TN.plan.stops.map(esc).join(" and ")} first; ${TN.plan.stops.length > 1 ? "they start" : "it starts"} again when a chat needs ${TN.plan.stops.length > 1 ? "them" : "it"}.` : ""}</p>` : ""}
+    <div class="line">      <label class="help" style="margin:0">Used for <select id="tnuse"><option value="chat" ${TN.opts.use === "chat" ? "selected" : ""}>Chat</option><option value="coding" ${TN.opts.use === "coding" ? "selected" : ""}>Coding (long prompts)</option></select></label></div>
     <div class="line"><button class="btn primary" data-tn="go" ${TN.plan.ok ? "" : "disabled"}>Start tuning</button><button class="btn ghost" data-tn="close">Not now</button></div></section>` : "";
   const group = (engine, title) => {
     const rows = d.targets.filter(t => t.engine === engine);
@@ -3746,10 +3577,10 @@ function tnPaint(){
         </span>
       ${t.engine === "lemonade" ? `<button class="btn" data-tn="test" data-engine="${t.engine}" data-id="${esc(t.id)}" ${running ? "disabled" : ""}>Test speed</button>` : ""}
       <button class="btn ${t.tuned.has && !t.tuned.stale ? "" : "primary"}" data-tn="plan" data-engine="${t.engine}" data-id="${esc(t.id)}" ${running ? "disabled" : ""}>${t.tuned.has ? "Tune again" : "Tune"}</button>
-      ${t.tuned.can_undo ? `<button class="btn ghost" data-tn="undo" data-engine="${t.engine}" data-id="${esc(t.id)}" ${running ? "disabled" : ""}>${t.engine === "strata" ? "Switch off" : "Undo"}</button>` : ""}</div>`).join("")}</section>`;
+      ${t.tuned.can_undo ? `<button class="btn ghost" data-tn="undo" data-engine="${t.engine}" data-id="${esc(t.id)}" ${running ? "disabled" : ""}>Undo</button>` : ""}</div>`).join("")}</section>`;
   };
   host.innerHTML = `<p class="lede">Tuning finds the settings that make a model answer faster on this computer. Shoggoth measures the model as it is, tries changes one at a time, and keeps only the ones that clearly help. Answers stay the same: nothing here changes how a model is compressed. A tune takes the graphics cards for a while, so it never starts without your say-so.</p>
-    ${jobBox}${planBox}${group("strata", `Large models <span class="faint">· Strata</span>`)}${group("lemonade", `Small and medium models <span class="faint">· Lemonade</span>`)}
+    ${jobBox}${planBox}${group("lemonade", `Small and medium models <span class="faint">· Lemonade</span>`)}
     ${!d.targets.length ? '<p class="help">Nothing to tune yet. <a href="#models" data-go="models">Get a model</a> first.</p>' : ""}${TN.msg ? `<div class="note-bad">${esc(TN.msg)}</div>` : ""}`;
 }
 $("#tuning").addEventListener("change", e => { if(e.target.id === "tnmode") TN.opts.mode = e.target.value; if(e.target.id === "tngoal") TN.opts.goal = e.target.value; if(e.target.id === "tnuse") TN.opts.use = e.target.value; if(e.target.id === "tnmode" && TN.sel) tnPlan(TN.sel); });
@@ -3768,8 +3599,8 @@ $("#tuning").addEventListener("click", async e => {
     else if(a === "cancel"){ await api("/ui/tuning/cancel", {method: "POST", body: "{}"}); }
     else if(a === "undo"){
       const t = TN.d.targets.find(t => t.engine === b.dataset.engine && t.id === b.dataset.id);
-      if(!confirm(t.engine === "strata" ? "Switch tuning off for " + t.title + "? It is kept, so you can bring it back." : "Put " + t.title + "'s settings back as they were?")) return;
-      await api("/ui/tuning/action", {method: "POST", body: JSON.stringify({engine: t.engine, target: t.id, act: t.engine === "strata" ? "off" : "undo"})}); await tnLoad();
+      if(!confirm("Put " + t.title + "'s settings back as they were?")) return;
+      await api("/ui/tuning/action", {method: "POST", body: JSON.stringify({engine: t.engine, target: t.id, act: "undo"})}); await tnLoad();
     }
   }catch(err){ TN.msg = err.message; }
   tnPaint();
@@ -4168,26 +3999,12 @@ function filterSettings(){
   $$("#settings details.setgrp").forEach(d => { const any = $$(".setrow:not([hidden])", d).length > 0; d.hidden = !any; if(q && any) d.open = true; });
   $("#setcount").textContent = q ? `${n} match${n === 1 ? "" : "es"}` : `${$$("#settings .setrow").length} settings`;
 }
-/* What Strata shows on the settings page: it keeps its own setups, so there is no flag list to edit, but what it is and what it runs is here. */
-function renderStrataSettings(){
-  const host = $("#setstrata"), d = STR.d;
-  if(!d || !d.installed){ host.innerHTML = ""; return; }
-  const run = (d.servers || []).filter(r => r.state === "ready" || r.state === "loading"), ps = d.presets || [];
-  host.innerHTML = `<details class="setgrp" open><summary>Engine: Strata<small>${ps.length} setup${ps.length === 1 ? "" : "s"}</small></summary><div class="setrows">
-    <div class="setrow"><div><b>Version</b><span class="help">Strata runs your large models. It keeps its own saved setups (called presets), so there are no flags to edit here.</span></div><div class="mono">${esc(d.version || "unknown")}</div></div>
-    <div class="setrow"><div><b>Running now</b><span class="help">Start and stop models from the model picker in Chat or from Models.</span></div><div>${run.length ? run.map(r => esc((r.models[0] || {}).id || r.name || r.url)).join(", ") : "Nothing"}</div></div>
-    <div class="setrow"><div><b>Saved setups</b><span class="help">Make new ones in a terminal with <code>strata launch</code>.</span></div><div>${ps.length ? ps.map(p => esc(p.name)).join(", ") : "None yet"}</div></div>
-    <div class="setrow"><div><b>Speed settings</b><span class="help">Strata's own tuner and each model's tuning are under Tuning.</span></div><div><button class="btn" data-goto="tuning">Open Tuning</button></div></div>
-  </div></details>`;
-}
 async function loadSettings(){
-  try{ STR.d = await api("/ui/strata"); }catch{}
-  renderStrataSettings();
   try{
     if(!S.bk){ try{ S.bk = (await api("/ui/backends")).recipes; }catch{} }
     const r = await api("/ui/config"); SET.cfg = r.config; SET.defaults = r.defaults; renderSettings(); $("#setq").parentElement.hidden = !$$("#settings .setrow").length;
   }catch(e){
-    $("#settings").innerHTML = `<div class="empty-note">${STR.d && STR.d.installed ? "Lemonade isn't running, so its settings aren't shown. Strata's are above." : "Couldn't read Lemonade's settings: " + esc(e.message)}</div>`;
+    $("#settings").innerHTML = `<div class="empty-note">Couldn't read Lemonade's settings: ${esc(e.message)}</div>`;
     $("#setcount").textContent = ""; $("#setq").parentElement.hidden = true;
   }
 }
@@ -4203,7 +4020,6 @@ async function saveSetting(key, value, row, revert){
   }catch(e){ st.className = "st err"; st.textContent = e.message; revert?.(); return false; }
 }
 $("#setq").addEventListener("input", filterSettings);
-$("#setstrata").addEventListener("click", e => { const go = e.target.closest("[data-goto]"); if(go) show(go.dataset.goto); });
 $("#settings").addEventListener("change", e => {
   const el = e.target.closest("[data-set]"); if(!el) return;
   const key = el.dataset.set, old = key.split(".").reduce((o, k) => o?.[k], SET.cfg), row = el.closest(".setrow");
@@ -5179,7 +4995,7 @@ function liveHTML(d, active){
 }
 function tankY(d){ const g = gpuFor(d); return g ? 240 * (1 - Math.min(1, g.mem_used_mb / g.mem_total_mb)) : 240; }
 let hwSig = "";
-/* No llama.cpp to ask (Strata runs models without it): show the cards Shoggoth can read itself, for looking at, not for choosing. */
+/* No llama.cpp to ask (a connected server runs models without it): show the cards Shoggoth can read itself, for looking at, not for choosing. */
 const seenOnly = () => !allDevices().length && (S.gpus || []).length > 0;
 const seenDevices = () => (S.gpus || []).map(g => ({id: g.key, name: g.name, mib: Math.round(g.mem_total_mb || 0), gpu_key: g.key, gpu_ref: g.ref || ""}));
 function renderHardware(){
