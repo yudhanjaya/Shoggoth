@@ -47,7 +47,7 @@ MANAGED_FLAGS = {
 }
 # Options people know from vLLM / SGLang that llama.cpp spells differently.
 FOREIGN_HINTS = {
-    "--tool-call-parser": "That is a vLLM/SGLang option. llama.cpp reads tool calls through the model's chat template, and --jinja is already on. To use a different template, try --chat-template-file.",
+    "--tool-call-parser": "That is a vLLM/SGLang option. llama.cpp reads tool calls through the model's chat template. --jinja is already on. To use a different template, try --chat-template-file.",
     "--enable-auto-tool-choice": "That is a vLLM option. llama.cpp enables tool calling through the chat template (--jinja is already on).",
     "--reasoning-parser": "That is a vLLM/SGLang option. llama.cpp has --reasoning-format and --reasoning for thinking models.",
     "--max-model-len": "That is a vLLM option. Set the Context window field instead.",

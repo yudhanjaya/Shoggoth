@@ -40,7 +40,7 @@ tools:
     badge: My pick
     take: >-
       The app I recommend for working with your models. Connect it through the [Server](#server) page. I find Unsloth Desktop laggy at
-      the moment, and Hermes more complex than most people need.
+      the moment. I find Hermes more complex than most people need.
     links: [{label: OpenChamber on GitHub, url: "https://github.com/openchamber/openchamber"}]
     show: [library]
     detect: [openchamber]
@@ -50,7 +50,7 @@ tools:
     kind: skills
     badge: Skills
     take: >-
-      Give your models a few skills, especially this set, and most of them turn into a very good daily driver. A trimmed copy already
+      Give your models a few skills, especially this set. Most of them turn into a very good daily driver. A trimmed copy already
       comes with Shoggoth: switch it on under [Skills](#skills).
     links: [{label: obra/superpowers on GitHub, url: "https://github.com/obra/superpowers"}]
     show: [library]

@@ -1108,7 +1108,7 @@ def create_job(parent, spec):
     if not goal:
         raise ValueError("Say what the job should achieve.")
     if p.get("chat") or p.get("home"):
-        raise ValueError("Choose a project folder for this chat first. A job needs somewhere to work, and your whole home folder is too much to work on.")
+        raise ValueError("Choose a project folder for this chat first. A job needs somewhere to work. Your whole home folder is too much to work on.")
     check = str(spec.get("check", "")).strip()
     kind = spec.get("check_kind") if spec.get("check_kind") in ("command", "words") else ("command" if re.match(r"^[\w./-]+( |$)", check) and check else "words")
     if not check:

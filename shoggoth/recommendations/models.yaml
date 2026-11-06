@@ -105,6 +105,6 @@ first_run:
     start: Ready in seconds
   - size: medium
     models: [Qwen3.6-35B-A3B-MTP-GGUF, Gemma-4-26B-A4B-it-MTP-GGUF, Gemma-4-31B-it-MTP-GGUF]
-    blurb: "My general pick: fast, and good at everyday tasks, research and simple code."
+    blurb: "My general pick: fast and good at everyday tasks, research and simple code."
     start: Ready in seconds
     recommended: true

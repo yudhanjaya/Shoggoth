@@ -4584,7 +4584,7 @@
       "Gemma-4-31B-it-MTP-GGUF"
      ],
      "engine": "",
-     "blurb": "My general pick: fast, and good at everyday tasks, research and simple code.",
+     "blurb": "My general pick: fast and good at everyday tasks, research and simple code.",
      "start": "Ready in seconds",
      "recommended": true
     }

@@ -427,7 +427,7 @@ class GenericProvider(Base):
             return ep
         run = self.spec.get("run") or {}
         if run.get("mode", "managed") != "managed":
-            raise ProviderError("%s isn't running, and Shoggoth doesn't start it." % self.name)
+            raise ProviderError("%s isn't running. Shoggoth doesn't start it." % self.name)
         if not self.approved:
             raise ProviderError("%s hasn't been approved to run yet." % self.name)
         if not self.binary():

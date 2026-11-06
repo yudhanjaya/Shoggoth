@@ -26,7 +26,7 @@ _RESULT = re.compile(r'<a[^>]+class="result__a"[^>]+href="([^"]+)"[^>]*>(.*?)</a
 _SNIPPET = re.compile(r'class="result__snippet"[^>]*>(.*?)</a>', re.S)
 
 NEED_KEY = ("DuckDuckGo refused this search, because it limits automated searching. Don't try again. Tell the user that web search "
-            "needs a free API key from Brave Search or Tavily, and that they can add one in Shoggoth: open the chat's Details panel, "
+            "needs a free API key from Brave Search or Tavily. They can add one in Shoggoth: open the chat's Details panel, "
             "find Web search, choose the provider and paste the key.")
 
 
@@ -56,7 +56,7 @@ def _open(req, provider):
             return r.read(2_000_000).decode("utf8", "replace")
     except urllib.error.HTTPError as e:
         if e.code in (401, 403, 422):                # Brave answers 422 for a key it doesn't know
-            raise SearchError("%s didn't accept the key. Check it was copied whole, and that it is for the search API." % provider)
+            raise SearchError("%s didn't accept the key. Check it was copied whole. Check that it is for the search API." % provider)
         if e.code == 429:
             raise SearchError("%s says this key has used up its searches for now (or is searching too fast). Try again later." % provider)
         if e.code == 402:

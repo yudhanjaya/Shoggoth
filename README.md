@@ -1,4 +1,4 @@
-<h1 align="center"><img src="docs/readme/banner.png" alt="Shoggoth: run AI models on your own computer, and put them to work" width="100%"></h1>
+<h1 align="center"><img src="docs/readme/banner.png" alt="Shoggoth: run AI models on your own computer. Put them to work" width="100%"></h1>
 
 <p align="center"><img src="docs/readme/badge.png" alt="v 4.2: Hitchhiker’s Edition" width="380"></p>
 
@@ -8,7 +8,7 @@
 ![Platform](https://img.shields.io/badge/platform-Linux%20x86__64-blue)
 [![Stars](https://img.shields.io/github/stars/yudhanjaya/Shoggoth?style=social)](https://github.com/yudhanjaya/Shoggoth)
 
-# Run AI on your own computer, and put it to work.
+# Run AI on your own computer. Put it to work.
 
 **Shoggoth is one download that runs open-weights language models on your own hardware.** Chat with them, draw diagrams, write documents, or let a model read and change the files in a folder while you watch. Shoggoth gives you the complete setup - backend, agent, harness, monitoring - without needing much technical know-how.
 
@@ -37,12 +37,12 @@ Shoggoth is not meant to be a replacement for various backends or front-ends. I 
 
 | | |
 | --- | --- |
-| **Private by default** | Chats run on your computer. The one exception is web search, and the model asks before every search. |
-| **It works on your files** | Choose a folder. The model reads, searches, edits and runs things there while you watch, and asks before it changes anything. |
+| **Private by default** | Chats run on your computer. The one exception is web search. The model asks before every search. |
+| **It works on your files** | Choose a folder. The model reads, searches, edits and runs things there while you watch. It asks before it changes anything. |
 | **Bigger jobs, in the background** | Describe the work and how to tell it is done, such as a passing test. The job runs round after round. You review its changes before they touch your folder. |
-| **Diagrams and documents** | Ask for a picture or a README, and it appears in the chat. |
+| **Diagrams and documents** | Ask for a picture or a README. It appears in the chat. |
 | **Skills** | A skill is a short instruction sheet that makes small models far more dependable. Add more by pasting a GitHub link. |
-| **Models that fit your computer** | Shoggoth tells you which models will run well on your hardware, and downloads them for you. |
+| **Models that fit your computer** | Shoggoth tells you which models will run well on your hardware. It downloads them for you. |
 | **Your own server** | Shoggoth runs [Lemonade](https://lemonade-server.ai). Under Advanced you can connect a server you run yourself (Ollama, LM Studio, llama.cpp, Strata, Maya, Unsloth) and use its models in chat. Shoggoth doesn't install or start those. |
 | **Use your models in other apps** | Share them with Hermes, or anything that talks to an OpenAI-style server. |
 
@@ -66,23 +66,25 @@ Closing the browser tab quits Shoggoth after about three minutes. Already have m
 
 ## Picking a model
 
-Shoggoth suggests one model per size on first run, and keeps a tested list on the Models page.
+Shoggoth suggests one model per size on first run. It keeps a tested list on the Models page.
 
 | Size | Pick | Why |
 | --- | --- | --- |
 | **Small** | LFM2.5 8B A1B | Very fast, calls tools well, keeps answers short, runs on almost anything. Start here. |
 | **Medium** | Qwen3.6 35B A3B MTP, or Gemma 4 26B A4B | The general pick for everyday tasks, research and agent work. |
-| **Large** | Qwen3.8 Flash-Next (IQ3_S) | For computers with a GPU and about 64 GB of RAM. Runs models far bigger than your graphics card. Slower, and takes a couple of minutes to start. |
+| **Large** | Qwen3.8 Flash-Next (IQ3_S) | For computers with a GPU and about 64 GB of RAM. Runs models far bigger than your graphics card. Slower. Takes a couple of minutes to start. |
 
 ![Models: the recommended picks, each with its creature, and a button to set up and get it](docs/screenshots/models.png)
 
+Shoggoth runs large models through Lemonade. For models with over a hundred billion parameters, Lemonade and llama.cpp are not yet as good as [Strata](https://github.com/Niko1221/Strata), [Basalt](https://github.com/jesdga95/basalt) and [Maya](https://github.com/mw00/project-maya). That is true as of November 2026. It will change. To run models that size, set one of those up yourself. Then connect it under Advanced, Connect a server.
+
 ## Models you can see
 
-Shoggoth draws every model as a many-eyed creature in a glass tube, wired to a bench of lab equipment. A model's name decides its shape and colour, and the bigger the model, the bigger the creature, with more eyes and more hands. You can turn them off.
+Shoggoth draws every model as a many-eyed creature in a glass tube, wired to a bench of lab equipment. A model's name decides its shape and colour. The bigger the model, the bigger the creature, with more eyes and more hands. You can turn them off.
 
 ![One family at three sizes: Qwen3.6 at 9B, 35B and 100B. The bigger the model, the bigger the creature, with more camera eyes and more hands holding pens, papers and keyboards](docs/readme/ladder.png)
 
-The **Hardware** page puts your graphics cards on the bench, and the **Server** page shows which apps are asking your models for what.
+The **Hardware** page puts your graphics cards on the bench. The **Server** page shows which apps are asking your models for what.
 
 | | |
 | --- | --- |
@@ -92,8 +94,8 @@ The **Hardware** page puts your graphics cards on the bench, and the **Server** 
 ## You stay in control
 
 - **Four levels of care in every chat:** Ask first, Edit freely, Do everything, or Look only.
-- **Jobs work on a copy** of your folder by default. The **Changes** tab shows what they did, and you apply what you want.
-- **Tool cards** show each step, and edits show a diff.
+- **Jobs work on a copy** of your folder by default. The **Changes** tab shows what they did. You apply what you want.
+- **Tool cards** show each step. Edits show a diff.
 
 ![Shoggoth asking before it runs a command](docs/screenshots/work-approve.png)
 

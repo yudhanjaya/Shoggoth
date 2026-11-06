@@ -15,7 +15,7 @@ Under **Advanced > Engines**, **Connect a server** takes the address of a server
 
 - A connected server is an engine that is only an address (`shoggoth/servers.py`). Its models are named `<server id>/<model>`, so two servers that both have `llama3` stay apart. Saved servers live in the `servers` setting.
 - Shoggoth never installs, starts, stops, updates, tunes or frees memory for it. If it shares a graphics card with Lemonade, you manage that.
-- The address must start with `http://` or `https://` and carry no user name or password. A trailing `/v1` is dropped, and `localhost` and `127.0.0.1` count as the same address.
+- The address must start with `http://` or `https://` and carry no user name or password. A trailing `/v1` is dropped. `localhost` and `127.0.0.1` count as the same address.
 - The key is kept in Shoggoth's settings file and is never sent back to the page; the page sees only its last four characters.
 - Shoggoth does not ship setup for Strata or Maya. The names are labels and default addresses (`shoggoth/recommendations/servers.yaml`), nothing more.
 
@@ -45,14 +45,14 @@ export SHOGGOTH_LLAMA_SERVER=/opt/llama.cpp/llama-b11273/llama-server
 
 ```
 Checking /home/you/.local/share/shoggoth/providers/llama-server
-  ✓ provider.yaml reads, and every setting has the right shape (id llama-server, "llama.cpp server").
+  ✓ provider.yaml reads. Every setting has the right shape (id llama-server, "llama.cpp server").
   · Found its program at /opt/llama.cpp/llama-b11273/llama-server.
   · Before it runs, Shoggoth will ask the person to allow it to: start a program on your computer (llama-server).
   ·   run.start: /opt/llama.cpp/llama-b11273/llama-server --model {model_file} --alias {model} --host {host} --port {port} …
 Shoggoth will load this engine.
 ```
 
-A `✗` is a problem that stops Shoggoth loading the engine, and says which setting and why. A `!` is something that loads but is probably not what you meant (a misspelt setting comes with "did you mean…?"). A `·` is information. The exit code is 1 when there is a `✗`, so you can use it in a script; `--json` prints the same thing for tools.
+A `✗` is a problem that stops Shoggoth loading the engine. It says which setting and why. A `!` is something that loads but is probably not what you meant (a misspelt setting comes with "did you mean…?"). A `·` is information. The exit code is 1 when there is a `✗`, so you can use it in a script; `--json` prints the same thing for tools.
 
 **4. Reload.** Open **Advanced > Engines**, press **Reload engines**. The card appears, with a box that says exactly what the engine will run and an **Allow it** button. Shoggoth only asks once per version of the files: change the YAML and it asks again.
 
@@ -83,7 +83,7 @@ Everything except `id`, `name` and `api_version: 1` is optional, but a managed e
 | `memory.start_estimate` | `{seconds: 30}`: how long to tell the person to expect. |
 | `capabilities.activity` | `{path: /slots, busy: "$[*].is_processing"}`: how Shoggoth can tell the engine is working. **Without it Shoggoth never stops the engine by the clock**, because stopping something that is answering would be worse than leaving it running. |
 
-**Commands are lists of words**, never one shell string, so there is no `|`, `&&`, redirect or `$VAR`. The words you may use in commands and addresses are `{bin}` `{host}` `{port}` `{context}` `{model}` `{model_file}` `{library}` `{data}`, plus `{preset}` `{family}` `{name}` `{profile}` `{key}` for engines that need them. Anything else is an error, and `providers check` says which word.
+**Commands are lists of words**, never one shell string, so there is no `|`, `&&`, redirect or `$VAR`. The words you may use in commands and addresses are `{bin}` `{host}` `{port}` `{context}` `{model}` `{model_file}` `{library}` `{data}`, plus `{preset}` `{family}` `{name}` `{profile}` `{key}` for engines that need them. Anything else is an error. `providers check` says which word.
 
 `{context}` is the context window Shoggoth wants, in tokens (128k by default). A model is started once at that size. To change it, reload the model from the chat bar.
 
@@ -92,7 +92,7 @@ Everything except `id`, `name` and `api_version: 1` is optional, but a managed e
 - **One at a time.** Unless `capabilities.multi_model: true`, starting a second model on your engine stops the first.
 - **Memory.** Before it starts a model, Shoggoth stops what it started in any other engine of the same `memory.group` (if either is `exclusive`), unless that engine is answering right now, in which case it says so and waits for you. It never stops something you started yourself: if your engine needs the memory to itself, that is an error with the plain reason. Shoggoth doesn't measure free memory for a YAML-only engine, so one that is too big for the card fails when the engine does.
 - **What it never does.** Stop an engine it didn't start, or update it.
-- **Trust.** Engines that come with Shoggoth are trusted. One you add must be allowed once, and Shoggoth remembers the allowed files by their fingerprint, so a changed file asks again. The box shows the real commands, with `{bin}` replaced by the real program. An engine that only points at an address that is already running needs no approval. A folder that fails to load is skipped and shown on the Engines page with the line to fix; it never stops Shoggoth or the other engines.
+- **Trust.** Engines that come with Shoggoth are trusted. One you add must be allowed once. Shoggoth remembers the allowed files by their fingerprint, so a changed file asks again. The box shows the real commands, with `{bin}` replaced by the real program. An engine that only points at an address that is already running needs no approval. A folder that fails to load is skipped and shown on the Engines page with the line to fix; it never stops Shoggoth or the other engines.
 
 ## What a YAML-only engine can't do
 
@@ -106,7 +106,7 @@ Add a `provider.py` next to the YAML with `class Provider(provbase.GenericProvid
 - `models()`, `chat_models()`, `endpoint()`, `ensure(model_id, progress, opts)`, `stop()`: serving.
 - `model_id(entry)`, `can_run(entry)`, `need_gb(entry)`, `fit(entry, machine)`, `library_models()`, `model_folders()`: how library models map onto your engine.
 - `install(progress)`, `update_check()`, `update(progress)`, `update_status()`: keeping it current.
-- `activity()`, `owned_instance()`, `idle_minutes()`: so Shoggoth can stop it when idle, and only if it started it.
+- `activity()`, `owned_instance()`, `idle_minutes()`: so Shoggoth can stop it when idle. It does so only if it started it.
 - `make_way()`: free memory for another engine. Defaults to `stop()`; return `(False, why)` when what holds the memory isn't Shoggoth's.
 - `tune_plan()`, `tune_run()`: Advanced > Tuning.
 

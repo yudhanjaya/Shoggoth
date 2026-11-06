@@ -58,7 +58,7 @@ A thread per job (`_job_loop` in `agent.py`) prompts Pi, waits for `agent_settle
 - **Check.** Either a command run in the job's folder (exit code 0 means done; a trailing "N failed" count feeds the progress sparkline), or, for a free-text criterion, the model ending a round with `STATUS: DONE`.
 - **Termination.** A job stops when it reaches its round limit, its time limit (only time spent working counts), or when the failure count has not decreased for three rounds.
 - **Pause.** Pause aborts the round in progress. The same round runs again on resume. *Wait for my OK after each round* pauses with `wait_reason: review`, which the sidebar shows as awaiting the user.
-- **Interruption.** If Shoggoth stops while a job is working, the job is marked *interrupted* at next start, and **Continue** resumes it from the transcript with elapsed time preserved. The idle watchdog does not exit while a job is working or a question is unanswered.
+- **Interruption.** If Shoggoth stops while a job is working, the job is marked *interrupted* at next start. **Continue** resumes it from the transcript with elapsed time preserved. The idle watchdog does not exit while a job is working or a question is unanswered.
 - **Plan to job.** In Look only mode, a long answer offers **Run this plan as a job…**, which opens the job form with the plan as the goal.
 - **Completion notice.** When a job ends, a short note is queued and prepended (hidden, in `<zest-note>` tags) to the chat's next message so the model knows the outcome.
 
@@ -100,7 +100,7 @@ A thread per job (`_job_loop` in `agent.py`) prompts Pi, waits for `agent_settle
 2. Download the tarball and the exact `jiti` version that release depends on, and verify both against npm's sha512 integrity values.
 3. Unpack to `~/.local/share/shoggoth/pi/<version>/` and start the new Pi once in RPC mode with Shoggoth's extensions loaded. Only a Pi that passes is offered; otherwise nothing is installed.
 
-The copy bundled with the AppImage is never modified. The two newest downloads are retained, and *Go back to the version that came with Shoggoth* pins the bundled copy. A new major version is not offered, because Shoggoth has not been validated against it. A release that requires a newer Node.js than the bundled one is likewise not offered. Idle tasks restart on their next message with the new Pi; a working task finishes on the old one.
+The copy bundled with the AppImage is never modified. The two newest downloads are retained. *Go back to the version that came with Shoggoth* pins the bundled copy. A new major version is not offered, because Shoggoth has not been validated against it. A release that requires a newer Node.js than the bundled one is likewise not offered. Idle tasks restart on their next message with the new Pi; a working task finishes on the old one.
 
 ## Packaging
 
@@ -110,5 +110,5 @@ The AppImage includes Node 22 (binary only), Pi's self-contained bundle, and `ji
 
 - A live (in-place) job's changes can be inspected but not reverted from the UI.
 - Live jobs in one folder run serially. Copy jobs can run concurrently, but their changes are applied one at a time.
-- Prompt templates and MCP servers cannot be configured from Shoggoth. Pi reads its own agent directory, and Shoggoth rewrites only `models.json` and `settings.json` there.
-- Skills can be installed only from GitHub. Other sources (npm, plain URLs, local folders) are unsupported, and updating an installed set requires adding its link again, which replaces it.
+- Prompt templates and MCP servers cannot be configured from Shoggoth. Pi reads its own agent directory. Shoggoth rewrites only `models.json` and `settings.json` there.
+- Skills can be installed only from GitHub. Other sources (npm, plain URLs, local folders) are unsupported. Updating an installed set requires adding its link again, which replaces it.

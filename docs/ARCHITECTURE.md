@@ -47,7 +47,7 @@ Each engine is a provider (`provider.yaml`, optionally `provider.py`). The regis
 
 **Hugging Face downloads.** A download is registered with Lemonade as a custom model: id `user.<name>-<quant>`, checkpoint `org/repo:QUANT`, recipe `llamacpp`. This part of Lemonade's API has changed between releases; `providers doctor` detects drift.
 
-**Connected servers.** A server the person runs (Ollama, LM Studio, llama.cpp, Strata, Maya, Unsloth, or any OpenAI-style server) is saved by address under Advanced > Engines and becomes an address-only engine. Shoggoth reads its model list and sends requests to it, and never installs, starts, stops, updates or tunes it.
+**Connected servers.** A server the person runs (Ollama, LM Studio, llama.cpp, Strata, Maya, Unsloth, or any OpenAI-style server) is saved by address under Advanced > Engines and becomes an address-only engine. Shoggoth reads its model list and sends requests to it. It never installs, starts, stops, updates or tunes it.
 
 ## Hardware discovery
 
@@ -60,5 +60,5 @@ Each engine is a provider (`provider.yaml`, optionally `provider.py`). The regis
 - **Supported OS:** Linux x86_64. The AppImage bundles a glibc 2.38 loader because the embedded Lemonade requires it, so it runs on older distributions such as Ubuntu 22.04.
 - **Tested hardware:** NVIDIA GPUs. The Vulkan and ROCm paths follow Lemonade's backend data and have not been exercised on real hardware.
 - **AMD telemetry** has been verified only against a simulated amdgpu sysfs tree and a screenshot from a two-Radeon VII system. Two identical AMD devices are matched to llama.cpp devices by order, so their usage may be reported swapped.
-- **Intel devices** are listed and selectable, but report capacity without live usage, and the fit estimate treats them as idle.
+- **Intel devices** are listed and selectable, but report capacity without live usage. The fit estimate treats them as idle.
 - **Gated Hugging Face models** (those requiring a login) are not supported.

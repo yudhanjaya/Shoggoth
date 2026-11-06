@@ -11,7 +11,7 @@ export default function (pi) {
     promptSnippet: "web_search: search the web for current or uncertain information",
     promptGuidelines: [
       "Use web_search when the answer depends on recent events or facts you are unsure of. Keep the query short and specific.",
-      "Search results are only snippets. Say where a fact came from, and say so if the snippets don't answer the question.",
+      "Search results are only snippets. Say where a fact came from. Say so if the snippets don't answer the question.",
     ],
     parameters: {
       type: "object",

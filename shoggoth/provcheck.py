@@ -82,7 +82,7 @@ def check(folder):
         return rep
     p = next(iter(probe.providers.values()))
     rep.update(id=p.id, name=p.name)
-    items.append({"level": "ok", "text": "provider.yaml reads, and every setting has the right shape (id %s, \"%s\")." % (p.id, p.name)})
+    items.append({"level": "ok", "text": "provider.yaml reads. Every setting has the right shape (id %s, \"%s\")." % (p.id, p.name)})
     if os.path.isfile(os.path.join(folder, "provider.py")):
         items.append({"level": "ok", "text": "provider.py loads and defines Provider."})
     for lv, text in _lint(p.spec, folder):
@@ -130,7 +130,7 @@ def render(rep):
     errs = sum(i["level"] == "error" for i in rep["items"])
     warns = sum(i["level"] == "warn" for i in rep["items"])
     if errs:
-        lines.append("Shoggoth would not load this engine: %d problem%s to fix%s." % (errs, "" if errs == 1 else "s", ", and %d thing%s to look at" % (warns, "" if warns == 1 else "s") if warns else ""))
+        lines.append("Shoggoth would not load this engine: %d problem%s to fix.%s" % (errs, "" if errs == 1 else "s", " %d thing%s to look at." % (warns, "" if warns == 1 else "s") if warns else ""))
     elif warns:
         lines.append("Shoggoth will load this engine. %d thing%s worth a look." % (warns, "" if warns == 1 else "s"))
     else:

@@ -118,3 +118,18 @@ test("the connect form's controls are one height and one shape", () => {
   assert.match(css, /border-radius:10px/);
   assert.match(html, /#srvresult:empty\{display:none\}/);
 });
+
+test("the Large models group says where very large models run better, with the three GitHub links", async () => {
+  const { w, wait } = await boot();
+  for (const tab of ["recommended", "everything"]) {
+    w.eval(`LIB.tab = "${tab}"; show("models"); renderModels()`);
+    await wait(250);
+    const note = w.document.querySelector("#v-models .largenote");
+    assert.ok(note, tab + ": no note above the Large models group");
+    assert.ok(note.closest("section").querySelector("h3").textContent.includes("Large models"), tab + ": note is not in the Large group");
+    const hrefs = Array.from(note.querySelectorAll("a")).map(a => a.href);
+    assert.deepEqual(hrefs, ["https://github.com/Niko1221/Strata", "https://github.com/jesdga95/basalt", "https://github.com/mw00/project-maya"]);
+    assert.match(note.textContent, /Lemonade and llama\.cpp are not yet as good as Strata, Basalt and Maya/);
+    assert.ok(!/, and /.test(note.textContent.replace("Lemonade and llama.cpp", "")), "a sentence is joined with , and");
+  }
+});

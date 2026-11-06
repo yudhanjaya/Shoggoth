@@ -17,7 +17,7 @@ lines:
   loading:
     - "Dragging {model} up from the deep weights…"
     - "The vessel fills. {model} settles into the dark of the graphics card."
-    - "{model} wakes slowly, and does not care for the light."
+    - "{model} wakes slowly. It does not care for the light."
     - "Unsealing {model}. Do not look directly at it."
     - "The old shapes of {model} reassemble in memory."
     - "Something vast is being poured into a space too small for it."
@@ -31,7 +31,7 @@ lines:
   thinking:
     - "{model} turns your words over in the dark between the stars."
     - "Something stirs in the weights."
-    - "Ph’nglui… the many eyes of {model} open, and it considers you."
+    - "Ph’nglui… the many eyes of {model} open. It considers you."
     - "Angles that should not meet are meeting."
     - "In its sunken house, {model} waits dreaming of an answer."
     - "The geometry is wrong, but it is working."
