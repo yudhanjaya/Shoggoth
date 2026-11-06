@@ -53,6 +53,40 @@ from util import cached, invalidate, run   # noqa: E402
 
 VERSION = "4.2.3"
 _last_ping = {"t": None}
+
+
+class Tabs:
+    """Which browser tabs are open, for app mode. A tab pings while it is open and says goodbye as it closes, so the last one closing
+    quits Shoggoth after `leave` seconds (long enough for a reload to come back). A tab that vanished without a goodbye, like a crashed
+    browser, times out after `grace` seconds."""
+
+    def __init__(self, leave=2, grace=180):
+        self.leave, self.grace, self.seen, self.left, self.lock = leave, grace, {}, None, threading.Lock()
+
+    def ping(self, tab, now=None):
+        with self.lock:
+            self.seen[str(tab or "")], self.left = now or time.time(), None
+
+    def bye(self, tab, now=None):
+        with self.lock:
+            self.seen.pop(str(tab or ""), None)
+            if not self.seen:
+                self.left = now or time.time()
+
+    def should_quit(self, now=None, started=0):
+        now = now or time.time()
+        with self.lock:
+            for t, at in [(t, at) for t, at in self.seen.items() if now - at > self.grace]:
+                del self.seen[t]
+                self.left = max(self.left or 0, at + self.grace)           # it was last heard from `grace` seconds after its last ping
+            if self.seen:
+                return False
+            if self.left is not None:
+                return now - self.left >= self.leave
+            return now - started > 300
+
+
+TABS = Tabs()
 FORCED = {"addr": None}           # set by --lemonade: use exactly that server and skip the setup screen
 LOOPBACK_ONLY = {"on": True}
 
@@ -339,7 +373,11 @@ class Handler(BaseHTTPRequestHandler):
             return self._refuse()
         if p == "/ui/ping":                                       # only the real page keeps Shoggoth open
             _last_ping["t"] = time.time()
+            TABS.ping(self.headers.get("X-Tab"))
             return self.send_json({"zest": VERSION})
+        if p == "/ui/bye":                                        # a tab says it is closing (sent by the page as it unloads)
+            TABS.bye(self.headers.get("X-Tab") or urlparse(self.path).query.partition("tab=")[2])
+            return self.send_json({"ok": True})
         if p == "/ui/code":                                       # a second launch asks the running Shoggoth for a way in (it holds the secret)
             return self.send_json({"code": uiauth.new_code()})
         if not self.same_origin():
@@ -956,14 +994,14 @@ def zest_running(host, port):
 
 
 def watchdog(srv, grace):
-    """App mode: quit once the browser tab has been gone for `grace` seconds."""
+    """App mode: quit once the last browser tab has closed (a few seconds), or has been gone for `grace` seconds without saying goodbye."""
+    TABS.grace = grace
     started = time.time()
     while True:
-        time.sleep(5)
+        time.sleep(1)
         if agent.busy():
             continue              # a job is running or waiting on you: stay open even with the tab closed
-        last = _last_ping["t"]
-        if (last and time.time() - last > grace) or (not last and time.time() - started > 300):
+        if TABS.should_quit(started=started):
             srv.shutdown()
             return
 
