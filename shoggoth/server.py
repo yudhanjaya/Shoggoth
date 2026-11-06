@@ -8,6 +8,7 @@ logs. Shoggoth runs either its own bundled Lemonade ("built-in") or talks to one
 Standard library only. Listens on 127.0.0.1 unless told otherwise.
 """
 import argparse
+import hashlib
 import http.client
 import json
 import os
@@ -251,7 +252,7 @@ class Handler(BaseHTTPRequestHandler):
         u = urlparse(self.path)
         p = u.path
         if p == "/ui/ping":                                       # the version only: how a second launch finds this Shoggoth
-            return self.send_json({"zest": VERSION})
+            return self.send_json({"zest": VERSION, "profile": profile_id()})
         if p == "/" and uiauth.enabled() and uiauth.redeem(parse_qs(u.query).get("c", [""])[0]):
             return self._let_in()
         if not self.authed():
@@ -374,7 +375,7 @@ class Handler(BaseHTTPRequestHandler):
         if p == "/ui/ping":                                       # only the real page keeps Shoggoth open
             _last_ping["t"] = time.time()
             TABS.ping(self.headers.get("X-Tab"))
-            return self.send_json({"zest": VERSION})
+            return self.send_json({"zest": VERSION, "profile": profile_id()})
         if p == "/ui/bye":                                        # a tab says it is closing (sent by the page as it unloads)
             TABS.bye(self.headers.get("X-Tab") or urlparse(self.path).query.partition("tab=")[2])
             return self.send_json({"ok": True})
@@ -983,14 +984,35 @@ def open_window(host, port):
     return url
 
 
-def zest_running(host, port):
-    """The version of the Shoggoth answering on this port, or None when it isn't Shoggoth (or nothing is there)."""
+def profile_id():
+    """Who this Shoggoth belongs to: an id made from its data folder, so two profiles on one computer can tell their Shoggoths apart."""
+    return hashlib.sha256(os.path.abspath(store.data_dir()).encode()).hexdigest()[:12]
+
+
+def zest_info(host, port):
+    """What the Shoggoth answering on this port says about itself ({zest: version, profile: id}), or None when it isn't Shoggoth."""
     try:
         c = http.client.HTTPConnection(host, port, timeout=1.5)
         c.request("GET", "/ui/ping")
-        return json.loads(c.getresponse().read()).get("zest")
+        info = json.loads(c.getresponse().read())
+        return info if isinstance(info, dict) and info.get("zest") else None
     except (OSError, ValueError, AttributeError):
         return None
+
+
+def choose_port(port, version, profile, probe, taken):
+    """("reuse", port) when this profile's own Shoggoth of this version is already running on `port` or one of the next ten, else
+    ("start", the port to start on). Another profile's Shoggoth, or an older one, is left alone and the next free port is used."""
+    first = probe(port)
+    if not first:
+        return "start", port                                        # free, or something that isn't Shoggoth (starting will say so)
+    mine = [p for p in range(port, port + 11) if (probe(p) or {}).get("zest") == version and (probe(p) or {}).get("profile") == profile]
+    if mine:
+        return "reuse", mine[0]
+    for p in range(port + 1, port + 11):
+        if not probe(p) and not taken(p):
+            return "start", p
+    return "start", port
 
 
 def watchdog(srv, grace):
@@ -1027,23 +1049,21 @@ def main():
     shown = "127.0.0.1" if a.host in ("0.0.0.0", "::") else a.host
     url = f"http://{shown}:{a.port}"
 
-    there = zest_running(shown, a.port)
-    if there == VERSION:  # second launch: just show the existing one
-        print(f"Shoggoth is already running at {url}")
+    def taken(p):
+        try:
+            socket.create_connection((shown, p), timeout=0.3).close()
+            return True
+        except OSError:
+            return False
+    action, port = choose_port(a.port, VERSION, profile_id(), lambda p: zest_info(shown, p), taken)
+    if action == "reuse":  # a second launch: just show the one that is already running
+        print(f"Shoggoth is already running at http://{shown}:{port}")
         if not a.no_browser:
-            open_window(shown, a.port)
+            open_window(shown, port)
         return
-    if there:
-        # An older Shoggoth is still running (its window may be hidden). Showing it would open the old interface, so start
-        # this one beside it on the next free port; the old one quits by itself a few minutes after its tab closes.
-        for p in range(a.port + 1, a.port + 11):
-            if not zest_running(shown, p):
-                try:
-                    socket.create_connection((shown, p), timeout=0.3).close()
-                except OSError:
-                    print(f"Shoggoth {there} is still running on port {a.port}; starting Shoggoth {VERSION} on port {p} instead.", flush=True)
-                    a.port, url = p, f"http://{shown}:{p}"
-                    break
+    if port != a.port:
+        print(f"Another Shoggoth is already on port {a.port}, so Shoggoth {VERSION} is starting on port {port}.", flush=True)
+        a.port, url = port, f"http://{shown}:{port}"
     try:
         srv = ThreadingHTTPServer((a.host, a.port), Handler)
     except OSError as e:
