@@ -43,6 +43,7 @@ import registry    # noqa: E402
 import router      # noqa: E402
 import skills      # noqa: E402
 import strata      # noqa: E402
+import servers     # noqa: E402
 import modelmeta  # noqa: E402
 import tuning      # noqa: E402
 import uiauth      # noqa: E402
@@ -291,6 +292,8 @@ class Handler(BaseHTTPRequestHandler):
             self.send_json({"state": router.state(), "models": router.chat_models()})
         elif p == "/ui/providers":
             self.send_json(registry.default().summary())
+        elif p == "/ui/servers":
+            self.send_json({"presets": servers.presets(), "servers": servers.public()})
         elif p == "/ui/tuning":
             self.send_json({"targets": tuning.targets(), "job": tuning.status()})
         elif p == "/ui/tuning/job":
@@ -366,7 +369,7 @@ class Handler(BaseHTTPRequestHandler):
             "/ui/cowork/job/apply": self.post_job_apply, "/ui/cowork/job/discard": self.post_job_discard,
             "/ui/cowork/folders": self.post_cowork_folders, "/ui/cowork/seen": self.post_cowork_seen,
             "/ui/cowork/allow/remove": self.post_allow_remove, "/ui/cowork/folder": self.post_cowork_folder, "/ui/skills/install": self.post_skills_install, "/ui/pi/check": self.post_pi_check,
-            "/ui/pi/update": self.post_pi_update, "/ui/strata/start": self.post_strata_start, "/ui/strata/stop": self.post_strata_stop, "/ui/library/root": self.post_library_root, "/ui/library/folder": self.post_library_folder, "/ui/providers/approve": self.post_provider_approve, "/ui/providers/check": self.post_provider_check, "/ui/providers/update": self.post_provider_update, "/ui/providers/stop": self.post_provider_stop, "/ui/providers/reload": self.post_provider_reload, "/ui/tuning/plan": self.post_tuning_plan, "/ui/model/meta": self.post_model_meta, "/ui/tuning/run": self.post_tuning_run, "/ui/tuning/cancel": self.post_tuning_cancel, "/ui/tuning/action": self.post_tuning_action, "/ui/strata/setup": self.post_strata_setup, "/ui/strata/update": self.post_strata_update, "/ui/strata/idle": self.post_strata_idle, "/ui/strata/connect": self.post_strata_connect, "/ui/strata/forget": self.post_strata_forget, "/ui/strata/key": self.post_strata_key, "/ui/strata/install": self.post_strata_install, "/ui/update/all": self.post_update_all, "/ui/update/restart": self.post_update_restart, "/ui/pi/use": self.post_pi_use,
+            "/ui/pi/update": self.post_pi_update, "/ui/strata/start": self.post_strata_start, "/ui/strata/stop": self.post_strata_stop, "/ui/library/root": self.post_library_root, "/ui/library/folder": self.post_library_folder, "/ui/providers/approve": self.post_provider_approve, "/ui/providers/check": self.post_provider_check, "/ui/providers/update": self.post_provider_update, "/ui/providers/stop": self.post_provider_stop, "/ui/providers/reload": self.post_provider_reload, "/ui/servers": self.post_servers, "/ui/tuning/plan": self.post_tuning_plan, "/ui/model/meta": self.post_model_meta, "/ui/tuning/run": self.post_tuning_run, "/ui/tuning/cancel": self.post_tuning_cancel, "/ui/tuning/action": self.post_tuning_action, "/ui/strata/setup": self.post_strata_setup, "/ui/strata/update": self.post_strata_update, "/ui/strata/idle": self.post_strata_idle, "/ui/strata/connect": self.post_strata_connect, "/ui/strata/forget": self.post_strata_forget, "/ui/strata/key": self.post_strata_key, "/ui/strata/install": self.post_strata_install, "/ui/update/all": self.post_update_all, "/ui/update/restart": self.post_update_restart, "/ui/pi/use": self.post_pi_use,
             "/ui/skills/remove": self.post_skills_remove, "/ui/skills/toggle": self.post_skills_toggle,
             "/ui/models/storage": self.post_storage, "/ui/models/imports": self.post_imports,
         }.get(p)
@@ -758,6 +761,24 @@ class Handler(BaseHTTPRequestHandler):
 
     def post_provider_reload(self, body):
         self.send_json(registry.reload().summary())
+
+    def post_servers(self, body):
+        """Connect, test or remove a server the person runs themselves. Shoggoth only ever talks to these; it never starts or stops them."""
+        act = body.get("action")
+        if act == "test":
+            return self.send_json(servers.probe(str(body.get("url", "")), str(body.get("key", "")).strip()))
+        if act == "add":
+            url, key = str(body.get("url", "")), str(body.get("key", "")).strip()
+            entry = servers.add(str(body.get("preset", "")), url, key, str(body.get("name", "")))
+            result = {"ok": True, "server": next(s for s in servers.public() if s["id"] == entry["id"])}
+        elif act == "remove":
+            servers.remove(str(body.get("id", "")))
+            result = {"ok": True}
+        else:
+            raise ValueError("Choose to connect, test or remove a server.")
+        registry.reload()
+        router.invalidate()
+        self.send_json(dict(result, servers=servers.public()))
 
     @staticmethod
     def _tune_args(body):

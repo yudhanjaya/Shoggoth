@@ -3287,10 +3287,10 @@ function renderSetup(force){
   if(S.view === "backends") return renderPrefs(force);
 }
 /* ======================= Advanced > Engines: one card per engine, from the provider data ======================= */
-const ENG = {d: null, checks: {}, msg: "", sig: ""};
+const ENG = {d: null, srv: {presets: [], servers: []}, checks: {}, msg: "", sig: ""};
 const ENG_TIER = {"small-medium": "Small and medium models", large: "Large models"};
 async function engLoad(){
-  try{ ENG.d = await api("/ui/providers"); }catch(e){ ENG.msg = e.message; }
+  try{ [ENG.d, ENG.srv] = await Promise.all([api("/ui/providers"), api("/ui/servers")]); }catch(e){ ENG.msg = e.message; }
   renderEngines();
 }
 function engUpdateRow(p){
@@ -3307,7 +3307,29 @@ function engUpdateRow(p){
   if(c.available) return `<div class="erow"><span class="stat-dot busy"></span><span><b>A newer version is available</b>${c.latest ? " (" + esc(c.latest) + ")" : ""}.${c.deferred ? " It is running something you started, so it can't be replaced yet." : ""}</span>${c.deferred ? "" : `<button class="btn primary" data-eng="update" data-id="${esc(p.id)}">Update</button>`}</div>`;
   return `<div class="erow"><span class="stat-dot ok"></span><span>Up to date</span><button class="btn ghost" data-eng="check" data-id="${esc(p.id)}">Check again</button></div>`;
 }
+function engConnCard(p){                 // a server the person connected: Shoggoth uses it and never starts or stops it
+  const ms = p.models || [], state = p.needs_key ? `<span><b>Needs a key.</b> It answered, but wants an API key. Remove it and connect it again with the key.</span>`
+    : (p.running || []).length ? `<span><b>Answering</b> · ${ms.length ? ms.length + (ms.length === 1 ? " model: " : " models: ") + esc(ms.slice(0, 6).join(", ")) + (ms.length > 6 ? "…" : "") : "it has no models loaded right now"}</span>`
+    : `<span><b>Not answering right now.</b> Start it yourself; Shoggoth doesn't.</span>`;
+  return `<section class="panel engine" data-pid="${esc(p.id)}"><div class="ehead"><h3>${esc(p.name)}</h3><span class="chip">Connected by you</span></div>
+    <p class="help" style="margin:0"><span class="mono" style="overflow-wrap:anywhere">${esc(p.url || "")}</span></p>
+    <div class="estat">${state}</div>
+    <div class="erow"><button class="btn" data-eng="srvremove" data-id="${esc(p.id)}">Remove</button><span class="help" style="margin:0">Shoggoth forgets the address. It doesn't touch the server.</span></div></section>`;
+}
+function engConnect(){                   // the form that connects one
+  const pre = ENG.srv.presets || [], first = pre[0] || {};
+  return `<section class="panel engine"><div class="ehead"><h3>Connect a server</h3></div>
+    <p class="help" style="margin:0">Use a server you already run: Ollama, LM Studio, llama.cpp, Strata, Maya, Unsloth, or anything that speaks the OpenAI API. Shoggoth uses its models in chat and for your other apps. It doesn't install, start, stop or update the server.</p>
+    <form class="line" id="srvform" style="margin-top:8px;flex-wrap:wrap">
+      <select id="srvpre" aria-label="Which server">${pre.map(x => `<option value="${esc(x.id)}">${esc(x.name)}</option>`).join("")}</select>
+      <input id="srvurl" type="text" inputmode="url" value="${esc(first.url || "")}" placeholder="http://192.168.1.20:8000" autocomplete="off" spellcheck="false" aria-label="Server address">
+      <input id="srvkey" type="password" placeholder="API key (if it has one)" autocomplete="off" aria-label="API key">
+      <button class="btn" type="button" data-eng="srvtest">Test</button><button class="btn primary" type="submit">Connect</button></form>
+    <p class="help" id="srvhint" style="margin:6px 0 0">${esc(first.hint || "")}</p>
+    <p class="help" id="srvresult" style="margin:6px 0 0" role="status"></p></section>`;
+}
 function engCard(p){
+  if(p.connected) return engConnCard(p);
   const run = p.running || [], zestRuns = run.some(r => r.owner === "zest"), more = {strata: "Saved setups, connections and the large-model program", lemonade: "Kinds of model and the hardware they use"}[p.id];
   const stat = [p.installed ? `<span><b>${p.version ? "Version " + esc(p.version) : "Installed"}</b></span>` : `<span><b>Not installed</b></span>`,
     run.length ? run.map(r => `<span><b>Running</b> · ${r.owner === "zest" ? "started by Shoggoth" : "started by you"}${r.port ? ", port " + r.port : ""}</span>`).join("") : `<span>Not running right now. Shoggoth starts it when a model needs it.</span>`].join("");
@@ -3336,7 +3358,7 @@ function engMount(){                     // the engine-specific parts live in a 
 }
 function renderEngines(){
   const d = ENG.d, host = $("#engcards"); if(!d) return;
-  const sig = JSON.stringify([d, ENG.checks, ENG.msg]);
+  const sig = JSON.stringify([d, ENG.srv, ENG.checks, ENG.msg]);
   if(sig === ENG.sig) return;
   if(host.contains(document.activeElement) && /^(INPUT|SELECT|TEXTAREA)$/.test(document.activeElement.tagName)) return;
   ENG.sig = sig;
@@ -3346,13 +3368,28 @@ function renderEngines(){
   host.innerHTML = d.providers.map(engCard).join("");
   engMount();
   document.querySelectorAll("#engcards details.engmore").forEach(x => { if(open.has(x.dataset.part)) x.open = true; });
-  $("#engadd").innerHTML = engMore() + `<section class="panel engine"><div class="ehead"><h3>Add an engine</h3></div>
+  const form = ["#srvpre", "#srvurl", "#srvkey"].map(q => { const n = $(q); return n ? n.value : null; });
+  $("#engadd").innerHTML = engConnect() + engMore() + `<section class="panel engine"><div class="ehead"><h3>Add an engine</h3></div>
     <p class="help" style="margin:0">An engine is a folder with a <span class="mono">provider.yaml</span> file in it that says how to start the program, where to reach it and which models it can run. Put the folder in <span class="mono" style="overflow-wrap:anywhere">${esc(d.user_folder || "")}</span>, then press Reload. Shoggoth asks before it lets an added engine run a program.</p>
     <p class="help" style="margin:0">In a terminal, <span class="mono">Shoggoth-*.AppImage providers new my-engine</span> makes a starting folder, and <span class="mono">providers check &lt;folder&gt;</span> tells you what to fix before you press Reload. The guide is <span class="mono">docs/ENGINES.md</span> in the Shoggoth repository.</p>
     <div class="erow"><button class="btn" data-eng="reload">Reload engines</button></div>
     ${(d.errors || []).length ? `<div class="engerr"><b>Engines Shoggoth couldn't load</b>${d.errors.map(e => `<div class="note-bad"><code>${esc(e.folder)}</code><br>${esc(e.error)}</div>`).join("")}</div>` : ""}
     ${ENG.msg ? `<div class="note-bad">${esc(ENG.msg)}</div>` : ""}</section>`;
+  ["#srvpre", "#srvurl", "#srvkey"].forEach((q, i) => { const n = $(q); if(n && form[i] !== null) n.value = form[i]; });
 }
+function srvPreset(){ return (ENG.srv.presets || []).find(x => x.id === $("#srvpre").value) || {}; }
+document.addEventListener("change", e => {
+  if(e.target.id !== "srvpre") return;
+  const x = srvPreset(); $("#srvurl").value = x.url || ""; $("#srvhint").textContent = x.hint || ""; $("#srvresult").textContent = "";
+});
+document.addEventListener("submit", async e => {
+  if(e.target.id !== "srvform") return;
+  e.preventDefault(); const out = $("#srvresult");
+  try{
+    await api("/ui/servers", {method: "POST", body: JSON.stringify({action: "add", preset: $("#srvpre").value, url: $("#srvurl").value.trim(), key: $("#srvkey").value.trim()})});
+    $("#srvkey").value = ""; toast("Connected."); await engLoad();
+  }catch(err){ out.textContent = err.message; }
+});
 document.addEventListener("click", async e => {
   const b = e.target.closest("[data-eng]"); if(!b || !b.closest("#v-backends")) return;
   const act = b.dataset.eng, id = b.dataset.id; ENG.msg = "";
@@ -3361,6 +3398,15 @@ document.addEventListener("click", async e => {
     else if(act === "update"){ await api("/ui/providers/update", {method: "POST", body: JSON.stringify({id})}); delete ENG.checks[id]; }
     else if(act === "stop"){ if(!confirm("Stop it? It frees the memory it is using, and starts again when a model needs it.")) return; await api("/ui/providers/stop", {method: "POST", body: JSON.stringify({id})}); toast("Stopped."); await Promise.all([pollServer(), pkLoad(true)]); }
     else if(act === "approve"){ await api("/ui/providers/approve", {method: "POST", body: JSON.stringify({id})}); toast("Allowed."); }
+    else if(act === "srvtest"){
+      const out = $("#srvresult"); out.textContent = "Looking…";
+      const r = await api("/ui/servers", {method: "POST", body: JSON.stringify({action: "test", url: $("#srvurl").value.trim(), key: $("#srvkey").value.trim()})});
+      out.textContent = !r.reachable ? "Nothing answered at that address. Check that the server is running and the address is right."
+        : r.needs_key ? "It answered, but it wants an API key."
+        : r.models.length ? "Found it. Models: " + r.models.slice(0, 8).join(", ") + (r.models.length > 8 ? "…" : "") : "Found it. It has no models loaded right now.";
+      return;
+    }
+    else if(act === "srvremove"){ if(!confirm("Remove this server? Shoggoth forgets the address; the server itself is untouched.")) return; await api("/ui/servers", {method: "POST", body: JSON.stringify({action: "remove", id})}); toast("Removed."); }
     else if(act === "reload"){ await api("/ui/providers/reload", {method: "POST", body: "{}"}); toast("Engines reloaded."); }
   }catch(err){ ENG.checks["_busy_" + id] = false; ENG.msg = err.message; }
   await engLoad();

@@ -163,5 +163,82 @@ class AsAnEngine(Env):
             stop()
 
 
+class Routes(Env):
+    def setUp(self):
+        super().setUp()
+        import http.client  # noqa: F401
+        import server
+        import uiauth
+        os.environ.pop("SHOGGOTH_AUTH", None)
+        os.environ.pop("SHOGGOTH_TOKEN", None)
+        self.srv = server.ThreadingHTTPServer(("127.0.0.1", 0), server.Handler)
+        self.srv.daemon_threads = True
+        self.port = self.srv.server_address[1]
+        threading.Thread(target=self.srv.serve_forever, daemon=True).start()
+        self.auth = {"Authorization": "Bearer " + uiauth.token(), "Host": "127.0.0.1:%d" % self.port}
+
+    def tearDown(self):
+        self.srv.shutdown()
+        self.srv.server_close()
+        super().tearDown()
+
+    def call(self, method, path, body=None, auth=True):
+        import http.client
+        c = http.client.HTTPConnection("127.0.0.1", self.port, timeout=10)
+        c.request(method, path, body=json.dumps(body) if body is not None else None, headers=self.auth if auth else {"Host": self.auth["Host"]})
+        r = c.getresponse()
+        raw = r.read()
+        return r.status, raw
+
+    def test_add_then_list_then_remove(self):
+        url, stop = fake_server(models=("m1",))
+        try:
+            st, raw = self.call("POST", "/ui/servers", {"action": "add", "preset": "ollama", "url": url, "key": "sk-secret-0000"})
+            self.assertEqual(st, 200)
+            sid = json.loads(raw)["server"]["id"]
+            st, raw = self.call("GET", "/ui/servers")
+            d = json.loads(raw)
+            self.assertEqual([s["id"] for s in d["servers"]], [sid])
+            self.assertIn("ollama", [p["id"] for p in d["presets"]])
+            st, raw = self.call("GET", "/ui/providers")
+            ours = next(p for p in json.loads(raw)["providers"] if p["id"] == sid)
+            self.assertEqual((ours["connected"], ours["models"]), (True, ["m1"]))
+            self.assertEqual(self.call("POST", "/ui/servers", {"action": "remove", "id": sid})[0], 200)
+            self.assertEqual(json.loads(self.call("GET", "/ui/servers")[1])["servers"], [])
+            self.assertNotIn(sid, [p["id"] for p in json.loads(self.call("GET", "/ui/providers")[1])["providers"]])
+        finally:
+            stop()
+
+    def test_a_bad_address_is_a_400_in_plain_words(self):
+        st, raw = self.call("POST", "/ui/servers", {"action": "add", "preset": "other", "url": "file:///etc/passwd"})
+        self.assertEqual(st, 400)
+        self.assertIn("http://", json.loads(raw)["error"])
+        self.assertNotIn("Traceback", raw.decode())
+
+    def test_the_key_is_in_no_response(self):
+        url, stop = fake_server()
+        try:
+            out = [self.call("POST", "/ui/servers", {"action": "add", "preset": "ollama", "url": url, "key": "sk-abcd1234efgh5678"})[1],
+                   self.call("GET", "/ui/servers")[1], self.call("GET", "/ui/providers")[1],
+                   self.call("POST", "/ui/servers", {"action": "test", "url": url, "key": "sk-abcd1234efgh5678"})[1]]
+            for raw in out:
+                self.assertNotIn(b"sk-abcd1234efgh5678", raw)
+        finally:
+            stop()
+
+    def test_test_does_not_save_anything(self):
+        url, stop = fake_server(models=("a", "b"))
+        try:
+            st, raw = self.call("POST", "/ui/servers", {"action": "test", "url": url})
+            self.assertEqual(json.loads(raw)["models"], ["a", "b"])
+            self.assertEqual(servers.all(), [])
+        finally:
+            stop()
+
+    def test_it_needs_the_page_key(self):
+        for m, path in (("GET", "/ui/servers"), ("POST", "/ui/servers")):
+            self.assertEqual(self.call(m, path, {}, auth=False)[0], 401)
+
+
 if __name__ == "__main__":
     unittest.main()

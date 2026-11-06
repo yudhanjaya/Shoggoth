@@ -120,7 +120,7 @@ class ConnectedServer(provbase.GenericProvider):
         spec = {"id": entry["id"], "name": entry.get("name") or entry["id"], "api_version": 1, "tier": "", "run": {"mode": "external"},
                 "endpoint": {"base_url": entry["url"] + "/v1"}, "memory": {"group": ""}}
         super().__init__(spec, "", ctx)
-        self._seen = (0.0, [])
+        self._seen = (0.0, [], 0)
 
     def _entry(self):
         return get(self.id) or {"url": self.spec["endpoint"]["base_url"][:-3], "key": ""}
@@ -129,7 +129,7 @@ class ConnectedServer(provbase.GenericProvider):
         return self._entry().get("key", "")
 
     def _models(self):
-        t, v = self._seen
+        t, v, _ = self._seen
         if time.time() - t < 5:
             return v
         e = self._entry()
@@ -140,7 +140,7 @@ class ConnectedServer(provbase.GenericProvider):
                 if isinstance(m, dict) and m.get("id"):
                     ctx = ((m.get("meta") or {}).get("n_ctx") if isinstance(m.get("meta"), dict) else 0) or 0
                     out.append({"id": str(m["id"]), "ctx": int(ctx) if str(ctx).isdigit() else 0, "port": 0, "owner": "yours"})
-        self._seen = (time.time(), out)
+        self._seen = (time.time(), out, status)
         return out
 
     def detect(self):
@@ -148,7 +148,8 @@ class ConnectedServer(provbase.GenericProvider):
 
     def status(self):
         det = self.detect()
-        return dict(self.summary(), installed=True, running=det["running"], bin=None, problems=[], url=self._entry()["url"], connected=True)
+        return dict(self.summary(), installed=True, running=det["running"], bin=None, problems=[], url=self._entry()["url"], connected=True,
+                    needs_key=self._seen[2] in (401, 403), models=[m["id"] for m in self._models()])
 
     def models(self):
         return self._models()
@@ -161,7 +162,7 @@ class ConnectedServer(provbase.GenericProvider):
         return None
 
     def ensure(self, model_id, progress, opts=None):
-        self._seen = (0.0, [])
+        self._seen = (0.0, [], 0)
         ep = self.endpoint(model_id)
         if not ep:
             raise provbase.ProviderError("%s isn't answering, or doesn't list %s. Shoggoth doesn't start it; start it yourself and try again." % (self.name, model_id))

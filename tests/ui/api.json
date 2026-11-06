@@ -5630,5 +5630,22 @@
    "models": "/zest/recommendations/models.yaml",
    "tools": "/zest/recommendations/tools.yaml"
   }
+ },
+ "/ui/servers": {
+  "presets": [
+   {
+    "id": "ollama",
+    "name": "Ollama",
+    "url": "http://127.0.0.1:11434",
+    "hint": "Ollama's usual address."
+   },
+   {
+    "id": "other",
+    "name": "Another server",
+    "url": "",
+    "hint": "Any OpenAI-style server."
+   }
+  ],
+  "servers": []
  }
 }
