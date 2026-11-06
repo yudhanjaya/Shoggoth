@@ -39,6 +39,6 @@ Destinations contacted by Shoggoth and the bundled engines:
 - **html.duckduckgo.com, api.search.brave.com or api.tavily.com:** only when you let the model search the web, and only with the words of that search.
 - **codeload.github.com:** only when you paste a link under Skills, to download that repository's skills.
 - **registry.npmjs.org:** to look for and download Pi updates. The automatic-check switch covers it.
-- **api.github.com and github.com:** to look for and download Shoggoth and Lemonade updates (you can switch off the automatic check), for Lemonade to download the backends you install, and, if you use large models, for Strata's installer and its checksum list. Strata checks for its own engine updates from its own feed.
+- **api.github.com and github.com:** to look for and download Shoggoth and Lemonade updates (you can switch off the automatic check), for Lemonade to download the backends you install. Servers you connect under Advanced > Engines are contacted only at the address you gave.
 - **Hugging Face:** your engines download the models you choose from there, and Shoggoth reads a repository's public file list when you add one by link. Gated models, which need a login, aren't supported yet.
 - **Benchmark and community sites:** the links in **How do I choose a model?** open in your browser only when you click them. Shoggoth never contacts those sites itself.

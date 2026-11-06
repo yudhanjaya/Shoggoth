@@ -1,3 +1,5 @@
+> **Superseded by [2026-11-06-lemonade-plus-your-server.md](../2026-11-06-lemonade-plus-your-server.md): Strata is no longer shipped. Kept as history.**
+
 # Strata integration plan
 
 Goal: bigger-than-VRAM models (Strata) that feel built in. Install and forget, updates without thought, an existing

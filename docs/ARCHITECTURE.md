@@ -13,8 +13,8 @@ flowchart LR
     pi --> proxy["/api/v1 proxy"]
     srv --> proxy
     gw --> proxy
-    proxy --> lem["Lemonade<br/>small and medium models"]
-    proxy --> str["Strata<br/>large models"]
+    proxy --> lem["Lemonade"]
+    proxy --> srv2["Servers you connected<br/>Ollama, LM Studio, llama.cpp, ..."]
 ```
 
 | Component | Responsibility |
@@ -24,10 +24,10 @@ flowchart LR
 | `shoggoth/gateway.py` | The second listener for external clients (default port 13308), and the request recorder behind the Server page. |
 | `shoggoth/agent.py` | Runs Pi and the job loop. See [AGENT-RUNTIME.md](AGENT-RUNTIME.md). |
 | `shoggoth/providers/`, `provbase.py`, `registry.py` | Engine abstraction. See [ENGINES.md](ENGINES.md). |
-| `shoggoth/lem.py`, `strata.py`, `engine.py` | Lemonade and Strata control, and engine selection. |
+| `shoggoth/lem.py`, `engine.py`, `servers.py` | Lemonade control, and the servers a person connected. |
 | `shoggoth/hardware.py`, `gguf.py`, `modelmeta.py` | Device discovery and telemetry, GGUF header parsing, and the memory-fit estimate. |
 | `shoggoth/library.py`, `modelscan.py`, `hf.py` | The unified model library, import from other tools' folders, and Hugging Face file listings. |
-| `shoggoth/lemtune.py`, `tuning.py` | Model tuning for llama.cpp models. Strata's own tuner handles large models. |
+| `shoggoth/lemtune.py`, `tuning.py` | Model tuning for llama.cpp models on Lemonade. |
 | `shoggoth/skills.py`, `workcopy.py`, `folders.py`, `websearch.py` | Skills, work copies, per-folder trust, and the web search tool. |
 | `shoggoth/piup.py`, `zestup.py` | Updates for Pi and for Shoggoth itself. |
 
@@ -47,7 +47,7 @@ Each engine is a provider (`provider.yaml`, optionally `provider.py`). The regis
 
 **Hugging Face downloads.** A download is registered with Lemonade as a custom model: id `user.<name>-<quant>`, checkpoint `org/repo:QUANT`, recipe `llamacpp`. This part of Lemonade's API has changed between releases; `providers doctor` detects drift.
 
-**Strata.** Large models run on Strata. Shoggoth installs it on first use from the published installer after verifying the published checksum. A Strata instance started by the user is detected and used, but never stopped, restarted, or updated.
+**Connected servers.** A server the person runs (Ollama, LM Studio, llama.cpp, Strata, Maya, Unsloth, or any OpenAI-style server) is saved by address under Advanced > Engines and becomes an address-only engine. Shoggoth reads its model list and sends requests to it, and never installs, starts, stops, updates or tunes it.
 
 ## Hardware discovery
 

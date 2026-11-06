@@ -275,5 +275,33 @@ class Routes(Env):
             self.assertEqual(self.call(m, path, {}, auth=False)[0], 401)
 
 
+class NothingShippedForOtherEngines(unittest.TestCase):
+    """Shoggoth ships Lemonade only. Other servers are connected by address, and nothing here may install, start, update or tune them."""
+    # names and default addresses only; models.yaml has the owner's own "coming soon" text, which says "Project Maya"
+    ALLOWED = {"servers.py", os.path.join("recommendations", "servers.yaml"), os.path.join("recommendations", "models.yaml"), "index.html", "docs.md"}
+
+    def test_shipped_code_has_no_strata_or_maya_setup(self):
+        root = os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", "shoggoth")
+        bad = []
+        for base, dirs, files in os.walk(root):
+            dirs[:] = [d for d in dirs if d not in ("_vendor", "vendor", "__pycache__", "node_modules", "pi", "skills")]
+            for f in files:
+                if not f.endswith((".py", ".yaml", ".html", ".md", ".js")):
+                    continue
+                path = os.path.join(base, f)
+                text = open(path, encoding="utf8").read().lower() if "base64," not in f else ""
+                rel = os.path.relpath(path, root)
+                for marker in ("strata launch", "strata tune", "strata update", "install.sh", "import strata"):
+                    if marker in text:
+                        bad.append((rel, marker))
+                if "maya" in text and rel not in self.ALLOWED:
+                    bad.append((rel, "maya"))
+        self.assertEqual(bad, [])
+
+    def test_the_only_bundled_engine_is_lemonade(self):
+        folders = [d for d in os.listdir(os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", "shoggoth", "providers")) if not d.startswith("_")]
+        self.assertEqual(folders, ["lemonade"])
+
+
 if __name__ == "__main__":
     unittest.main()
