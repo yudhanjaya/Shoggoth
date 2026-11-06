@@ -297,9 +297,9 @@ main{display:flex;flex-direction:column;min-width:0;height:100dvh}
 .filters input{margin-left:auto;min-height:38px;border:1px solid var(--line);border-radius:999px;background:var(--surface);padding:0 16px;outline:none;min-width:180px}
 .filters input:focus{border-color:var(--lemon)}
 .grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(310px,1fr));gap:16px}
-.card{position:relative;border:1px solid var(--line);background:var(--surface);border-radius:var(--radius);padding:20px;display:flex;flex-direction:column;gap:16px;transition:border-color .2s,transform .2s var(--ease)}
-.card:hover{border-color:var(--faint);transform:translateY(-2px)}
-.card.loaded{border-color:var(--lemon);background:linear-gradient(180deg,var(--lemon-wash),transparent 60%),var(--surface)}
+.card{position:relative;border:1px solid var(--line);background:var(--surface);border-radius:var(--radius);padding:20px;display:flex;flex-direction:column;gap:16px;transition:border-color .2s}
+.card:hover{border-color:var(--faint)}
+.card.loaded{border-color:var(--lemon);background:var(--lemon-wash)}
 .card h3{margin:0;font:600 19px/1.2 var(--sans);overflow-wrap:anywhere}
 .card .tags{display:flex;gap:8px;flex-wrap:wrap}
 .card .row{display:flex;justify-content:space-between;align-items:baseline;font-size:13px;color:var(--muted)}
@@ -568,6 +568,12 @@ a:not([class]){color:var(--lemon-text);text-underline-offset:3px}
 .addfound small{display:block;color:var(--muted)}
 .libwhere{display:flex;flex-wrap:wrap;gap:8px 16px;align-items:center;font-size:13px;color:var(--muted);margin:-4px 0 16px}
 .libwhere b{color:var(--text);font-weight:600;overflow-wrap:anywhere}
+#srvform{gap:8px}
+#srvform select,#srvform input{min-height:40px;border:1px solid var(--line);border-radius:10px;background:var(--surface);color:var(--text);font:inherit;font-size:14px;padding:0 12px}
+#srvform input{flex:1 1 200px;min-width:0}
+#srvform select{flex:0 0 auto;padding-right:8px}
+#srvform input:focus,#srvform select:focus{border-color:var(--lemon);outline:none}
+#srvhint,#srvresult{font-size:14px}#srvresult:empty{display:none}
 .libplaces{display:grid;gap:8px;margin:12px 0;min-width:0}
 .libplaces label{min-width:0;flex-wrap:wrap}.libplaces label span,.libplaces label b{min-width:0;overflow-wrap:anywhere}
 .libplaces label{display:flex;gap:12px;align-items:center;padding:8px 12px;border:1px solid var(--line);border-radius:10px;background:var(--surface);cursor:pointer;font-size:13.5px}
@@ -621,7 +627,7 @@ a:not([class]){color:var(--lemon-text);text-underline-offset:3px}
 .linkbtn{border:0;background:none;color:var(--lemon-text);text-decoration:underline;text-underline-offset:3px;padding:0;font:inherit;cursor:pointer}
 .note-warn{border:1px solid color-mix(in srgb,var(--warn) 45%,transparent);background:var(--warn-bg);color:var(--warn);border-radius:12px;padding:12px 16px;font-size:14px}
 .note-warn a{color:inherit;font-weight:600}
-.card .ctop{display:grid;grid-template-columns:minmax(0,1fr);gap:6px 12px;align-items:start}
+.card .ctop{display:grid;grid-template-columns:minmax(0,1fr);gap:8px 12px;align-items:start}
 .card .ctop:has(.cthumb){grid-template-columns:auto minmax(0,1fr)}
 .card .ctop h3{overflow-wrap:anywhere}.card .ctop .chip{order:-1;justify-self:start}
 .card .ctop .cthumb{grid-column:1;grid-row:1 / span 3}.card .ctop:has(.cthumb)>:not(.cthumb){grid-column:2}
@@ -2266,6 +2272,15 @@ function whatFor(m){
   if(l.some(x => /embed/.test(x))) out.push("Helps other apps search your files");
   if(l.some(x => /rerank/.test(x))) out.push("Helps other apps sort search results");
   if(l.includes("tool-calling")) out.push("Can use tools");
+  if(!out.length){
+    if(l.some(x => /^(tts|voice-design)$/.test(x))) return "Reads text aloud";
+    if(l.some(x => /transcription/.test(x))) return "Turns speech into text";
+    if(l.includes("audio-generation")) return "Makes music and sound";
+    if(l.includes("classification")) return "Sorts text into categories";
+    if(l.includes("upscaling")) return "Sharpens pictures";
+    if(l.includes("3d")) return "Makes 3D models";
+    if(l.includes("image")) return "Draws pictures from a description";
+  }
   return out.join(" · ") || "Everyday chat and writing";
 }
 function fitInfo(m){
@@ -2313,14 +2328,16 @@ document.addEventListener("change", async e => {
   try{ await api("/ui/model/meta", {method: "POST", body: JSON.stringify({model: sel.dataset.hr, headroom_gb: sel.value})}); HR.set[sel.dataset.hr] = Number(sel.value); toast(Number(sel.value) ? `It will leave ${sel.value} GB free the next time it starts.` : "It won't keep any graphics memory free."); }
   catch(err){ toast(err.message); }
 });
-function cardHTML(m, extra, title){
+const TAG_WORDS = {llamacpp: "llama.cpp", "sd-cpp": "stable-diffusion.cpp", whispercpp: "whisper.cpp", "tool-calling": "Tool use", tts: "Text to speech", onnxruntime: "ONNX", mtp: "MTP", dflash: "DFlash", "3d": "3D", "voice-design": "Voice design", "audio-generation": "Audio generation", "chat-transcription": "Chat transcription", "realtime-transcription": "Live transcription", hot: "Popular", "collection.omni": "Omni"};
+const tagWord = l => TAG_WORDS[l] || (l ? l[0].toUpperCase() + l.slice(1) : l);
+function cardHTML(m, extra, title, quiet){            // quiet: in a long list the Get it button is plain, so the bright button means a model you have
   const f = fitInfo(m), isLoaded = m.id === S.loaded, job = dlJob(m.id);
-  const tags = [m.recipe, ...(m.labels||[]).filter(l => l !== m.recipe)].map(l => `<span class="chip">${esc(l)}</span>`).join("");
+  const tags = [m.recipe, ...(m.labels||[]).filter(l => l !== m.recipe)].map(l => `<span class="chip">${esc(tagWord(l))}</span>`).join("");
   let act;
   if(!m.downloaded){
     act = job ? `<div class="dlrow" style="flex:1"><div class="prog" style="flex:1"><i style="width:${job.percent}%"></i></div>${job.percent}%</div><button class="btn" data-canceldl="${esc(m.id)}">Cancel</button>`
       : S.dlSupported === false ? `<button class="btn" data-copycmd="${esc(m.id)}">${ICON.copy} Copy download command</button>`
-      : `<button class="btn primary" data-dl="${esc(m.id)}">Get it${m.size ? " · " + (m.size < 10 ? m.size.toFixed(1) : Math.round(m.size)) + " GB" : ""}</button>`;
+      : `<button class="btn${quiet ? "" : " primary"}" data-dl="${esc(m.id)}">Get it${m.size ? " · " + (m.size < 10 ? m.size.toFixed(1) : Math.round(m.size)) + " GB" : ""}</button>`;
   } else act = `<button class="btn primary" data-chat="${esc(m.id)}">Chat with it</button><button class="btn" data-opts="${esc(m.id)}">${ICON.sliders} Settings</button>`;
   const sh = m.downloaded ? speedHistory(m.id) : null, [shWord, shCls] = sh ? speedWord(sh.tps) : ["", ""];
   const spLine = sh ? `<div class="speedline"><span class="sw ${shCls}">${shWord}</span><span>About <b class="num">${fmtRate(sh.tps)}</b> tok/s on this computer${sh.n > 1 ? ` <small>(from ${sh.n} answers)</small>` : ""}</span></div>` : "";
@@ -2428,8 +2445,6 @@ function bigCard(e){          // an installed model that another engine runs (no
       ${e.context ? `<div class="mid">Remembers up to ${fmtTok(e.context)} tokens of conversation</div>` : ""}
       <div class="undereng">Runs on ${esc(e.engine_name)}</div></div></details></article>`;
 }
-/* the engine's name sits at the right of a card's Details row */
-const libUnder = card => card.replace("<summary>Details</summary>", '<summary>Details<span class="eng">Runs on Lemonade</span></summary>');
 function libGrid(items){ return items.length ? `<div class="grid">${items.join("")}</div>` : ""; }
 function libSection(t, cards, note){ return cards.length ? `<section class="picktier"><div class="tierhead"><h3>${esc(t[1])}</h3>${t[2] ? `<p>${esc(t[2])}</p>` : ""}</div>${note || ""}<div class="grid">${cards.join("")}</div></section>` : ""; }
 const libMatch = (m, q) => !q || m.id.toLowerCase().includes(q) || friendly(m).toLowerCase().includes(q) || (m.labels || []).some(l => l.includes(q));
@@ -2440,11 +2455,11 @@ function libInstalled(){
   for(const e of cat){
     if(!(!q || e.title.toLowerCase().includes(q) || e.stem.toLowerCase().includes(q))) continue;
     const lid = (e.ids || {}).lemonade, lm = lid && S.models.find(x => x.id === lid);
-    if(lm){ seen.add(lm.id); by.tier[e.tier || libTier(e.size_bytes / 1e9)].push(libUnder(cardHTML(lm, "", titles[lm.id]))); }
+    if(lm){ seen.add(lm.id); by.tier[e.tier || libTier(e.size_bytes / 1e9)].push(cardHTML(lm, "", titles[lm.id], true)); }
     else if(e.provider && e.provider !== "lemonade" && e.ref !== undefined) by.tier[e.tier || "large"].push(bigCard(e));
   }
   for(const m of S.models.filter(m => m.downloaded && !seen.has(m.id) && libMatch(m, q)))
-    by.tier[isChatModel(m) ? libTier(m.size) : "other"].push(libUnder(cardHTML(m, "", titles[m.id])));
+    by.tier[isChatModel(m) ? libTier(m.size) : "other"].push(cardHTML(m, "", titles[m.id], true));
   return LIB_TIERS.map(t => libSection(t, by.tier[t[0]])).join("") || `<div class="empty-note">${q ? "Nothing matches." : "You don't have any models yet. Open <b>Recommended for this computer</b> to get one."}</div>`;
 }
 /* what a pick says about itself, from models.yaml: it is true of the model whether or not an engine is installed yet */
@@ -2497,7 +2512,7 @@ function libRecommended(){
   for(const it of rm.recommended){
     const m = recModel(it), gb = m ? m.size : it.size_gb, name = it.title || (m ? friendly(m) : friendly(it.id));
     if(q && !(name.toLowerCase().includes(q) || it.id.toLowerCase().includes(q))) continue;
-    by[libTier(gb)].push(m ? libUnder(cardHTML(m, recExtra(it, gb), it.title)) : recGetCard(it));
+    by[libTier(gb)].push(m ? cardHTML(m, recExtra(it, gb), it.title) : recGetCard(it));
   }
   const soon = (rm.coming_soon || []).filter(c => !q || c.title.toLowerCase().includes(q)).map(recSoonCard);
   const html = LIB_TIERS.slice(0, 3).map(t => libSection(t, by[t[0]])).join("") + libSection(["soon", "Coming soon", "Not ready yet."], soon);
@@ -2506,7 +2521,7 @@ function libRecommended(){
 function libEverything(){
   const q = LIB.q.toLowerCase(), by = {small: [], medium: [], large: [], other: []}, titles = libTitles(S.models);
   for(const m of S.models.filter(m => libKind(m, LIB.kind) && libMatch(m, q)).sort((a, b) => b.downloaded - a.downloaded || a.id.localeCompare(b.id)))
-    by[isChatModel(m) ? libTier(m.size) : "other"].push(libUnder(cardHTML(m, "", titles[m.id])));
+    by[isChatModel(m) ? libTier(m.size) : "other"].push(cardHTML(m, "", titles[m.id], true));
   if(["all", "chat"].includes(LIB.kind)){
     for(const e of ((LIB.d || {}).models || []).filter(e => e.provider && e.provider !== "lemonade" && (!q || e.title.toLowerCase().includes(q)))) by.large.push(bigCard(e));
   }
@@ -3289,8 +3304,8 @@ function engConnect(){                   // the form that connects one
       <select id="srvpre" aria-label="Which server">${pre.map(x => `<option value="${esc(x.id)}">${esc(x.name)}</option>`).join("")}</select>
       <input id="srvurl" type="text" inputmode="url" value="${esc(first.url || "")}" placeholder="http://192.168.1.20:8000" autocomplete="off" spellcheck="false" aria-label="Server address">
       <input id="srvkey" type="password" placeholder="API key (if it has one)" autocomplete="off" aria-label="API key">
-      <button class="btn" type="button" data-eng="srvtest">Test</button><button class="btn primary" type="submit">Connect</button></form>
-    <div class="line" style="margin-top:10px"><button class="btn" type="button" data-eng="srvprobe">Probe and connect</button><span class="help" style="margin:0">Looks on this computer at the usual address of each server above and connects the ones that answer.</span></div>
+      <button class="btn primary" type="submit">Probe and connect</button></form>
+    <p class="help" style="margin:6px 0 0">Looks at the address above and at the usual address of each server in the list, and connects the ones that answer.</p>
     <p class="help" id="srvhint" style="margin:6px 0 0">${esc(first.hint || "")}</p>
     <p class="help" id="srvresult" style="margin:6px 0 0" role="status">${esc(ENG.probeMsg || "")}</p></section>`;
 }
@@ -3350,11 +3365,21 @@ document.addEventListener("change", e => {
 });
 document.addEventListener("submit", async e => {
   if(e.target.id !== "srvform") return;
-  e.preventDefault(); const out = $("#srvresult");
+  e.preventDefault(); const out = $("#srvresult"), btn = e.target.querySelector("button[type=submit]");
+  out.textContent = "Looking…"; ENG.probeMsg = ""; btn.disabled = true;
   try{
-    await api("/ui/servers", {method: "POST", body: JSON.stringify({action: "add", preset: $("#srvpre").value, url: $("#srvurl").value.trim(), key: $("#srvkey").value.trim()})});
-    $("#srvkey").value = ""; toast("Connected."); await engLoad();
+    const r = await api("/ui/servers", {method: "POST", body: JSON.stringify({action: "probe", preset: $("#srvpre").value, url: $("#srvurl").value.trim(), key: $("#srvkey").value.trim()})});
+    $("#srvkey").value = "";
+    ENG.probeMsg = [r.connected.length ? "Connected: " + r.connected.map(c => `${c.name} (${c.url})`).join(", ") + "." : "",
+      r.unreachable.length ? "Nothing answered at " + r.unreachable.join(", ") + ". Check that it is running and the address is right." : "",
+      r.needs_key.length ? "Wants a key, so not connected: " + r.needs_key.join(", ") + ". Type its key above and try again." : "",
+      r.already.length ? "Already connected: " + r.already.join(", ") + "." : "",
+      r.found || r.unreachable.length ? "" : "Nothing answered at the usual addresses. Start your server, or type its address above."].filter(Boolean).join(" ");
+    out.textContent = ENG.probeMsg;
+    if(r.connected.length) toast("Connected " + r.connected.length + ".");
+    await engLoad();
   }catch(err){ out.textContent = err.message; }
+  finally{ btn.disabled = false; }
 });
 document.addEventListener("click", async e => {
   const b = e.target.closest("[data-eng]"); if(!b || !b.closest("#v-backends")) return;
@@ -3364,25 +3389,6 @@ document.addEventListener("click", async e => {
     else if(act === "update"){ await api("/ui/providers/update", {method: "POST", body: JSON.stringify({id})}); delete ENG.checks[id]; }
     else if(act === "stop"){ if(!confirm("Stop it? It frees the memory it is using, and starts again when a model needs it.")) return; await api("/ui/providers/stop", {method: "POST", body: JSON.stringify({id})}); toast("Stopped."); await Promise.all([pollServer(), pkLoad(true)]); }
     else if(act === "approve"){ await api("/ui/providers/approve", {method: "POST", body: JSON.stringify({id})}); toast("Allowed."); }
-    else if(act === "srvtest"){
-      const out = $("#srvresult"); out.textContent = "Looking…";
-      const r = await api("/ui/servers", {method: "POST", body: JSON.stringify({action: "test", url: $("#srvurl").value.trim(), key: $("#srvkey").value.trim()})});
-      out.textContent = !r.reachable ? "Nothing answered at that address. Check that the server is running and the address is right."
-        : r.needs_key ? "It answered, but it wants an API key."
-        : r.models.length ? "Found it. Models: " + r.models.slice(0, 8).join(", ") + (r.models.length > 8 ? "…" : "") : "Found it. It has no models loaded right now.";
-      return;
-    }
-    else if(act === "srvprobe"){
-      const out = $("#srvresult"); out.textContent = "Looking at the usual addresses…"; ENG.probeMsg = ""; b.disabled = true;
-      let r; try{ r = await api("/ui/servers", {method: "POST", body: JSON.stringify({action: "probe"})}); } finally { b.disabled = false; }
-      const names = r.connected.map(c => `${c.name} (${c.url})`);
-      ENG.probeMsg = [r.connected.length ? "Connected: " + names.join(", ") + "." : "",
-        r.needs_key.length ? "Wants a key, so not connected: " + r.needs_key.join(", ") + ". Use the form above with its key." : "",
-        r.already.length ? "Already connected: " + r.already.join(", ") + "." : "",
-        r.found ? "" : "Nothing answered at the usual addresses. Start your server, or type its address above."].filter(Boolean).join(" ");
-      out.textContent = ENG.probeMsg;
-      if(r.connected.length) toast("Connected " + r.connected.length + ".");
-    }
     else if(act === "srvremove"){ if(!confirm("Remove this server? Shoggoth forgets the address; the server itself is untouched.")) return; await api("/ui/servers", {method: "POST", body: JSON.stringify({action: "remove", id})}); toast("Removed."); }
     else if(act === "reload"){ await api("/ui/providers/reload", {method: "POST", body: "{}"}); toast("Engines reloaded."); }
   }catch(err){ ENG.checks["_busy_" + id] = false; ENG.msg = err.message; }

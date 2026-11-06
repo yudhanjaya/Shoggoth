@@ -138,12 +138,66 @@ class Discovering(Env):
         a, sa = fake_server()
         sa()
         with self.presets_at(ollama=a):
-            self.assertEqual(servers.connect_found(), {"connected": [], "needs_key": [], "already": [], "found": 0})
+            self.assertEqual(servers.connect_found(), {"connected": [], "needs_key": [], "already": [], "unreachable": [], "found": 0})
 
     def test_it_finds_nothing_on_a_computer_with_no_servers_without_waiting(self):
         t = time.time()
         servers.discover()
         self.assertLess(time.time() - t, 4.0)
+
+
+class TypedAddress(Env):
+    """The one yellow button also looks at the address in the box."""
+    def only_other(self):
+        from unittest import mock
+        return mock.patch.object(servers, "presets", lambda: [{"id": "other", "name": "Another server", "url": "", "hint": ""}])
+
+    def test_the_typed_address_is_connected_with_its_key(self):
+        url, stop = fake_server()
+        try:
+            with self.only_other():
+                r = servers.connect_found(typed={"preset": "other", "url": url + "/v1/", "key": "k1"})
+            self.assertEqual([c["url"] for c in r["connected"]], [servers.normalise(url)])
+            self.assertEqual(servers.all()[0]["key"], "k1")
+        finally:
+            stop()
+
+    def test_a_typed_address_that_wants_a_key_is_not_connected_without_one(self):
+        url, stop = fake_server(status=401)
+        try:
+            with self.only_other():
+                r = servers.connect_found(typed={"preset": "other", "url": url, "key": ""})
+            self.assertEqual((r["connected"], r["needs_key"]), ([], [servers.normalise(url)]))
+        finally:
+            stop()
+
+    def test_a_typed_address_nothing_answers_at_is_named(self):
+        url, stop = fake_server()
+        stop()
+        with self.only_other():
+            r = servers.connect_found(typed={"preset": "other", "url": url})
+        self.assertEqual((r["connected"], r["unreachable"], r["found"]), ([], [servers.normalise(url)], 0))
+
+    def test_an_empty_box_still_looks_at_the_usual_addresses(self):
+        a, sa = fake_server()
+        try:
+            from unittest import mock
+            with mock.patch.object(servers, "presets", lambda: [{"id": "ollama", "name": "Ollama", "url": a, "hint": ""}, {"id": "other", "name": "Another server", "url": "", "hint": ""}]):
+                r = servers.connect_found(typed={"preset": "ollama", "url": ""})
+            self.assertEqual([c["id"] for c in r["connected"]], ["ollama"])
+        finally:
+            sa()
+
+    def test_the_typed_address_is_not_connected_twice_when_it_is_also_a_usual_one(self):
+        a, sa = fake_server()
+        try:
+            from unittest import mock
+            with mock.patch.object(servers, "presets", lambda: [{"id": "ollama", "name": "Ollama", "url": a, "hint": ""}, {"id": "other", "name": "Another server", "url": "", "hint": ""}]):
+                r = servers.connect_found(typed={"preset": "ollama", "url": a})
+            self.assertEqual(len(r["connected"]), 1)
+            self.assertEqual(len(servers.all()), 1)
+        finally:
+            sa()
 
 
 class Migrating(Env):
@@ -277,18 +331,22 @@ class Routes(Env):
         raw = r.read()
         return r.status, raw
 
-    def test_add_then_list_then_remove(self):
+    def probe(self, **body):
+        from unittest import mock
+        only_typed = [{"id": "other", "name": "Another server", "url": "", "hint": ""}]          # nothing usual to scan: only what was typed
+        with mock.patch.object(servers, "presets", lambda: only_typed):
+            return self.call("POST", "/ui/servers", dict(action="probe", preset="other", **body))
+
+    def test_probe_connects_the_typed_address_then_lists_and_removes_it(self):
         url, stop = fake_server(models=("m1",))
         try:
-            st, raw = self.call("POST", "/ui/servers", {"action": "add", "preset": "ollama", "url": url, "key": "sk-secret-0000"})
-            self.assertEqual(st, 200)
-            sid = json.loads(raw)["server"]["id"]
-            st, raw = self.call("GET", "/ui/servers")
+            st, raw = self.probe(url=url, key="sk-secret-0000")
             d = json.loads(raw)
+            self.assertEqual((st, [c["url"] for c in d["connected"]]), (200, [servers.normalise(url)]))
+            sid = d["connected"][0]["id"]
+            d = json.loads(self.call("GET", "/ui/servers")[1])
             self.assertEqual([s["id"] for s in d["servers"]], [sid])
-            self.assertIn("ollama", [p["id"] for p in d["presets"]])
-            st, raw = self.call("GET", "/ui/providers")
-            ours = next(p for p in json.loads(raw)["providers"] if p["id"] == sid)
+            ours = next(p for p in json.loads(self.call("GET", "/ui/providers")[1])["providers"] if p["id"] == sid)
             self.assertEqual((ours["connected"], ours["models"]), (True, ["m1"]))
             self.assertEqual(self.call("POST", "/ui/servers", {"action": "remove", "id": sid})[0], 200)
             self.assertEqual(json.loads(self.call("GET", "/ui/servers")[1])["servers"], [])
@@ -297,7 +355,7 @@ class Routes(Env):
             stop()
 
     def test_a_bad_address_is_a_400_in_plain_words(self):
-        st, raw = self.call("POST", "/ui/servers", {"action": "add", "preset": "other", "url": "file:///etc/passwd"})
+        st, raw = self.probe(url="file:///etc/passwd")
         self.assertEqual(st, 400)
         self.assertIn("http://", json.loads(raw)["error"])
         self.assertNotIn("Traceback", raw.decode())
@@ -305,22 +363,23 @@ class Routes(Env):
     def test_the_key_is_in_no_response(self):
         url, stop = fake_server()
         try:
-            out = [self.call("POST", "/ui/servers", {"action": "add", "preset": "ollama", "url": url, "key": "sk-abcd1234efgh5678"})[1],
-                   self.call("GET", "/ui/servers")[1], self.call("GET", "/ui/providers")[1],
-                   self.call("POST", "/ui/servers", {"action": "test", "url": url, "key": "sk-abcd1234efgh5678"})[1]]
+            out = [self.probe(url=url, key="sk-abcd1234efgh5678")[1], self.call("GET", "/ui/servers")[1], self.call("GET", "/ui/providers")[1]]
             for raw in out:
                 self.assertNotIn(b"sk-abcd1234efgh5678", raw)
         finally:
             stop()
 
-    def test_test_does_not_save_anything(self):
-        url, stop = fake_server(models=("a", "b"))
-        try:
-            st, raw = self.call("POST", "/ui/servers", {"action": "test", "url": url})
-            self.assertEqual(json.loads(raw)["models"], ["a", "b"])
-            self.assertEqual(servers.all(), [])
-        finally:
-            stop()
+    def test_an_address_nothing_answers_at_is_reported_and_not_saved(self):
+        url, stop = fake_server()
+        stop()
+        st, raw = self.probe(url=url)
+        d = json.loads(raw)
+        self.assertEqual((st, d["connected"], d["unreachable"]), (200, [], [servers.normalise(url)]))
+        self.assertEqual(servers.all(), [])
+
+    def test_the_old_add_and_test_actions_are_gone(self):
+        for act in ("add", "test"):
+            self.assertEqual(self.call("POST", "/ui/servers", {"action": act, "url": "http://h:1"})[0], 400)
 
     def test_probe_connects_what_answers(self):
         from unittest import mock

@@ -167,13 +167,30 @@ def discover(connected=None):
     return out
 
 
-def connect_found(found=None):
-    """Connect every server `discover` found that is not connected yet and does not need a key. Returns
-    {connected: [{id, name, url}], needs_key: [url], already: [url], found: n}."""
+def connect_found(found=None, typed=None):
+    """Connect what answers: the address the person typed (with its key), then every usual address `discover` finds. Skips servers that
+    are already connected, and ones that want a key Shoggoth wasn't given. Returns
+    {connected: [{id, name, url}], needs_key: [url], already: [url], unreachable: [url], found: n}."""
+    res = {"connected": [], "needs_key": [], "already": [], "unreachable": [], "found": 0}
+    if typed and str(typed.get("url") or "").strip():
+        url = normalise(typed["url"])
+        r = probe(url, typed.get("key", ""))
+        if not r["reachable"]:
+            res["unreachable"].append(url)
+        elif r["needs_key"]:
+            res["needs_key"].append(url)
+            res["found"] += 1
+        else:
+            res["found"] += 1
+            try:
+                e = add(typed.get("preset") or "other", url, typed.get("key", ""), "")
+                res["connected"].append({"id": e["id"], "name": e["name"], "url": e["url"]})
+            except ValueError:
+                res["already"].append(url)
     found = discover() if found is None else found
-    res = {"connected": [], "needs_key": [], "already": [], "found": len(found)}
+    res["found"] += len(found)
     for f in found:
-        if f["already"]:
+        if f["already"] or f["url"] in res["already"]:
             res["already"].append(f["url"])
         elif f["needs_key"]:
             res["needs_key"].append(f["url"])

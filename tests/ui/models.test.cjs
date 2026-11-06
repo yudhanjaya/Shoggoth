@@ -62,3 +62,59 @@ test("saved settings wrap instead of being cut off", () => {
 test("the folder chooser can't make the page wider than the screen", () => {
   assert.match(html, /\.libplaces[^{]*\{[^}]*min-width:\s*0/);
 });
+
+// ---- unslop polish: what the audit found on All models and Connect a server
+const WORLD = {
+  "/api/v1/models?show_all=true": { data: [
+    { id: "Phishing-Email-Detection-ONNX", recipe: "onnxruntime", labels: ["classification"], size: 0.27, downloaded: false },
+    { id: "MOSS-TTS-Local", recipe: "openmoss", labels: ["tts"], size: 4, downloaded: false },
+    { id: "TRELLIS-3D", recipe: "trellis", labels: ["3d"], size: 6, downloaded: false },
+    { id: "Qwen3-8B-GGUF", recipe: "llamacpp", labels: ["chat", "hot", "tool-calling"], size: 5, downloaded: false, checkpoint: "unsloth/Qwen3-8B-GGUF:Q4_K_M" },
+    { id: "Qwen3-4B-GGUF", recipe: "llamacpp", labels: ["chat"], size: 2.5, downloaded: true },
+  ] },
+};
+
+test("a model that isn't for chat says what it does, not 'everyday chat'", async () => {
+  const { w } = await boot(WORLD);
+  const say = id => w.eval(`whatFor(S.models.find(m => m.id === ${JSON.stringify(id)}))`);
+  assert.equal(say("Phishing-Email-Detection-ONNX"), "Sorts text into categories");
+  assert.equal(say("MOSS-TTS-Local"), "Reads text aloud");
+  assert.equal(say("TRELLIS-3D"), "Makes 3D models");
+  assert.equal(say("Qwen3-8B-GGUF"), "Can use tools");
+});
+
+test("tags are words, not engine ids", async () => {
+  const { w } = await boot(WORLD);
+  assert.equal(w.eval('tagWord("llamacpp")'), "llama.cpp");
+  assert.equal(w.eval('tagWord("tool-calling")'), "Tool use");
+  assert.equal(w.eval('tagWord("chat")'), "Chat");
+  assert.equal(w.eval('tagWord("sd-cpp")'), "stable-diffusion.cpp");
+});
+
+test("All models doesn't light up a hundred yellow buttons, and doesn't repeat the engine name on every card", async () => {
+  const { w, wait } = await boot(WORLD);
+  w.eval('SU.st = Object.assign({}, SU.st || {}, {lemonade: {reachable: true}}); S.dlSupported = true; LIB.tab = "everything"; LIB.kind = "all"; show("models"); renderModels()');
+  await wait(300);
+  const doc = w.document;
+  assert.equal(doc.querySelectorAll("#v-models .card [data-dl].primary").length, 0, "Get it should be quiet in the long list");
+  assert.ok(doc.querySelectorAll("#v-models .card [data-dl]").length >= 1);
+  assert.ok(doc.querySelector('#v-models .card [data-chat].primary'), "Chat with it stays the one bright button on a card you have");
+  assert.equal(doc.querySelectorAll("#v-models .card summary .eng").length, 0);
+  // and on Recommended, the pick you came for still gets the bright button
+  w.eval('LIB.tab = "recommended"; renderModels()');
+  await wait(200);
+  assert.ok(doc.querySelectorAll("#v-models .card .btn.primary").length >= 1);
+});
+
+test("cards stay put on hover and sit on the 4px grid", () => {
+  assert.doesNotMatch(html.match(/\.card:hover\{[^}]*\}/)[0], /transform/);
+  assert.doesNotMatch(html.match(/\.card\.loaded\{[^}]*\}/)[0], /gradient/);
+  assert.match(html.match(/\.card \.ctop\{[^}]*\}/)[0], /gap:8px 12px/);
+});
+
+test("the connect form's controls are one height and one shape", () => {
+  const css = html.match(/#srvform select[^{]*\{[^}]*\}/g).join(" ");
+  assert.match(css, /min-height:40px/);
+  assert.match(css, /border-radius:10px/);
+  assert.match(html, /#srvresult:empty\{display:none\}/);
+});
