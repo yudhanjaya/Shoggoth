@@ -76,6 +76,8 @@ Shoggoth suggests one model per size on first run. It keeps a tested list on the
 
 ![Models: the recommended picks, each with its creature, and a button to set up and get it](docs/screenshots/models.png)
 
+Shoggoth runs large models through Lemonade. For models with over a hundred billion parameters, Lemonade and llama.cpp are not yet as good as [Strata](https://github.com/Niko1221/Strata), [Basalt](https://github.com/jesdga95/basalt) and [Maya](https://github.com/mw00/project-maya). That is true as of November 2026. It will change. To run models that size, set one of those up yourself. Then connect it under Advanced, Connect a server.
+
 ## Models you can see
 
 Shoggoth draws every model as a many-eyed creature in a glass tube, wired to a bench of lab equipment. A model's name decides its shape and colour. The bigger the model, the bigger the creature, with more eyes and more hands. You can turn them off.
