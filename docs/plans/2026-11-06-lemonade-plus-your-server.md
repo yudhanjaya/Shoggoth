@@ -189,3 +189,16 @@ Unverified, check before shipping the preset table: the default ports of **Maya*
 - **Not covered, on purpose:** PR 42's authority, GPU assignment, flows, terminal mode, Maya provider. They are not carried over. Anything the owner wants back from them is a separate plan.
 - **Types:** `servers.add/public/probe/normalise/migrate_strata` are used with the same names in Tasks 2–4.
 - **Risk:** Task 6 touches many files; each test edit keeps its assertion where the case still makes sense. The migration (Task 4) is the one place old Strata settings are read.
+
+---
+
+## As built (differences from the plan above)
+
+- `run.mode: external` in the generic provider only names an address; it never lists models. So a connected server is its own class, `servers.ConnectedServer(provbase.GenericProvider)`, in `shoggoth/servers.py`, not a synthesised YAML spec.
+- The key is stored on the saved server entry (`servers[].key`) and read from there on every request, so changing it needs no restart. It is not copied into `providers.<id>`.
+- Presets live in `shoggoth/recommendations/servers.yaml` (that folder is already copied into the AppImage), not `shoggoth/server_presets.yaml`.
+- Strata was removed in two commits that each keep the tests green: first the routes, page and update-all list (`strata.py` still existed but nothing used it), then tuning, recommendations, the library, settings, `strata.py`, `providers/strata/` and their tests.
+- `tests/test_contracts.py` (only Strata's recorded answers) was deleted. `tests/test_headroom.py` was cut down to the model-level setting that still exists.
+- A Strata that was found running on a port by probing, rather than typed in, is not migrated: only saved addresses and keys carry over.
+- One guard test (`NothingShippedForOtherEngines`) fails if install, launch, update or tune code for Strata or Maya reappears under `shoggoth/`. `models.yaml` still has the owner's own "coming soon" sentence that says "Project Maya", which the guard allows on purpose.
+- Checked on this machine: a fresh profile, and a profile with an old saved Strata address and key (it became the connected server `strata`, its model `strata/<model>` resolved, no key in any response, the old `/ui/strata*` routes answer 404). Not checked: Maya, Unsloth, a real Ollama or LM Studio, and chatting through a connected server (only listing models was exercised against a fake).
