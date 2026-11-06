@@ -1,0 +1,30 @@
+# Names and usual addresses for servers a person runs themselves. Shoggoth connects to these; it does not install, start, update or tune them.
+# Nothing here may carry a command: tests/test_servers.py fails if a preset has any key beyond these four.
+- id: ollama
+  name: Ollama
+  url: http://127.0.0.1:11434
+  hint: Ollama's usual address. Start Ollama first, and pull a model with `ollama pull`.
+- id: lmstudio
+  name: LM Studio
+  url: http://127.0.0.1:1234
+  hint: Turn on the local server in LM Studio (Developer tab), then use the address it shows.
+- id: llama-server
+  name: llama.cpp server
+  url: http://127.0.0.1:8080
+  hint: The address you gave llama-server with --host and --port.
+- id: strata
+  name: Strata
+  url: http://127.0.0.1:8080
+  hint: Use the address Strata prints when it starts, and its API key if it has one.
+- id: maya
+  name: Maya
+  url: http://127.0.0.1:8080
+  hint: Use the address Maya prints when it starts. This default is a guess; check it.
+- id: unsloth
+  name: Unsloth
+  url: http://127.0.0.1:8888
+  hint: Use the address Unsloth prints when it starts. This default is a guess; check it.
+- id: other
+  name: Another server
+  url: ""
+  hint: Any server that speaks the OpenAI API. Type its address, for example http://192.168.1.20:8000.

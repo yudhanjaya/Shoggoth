@@ -40,7 +40,7 @@ Unverified, check before shipping the preset table: the default ports of **Maya*
 ## File Structure
 
 - Create `shoggoth/servers.py`: saved connected servers, presets, address checks, the probe. One responsibility: what the person connected.
-- Create `shoggoth/servers/presets.yaml`: the six presets (data, not code).
+- Create `shoggoth/recommendations/servers.yaml`: the six presets (data, not code).
 - Modify `shoggoth/registry.py`: also build one external-mode provider per saved server.
 - Modify `shoggoth/server.py`, `shoggoth/index.html`: `/ui/servers` routes and the Advanced > Engines "Connect a server" card; later, delete the Strata routes and UI.
 - Delete `shoggoth/strata.py`, `shoggoth/providers/strata/`, `tests/test_strata_presets.py`, `tests/fixtures/real/strata_*`.
@@ -51,7 +51,7 @@ Unverified, check before shipping the preset table: the default ports of **Maya*
 ### Task 1: Connected servers (data, presets, probe)
 
 **Files:**
-- Create: `shoggoth/servers.py`, `shoggoth/servers/presets.yaml`
+- Create: `shoggoth/servers.py`, `shoggoth/recommendations/servers.yaml`
 - Modify: `shoggoth/store.py` (DEFAULTS gains `"servers": []`)
 - Test: `tests/test_servers.py`
 
