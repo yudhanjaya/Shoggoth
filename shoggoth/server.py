@@ -750,21 +750,15 @@ class Handler(BaseHTTPRequestHandler):
         self.send_json(registry.reload().summary())
 
     def post_servers(self, body):
-        """Connect, test or remove a server the person runs themselves. Shoggoth only ever talks to these; it never starts or stops them."""
+        """Probe and connect, or remove, a server the person runs themselves. Shoggoth only ever talks to these; it never starts or stops them."""
         act = body.get("action")
-        if act == "test":
-            return self.send_json(servers.probe(str(body.get("url", "")), str(body.get("key", "")).strip()))
         if act == "probe":
-            result = dict(servers.connect_found(), ok=True)
-        elif act == "add":
-            url, key = str(body.get("url", "")), str(body.get("key", "")).strip()
-            entry = servers.add(str(body.get("preset", "")), url, key, str(body.get("name", "")))
-            result = {"ok": True, "server": next(s for s in servers.public() if s["id"] == entry["id"])}
+            result = dict(servers.connect_found(typed={"preset": str(body.get("preset", "")), "url": str(body.get("url", "")), "key": str(body.get("key", "")).strip()}), ok=True)
         elif act == "remove":
             servers.remove(str(body.get("id", "")))
             result = {"ok": True}
         else:
-            raise ValueError("Choose to connect, test or remove a server.")
+            raise ValueError("Choose to probe and connect, or to remove a server.")
         registry.reload()
         router.invalidate()
         self.send_json(dict(result, servers=servers.public()))
