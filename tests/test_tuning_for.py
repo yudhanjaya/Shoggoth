@@ -1,4 +1,4 @@
-"""One model-level answer to "is this tuned?", the same shape from both engines. Run: python3 -m unittest discover tests"""
+"""One model-level answer to "is this tuned?". Run: python3 -m unittest discover tests"""
 import os
 import shutil
 import sys
@@ -10,69 +10,19 @@ sys.path.insert(0, os.path.join(os.path.dirname(os.path.abspath(__file__)), ".."
 
 import lemtune  # noqa: E402
 import modelmeta  # noqa: E402
-import strata  # noqa: E402
 import tuning  # noqa: E402
 
 KEYS = {"engine", "model", "state", "source", "gain_pct", "decode_tok_s", "baseline_tok_s", "when", "can_undo", "preset", "details", "speed", "headroom_gb"}
-PRESETS = [
-    {"name": "Mine old", "model": "IQ3_S", "last_used": "2026-10-01 10:00", "tuned_preset": None, "tuned_at": "2026-10-02"},      # tuned_at set, nothing tuned
-    {"name": "Mine tuned", "model": "IQ3_S", "last_used": "2026-09-01 10:00", "tuned_preset": "abc", "tuned_at": "2026-09-02"},
-    {"name": "Deep", "model": "IST-DAS-2.00bpw", "last_used": None, "tuned_preset": None, "tuned_at": "2026-10-25"},
-]
-
-
-def status(**kw):
-    base = {"has": True, "state": "fresh", "reasons": [], "gain_pct": 12.5, "decode_tok_s": 90.0, "baseline_tok_s": 80.0, "outcome": "improved", "mode": "quick", "when": "2026-10-24", "id": "abc", "name": "x", "presets": []}
-    base.update(kw)
-    return base
-
-
 class Env(unittest.TestCase):
     def setUp(self):
         self.tmp = tempfile.mkdtemp()
         self._old = {k: os.environ.get(k) for k in ("SHOGGOTH_DATA_DIR", "SHOGGOTH_CONFIG_DIR")}
         os.environ["SHOGGOTH_DATA_DIR"], os.environ["SHOGGOTH_CONFIG_DIR"] = os.path.join(self.tmp, "data"), os.path.join(self.tmp, "config")
-        self.patches = [mock.patch.object(strata, "_presets_cached", lambda: PRESETS), mock.patch.object(strata, "installed_models", lambda: []),
-                        mock.patch.object(strata, "binary", lambda: "/bin/strata")]
-        for p in self.patches:
-            p.start()
 
     def tearDown(self):
-        for p in self.patches:
-            p.stop()
         for k, v in self._old.items():
             os.environ.pop(k, None) if v is None else os.environ.__setitem__(k, v)
         shutil.rmtree(self.tmp, ignore_errors=True)
-
-
-class StrataSide(Env):
-    def test_no_saved_setup_is_not_tuned(self):
-        t = tuning.tuning_for("strata/something-else")
-        self.assertEqual(t["state"], "not_tuned")
-        self.assertIsNone(t["preset"])
-
-    def test_tuned_at_alone_does_not_count_as_tuned(self):
-        t = tuning.tuning_for("strata/IST-DAS-2.00bpw")
-        self.assertEqual(t["state"], "not_tuned")
-        self.assertEqual(t["preset"], "Deep")
-
-    def test_with_several_setups_the_tuned_one_is_read(self):
-        with mock.patch.object(strata, "tuning_status", lambda name: status()) as m:
-            t = tuning.tuning_for("strata/IQ3_S")
-        self.assertEqual((t["state"], t["preset"], t["gain_pct"]), ("tuned", "Mine tuned", 12.5))
-        self.assertTrue(t["can_undo"])
-
-    def test_defaults_confirmed_is_a_result_not_a_zero(self):
-        with mock.patch.object(strata, "tuning_status", lambda name: status(gain_pct=0.0, outcome="default_confirmed", decode_tok_s=79.1, baseline_tok_s=79.1)):
-            t = tuning.tuning_for("strata/IQ3_S")
-        self.assertEqual(t["state"], "default_best")
-        self.assertEqual(t["decode_tok_s"], 79.1)
-
-    def test_a_stale_tune_is_stale(self):
-        with mock.patch.object(strata, "tuning_status", lambda name: status(state="stale", reasons=["engine changed"])):
-            t = tuning.tuning_for("strata/IQ3_S")
-        self.assertEqual(t["state"], "stale")
-        self.assertEqual(t["details"]["reasons"], ["engine changed"])
 
 
 class LemonadeSide(Env):
@@ -111,10 +61,10 @@ class LemonadeSide(Env):
 
 
 class SameShape(Env):
-    def test_both_engines_answer_with_the_same_keys(self):
-        with mock.patch.object(strata, "tuning_status", lambda name: status()), mock.patch.object(tuning, "lemonade_env", lambda: {}):
+    def test_a_tuned_and_an_untuned_model_answer_with_the_same_keys(self):
+        with mock.patch.object(tuning, "lemonade_env", lambda: {}):
             lemtune._save_results({"m": {"outcome": "improved", "gain_pct": 3.0}})
-            keys = [set(tuning.tuning_for(x)) for x in ("strata/IQ3_S", "strata/nope", "m", "unknown")]
+            keys = [set(tuning.tuning_for(x)) for x in ("m", "unknown")]
         for k in keys:
             self.assertEqual(k, KEYS)
 

@@ -1,6 +1,6 @@
 """The model cards and tools Shoggoth recommends come from shoggoth/recommendations/*.yaml. These tests check the files as shipped (so an edit
 with a mistake fails here before it reaches anyone), that a copy in the data folder wins, that a mistake is reported with where it is,
-and that Strata and the Server page read what the files say. Run: python3 -m unittest discover tests"""
+and that the Server page reads what the files say. Run: python3 -m unittest discover tests"""
 import os
 import re
 import contextlib
@@ -14,7 +14,6 @@ sys.path.insert(0, os.path.join(os.path.dirname(os.path.abspath(__file__)), ".."
 
 import gateway  # noqa: E402
 import recs  # noqa: E402
-import strata  # noqa: E402
 
 
 class Env(unittest.TestCase):
@@ -44,8 +43,8 @@ class Shipped(Env):
     def test_they_say_what_the_app_used_to_hard_code(self):
         m, t = recs.models(), recs.tools()
         self.assertEqual([r["id"] for r in m["recommended"]][:3], ["LFM2.5-8B-A1B", "user.MiMo-V2.6-Distill-Qwen-9B-Q4_K_M", "Gemma-4-12B-it-MTP-GGUF"])
-        self.assertEqual([f["size"] for f in m["first_run"]], ["small", "medium", "large"])
-        self.assertEqual(next(e for e in m["strata"] if e["family"] == "deepseek41")["suggest"], False)
+        self.assertEqual([f["size"] for f in m["first_run"]], ["small", "medium"])
+        self.assertNotIn("strata", m)
         ids = {x["id"]: x for x in t["tools"]}
         self.assertEqual([x["id"] for x in t["tools"] if "server" in x["show"]], ["hermes"])
         self.assertEqual(ids["hermes"]["connect"]["fields"], ["base_url", "key", "model"])
@@ -74,18 +73,11 @@ class ThePicks(Env):
         self.assertEqual([c["title"] for c in recs.models()["coming_soon"]], ["LFM3", "GLM 5.3 Flash"])
         self.assertTrue(all(c["take"] for c in recs.models()["coming_soon"]))
 
-    def test_the_large_models_carry_their_text(self):
-        st = recs.models()["strata"]
-        self.assertIn("Claude Sonnet 5", next(e for e in st if e["family"] == "qwen")["take"])
-        self.assertIn("token-maxxers", next(e for e in st if e["family"] == "deepseek41")["take"])
-
-    def test_flash_next_has_two_sizes_and_coder_and_swift_are_offered_but_never_suggested(self):
-        st = recs.models()["strata"]
-        self.assertEqual([e["model"] for e in st if e["family"] == "qwen"], ["IQ3_S", "IQ2_XS"])
-        for fam in ("coder", "swift"):
-            e = next(e for e in st if e["family"] == fam)
-            self.assertFalse(e["suggest"])
-            self.assertTrue(e["take"])
+    def test_recommendations_name_no_engine_but_lemonade(self):
+        for r in recs.models()["recommended"]:
+            self.assertEqual(r["provider"], "Lemonade", r["id"])
+        for f in recs.models()["first_run"]:
+            self.assertNotIn("engine", f)
 
     def test_no_speed_figures_on_a_card(self):
         for r in recs.models()["recommended"]:
@@ -116,14 +108,14 @@ class Yours(Env):
         self.assertEqual(recs.models()["recommended"][0]["id"], "B")
 
     def test_a_mistake_skips_that_entry_and_says_where(self):
-        self.mine("models", "recommended:\n  - {id: A, size_gb: lots}\n  - {id: B, label: fine}\nstrata:\n  - {family: q, model: M, title: T, need_gb: lots, ctx: 8192}\n")
+        self.mine("models", "recommended:\n  - {id: A, size_gb: lots}\n  - {id: B, label: fine}\nfirst_run:\n  - {size: tiny, models: [X]}\n")
         s = recs.summary()
         self.assertEqual([m["id"] for m in s["models"]["recommended"]], ["A", "B"])
         self.assertIsNone(s["models"]["recommended"][0]["size_gb"])
-        self.assertEqual(s["models"]["strata"], [])
+        self.assertEqual(s["models"]["first_run"], [])
         joined = "\n".join(s["problems"])
         self.assertIn("recommended[0]: `size_gb` must be a number above 0", joined)
-        self.assertIn("strata[0]: `need_gb` must be a number", joined)
+        self.assertIn("first_run[0]: `size` must be one of", joined)
 
     def test_a_file_that_isnt_yaml_falls_back_to_zests_own(self):
         self.mine("tools", "tools: [\n")
@@ -175,21 +167,6 @@ class NoEmojiInTheUI(unittest.TestCase):
 
 
 class ReadByTheApp(Env):
-    def test_strata_offers_the_models_in_the_file(self):
-        self.mine("models", "strata:\n  - {family: qwen, model: NEW_Q, title: New, need_gb: 20, ctx: 65536}\n")
-        self.assertEqual([e["model"] for e in strata.catalog()], ["NEW_Q"])
-        self.assertEqual(strata.need_gb("new_q"), 20)
-
-    def test_the_suggestion_skips_what_the_file_says_never_to_suggest(self):
-        self.mine("models", "strata:\n  - {family: d, model: BIG, title: B, need_gb: 10, ctx: 8192, suggest: false}\n"
-                            "  - {family: qwen, model: OK, title: O, need_gb: 10, ctx: 8192}\n")
-        orig = strata.machine, strata.binary
-        strata.machine, strata.binary = (lambda: {"ram_gb": 128, "vram_gb": 24, "gpus": [{}], "best_gpu_gb": 24}), (lambda: None)
-        try:
-            self.assertEqual(strata.recommend(max_age=0)["pick"], "OK")
-        finally:
-            strata.machine, strata.binary = orig
-
     def test_the_server_page_names_apps_from_the_file(self):
         self.assertEqual(gateway.app_name({"User-Agent": "opencode/0.9 ai-sdk"}), "opencode")
         self.assertEqual(gateway.app_name({"User-Agent": "python-requests/2.31"}), "Python script")

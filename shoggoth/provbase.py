@@ -1,6 +1,6 @@
 """What a provider is, and the one that needs nothing but a YAML file.
 
-A provider is an engine that can serve models (Lemonade, Strata, a llama-server wrapper, a remote address). It lives in a folder
+A provider is an engine that can serve models (Lemonade, a llama-server wrapper, a remote address). It lives in a folder
 with a `provider.yaml` and, only when YAML can't say it, a `provider.py` defining `class Provider(provbase.Base)`.
 Shoggoth talks to every provider through `Base`, so the rest of the program never needs to know which engine it is. Standard library
 only (YAML is read by the copy in _vendor).

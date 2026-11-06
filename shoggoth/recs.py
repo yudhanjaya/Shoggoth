@@ -1,6 +1,6 @@
 """Recommendations: the model cards and tools Shoggoth suggests, read from YAML so they change without touching code.
 
-Two files in `recommendations/` next to this one: models.yaml (Library > Recommended, the first-run picks, Strata's big models) and
+Two files in `recommendations/` next to this one: models.yaml (Library > Recommended and the first-run picks) and
 tools.yaml (apps, skills, engines and guides: where each shows, how to connect it, how to recognise it in the Server log). A file of
 the same name in Shoggoth's data folder (`recommendations/`) is used instead of the bundled one. A file is read again when it changes.
 
@@ -120,12 +120,12 @@ class _Check:
 
 # ---------------------------------------------------------------- models.yaml
 def clean_models(doc, c):
-    """The usable part of a parsed models.yaml: {recommended, first_run, strata}."""
-    out = {"recommended": [], "first_run": [], "strata": [], "coming_soon": []}
+    """The usable part of a parsed models.yaml: {recommended, first_run, coming_soon}."""
+    out = {"recommended": [], "first_run": [], "coming_soon": []}
     if not isinstance(doc, dict):
         c.bad("", "the file must be groups of settings (key: value), not %s." % type(doc).__name__)
         return out
-    c.keys(doc, "", ["version", "recommended", "first_run", "strata", "coming_soon"])
+    c.keys(doc, "", ["version", "recommended", "first_run", "coming_soon"])
     if doc.get("version", 1) != 1:
         c.bad("version", "Shoggoth reads version 1.")
     ids = set()
@@ -159,38 +159,18 @@ def clean_models(doc, c):
             out["coming_soon"].append({"title": title, "take": c.text(e, "take", w) or ""})
     for i, f in c.items(doc, "first_run", ""):
         w = "first_run[%d]" % i
-        c.keys(f, w, ["size", "models", "engine", "blurb", "start", "recommended"])
+        c.keys(f, w, ["size", "models", "blurb", "start", "recommended"])
         size = c.text(f, "size", w, need=True)
         if size and size not in SIZES:
             c.bad(w, "`size` must be one of %s." % ", ".join(SIZES))
             continue
-        models, engine = c.words(f, "models", w), c.text(f, "engine", w)
-        if size and not models and engine != "strata":
-            c.bad(w, "needs `models` (the ones to try, best first), or `engine: strata` for Strata's own suggestion.")
+        models = c.words(f, "models", w)
+        if size and not models:
+            c.bad(w, "needs `models` (the ones to try, best first).")
             continue
         if size:
-            out["first_run"].append({"size": size, "models": models, "engine": engine or "", "blurb": c.text(f, "blurb", w) or "",
+            out["first_run"].append({"size": size, "models": models, "blurb": c.text(f, "blurb", w) or "",
                                      "start": c.text(f, "start", w) or "", "recommended": c.flag(f, "recommended", w)})
-    seen = set()
-    for i, e in c.items(doc, "strata", ""):
-        w = "strata[%d]" % i
-        c.keys(e, w, ["family", "model", "title", "need_gb", "ctx", "min_vram_gb", "disk_gb", "suggest", "take"])
-        ent = {"family": c.text(e, "family", w, need=True), "model": c.text(e, "model", w, need=True), "title": c.text(e, "title", w, need=True),
-               "need_gb": c.number(e, "need_gb", w, need=True), "ctx": c.number(e, "ctx", w, need=True)}
-        if not all(ent.values()):
-            continue
-        if (ent["family"], ent["model"]) in seen:
-            c.bad(w, "%s %s is listed twice." % (ent["family"], ent["model"]))
-            continue
-        seen.add((ent["family"], ent["model"]))
-        ent["ctx"] = int(ent["ctx"])
-        for k in ("min_vram_gb", "disk_gb"):
-            v = c.number(e, k, w)
-            if v is not None:
-                ent[k] = v
-        ent["suggest"] = c.flag(e, "suggest", w, default=True)
-        ent["take"] = c.text(e, "take", w) or ""
-        out["strata"].append(ent)
     return out
 
 
@@ -392,11 +372,6 @@ def summary():
             "files": {"models": m["file"], "tools": t["file"], "flavour": f["file"]}}
 
 
-def strata_catalog():
-    """Strata's big models, best quality first: [{family, model, title, need_gb, ctx, min_vram_gb?, disk_gb?, suggest}]."""
-    return models()["strata"]
-
-
 def app_patterns():
     """[(compiled pattern, app name)] from every tool's `detect`, in file order: the Server page names apps with these."""
     out = []
@@ -428,7 +403,7 @@ def main(argv):
             continue
         r = load(name, os.path.abspath(f))
         d = r["data"]
-        counts = ("%d recommended, %d coming soon, %d first-run sizes, %d Strata models" % (len(d["recommended"]), len(d["coming_soon"]), len(d["first_run"]), len(d["strata"])) if name == "models"
+        counts = ("%d recommended, %d coming soon, %d first-run sizes" % (len(d["recommended"]), len(d["coming_soon"]), len(d["first_run"])) if name == "models"
                   else "%d tools, %d places" % (len(d["tools"]), len(d["places"])) if name == "tools"
                   else "%d lines in %d sets" % (sum(map(len, d["lines"].values())), len(d["lines"])))
         print("%s %s: %s" % ("✗" if r["problems"] else "✓", f, counts))

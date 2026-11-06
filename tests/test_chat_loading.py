@@ -1,4 +1,4 @@
-"""An engine change (Strata starting a model) must not stop the chat that is waiting for that model. Run: python3 -m unittest discover tests"""
+"""An engine change (another engine starting a model) must not stop the chat that is waiting for that model. Run: python3 -m unittest discover tests"""
 import os
 import sys
 import unittest

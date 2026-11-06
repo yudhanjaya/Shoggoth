@@ -138,7 +138,7 @@ def chat_ctx():
 def want_ctx(model):
     """What a load of `model` asks for: the chat setting, never more than the model can do."""
     if router.fixed_ctx(model):
-        return model_max_ctx(model)         # some engines decide the window when they start (Strata)
+        return model_max_ctx(model)         # some engines decide the window when they start
     n, top = chat_ctx(), model_max_ctx(model)
     # "128k" models are listed as 128000; only a model with clearly less room than asked for is held back
     return top if top and top * 1.05 < n else n
@@ -278,7 +278,7 @@ def write_config(models, default, ctx=0):
         groups.setdefault(m["pi_provider"], []).append(m)
     for name, ms in groups.items():
         first = ms[0]
-        if first.get("pi_url"):                                  # an engine with its own server per model (Strata): talk to it directly
+        if first.get("pi_url"):                                  # an engine with its own server per model: talk to it directly
             url, key = first["pi_url"], first.get("pi_key") or name
         else:
             ep = router.get(first["engine"]).pi_endpoint(_zest_port["v"]) or {}

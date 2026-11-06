@@ -14,8 +14,6 @@ DEFAULTS = {
     "search": {"enabled": True, "provider": "duckduckgo", "brave_key": "", "tavily_key": ""},   # the model may search the web; every search still asks first
     "chat": {"ctx": 131072},  # the context window every chat load asks for (128k): long chats and agent work need the room
     "pi": {"version": ""},   # which Pi (the agent) to run: "" = newest, "bundled" = the one that came with Shoggoth, or a version number
-    # Strata (bigger models): servers typed in by hand, keys, and the one Shoggoth itself started (so a restart of Shoggoth still knows).
-    "strata": {"remote": [], "keys": {}, "owned": {"preset": "", "port": 0}, "known": {}, "idle_minutes": 20},
     "servers": [],                 # servers the person connected under Advanced > Engines: [{id, preset, name, url, key}]
     "library": {"root": ""},       # where every model lives (the person chooses it once)
     "providers": {},               # per engine: its own settings, and the fingerprint of a user-added one that was approved

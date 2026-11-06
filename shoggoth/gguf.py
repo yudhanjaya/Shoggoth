@@ -186,7 +186,7 @@ _NOT_CHAT = {"clip": "projector", "dflash": "drafter", "parakeet": "speech", "wh
 def role_of(architecture, stem="", folder=""):
     """What a model file is for: chat (a language model to talk to), or projector, drafter, speech, embedding, support, unknown.
 
-    Strata keeps shared pieces (n-gram tables and the like) beside its models; those are support files, not models to pick."""
+    Some engines keep shared pieces (n-gram tables and the like) beside their models; those are support files, not models to pick."""
     if not architecture:
         return "unknown"
     if architecture in _NOT_CHAT:

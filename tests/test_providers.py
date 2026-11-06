@@ -19,7 +19,6 @@ import engine  # noqa: E402
 import provbase  # noqa: E402
 import provcheck  # noqa: E402
 import registry  # noqa: E402
-import strata  # noqa: E402
 
 FIXTURE = os.path.join(HERE, "fixtures", "openai_server.py")
 GOOD = {"id": "demo", "name": "Demo", "api_version": 1, "run": {"mode": "managed", "start": ["{bin}", "--port", "{port}"], "ready": {"path": "/health"}},
@@ -94,7 +93,7 @@ class Validation(unittest.TestCase):
 class Loading(Env):
     def test_bundled_providers_load(self):
         r = self.registry()
-        self.assertEqual(sorted(p.id for p in r.all()), ["lemonade", "strata"])
+        self.assertEqual(sorted(p.id for p in r.all()), ["lemonade"])
         self.assertEqual(r.errors, [])
         # the template folder starts with _ and is never loaded
         self.assertNotIn("my-engine", r.providers)
@@ -103,10 +102,8 @@ class Loading(Env):
         r = self.registry()
         big = {"format": "gguf", "architecture": "qwen4exp"}
         plain = {"format": "gguf", "architecture": "gemma4"}
-        self.assertFalse(r.get("lemonade").can_run(big)[0])
-        self.assertTrue(r.get("strata").can_run(big)[0])
+        self.assertFalse(r.get("lemonade").can_run(big)[0])          # Lemonade's llama.cpp doesn't know this architecture
         self.assertTrue(r.get("lemonade").can_run(plain)[0])
-        self.assertFalse(r.get("strata").can_run(plain)[0])
 
     def test_wrong_folders_are_skipped_and_explained(self):
         self.add("broken-yaml", "id: [unclosed\n")
@@ -363,7 +360,7 @@ class ConnectedServers(Env):
         servers.add("ollama", "http://h:1")
         store.update(lambda s: s["servers"][0].__setitem__("id", "lemonade"))
         r = self.registry()
-        self.assertEqual(sorted(p.id for p in r.all()), ["lemonade", "strata"])
+        self.assertEqual(sorted(p.id for p in r.all()), ["lemonade"])
         self.assertIn("lemonade", r.errors[-1]["error"])
 
     def test_a_server_that_is_down_does_not_slow_loading(self):
@@ -393,7 +390,7 @@ class EnginesPage(Env):
         d = self.real().summary()
         self.assertEqual(d["user_folder"], self.user)
         by = {p["id"]: p for p in d["providers"]}
-        self.assertEqual(sorted(by), ["lemonade", "strata"])
+        self.assertEqual(sorted(by), ["lemonade"])
         for p in by.values():
             self.assertTrue({"state", "text", "error"} <= set(p["update"]))
             self.assertIn(p["update"]["state"], ("idle", "working", "done", "error", "deferred"))
@@ -417,16 +414,6 @@ class EnginesPage(Env):
         finally:
             engine.UPD.clear()
             engine.UPD.update(old)
-
-    def test_strata_reports_its_update_in_the_common_shape(self):
-        old = dict(strata.SUPD)
-        try:
-            strata.SUPD.update(state="deferred", text="Update after you stop it.", error=None)
-            u = self.real().get("strata").update_status()
-            self.assertEqual((u["state"], u["text"]), ("deferred", "Update after you stop it."))
-        finally:
-            strata.SUPD.clear()
-            strata.SUPD.update(old)
 
     def test_consent_names_the_program_and_shows_the_real_command(self):
         d = os.path.join(self.user, "demo")

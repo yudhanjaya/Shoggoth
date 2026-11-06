@@ -1,5 +1,5 @@
 """Shoggoth used to be called Zest. These check the pieces that keep an old install working after the rename (the settings
-folder and the ZEST_* variables are in test_store.py; Strata presets and Lemonade's list are in test_ownership.py).
+folder and the ZEST_* variables are in test_store.py; Lemonade's list is in test_ownership.py).
 Run: python3 -m unittest discover tests"""
 import os
 import sys
