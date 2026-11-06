@@ -46,15 +46,15 @@ class Merging(unittest.TestCase):
 
     def test_a_removed_key_stays_removed_and_a_new_key_is_kept(self):
         s = store.load()
-        s["strata"]["known"] = {"x": 1}
+        s["providers"]["kept"] = {"x": 1}
         store.save(s)
         a, b = store.load(), store.load()
-        del a["strata"]["known"]["x"]
+        del a["providers"]["kept"]["x"]
         b["providers"]["mine"] = {"approved": "abc"}
         store.save(a)
         store.save(b)
         now = store.load()
-        self.assertEqual(now["strata"]["known"], {})
+        self.assertEqual(now["providers"]["kept"], {})
         self.assertEqual(now["providers"]["mine"], {"approved": "abc"})
 
     def test_many_threads_changing_their_own_setting_lose_nothing(self):

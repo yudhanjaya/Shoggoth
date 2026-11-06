@@ -26,7 +26,7 @@ endpoint:
 
 models:
   formats: [gguf]
-  # Lemonade's llama.cpp does not know these; they are Strata's own architectures.
+  # Lemonade's llama.cpp does not know these; other engines run these architectures.
   excluded_architectures: [qwen4exp, deepseek41]
   data_dir: "{library}/lemonade"
   download: {mode: api}          # plain GGUF downloads go through Lemonade

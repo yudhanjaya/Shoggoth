@@ -1,5 +1,5 @@
-"""What is Shoggoth's to stop, and what isn't: a Strata of yours on Shoggoth's old port, a process number given to another program, models
-another program loaded into your Lemonade. Also: a Strata model keeps its name when it starts. Run: python3 -m unittest discover tests"""
+"""What is Shoggoth's to stop, and what isn't: a process number given to another program, models another program loaded into your Lemonade.
+Run: python3 -m unittest discover tests"""
 import os
 import shutil
 import socket
@@ -16,8 +16,6 @@ import engine  # noqa: E402
 import lem  # noqa: E402
 import provbase  # noqa: E402
 import store  # noqa: E402
-import strata  # noqa: E402
-
 
 
 def _load(name):
@@ -30,7 +28,7 @@ def _load(name):
     return mod
 
 
-lemonade_provider, strata_provider = _load("lemonade"), _load("strata")
+lemonade_provider = _load("lemonade")
 
 
 class Patch(unittest.TestCase):
@@ -47,92 +45,10 @@ class Patch(unittest.TestCase):
         for k, v in self._env.items():
             os.environ.pop(k, None) if v is None else os.environ.__setitem__(k, v)
         shutil.rmtree(self.tmp, ignore_errors=True)
-        strata._cache["v"] = None
 
     def patch(self, mod, name, value):
         self._undo.append((mod, name, getattr(mod, name)))
         setattr(mod, name, value)
-
-
-class StrataOwnership(Patch):
-    def discover(self, running, owned):
-        strata._save(lambda s: s["owned"].update(owned))
-        self.patch(strata, "_json", lambda args, timeout=20: {"running": running} if "--status" in args else {})
-        self.patch(strata, "_health", lambda u: None)
-        self.patch(strata, "_show_key", lambda: "")
-        self.patch(strata, "_http_json", lambda u, key="", timeout=3: (200, {"data": []}))
-        return strata._discover()
-
-    def test_a_strata_of_yours_on_zests_old_port_stays_yours(self):
-        out = self.discover([{"url": "http://127.0.0.1:8080", "name": "Mine", "profile": "launch-my-own", "port": 8080, "state": "ready"}],
-                            {"preset": "Shoggoth IQ3_S", "port": 8080})
-        self.assertEqual(out[0]["owner"], "yours")
-        self.assertEqual(strata._settings()["owned"]["port"], 0)                    # and Shoggoth forgets the one it started, which has gone
-
-    def test_the_one_zest_started_is_zests(self):
-        out = self.discover([{"url": "http://127.0.0.1:8080", "name": "Q", "profile": "launch-shoggoth-iq3_s", "port": 8080, "state": "loading"}],
-                            {"preset": "Shoggoth IQ3_S", "port": 8080})
-        self.assertEqual(out[0]["owner"], "zest")
-        self.assertIsNotNone(strata.zest_server())
-        self.patch(strata, "running", lambda: out)
-        self.assertEqual(strata_provider.Provider.owned_instance(None), "http://127.0.0.1:8080")    # still loading: stopped on quit too
-
-
-    def test_a_strata_that_freed_its_memory_still_offers_its_model(self):
-        strata._save(lambda s: s["owned"].update({"preset": "", "port": 0}))
-        self.patch(strata, "_json", lambda args, timeout=20: {"running": [{"url": "http://127.0.0.1:8080", "name": "Q", "port": 8080, "state": "ready"}]} if "--status" in args else {})
-        self.patch(strata, "_show_key", lambda: "")
-        self.patch(strata, "_http_json", lambda u, key="", timeout=3: (200, {"data": []}))
-        self.patch(strata, "_health", lambda u: {"service": "strata", "model": "qwen3.8-flash-next-iq3_s", "loaded": False, "max_context": 131072, "images": True})
-        out = strata._discover()
-        self.assertEqual(out[0]["models"], [{"id": "qwen3.8-flash-next-iq3_s", "ctx": 131072, "vision": True, "asleep": True}])
-        self.patch(strata, "running", lambda: out)
-        self.patch(strata, "binary", lambda: "")
-        m = strata.models()[0]
-        self.assertEqual((m["id"], m["asleep"]), ("strata/qwen3.8-flash-next-iq3_s", True))
-        self.assertFalse(strata.is_live(m["id"]))                                    # offered, but not counted as in memory
-        self.assertEqual(strata_provider.Provider.loaded(None, "qwen3.8-flash-next-iq3_s"), (False, 0))
-
-
-class StrataNames(Patch):
-    LIVE = {"id": "strata/served-name", "url": "http://127.0.0.1:8080", "key": "", "ctx": 131072, "bare": "served-name", "vision": False}
-    DORMANT = {"id": "strata/qwen3.8-flash-next-iq3_s", "url": "http://127.0.0.1:8080", "key": "", "ctx": 131072, "bare": "qwen3.8-flash-next-iq3_s",
-               "vision": False, "dormant": True, "preset": "Shoggoth IQ3_S"}
-
-    def test_a_dormant_model_is_listed_under_the_name_its_server_gave_it(self):
-        strata._save(lambda s: s["known"].update({"Shoggoth IQ3_S": {"id": "served-name", "ctx": 131072, "vision": False}}))
-        self.patch(strata, "running", lambda: [])
-        self.patch(strata, "binary", lambda: "/bin/true")
-        self.patch(strata, "_presets_cached", lambda: [{"name": "Shoggoth IQ3_S", "model": "IQ3_S", "port": 8080}])
-        self.patch(strata, "installed_models", lambda: [{"id": "iq3_s", "name": "qwen3.8-flash-next-iq3_s", "status": "present"}])
-        self.assertEqual([m["id"] for m in strata.models()], ["strata/served-name"])
-
-    def test_a_model_that_starts_under_another_name_is_still_found(self):
-        state = {"started": False}
-        self.patch(strata, "models", lambda: [self.LIVE] if state["started"] else [self.DORMANT])
-        self.patch(strata, "start", lambda preset: state.update(started=True) or strata.RUN.update(state="ready") or True)
-        self.patch(strata.time, "sleep", lambda s: None)
-        m = strata.ensure("strata/qwen3.8-flash-next-iq3_s")
-        self.assertEqual(m["bare"], "served-name")
-
-    def test_loaded_is_safe_when_the_model_has_just_gone(self):
-        self.patch(strata, "find_model", lambda name: None)
-        self.assertEqual(strata_provider.Provider.loaded(None, "x"), (False, 0))
-
-    def test_a_strata_on_another_computer_holds_no_memory_here(self):
-        self.patch(strata, "running", lambda: [{"state": "ready", "source": "saved"}])
-        self.assertFalse(strata_provider.Provider.is_running(None))
-
-
-class StrataFromBeforeTheRename(Patch):
-    def test_a_server_started_while_it_was_zest_is_still_its_own(self):
-        out = StrataOwnership.discover(self, [{"url": "http://127.0.0.1:8080", "name": "Q", "profile": "launch-zest-iq3_s", "port": 8080, "state": "ready"}],
-                                       {"preset": "Zest IQ3_S", "port": 8080})
-        self.assertEqual(out[0]["owner"], "zest")
-
-    def test_a_preset_it_made_as_zest_is_still_preferred(self):
-        presets = [{"name": "Mine", "model": "IQ3_S", "last_used": "2026-10-29"}, {"name": "Zest IQ3_S", "model": "IQ3_S", "last_used": None}]
-        self.assertEqual(strata._preset_for({"id": "iq3_s"}, presets)["name"], "Zest IQ3_S")
 
 
 class LemonadeMakesWay(Patch):

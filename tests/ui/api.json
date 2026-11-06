@@ -3729,10 +3729,6 @@
       "ok": true,
       "reason": ""
      },
-     "strata": {
-      "ok": false,
-      "reason": "Strata doesn't support the gemma3 architecture."
-     },
      "llama-server": {
       "ok": true,
       "reason": ""
@@ -3785,10 +3781,6 @@
       "ok": true,
       "reason": ""
      },
-     "strata": {
-      "ok": false,
-      "reason": "Strata doesn't support the gemma3 architecture."
-     },
      "llama-server": {
       "ok": true,
       "reason": ""
@@ -3800,122 +3792,6 @@
     },
     "ref": "gemma270m-q4",
     "engine_name": "Lemonade"
-   },
-   {
-    "stem": "DeepSeek-V4.1-Flash-1017-GSQ-RCO-IQ2_XXS",
-    "files": [
-     "/media/user/HighSpeedIO/Strata/models/deepseek-v4.1-flash-IST-DAS-2.00bpw/DeepSeek-V4.1-Flash-1017-GSQ-RCO-IQ2_XXS-00001-of-00004.gguf",
-     "/media/user/HighSpeedIO/Strata/models/deepseek-v4.1-flash-IST-DAS-2.00bpw/DeepSeek-V4.1-Flash-1017-GSQ-RCO-IQ2_XXS-00002-of-00004.gguf",
-     "/media/user/HighSpeedIO/Strata/models/deepseek-v4.1-flash-IST-DAS-2.00bpw/DeepSeek-V4.1-Flash-1017-GSQ-RCO-IQ2_XXS-00003-of-00004.gguf",
-     "/media/user/HighSpeedIO/Strata/models/deepseek-v4.1-flash-IST-DAS-2.00bpw/DeepSeek-V4.1-Flash-1017-GSQ-RCO-IQ2_XXS-00004-of-00004.gguf"
-    ],
-    "size_bytes": 138238893056,
-    "complete": true,
-    "format": "gguf",
-    "architecture": "deepseek41",
-    "quant": "IQ2_XXS",
-    "context": 1048576,
-    "size_label": "384x212B",
-    "title": "DeepSeek-V4.1-Flash-1017 GSQ-RCO IQ2_XXS",
-    "vision": true,
-    "mmproj": "/media/user/HighSpeedIO/Strata/models/mmproj-Qwen3.8-Flash-Next-BF16.gguf",
-    "mtp": false,
-    "folder": "/media/user/HighSpeedIO/Strata/models/deepseek-v4.1-flash-IST-DAS-2.00bpw",
-    "source": "Strata",
-    "owner": "strata",
-    "attn": {
-     "layers": 40,
-     "kv_heads": 1,
-     "dk": 512,
-     "dv": 512,
-     "window": 128,
-     "arch": "deepseek41"
-    },
-    "kv_ctx": 8192,
-    "kv_gb": 0.34,
-    "id": "deepseek-v4-1-flash-1017-gsq-rco-iq2-xxs-138238893056",
-    "tier": "large",
-    "provider": "strata",
-    "need_gb": 46,
-    "fit": "fits",
-    "why": "",
-    "providers": {
-     "lemonade": {
-      "ok": false,
-      "reason": "Lemonade can't run the deepseek41 architecture."
-     },
-     "strata": {
-      "ok": true,
-      "reason": ""
-     },
-     "llama-server": {
-      "ok": true,
-      "reason": ""
-     }
-    },
-    "ids": {
-     "strata": "deepseek-v4.1-flash",
-     "llama-server": "DeepSeek-V4.1-Flash-1017-GSQ-RCO-IQ2_XXS"
-    },
-    "ref": "strata/deepseek-v4.1-flash",
-    "engine_name": "Strata"
-   },
-   {
-    "stem": "Qwen3.8-Flash-Next-GSQ-RCO-IQ3_S",
-    "files": [
-     "/media/user/HighSpeedIO/Strata/models/IQ3_S/Qwen3.8-Flash-Next-GSQ-RCO-IQ3_S-00001-of-00002.gguf",
-     "/media/user/HighSpeedIO/Strata/models/IQ3_S/Qwen3.8-Flash-Next-GSQ-RCO-IQ3_S-00002-of-00002.gguf"
-    ],
-    "size_bytes": 83617662656,
-    "complete": true,
-    "format": "gguf",
-    "architecture": "qwen4exp",
-    "quant": "IQ3_S",
-    "context": 262144,
-    "size_label": "512x56B",
-    "title": "Qwen3.8-Flash-Next GSQ-RCO",
-    "vision": true,
-    "mmproj": "/media/user/HighSpeedIO/Strata/models/mmproj-Qwen3.8-Flash-Next-BF16.gguf",
-    "mtp": false,
-    "folder": "/media/user/HighSpeedIO/Strata/models/IQ3_S",
-    "source": "Strata",
-    "owner": "strata",
-    "attn": {
-     "layers": 48,
-     "kv_heads": 2,
-     "dk": 256,
-     "dv": 256,
-     "full_every": 4,
-     "arch": "qwen4exp"
-    },
-    "kv_ctx": 8192,
-    "kv_gb": 0.2,
-    "id": "qwen3-8-flash-next-gsq-rco-iq3-s-83617662656",
-    "tier": "large",
-    "provider": "strata",
-    "need_gb": 54.8,
-    "fit": "fits",
-    "why": "",
-    "providers": {
-     "lemonade": {
-      "ok": false,
-      "reason": "Lemonade can't run the qwen4exp architecture."
-     },
-     "strata": {
-      "ok": true,
-      "reason": ""
-     },
-     "llama-server": {
-      "ok": true,
-      "reason": ""
-     }
-    },
-    "ids": {
-     "strata": "qwen3.8-flash-next-iq3_s",
-     "llama-server": "Qwen3.8-Flash-Next-GSQ-RCO-IQ3_S"
-    },
-    "ref": "strata/qwen3.8-flash-next-iq3_s",
-    "engine_name": "Strata"
    }
   ],
   "bytes": 222292458240,
@@ -4064,47 +3940,6 @@
    }
   ]
  },
- "/ui/strata": {
-  "installed": true,
-  "version": "0.2.7",
-  "presets": [
-   {
-    "name": "IQ3_S dual",
-    "family": "qwen",
-    "model": "IQ3_S",
-    "context": 131072,
-    "vision": "cpu",
-    "port": 8080,
-    "last_used": "2026-10-28 15:01:47.983826"
-   },
-   {
-    "name": "IST-DAS-2.00bpw 128K",
-    "family": "deepseek41",
-    "model": "IST-DAS-2.00bpw",
-    "context": 131072,
-    "vision": "off",
-    "port": 8080,
-    "last_used": "2026-10-25 07:24:21.057085"
-   }
-  ],
-  "run": {
-   "state": "idle",
-   "preset": null,
-   "error": null,
-   "log": [],
-   "since": 0,
-   "low_memory": false,
-   "retry": null
-  },
-  "install": {
-   "state": "idle",
-   "error": null,
-   "log": []
-  },
-  "command": "strata launch",
-  "idle_minutes": 20,
-  "servers": []
- },
  "/ui/model": {
   "loaded": null,
   "ctx": 0,
@@ -4157,46 +3992,6 @@
     "reasoning": false,
     "ctx": 131072,
     "ctx_fixed": false
-   },
-   {
-    "id": "strata/deepseek-v4.1-flash",
-    "title": "DeepSeek-V4.1-Flash-1017 GSQ-RCO IQ2_XXS",
-    "tier": "large",
-    "tier_label": "Large",
-    "fit": "fits",
-    "why": "",
-    "size_gb": 138.2,
-    "need_gb": 46,
-    "live": false,
-    "start_s": 120,
-    "start": "About 2 minutes to start",
-    "engine": "strata",
-    "engine_name": "Strata",
-    "vision": false,
-    "tools": true,
-    "reasoning": true,
-    "ctx": 131072,
-    "ctx_fixed": true
-   },
-   {
-    "id": "strata/qwen3.8-flash-next-iq3_s",
-    "title": "Qwen3.8-Flash-Next GSQ-RCO",
-    "tier": "large",
-    "tier_label": "Large",
-    "fit": "fits",
-    "why": "",
-    "size_gb": 83.6,
-    "need_gb": 54.8,
-    "live": false,
-    "start_s": 120,
-    "start": "About 2 minutes to start",
-    "engine": "strata",
-    "engine_name": "Strata",
-    "vision": true,
-    "tools": true,
-    "reasoning": true,
-    "ctx": 131072,
-    "ctx_fixed": true
    }
   ],
   "machine": {
@@ -4223,37 +4018,6 @@
     "label": "Large"
    }
   ]
- },
- "/ui/strata/update": {
-  "check": {
-   "installed": true,
-   "version": "0.2.7",
-   "available": false,
-   "major": false,
-   "engine": {
-    "installed": "0.1.50",
-    "offered": "0.1.52",
-    "new": false
-   },
-   "control": {
-    "installed": "0.1.53",
-    "offered": "0.1.53",
-    "new": false
-   },
-   "bytes": 0,
-   "serving": [],
-   "deferred": false,
-   "tested": true,
-   "problem": null
-  },
-  "error": "",
-  "update": {
-   "state": "idle",
-   "text": "",
-   "error": null,
-   "log": [],
-   "stopped": ""
-  }
  },
  "/ui/server?ids=&q=": {
   "gateway": {
@@ -4343,51 +4107,6 @@
      "error": null,
      "bytes": 0,
      "total": 0
-    }
-   },
-   {
-    "id": "strata",
-    "name": "Strata",
-    "summary": "Runs very large models by splitting them across the graphics card, RAM and the SSD.",
-    "tier": "large",
-    "trusted": true,
-    "approved": true,
-    "mode": "managed",
-    "capabilities": [
-     "context",
-     "multi_model",
-     "tuning"
-    ],
-    "installed": true,
-    "version": "0.2.7",
-    "running": [],
-    "bin": "/home/user/.local/bin/strata",
-    "problems": [],
-    "presets": [
-     {
-      "name": "IQ3_S dual",
-      "family": "qwen",
-      "model": "IQ3_S",
-      "context": 131072,
-      "vision": "cpu",
-      "port": 8080,
-      "last_used": "2026-10-28 15:01:47.983826"
-     },
-     {
-      "name": "IST-DAS-2.00bpw 128K",
-      "family": "deepseek41",
-      "model": "IST-DAS-2.00bpw",
-      "context": 131072,
-      "vision": "off",
-      "port": 8080,
-      "last_used": "2026-10-25 07:24:21.057085"
-     }
-    ],
-    "consent": null,
-    "update": {
-     "state": "idle",
-     "text": "",
-     "error": null
     }
    },
    {
@@ -4761,115 +4480,8 @@
    }
   }
  },
- "/ui/strata/recommend": {
-  "machine": {
-   "ram_gb": 62.7,
-   "vram_gb": 26,
-   "best_gpu_gb": 16,
-   "gpus": [
-    "NVIDIA GeForce RTX 3080",
-    "NVIDIA GeForce RTX 4080 SUPER"
-   ],
-   "free_disk_gb": 38.7
-  },
-  "adopted": true,
-  "options": [
-   {
-    "family": "qwen",
-    "model": "IQ3_S",
-    "title": "Qwen3.8 Flash-Next, best quality",
-    "need_gb": 54.8,
-    "ctx": 131072,
-    "fit": "fits",
-    "why": "",
-    "download_gb": 0,
-    "warnings": []
-   },
-   {
-    "family": "qwen",
-    "model": "IQ3_XXS",
-    "title": "Qwen3.8 Flash-Next, great quality",
-    "need_gb": 47,
-    "ctx": 131072,
-    "fit": "no",
-    "why": "Needs about 75 GB of free disk for the download; 29 GB is free on /media/user/HighSpeedIO/Strata.",
-    "download_gb": 75.8,
-    "warnings": []
-   },
-   {
-    "family": "qwen",
-    "model": "IQ2_XS",
-    "title": "Qwen3.8 Flash-Next, balanced",
-    "need_gb": 39.2,
-    "ctx": 131072,
-    "fit": "no",
-    "why": "Needs about 68 GB of free disk for the download; 29 GB is free on /media/user/HighSpeedIO/Strata.",
-    "download_gb": 68,
-    "warnings": []
-   },
-   {
-    "family": "qwen",
-    "model": "Q2_0",
-    "title": "Qwen3.8 Flash-Next, fastest",
-    "need_gb": 37.6,
-    "ctx": 131072,
-    "fit": "no",
-    "why": "Needs about 66 GB of free disk for the download; 29 GB is free on /media/user/HighSpeedIO/Strata.",
-    "download_gb": 66.4,
-    "warnings": []
-   },
-   {
-    "family": "deepseek41",
-    "model": "IST-DAS-2.00bpw",
-    "title": "DeepSeek V4.1 Flash (very large, 8K window)",
-    "need_gb": 46,
-    "ctx": 8192,
-    "min_vram_gb": 12,
-    "disk_gb": 270,
-    "fit": "fits",
-    "why": "",
-    "download_gb": 0,
-    "warnings": []
-   }
-  ],
-  "pick": "IQ3_S"
- },
  "/ui/tuning": {
   "targets": [
-   {
-    "engine": "strata",
-    "id": "IQ3_S dual",
-    "title": "IQ3_S dual",
-    "detail": "IQ3_S \u00b7 128k context",
-    "tuned": {
-     "has": true,
-     "stale": false,
-     "reasons": [],
-     "gain_pct": 0,
-     "decode": 79.1,
-     "baseline": 79.1,
-     "outcome": "default_confirmed",
-     "when": "2026-10-24T17:13:39+0530",
-     "can_undo": true
-    }
-   },
-   {
-    "engine": "strata",
-    "id": "IST-DAS-2.00bpw 128K",
-    "title": "IST-DAS-2.00bpw 128K",
-    "detail": "IST-DAS-2.00bpw \u00b7 128k context",
-    "tuned": {
-     "has": false,
-     "stale": false,
-     "reasons": [],
-     "gain_pct": null,
-     "decode": null,
-     "baseline": null,
-     "outcome": null,
-     "when": null,
-     "can_undo": false
-    }
-   },
    {
     "engine": "lemonade",
     "id": "gemma-3-270m-it-UD-IQ2_M",
@@ -4975,58 +4587,6 @@
      "blurb": "My general pick: fast, and good at everyday tasks, research and simple code.",
      "start": "Ready in seconds",
      "recommended": true
-    },
-    {
-     "size": "large",
-     "models": [],
-     "engine": "strata",
-     "blurb": "The most capable, for a big computer. It takes a couple of minutes to start.",
-     "start": "About 2 minutes to start",
-     "recommended": false
-    }
-   ],
-   "strata": [
-    {
-     "family": "qwen",
-     "model": "IQ3_S",
-     "title": "Qwen3.8 Flash-Next, best quality",
-     "need_gb": 54.8,
-     "ctx": 131072,
-     "suggest": true
-    },
-    {
-     "family": "qwen",
-     "model": "IQ3_XXS",
-     "title": "Qwen3.8 Flash-Next, great quality",
-     "need_gb": 47.0,
-     "ctx": 131072,
-     "suggest": true
-    },
-    {
-     "family": "qwen",
-     "model": "IQ2_XS",
-     "title": "Qwen3.8 Flash-Next, balanced",
-     "need_gb": 39.2,
-     "ctx": 131072,
-     "suggest": true
-    },
-    {
-     "family": "qwen",
-     "model": "Q2_0",
-     "title": "Qwen3.8 Flash-Next, fastest",
-     "need_gb": 37.6,
-     "ctx": 131072,
-     "suggest": true
-    },
-    {
-     "family": "deepseek41",
-     "model": "IST-DAS-2.00bpw",
-     "title": "DeepSeek V4.1 Flash (very large, 8K window)",
-     "need_gb": 46.0,
-     "ctx": 8192,
-     "min_vram_gb": 12,
-     "disk_gb": 270,
-     "suggest": false
     }
    ]
   },
@@ -5169,22 +4729,6 @@
      "show": [],
      "detect": [],
      "provider": "lemonade"
-    },
-    {
-     "id": "strata",
-     "name": "Strata",
-     "kind": "engine",
-     "badge": "",
-     "take": "",
-     "links": [
-      {
-       "label": "Strata on GitHub",
-       "url": "https://github.com/Niko1221/Strata"
-      }
-     ],
-     "show": [],
-     "detect": [],
-     "provider": "strata"
     },
     {
      "id": "llama-cpp",
@@ -5630,5 +5174,22 @@
    "models": "/zest/recommendations/models.yaml",
    "tools": "/zest/recommendations/tools.yaml"
   }
+ },
+ "/ui/servers": {
+  "presets": [
+   {
+    "id": "ollama",
+    "name": "Ollama",
+    "url": "http://127.0.0.1:11434",
+    "hint": "Ollama's usual address."
+   },
+   {
+    "id": "other",
+    "name": "Another server",
+    "url": "",
+    "hint": "Any OpenAI-style server."
+   }
+  ],
+  "servers": []
  }
 }

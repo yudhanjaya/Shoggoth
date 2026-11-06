@@ -2,7 +2,7 @@
 
 Shoggoth reads each model file's own header (gguf.py), asks every provider whether it can run the file and how much room it needs,
 sorts the model into a tier (Small, Medium, Large) and picks the provider that serves it. Where files live is one folder the
-person chooses (the Models folder); each engine keeps what it downloads in its own subfolder (lemonade/, strata/), and Shoggoth keeps small per-engine "views" (folders of
+person chooses (the Models folder); each engine keeps what it downloads in its own subfolder (lemonade/), and Shoggoth keeps small per-engine "views" (folders of
 links) so an engine is only ever shown files it can run. Nothing is copied or moved. Standard library only.
 """
 import json
@@ -20,7 +20,7 @@ import store
 TIERS = ("small", "medium", "large")
 TIER_LABEL = {"small": "Small", "medium": "Medium", "large": "Large"}
 SMALL_GB, MEDIUM_GB = 10, 24             # graphics memory a model needs: under 10 is Small, up to 24 Medium, beyond that Large
-SUBDIRS = ("lemonade", "strata")         # one folder per engine under the person's Models folder; nothing else lives there
+SUBDIRS = ("lemonade",)                  # one folder per engine under the person's Models folder; nothing else lives there
 _index = {"loaded": False, "d": {}}
 
 
@@ -157,7 +157,7 @@ def _entries_in(folder, label, owner):
         stem, i, n = gguf.shard_of(path)
         by_dir.setdefault((os.path.dirname(path), stem), {"n": n, "shards": {}})["shards"][i] = (path, size)
     out = []
-    # a projector may live in the model's folder or one level up (Strata keeps one beside its model folders)
+    # a projector may live in the model's folder or one level up (some engines keep one beside their model folders)
     for (d, stem), g in by_dir.items():
         shards = [g["shards"][i] for i in sorted(g["shards"])]
         first = shards[0][0]
@@ -537,7 +537,7 @@ def _live_on(engine):
 
 def models_on_cards(gpus):
     """Adds `models` to each card: [{model, id, engine, mem_mb}], the library models whose engines hold memory there. A process's
-    command line names its model file (llama-server's -m, Strata's --native ...); one that names none is listed by engine."""
+    command line names its model file (llama-server's -m ...); one that names none is listed by engine."""
     fmap = None
     for g in gpus:
         seen = {}

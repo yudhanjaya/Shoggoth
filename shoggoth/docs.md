@@ -27,7 +27,7 @@ flowchart LR
 | --- | --- |
 | **Shoggoth** | The window you are using. It shows the conversation, asks your permission, and manages everything else. |
 | **Pi** | A helper that lets a model do things: read a file, edit it, run a command, follow a skill. It comes bundled inside Shoggoth. |
-| **An engine** | A program that loads a model into your computer's memory and gets answers out of it. Shoggoth picks the right one for each model, starts it, and frees the memory when you switch, so you never have to. Small and medium models run on one engine and large models on another; **Advanced > Engines** names them if you are curious. |
+| **An engine** | A program that loads a model into your computer's memory and gets answers out of it. Shoggoth picks the right one for each model, starts it, and frees the memory when you switch, so you never have to. Shoggoth runs Lemonade for you. If you run another server yourself, such as Ollama or LM Studio, you can connect it under **Advanced > Engines**. |
 | **The model** | The AI. A large file, usually a few gigabytes (a lot more for the Large ones), that you download once and keep. |
 
 ## Your first minutes
@@ -183,25 +183,21 @@ Open **Models**. It lists every model on your computer, whichever program runs i
 - Memory (the context window): this is how much the AI can keep in mind at once. Shoggoth sets a roomy 128k by default. Working in a folder can use a lot of it, because the AI reads files. The Details panel shows how full it is, with a **Make room** button that tidies the older part of the conversation. The **Memory** menu in the chat's model bar changes the size.
 - **Settings for one model** (the **Settings** button on its card) let you change which devices it uses, backend options and more. The defaults are fine for nearly everyone. Chat always loads a model with the context size in its model bar.
 
-## Large models
+## Connecting a server of your own
 
-Some models are far too big for a graphics card. Shoggoth can still run them, by keeping part of the model in your RAM and on your SSD. They're slower than a model that fits, and they take a couple of minutes to start. They also need plenty of disk and a lot of RAM: the Large group is meant for computers with about 64 GB. They sit in the **Large** group of Models, and you use them like any other model.
+Shoggoth runs Lemonade by itself. If you already run another server, you can use its models in Chat and in your other apps.
 
-- **Choosing one is the same as choosing any model.** Under **Recommended for this computer**, Shoggoth looks at your RAM, graphics memory and free disk and suggests the best Large model that fits. **Get it** downloads it. The first time, Shoggoth also sets up the program that runs large models for you: it downloads it, checks it against the checksum its authors publish, and fits it to your computer. There is nothing to configure. Choose the model in Chat and a card shows it starting.
-- **Memory is shared.** Only one big model runs at a time. When you pick a Large model, Shoggoth frees whatever else was running first. Before it starts, Shoggoth checks there is enough free memory and, if not, says how much is missing and which programs are using the most (with a **Start anyway** button). Picking a smaller model later frees the big one again, unless it is answering right now.
-- **It frees itself.** A large model Shoggoth started is stopped after 20 idle minutes, and the next chat starts it again. Change this under **Memory** on the **Hardware** page, or set 0 to keep it ready.
-- **Updates come with everything else.** **Check and update everything** on **Advanced > Engines** includes the large-model program. If the one Shoggoth started is running, Shoggoth stops it, updates it and starts it again when a chat needs it.
-- **If you already run one yourself.** If you have already installed that program, or already have a big model running (started in a terminal, by its own app, or by hand), Shoggoth finds it and lists those models in Models with no setup. When it has been idle, it frees its model's memory; Shoggoth keeps listing the model, and your next message wakes it. Shoggoth never stops, restarts or updates one you started yourself, and won't start a second big model beside it. It has a **Stop** button (with a confirmation) only when you ask for one.
-
-The program is [Strata](https://github.com/Niko1221/Strata). Its saved setups, a way to connect to one on another computer, and its installer are all under **Advanced > Engines**.
+- Open **Advanced > Engines** and find **Connect a server**. Pick Ollama, LM Studio, llama.cpp, Strata, Maya, Unsloth, or **Another server** for anything that speaks the OpenAI API.
+- The address fills in with the usual one for that server. Change it if yours is different, add the API key if it has one, and press **Test**. Shoggoth tells you whether it answered and which models it has. **Connect** saves it. **Probe and connect** looks at the usual address of each server in the list, on this computer, and connects the ones that answer. It skips any that want a key (add those with the form) and any you already connected.
+- Its models appear in the model picker as `<server name>/<model>`.
+- **Shoggoth never starts, stops, updates or installs a connected server.** Start it yourself first. It does not free memory for it either, so if it shares a graphics card with Lemonade, you manage that. **Remove** forgets the address and leaves the server alone.
 
 ## Tuning
 
 **Advanced > Tuning** makes a model answer faster on your computer. It measures the model as it is, tries changes one at a time, and keeps only those that clearly help. Answers stay the same: tuning never changes how a model is compressed.
 
-- **Large models** are tuned by their own engine's tuner, quick (about 20 minutes) or thorough (up to 2 hours), for chat or for coding with long prompts. The result is saved and used every time the model starts. **Switch off** keeps it but goes back to the standard settings.
-- **Small and medium models** are tuned by Shoggoth: batch sizes, flash attention, threads, which backend and which graphics cards. Each is tried by loading the model with it, and a change is kept only if it beats the measuring noise (and at least 3%). **Undo** puts the old settings back.
-- Every model shows one of four states: tuned (with its speed and gain), tuned but the standard settings were already the fastest, out of date, or not tuned. **Test speed** measures a small or medium model without changing anything, and every model card has **Leave some graphics memory free**: large models keep 1.5 GB free by default, and start without it (saying so) if they need the whole card. Each reply in Chat shows how fast it was written.
+- **Models on Lemonade** are tuned by Shoggoth: batch sizes, flash attention, threads, which backend and which graphics cards. Each is tried by loading the model with it, and a change is kept only if it beats the measuring noise (and at least 3%). **Undo** puts the old settings back.
+- Every model shows one of four states: tuned (with its speed and gain), tuned but the standard settings were already the fastest, out of date, or not tuned. **Test speed** measures a small or medium model without changing anything, and every model card has **Leave some graphics memory free**. Each reply in Chat shows how fast it was written.
 - Tuning needs the graphics cards to itself, so Shoggoth shows the plan first (time, and what it will stop) and waits for your go-ahead. It stops what Shoggoth started, and waits while a chat is answering. It will not start while a large model you started yourself is running. You can cancel at any time and nothing is changed.
 
 ## Using your models in other apps
@@ -213,7 +209,7 @@ The program is [Strata](https://github.com/Niko1221/Strata). Its saved setups, a
 Everything in **Advanced** is optional.
 
 - **Hardware** is a lab bench. Each machine at the back is one graphics card, with lights for how hard it is working and the name of the model on it. The beaker shows memory used across all your cards, the gauge shows the hottest card, and the coil and radio show how hard they compute. Below the bench you choose which cards Shoggoth uses, and in what order.
-- **Engines** has a card for each program Shoggoth uses to run models: [Lemonade](https://lemonade-server.ai) for small and medium models, Strata for Large ones, and any you add. Each card shows its version, whether it is running and who started it, an update check, and a Stop button for ones Shoggoth started. Each card also holds that engine's own details. Lemonade's shows which hardware each kind of model uses (CUDA, Vulkan, ROCm or the processor). Strata's has your saved setups, a link to a Strata on another computer, and its installer. You can add your own engine by putting a folder with a `provider.yaml` file in the engines folder shown at the bottom of the page, then pressing **Reload**. Shoggoth asks once before an engine you added runs a program. The repository's `docs/ENGINES.md` explains how, and `providers check <folder>` (run the AppImage with those words) tells you what to fix before you reload.
+- **Engines** has a card for Lemonade, with its version, whether it is running, an update check, and which hardware each kind of model uses (CUDA, Vulkan, ROCm or the processor). Under it, **Connect a server** adds one you run yourself, and each connected server has its own card. You can also add an engine Shoggoth starts for you by putting a folder with a `provider.yaml` file in the engines folder shown at the bottom of the page, then pressing **Reload**. Shoggoth asks once before an engine you added runs a program. The repository's `docs/ENGINES.md` explains how, and `providers check <folder>` (run the AppImage with those words) tells you what to fix before you reload.
 - **Engine settings** is every setting Lemonade has, searchable.
 - **Themes** changes how Shoggoth looks. **Light Touch** is the default; **Braun T3** and **Teenage Engineering** are softer and bolder takes on the same idea, and the rest borrow colour schemes from popular code editors (Dracula, Nord, Monokai Pro, GitHub Light and more). Nothing moves when you switch, and your choice is remembered on this computer.
 - **Advanced > Engines** is where **Check and update everything** lives. Its **My own server** section is for the rare case where you run Lemonade yourself, for example as a system service: connect Shoggoth to it there instead of using the one Shoggoth starts.
@@ -253,8 +249,8 @@ Shoggoth goes online only to: download models you ask for, check for Shoggoth, e
 ## Terms used
 
 - **Model**: the AI itself, a big file on your computer.
-- **Engine**: a program that runs the model. Shoggoth picks and starts the right one for each model. (Lemonade runs small and medium models; Strata runs Large ones.)
-- **Small, Medium, Large**: how Shoggoth groups models by what they need. Small fits under 10 GB of graphics memory, Medium 10 to 24 GB, and Large is for big computers with lots of RAM.
+- **Engine**: a program that runs the model. Shoggoth runs Lemonade. A server you run yourself and connect also counts as an engine, and Shoggoth never starts or stops it.
+- **Small, Medium, Large**: how Shoggoth groups models by what they need. Small fits under 10 GB of graphics memory, Medium 10 to 24 GB, and Large needs more than that.
 - **Models**: the list of every model on your computer, and where you get new ones.
 - **Pi**: the helper that lets a model read files, make edits and run steps.
 - **Agent**: an AI that can take steps on its own (look, edit, run) instead of only talking.

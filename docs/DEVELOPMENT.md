@@ -49,7 +49,7 @@ Engines are added as a folder containing `provider.yaml`, with `provider.py` onl
 | `python3 shoggoth/server.py providers new <id> [--from llama-server]` | Scaffold an engine folder |
 | `providers check <folder> [--json]` | Validate a folder the way Shoggoth reads it. Starts nothing. |
 | `providers list` | List loaded engines and folders that failed to load |
-| `providers doctor` | Query installed Lemonade and Strata with the requests Shoggoth makes, and report schema drift. Run before each release. |
+| `providers doctor` | Query installed Lemonade with the requests Shoggoth makes, and report schema drift. Run before each release. |
 
 Reference material: `shoggoth/providers/_template/` (annotated template) and `shoggoth/providers/_examples/llama-server/` (complete YAML-only engine, tested end to end).
 

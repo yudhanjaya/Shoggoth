@@ -85,7 +85,7 @@ recommended:
       Excellent at coding for its size, but utterly neurotic and slow. Empires have risen and fallen in the time it takes to respond.
       Use if you're very patient.
 
-# Large models are the `strata` list below. Models that are not ready yet show greyed out with a COMING SOON! label.
+# Models that are not ready yet show greyed out with a COMING SOON! label.
 coming_soon:
   - title: LFM3
     take: >-
@@ -97,7 +97,7 @@ coming_soon:
       on many tasks. Will be added once I integrate Project Maya.
 
 # The first-run screen: "Choose your first model", one card per size. Each size shows the first model in `models` that this
-# computer can run. `recommended: true` marks the one Shoggoth suggests. The large card is Strata's suggestion (from `strata` below).
+# computer can run. `recommended: true` marks the one Shoggoth suggests.
 first_run:
   - size: small
     models: [LFM2.5-8B-A1B]
@@ -108,64 +108,3 @@ first_run:
     blurb: "My general pick: fast, and good at everyday tasks, research and simple code."
     start: Ready in seconds
     recommended: true
-  - size: large
-    engine: strata
-    blurb: The most capable, for a big computer. It takes a couple of minutes to start.
-    start: About 2 minutes to start
-
-# Very large models that Strata downloads and sets up itself (Large in the Library). `family` and `model` are Strata's own names
-# (`strata launch --family F --model M`). `need_gb` is the RAM plus graphics memory the weights need: it decides whether the model
-# fits. The suggestion is the first one, best quality first, that fits; `suggest: false` lists a model without ever suggesting it.
-strata:
-  # Qwen3.8 Flash-Next from ISTA-DASLab, Strata's recommended provider (Strata's docs/MODELS.md, "Pick by memory"): the best quality
-  # size and the balanced one. The two smaller sizes (IQ3_XXS, Q2_0) are left out on purpose.
-  - family: qwen
-    model: IQ3_S
-    title: "Qwen3.8 Flash-Next, IQ3_S"
-    need_gb: 54.8
-    ctx: 131072
-    take: >-
-      One of the closest options we have to a frontier model experience at home, thanks to Strata. Blazing fast (often as fast as some of
-      the medium models), roughly comparable to Claude Sonnet 5 for agentic work and code. You need at least 64 GB of RAM and a 12 GB GPU
-      to run this.
-  # The balanced size: 48 GB of RAM is enough for it (Strata's docs/MODELS.md).
-  - family: qwen
-    model: IQ2_XS
-    title: "Qwen3.8 Flash-Next, IQ2_XS"
-    need_gb: 39.2
-    ctx: 131072
-    take: >-
-      The IQ2_XS quantization. Smaller, and therefore less likely to be accurate - quantizations at this level tend to develop odd
-      habits, like looping or hallucinating. But if you're low on RAM, this is a good pick.
-  # Two more models from Strata's MODELS.md. `suggest: false`: they are never the default pick, only offered.
-  - family: coder
-    model: IQ1_M
-    title: "Qwen3.8 Flash-Next Coder (code only)"
-    need_gb: 29.6
-    ctx: 131072
-    suggest: false
-    take: >-
-      Flash-Next with half of its experts cut away, keeping only the stuff relevant for code. It runs on about 32 GB of RAM (half the
-      size of the full model). ISTA-DASLab, who made it, report that it keeps 91% of the full model’s SWE-bench Verified score and 99%
-      of its LiveCodeBench score. TL;DR: good at code and worse at everything else, especially multilingual stuff.
-  - family: swift
-    model: IQ2_XS
-    title: "Swift 1.5 (Flash-Next that thinks less)"
-    need_gb: 39.2
-    ctx: 131072
-    suggest: false
-    take: >-
-      A fine-tune of Qwen 3.8 Flash-Next by UkisAI that thinks much less before it answers, at about the same quality. It needs the
-      same memory, but you get your answers sooner and spend fewer tokens on long tool jobs. I prefer the original, but your call.
-  # 257 GB of disk and a fixed 8K window: listed, never suggested.
-  - family: deepseek41
-    model: IST-DAS-2.00bpw
-    title: "DeepSeek V4.1 Flash (very large, 8K window)"
-    need_gb: 46.0
-    ctx: 8192
-    min_vram_gb: 12
-    disk_gb: 270
-    suggest: false
-    take: >-
-      The darling of token-maxxers. DeepSeek approaches Claude Opus 5 quality (though not quite there), but expect it to be slow on all
-      but the most serious hardware. This one requires some serious hardware - if you need to run it, you need to do some reading.

@@ -1,4 +1,4 @@
-"""Tuning for Lemonade models (llama.cpp ones), the way `strata tune auto` does it for Strata.
+"""Tuning for Lemonade models (llama.cpp ones), by trying settings one at a time and keeping only what is clearly faster.
 
 Lemonade has no tuner of its own. This one measures the model as it is (the baseline, repeated, to learn how noisy a measurement is),
 tries one change at a time through Lemonade's own load options, keeps only changes that beat the noise, and checks the combination

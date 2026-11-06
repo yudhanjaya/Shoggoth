@@ -362,7 +362,7 @@ class Layout(Env):
         s.setdefault("models", {})["imports"] = [{"kind": "folder", "path": self.elsewhere, "label": "x"}]
         __import__("store").save(s)
         library.sync_views(self.cat(), self.reg)
-        self.assertEqual(sorted(os.listdir(self.lib)), ["lemonade", "strata"])
+        self.assertEqual(sorted(os.listdir(self.lib)), ["lemonade"])
         self.assertTrue(os.path.islink(os.path.join(self.tmp, "data", "views", "fast", "B-Q4.gguf")))
         self.assertEqual(library.views_base(), os.path.join(self.tmp, "data", "views"))
 
@@ -378,7 +378,7 @@ class Places(Env):
     def test_set_root_makes_the_folders_and_refuses_the_unwritable(self):
         new = os.path.join(self.tmp, "elsewhere", "My Models")
         self.assertEqual(library.set_root(new), new)
-        for sub in ("lemonade", "strata"):
+        for sub in ("lemonade",):
             self.assertTrue(os.path.isdir(os.path.join(new, sub)))
         self.assertEqual(library.root(), new)
         with self.assertRaises(ValueError):

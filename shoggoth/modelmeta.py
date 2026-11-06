@@ -1,6 +1,6 @@
 """Shoggoth's own notes about a model, kept per model id: a measured speed, and how much graphics memory to leave free for the system.
 
-Tuning flags are not kept here. Those stay where the engine keeps them (Strata's presets, Lemonade's saved options with the result in
+Tuning flags are not kept here. Those stay where the engine keeps them (Lemonade's saved options with the result in
 tuning.json), so nothing is stored twice and the engine remains the source of truth.
 """
 import json
@@ -52,14 +52,14 @@ def update(model, **fields):
         return rec
 
 
-DEFAULT_HEADROOM_GB = {"strata": 1.5}            # on unless the person turns it off: a big model that takes every last MiB makes the desktop crawl
+DEFAULT_HEADROOM_GB = {"lemonade": 0.0}          # none unless the person asks for some: graphics memory to leave free for the desktop
 
 
 def headroom_gb(model):
     """The graphics memory to leave free for the system on load: what the person set for the model (0 is "none"), else the engine's default."""
     v = get(model).get("headroom_gb")
     if v is None:
-        return DEFAULT_HEADROOM_GB.get("strata" if str(model).startswith("strata/") else "lemonade", 0.0)
+        return DEFAULT_HEADROOM_GB["lemonade"]
     try:
         return max(0.0, float(v))
     except (TypeError, ValueError):
@@ -68,10 +68,10 @@ def headroom_gb(model):
 
 def headroom_info(model):
     """For the page: {gb, default, explicit}."""
-    d = DEFAULT_HEADROOM_GB.get("strata" if str(model).startswith("strata/") else "lemonade", 0.0)
+    d = DEFAULT_HEADROOM_GB["lemonade"]
     return {"gb": headroom_gb(model), "default": d, "explicit": get(model).get("headroom_gb") is not None}
 
 
 def headroom_table():
     """Everything the page needs to show the setting: the engines' defaults, and what the person set for particular models."""
-    return {"default": dict(DEFAULT_HEADROOM_GB, lemonade=0.0), "set": {m: r["headroom_gb"] for m, r in _all().items() if isinstance(r, dict) and r.get("headroom_gb") is not None}}
+    return {"default": dict(DEFAULT_HEADROOM_GB), "set": {m: r["headroom_gb"] for m, r in _all().items() if isinstance(r, dict) and r.get("headroom_gb") is not None}}

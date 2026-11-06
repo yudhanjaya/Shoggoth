@@ -19,7 +19,6 @@ import engine  # noqa: E402
 import provbase  # noqa: E402
 import provcheck  # noqa: E402
 import registry  # noqa: E402
-import strata  # noqa: E402
 
 FIXTURE = os.path.join(HERE, "fixtures", "openai_server.py")
 GOOD = {"id": "demo", "name": "Demo", "api_version": 1, "run": {"mode": "managed", "start": ["{bin}", "--port", "{port}"], "ready": {"path": "/health"}},
@@ -94,7 +93,7 @@ class Validation(unittest.TestCase):
 class Loading(Env):
     def test_bundled_providers_load(self):
         r = self.registry()
-        self.assertEqual(sorted(p.id for p in r.all()), ["lemonade", "strata"])
+        self.assertEqual(sorted(p.id for p in r.all()), ["lemonade"])
         self.assertEqual(r.errors, [])
         # the template folder starts with _ and is never loaded
         self.assertNotIn("my-engine", r.providers)
@@ -103,10 +102,8 @@ class Loading(Env):
         r = self.registry()
         big = {"format": "gguf", "architecture": "qwen4exp"}
         plain = {"format": "gguf", "architecture": "gemma4"}
-        self.assertFalse(r.get("lemonade").can_run(big)[0])
-        self.assertTrue(r.get("strata").can_run(big)[0])
+        self.assertFalse(r.get("lemonade").can_run(big)[0])          # Lemonade's llama.cpp doesn't know this architecture
         self.assertTrue(r.get("lemonade").can_run(plain)[0])
-        self.assertFalse(r.get("strata").can_run(plain)[0])
 
     def test_wrong_folders_are_skipped_and_explained(self):
         self.add("broken-yaml", "id: [unclosed\n")
@@ -313,6 +310,67 @@ class YamlOnlyProvider(Env):
         self.assertIsNone(r.consent(r.get("remote")))
 
 
+class ConnectedServers(Env):
+    """A server the person connected is an engine that is only an address: Shoggoth uses it and never starts, stops or frees memory for it."""
+
+    def server(self, models=("m1",)):
+        from tests import test_servers
+        return test_servers.fake_server(models=models)
+
+    def test_a_saved_server_becomes_an_engine_after_lemonade(self):
+        import servers
+        url, stop = self.server()
+        try:
+            servers.add("ollama", url)
+            r = self.registry()
+            self.assertEqual([p.id for p in r.all()][-1], "ollama")
+            self.assertEqual(r.get("ollama").summary()["mode"], "external")
+            self.assertEqual([m["id"] for m in r.get("ollama").models()], ["m1"])
+            self.assertIsNone(r.consent(r.get("ollama")))
+        finally:
+            stop()
+
+    def test_two_servers_with_the_same_model_name_are_told_apart(self):
+        import servers
+        (u1, s1), (u2, s2) = self.server(("llama3",)), self.server(("llama3",))
+        try:
+            servers.add("ollama", u1)
+            servers.add("ollama", u2)
+            r = self.registry()
+            self.assertEqual([r.get(i).ref("llama3") for i in ("ollama", "ollama-2")], ["ollama/llama3", "ollama-2/llama3"])
+        finally:
+            s1()
+            s2()
+
+    def test_a_connected_server_needs_no_memory_and_is_never_stopped(self):
+        import servers
+        url, stop = self.server()
+        try:
+            servers.add("ollama", url)
+            p = self.registry().get("ollama")
+            self.assertEqual(p.memory()["group"], "")
+            self.assertFalse(p.stop()[0])
+            self.assertIsNone(p.owned_instance())
+        finally:
+            stop()
+
+    def test_an_id_that_is_already_an_engine_is_reported_and_skipped(self):
+        import servers
+        import store
+        servers.add("ollama", "http://h:1")
+        store.update(lambda s: s["servers"][0].__setitem__("id", "lemonade"))
+        r = self.registry()
+        self.assertEqual(sorted(p.id for p in r.all()), ["lemonade"])
+        self.assertIn("lemonade", r.errors[-1]["error"])
+
+    def test_a_server_that_is_down_does_not_slow_loading(self):
+        import servers
+        servers.add("ollama", "http://127.0.0.1:9")
+        t = time.time()
+        self.registry()
+        self.assertLess(time.time() - t, 1.0)
+
+
 class LemonadeNames(Env):
     def test_a_file_is_never_given_the_name_of_another_quant_of_the_same_repo(self):
         p = self.registry().get("lemonade")
@@ -332,7 +390,7 @@ class EnginesPage(Env):
         d = self.real().summary()
         self.assertEqual(d["user_folder"], self.user)
         by = {p["id"]: p for p in d["providers"]}
-        self.assertEqual(sorted(by), ["lemonade", "strata"])
+        self.assertEqual(sorted(by), ["lemonade"])
         for p in by.values():
             self.assertTrue({"state", "text", "error"} <= set(p["update"]))
             self.assertIn(p["update"]["state"], ("idle", "working", "done", "error", "deferred"))
@@ -356,16 +414,6 @@ class EnginesPage(Env):
         finally:
             engine.UPD.clear()
             engine.UPD.update(old)
-
-    def test_strata_reports_its_update_in_the_common_shape(self):
-        old = dict(strata.SUPD)
-        try:
-            strata.SUPD.update(state="deferred", text="Update after you stop it.", error=None)
-            u = self.real().get("strata").update_status()
-            self.assertEqual((u["state"], u["text"]), ("deferred", "Update after you stop it."))
-        finally:
-            strata.SUPD.clear()
-            strata.SUPD.update(old)
 
     def test_consent_names_the_program_and_shows_the_real_command(self):
         d = os.path.join(self.user, "demo")

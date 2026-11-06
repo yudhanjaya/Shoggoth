@@ -1,6 +1,6 @@
 # Add an engine in ten minutes
 
-An **engine** is a program that loads a model and serves inference. Shoggoth bundles two: [Lemonade](https://lemonade-server.ai) for small and medium models, and [Strata](https://github.com/Niko1221/Strata) for very large ones. Additional engines are defined by **one folder containing one YAML file**, with no change to Shoggoth's source.
+An **engine** is a program that loads a model and serves inference. Shoggoth bundles one: [Lemonade](https://lemonade-server.ai). You can connect a server you run yourself (see the next section), or add an engine Shoggoth starts for you. Those engines are defined by **one folder containing one YAML file**, with no change to Shoggoth's source.
 
 For any registered engine, Shoggoth:
 
@@ -8,6 +8,16 @@ For any registered engine, Shoggoth:
 - starts it when one of its models is selected, after freeing memory held by conflicting engines;
 - stops it after an idle period; and
 - lists its models in the **Library** alongside those of other engines.
+
+## Connect a server you already run
+
+Under **Advanced > Engines**, **Connect a server** takes the address of a server you run yourself. Pick a name for the usual address (Ollama `http://127.0.0.1:11434`, LM Studio `http://127.0.0.1:1234`, llama.cpp `http://127.0.0.1:8080`, Strata, Maya, Unsloth, or **Another server**), add the API key if it has one, press **Test**, then **Connect**. **Probe and connect** asks each preset's usual address on this computer for its model list (`/v1/models`, nothing else) and connects what answers, skipping servers that want a key and ones already connected. An address several presets share (8080) is connected as "Server at 127.0.0.1:8080".
+
+- A connected server is an engine that is only an address (`shoggoth/servers.py`). Its models are named `<server id>/<model>`, so two servers that both have `llama3` stay apart. Saved servers live in the `servers` setting.
+- Shoggoth never installs, starts, stops, updates, tunes or frees memory for it. If it shares a graphics card with Lemonade, you manage that.
+- The address must start with `http://` or `https://` and carry no user name or password. A trailing `/v1` is dropped, and `localhost` and `127.0.0.1` count as the same address.
+- The key is kept in Shoggoth's settings file and is never sent back to the page; the page sees only its last four characters.
+- Shoggoth does not ship setup for Strata or Maya. The names are labels and default addresses (`shoggoth/recommendations/servers.yaml`), nothing more.
 
 ## Ten minutes, start to finish
 
@@ -90,7 +100,7 @@ Some settings exist in the files of Shoggoth's own engines but are acted on only
 
 ## When YAML isn't enough: `provider.py`
 
-Add a `provider.py` next to the YAML with `class Provider(provbase.GenericProvider)` (or `provbase.Base` to do everything yourself) and override only what the YAML can't say. `shoggoth/provbase.py` documents every method; the shortest examples are the two real ones, in `shoggoth/providers/lemonade/provider.py` and `shoggoth/providers/strata/provider.py`. The interface in one line each:
+Add a `provider.py` next to the YAML with `class Provider(provbase.GenericProvider)` (or `provbase.Base` to do everything yourself) and override only what the YAML can't say. `shoggoth/provbase.py` documents every method; the shortest real example is `shoggoth/providers/lemonade/provider.py`. The interface in one line each:
 
 - `detect()`, `status()`: what is there, and what the card shows.
 - `models()`, `chat_models()`, `endpoint()`, `ensure(model_id, progress, opts)`, `stop()`: serving.
