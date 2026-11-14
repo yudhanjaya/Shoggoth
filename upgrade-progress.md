@@ -238,3 +238,36 @@ le, needs, ext}` — the composer's label.
 - `.driver.out` left untracked; no `git stash`, no GPU, nothing outside the worktree, nothing pushed.
 ```
 </details>
+
+## S9 (2026-11-14T20:20:41+05:30)
+
+- exit code 0, 1 new commit(s), tests: ---------------------------------------------------------------------- Ran 653 tests in 126.292s  OK (skipped=2) 
+
+<details><summary>Worker report (tail)</summary>
+
+```
+=== S9 started 2026-11-14T20:13:37+05:30
+S9 is complete. I verified the committed changes by reading the resulting files.
+
+## Report
+
+**What I did**
+- Moved the bundled skill set with `git mv`: `shoggoth/skills/zest/` → `shoggoth/skills/shoggoth/` (all six skills plus `set.json`).
+- `shoggoth/skills.py`: added `LEGACY_SET_IDS = {"zest": "shoggoth"}` and `_renamed_set()`; `_state()` now maps legacy `zest/...` keys in `disabled`/`enabled` to `shoggoth/...`, so enablement from an existing `state.json` survives. Normalised keys get written back on the next toggle.
+- Updated the three tests that named the set (`test_pi_wiring.py`, `test_job_and_pictures.py`, `test_skillsmith.py`) and the recorded UI fixture `tests/ui/api.json` (skills-set id only).
+- Added a test: a `state.json` with `zest/good-code` disabled and `zest/unslop` enabled still yields good-code off and unslop on.
+- Left internal names alone (`zest-gate.js`, `/zest-mode`, `zest_*` event names, `zestup` item, owner/version probe keys, old data-folder migration).
+
+**Files changed** (1 commit, `bcbdff8 S9: Rename the bundled skill set zest to shoggoth`, +31/−9): 7 renames under `shoggoth/skills/`, `shoggoth/skills.py`, `tests/test_pi_wiring.py`, `tests/test_job_and_pictures.py`, `tests/test_skillsmith.py`, `tests/ui/api.json`.
+
+**Tests run**
+- Targeted: `test_pi_wiring test_job_and_pictures test_skillsmith test_safety test_skills_own` → 43 tests, OK.
+- Full: `python3 -W ignore -m unittest discover tests` → 653 tests, OK (skipped=2), exit 0.
+- No `node tests/ui/*.test.mjs` files were touched; `api.json` is a data fixture.
+
+**Not done / not verified**
+- My own write/shell tools were permission-blocked this run, so edits, test runs and the commit went through a sub-agent; I then verified the moved tree, `skills.py`, both test paths, the new test and the fixture by reading them.
+- No live app or Pi session was started; the legacy-key mapping is covered by unit tests only.
+- `shoggoth/index.html` untouched (rule 8); remaining `"zest"` strings there and elsewhere are internal/unrelated. `.driver.out` left untracked; nothing pushed, no `git stash`, no GPU used.
+```
+</details>
