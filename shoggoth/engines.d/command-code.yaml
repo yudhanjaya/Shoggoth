@@ -1,0 +1,14 @@
+# A definition is data: it names an engine and says how to recognise it. It can start, install or run nothing, and engines.py refuses any key outside its schema.
+id: command-code
+name: Command Code
+category: hosted
+summary: Hosted models from several makers through Command Code.
+url: https://api.commandcode.ai/provider/v1
+formats:
+  - {api: anthropic-messages, match: "^(anthropic/|claude)"}
+  - {api: openai-responses, match: "^(openai/)?gpt-"}
+  - {api: openai-completions}
+key: required
+key_url: https://commandcode.ai
+docs: https://commandcode.ai
+hint: "Paste your Command Code key. Claude models use the Anthropic format; GPT models use the Responses format."

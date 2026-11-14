@@ -1,0 +1,17 @@
+# A definition is data: it names an engine and says how to recognise it. It can start, install or run nothing, and engines.py refuses any key outside its schema.
+id: lemonade
+name: Lemonade
+category: local
+summary: A local server from the Lemonade project that loads and unloads models on request.
+url: http://127.0.0.1:13305
+ports: [13305]
+match: [lemond, lemonade-server]
+identify:
+  - {path: /v1/models, json: "$.data[*].owned_by", equals: lemonade}
+formats:
+  - {api: openai-completions}
+context: {path: /v1/models, json: "$.data[0].context_length"}
+loads: router
+key: optional
+docs: https://github.com/lemonade-sdk/lemonade
+hint: "Its usual address is port 13305. If you set LEMONADE_API_KEY, paste that key here."

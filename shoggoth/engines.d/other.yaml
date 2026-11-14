@@ -2,7 +2,7 @@
 id: other
 name: Another server
 category: local
-summary: Any server that speaks the OpenAI API.
+summary: Any server that speaks the OpenAI API, at an address you type.
 formats:
   - {api: openai-completions}
 loads: fixed

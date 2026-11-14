@@ -1,0 +1,12 @@
+# A definition is data: it names an engine and says how to recognise it. It can start, install or run nothing, and engines.py refuses any key outside its schema.
+id: openrouter
+name: OpenRouter
+category: hosted
+summary: Hundreds of hosted models from many makers, behind one key.
+url: https://openrouter.ai/api/v1
+formats:
+  - {api: openai-completions}
+key: required
+key_url: https://openrouter.ai/keys
+docs: https://openrouter.ai
+hint: "Paste your OpenRouter key. Each model's page shows its price."

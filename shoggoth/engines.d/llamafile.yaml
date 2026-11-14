@@ -1,0 +1,15 @@
+# A definition is data: it names an engine and says how to recognise it. It can start, install or run nothing, and engines.py refuses any key outside its schema.
+id: llamafile
+name: llamafile
+category: local
+summary: A single file that holds a model and runs it as a server.
+url: http://127.0.0.1:8080
+ports: [8080]
+match: [llamafile]
+formats:
+  - {api: openai-completions}
+context: {path: /props, json: "$.default_generation_settings.n_ctx"}
+loads: fixed
+key: optional
+docs: https://github.com/mozilla-ai/llamafile
+hint: "Run the .llamafile file. Its usual address is port 8080."

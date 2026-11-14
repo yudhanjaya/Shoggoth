@@ -1,0 +1,15 @@
+# A definition is data: it names an engine and says how to recognise it. It can start, install or run nothing, and engines.py refuses any key outside its schema.
+id: mistralrs
+name: mistral.rs
+category: local
+summary: A Rust server for running models, with a chat page built in.
+url: http://127.0.0.1:1234
+ports: [1234]
+match: [mistralrs, mistralrs-server]
+formats:
+  - {api: openai-completions}
+context: {path: /v1/models, json: "$.data[0].max_model_len"}
+loads: fixed
+key: none
+docs: https://github.com/EricLBuehler/mistral.rs
+hint: "Its usual address is port 1234, the same as LM Studio. Its chat page is at /ui."

@@ -156,10 +156,12 @@ class Identifying(unittest.TestCase):
         r = scan.identify(defs, 9, "", "", lambda p: (200, {"server": "HServe/1.0"}, None))
         self.assertEqual(r["engine"], "h")
 
-    def test_bundled_definitions_put_an_unknown_8080_in_the_specialized_bucket(self):
+    def test_bundled_definitions_do_not_file_an_unknown_8080_as_specialized(self):
+        """llamafile, RamaLama and TGI are local engines on 8080 with no signature, so they share it with Strata and Maya: no one category fits."""
         r = scan.identify(engines.definitions(), 8080, "", "", self.answers())
-        self.assertEqual((r["category"], r["how"]), ("specialized", "category"))
-        self.assertTrue({"strata", "maya"} <= {c["id"] for c in r["candidates"]})
+        self.assertEqual((r["category"], r["how"]), (None, "generic"))
+        on_8080 = {d["id"] for d in engines.definitions() if 8080 in d["ports"]}
+        self.assertTrue({"strata", "maya", "llamafile", "ramalama", "tgi"} <= on_8080)
 
 
 class Scanning(Env):

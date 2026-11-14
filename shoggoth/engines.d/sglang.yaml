@@ -1,0 +1,14 @@
+# A definition is data: it names an engine and says how to recognise it. It can start, install or run nothing, and engines.py refuses any key outside its schema.
+id: sglang
+name: SGLang
+category: local
+summary: A GPU server for running one model, started with python -m sglang.launch_server.
+url: http://127.0.0.1:30000
+ports: [30000]
+match: [sglang.launch_server, sglang]
+formats:
+  - {api: openai-completions}
+loads: fixed
+key: optional
+docs: https://github.com/sgl-project/sglang
+hint: "Its usual address is port 30000. Start it with python -m sglang.launch_server."

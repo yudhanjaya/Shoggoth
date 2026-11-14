@@ -1,0 +1,15 @@
+# A definition is data: it names an engine and says how to recognise it. It can start, install or run nothing, and engines.py refuses any key outside its schema.
+id: ninfer
+name: NInfer
+category: specialized
+summary: An inference server for home hardware, with one engine serving one model.
+url: http://127.0.0.1:8080
+ports: [8080]
+match: [ninfer-serve, ninfer]
+formats:
+  - {api: openai-completions}
+context: {path: /v1/models, json: "$.data[0].max_model_len"}
+loads: fixed
+key: optional
+docs: https://github.com/Neroued/ninfer
+hint: "Its usual address is port 8080, set with --port. Use its API key if you set one."

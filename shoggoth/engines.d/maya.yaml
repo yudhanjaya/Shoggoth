@@ -5,9 +5,12 @@ category: specialized
 summary: Runs very large models on home hardware.
 url: http://127.0.0.1:8080
 ports: [8080]
-match: [maya]
+match: [maya, maya.sh]
+identify:
+  - {path: /api/tags, json: "$.models[*].maya"}
 formats:
   - {api: openai-completions}
-loads: fixed
+loads: router
 key: optional
-hint: Use the address Maya prints when it starts. This default is a guess; check it.
+docs: https://github.com/mw00/project-maya
+hint: "Maya's usual address is 127.0.0.1:8080. Use its API key if you set one for other devices."

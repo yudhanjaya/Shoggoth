@@ -1,0 +1,12 @@
+# A definition is data: it names an engine and says how to recognise it. It can start, install or run nothing, and engines.py refuses any key outside its schema.
+id: gemini
+name: Google Gemini
+category: hosted
+summary: Google's Gemini models, through its OpenAI-style endpoint.
+url: https://generativelanguage.googleapis.com/v1beta/openai/
+formats:
+  - {api: openai-completions}
+key: required
+key_url: https://aistudio.google.com/apikey
+docs: https://ai.google.dev
+hint: "Paste your key from Google AI Studio. The free tier has rate limits."

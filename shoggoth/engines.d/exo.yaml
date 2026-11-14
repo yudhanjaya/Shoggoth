@@ -1,0 +1,14 @@
+# A definition is data: it names an engine and says how to recognise it. It can start, install or run nothing, and engines.py refuses any key outside its schema.
+id: exo
+name: exo
+category: local
+summary: Runs models across one or more machines and serves them on a local port.
+url: http://127.0.0.1:52415
+ports: [52415]
+match: [exo]
+formats:
+  - {api: openai-completions}
+loads: ollama
+key: none
+docs: https://github.com/exo-explore/exo
+hint: "Its usual address is port 52415. Start it with uv run exo."

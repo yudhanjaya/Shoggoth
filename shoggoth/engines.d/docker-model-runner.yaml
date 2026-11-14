@@ -1,0 +1,14 @@
+# A definition is data: it names an engine and says how to recognise it. It can start, install or run nothing, and engines.py refuses any key outside its schema.
+id: docker-model-runner
+name: Docker Model Runner
+category: local
+summary: Docker's built-in runner for models, served on a local port.
+url: http://127.0.0.1:12434
+ports: [12434]
+match: [dmr, model-runner, com.docker.llama-server]
+formats:
+  - {api: openai-completions}
+loads: ollama
+key: none
+docs: https://github.com/docker/model-runner
+hint: "Turn on Model Runner in Docker, then use its address. Its usual port is 12434."
