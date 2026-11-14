@@ -7,12 +7,13 @@ import tempfile
 import threading
 
 DEFAULTS = {
-    "mode": None,            # "builtin" (Shoggoth runs its own Lemonade) or "existing" (one you already run)
+    "mode": None,            # "builtin" (Shoggoth runs its own llama.cpp) or "connected" (only servers you connected)
     "setup_done": False,
-    "existing": {"host": "127.0.0.1", "port": 13305, "api_key": ""},
-    "builtin": {"port": 13307, "api_key": "", "version": ""},   # version: "" = newest, or a pinned version, or "bundled"
+    # Shoggoth's own llama.cpp: backend (cpu, vulkan, cuda12, cuda13, rocm; "" = the newest build here), tag (a pinned build, "" = newest),
+    # device (llama.cpp's name, like cuda0; "" = all), max_loaded (keep up to N models loaded), enabled (false turns it off)
+    "llamacpp": {"backend": "", "tag": "", "device": "", "max_loaded": 1},
     "search": {"enabled": True, "provider": "duckduckgo", "brave_key": "", "tavily_key": ""},   # the model may search the web; every search still asks first
-    "chat": {"ctx": 131072},  # the context window every chat load asks for (128k): long chats and agent work need the room
+    "chat": {"ctx": "auto"},  # the context window chats ask for: "auto" (the most that fits, per model) or a number of tokens
     "pi": {"version": ""},   # which Pi (the agent) to run: "" = newest, "bundled" = the one that came with Shoggoth, or a version number
     "servers": [],                 # servers the person connected under Advanced > Engines: [{id, preset, name, url, key}]
     "library": {"root": ""},       # where every model lives (the person chooses it once)
@@ -92,6 +93,9 @@ def _merge(base, extra):
     return base
 
 
+OLD_DEFAULT_CTX = 131072     # what 4.x saved as the chat window without being asked; not a choice the person made
+
+
 def _read():
     s = copy.deepcopy(DEFAULTS)
     try:
@@ -99,6 +103,9 @@ def _read():
             _merge(s, json.load(f))
     except (OSError, ValueError):
         pass
+    c = s.get("chat") if isinstance(s.get("chat"), dict) else {}
+    if c.get("ctx") == OLD_DEFAULT_CTX and not c.get("ctx_set"):
+        c["ctx"] = "auto"            # 4.x wrote 128k as the default; only a size picked in the chat bar (ctx_set) stays fixed
     return s
 
 

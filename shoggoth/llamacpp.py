@@ -665,3 +665,40 @@ def summary(settings=None):
             "backends": [{"id": k, "name": NAMES[k]} for k in ASSETS], "recommended": util.cached("llamacpp-rec", 300, recommended),
             "max_loaded": max_loaded(cfg), "device": cfg.get("device", ""), "error": _state.get("error"),
             "update": dict(UPD), "log": log_path()}
+
+
+_BUF = re.compile(r"(?:model buffer size|compute buffer size)\s*=\s*([\d.]+) MiB|llama_kv_cache: size\s*=\s*([\d.]+) MiB")
+
+
+def instance_port(model_id):
+    """The port the router gave the process serving `model_id`, or None."""
+    m = next((m for m in models() if m["id"] == model_id), None)
+    a = (m or {}).get("args") or []
+    for i, x in enumerate(a[:-1]):
+        if x == "--port" and str(a[i + 1]).isdigit():
+            return int(a[i + 1])
+    return None
+
+
+def measured_gb(model_id, text=None):
+    """What loading `model_id` really took, in GB: its model buffers, the conversation cache and the compute buffers, read from the lines
+    the router copies from that model's process into its log (each starts with "[port]"). None when the log doesn't say."""
+    port = instance_port(model_id) if text is None else None
+    if text is None:
+        if not port:
+            return None
+        try:
+            with open(log_path(), "rb") as f:
+                f.seek(max(0, os.path.getsize(log_path()) - 2_000_000))
+                text = f.read().decode("utf8", "replace")
+        except OSError:
+            return None
+    mib = 0.0
+    tag = "[%d]" % port if port else ""
+    for line in text.splitlines():
+        if tag and not line.lstrip().startswith(tag):
+            continue
+        m = _BUF.search(line)
+        if m:
+            mib += float(m.group(1) or m.group(2))
+    return round(mib / 1024, 2) if mib else None

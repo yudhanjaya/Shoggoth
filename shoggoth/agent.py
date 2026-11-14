@@ -1,4 +1,4 @@
-"""Cowork: runs the Pi coding agent (https://pi.dev) against Shoggoth's own Lemonade and relays it to the browser.
+"""Cowork: runs the Pi coding agent (https://pi.dev) against Shoggoth's own llama.cpp (or any engine) and relays it to the browser.
 
 One `pi --mode rpc` child process per Cowork task, talking JSON lines over stdin/stdout. Shoggoth keeps each task's
 event stream in memory so the page can reconnect, stores the task list in its data folder, and leaves the transcript
@@ -18,7 +18,6 @@ import time
 import uuid
 
 import folders as folderstore
-import lem
 import pipkgs
 import piup
 import provbase
@@ -26,6 +25,7 @@ import router
 import skills
 import store
 import uiauth
+import util
 import workcopy
 
 HERE = os.path.dirname(os.path.abspath(__file__))
@@ -115,10 +115,6 @@ def chat_models():
     return router.chat_models()
 
 
-def _health():
-    return lem.get("/v1/health")
-
-
 def loaded_state(model, health=None):
     """(in memory?, its context window in tokens or 0 when the engine doesn't say)."""
     return router.loaded(model)
@@ -129,19 +125,47 @@ def model_max_ctx(model):
     return router.max_ctx(model)
 
 
-def chat_ctx():
-    """The person's chosen context window for chats (128k unless they changed it in the chat bar)."""
+def chat_ctx_setting():
+    """The chat context setting as the person chose it: "auto" (each model gets the most that fits, see library.pick_context) or a number."""
+    v = (store.load().get("chat") or {}).get("ctx")
+    if v in (None, "", "auto"):
+        return "auto"
     try:
-        return max(2048, int((store.load().get("chat") or {}).get("ctx") or DEFAULT_CTX))
+        return max(2048, int(v))
     except (TypeError, ValueError):
-        return DEFAULT_CTX
+        return "auto"
+
+
+def chat_ctx():
+    """The person's chosen context window for chats in tokens; DEFAULT_CTX when it is automatic (want_ctx then asks the library)."""
+    v = chat_ctx_setting()
+    return DEFAULT_CTX if v == "auto" else v
+
+
+def _auto_ctx(model):
+    """The window the library picked for this model (the most that fits here), or 0 when it isn't in the library."""
+    def table():
+        import library
+        out = {}
+        for e in library.catalog():
+            if e.get("ctx"):
+                for name in [e.get("ref")] + list((e.get("ids") or {}).values()):
+                    if name:
+                        out.setdefault(name, int(e["ctx"]))
+        return out
+    try:
+        return util.cached("auto-ctx", 15, table).get(model, 0)
+    except Exception:  # noqa: BLE001 - a library problem falls back to the default window
+        return 0
 
 
 def want_ctx(model):
-    """What a load of `model` asks for: the chat setting, never more than the model can do."""
+    """What a load of `model` asks for: the chat setting (or, when it is automatic, the library's pick), never more than the model can do."""
     if router.fixed_ctx(model):
         return model_max_ctx(model)         # some engines decide the window when they start
     n, top = chat_ctx(), model_max_ctx(model)
+    if chat_ctx_setting() == "auto":
+        n = _auto_ctx(model) or n
     # "128k" models are listed as 128000; only a model with clearly less room than asked for is held back
     return top if top and top * 1.05 < n else n
 
@@ -154,16 +178,13 @@ def model_ctx(model):
 
 def model_state():
     """What the chat bar shows: the model in memory, how much context it has, and what Shoggoth is loading right now."""
-    h = _health()
-    name = h.get("model_loaded") or None
-    ctx = loaded_state(name)[1] if name else 0
-    if not name:
-        live = [m for m in router.chat_models() if m["live"]]
-        if live:
-            name, ctx = live[0]["id"], live[0]["ctx"]
+    name, ctx = None, 0
+    live = [m for m in router.chat_models() if m["live"]]           # the providers' own lists (llama.cpp: router GET /models, status loaded)
+    if live:
+        name, ctx = live[0]["id"], live[0]["ctx"]
     with _lock:
         loading = dict(_loading) if _loading["model"] else None
-    return {"loaded": name, "ctx": ctx, "chat_ctx": chat_ctx(), "loading": loading, "default_ctx": DEFAULT_CTX,
+    return {"loaded": name, "ctx": ctx, "chat_ctx": chat_ctx_setting(), "loading": loading, "default_ctx": DEFAULT_CTX,
             "step": router.state()["step"]}
 
 
@@ -190,7 +211,7 @@ def load_model(model, ctx=None, force=False):
     if not model:
         return False, "Choose a model first.", 0
     with _load_lock:
-        ctx = int(ctx) if ctx else want_ctx(model)
+        ctx = int(ctx) if ctx and ctx != "auto" else want_ctx(model)
         isl, cur = loaded_state(model)
         if isl and (cur == ctx or router.fixed_ctx(model)) and not force:
             return True, "", cur or ctx
@@ -220,11 +241,11 @@ def unload_model(model):
 
 
 def set_chat_ctx(tokens):
-    """Remember the context window chats ask for, and let idle chats pick it up on their next message."""
-    tokens = max(2048, min(int(tokens), 1048576))
-    if tokens != chat_ctx():
+    """Remember the context window chats ask for ("auto" or a number of tokens), and let idle chats pick it up on their next message."""
+    tokens = "auto" if tokens in (None, "", "auto") else max(2048, min(int(tokens), 1048576))
+    if tokens != chat_ctx_setting():
         s = store.load()
-        s["chat"] = dict(s.get("chat") or {}, ctx=tokens)
+        s["chat"] = dict(s.get("chat") or {}, ctx=tokens, ctx_set=True)
         store.save(s)
         restart_idle()           # Pi is told each model's window when it starts
     return tokens
@@ -999,7 +1020,7 @@ def session(sid, start=True):
             return None
         models = chat_models()
         if not task.get("model") and models:
-            loaded = [m.get("model_name") for m in lem.get("/v1/health").get("all_models_loaded", [])]
+            loaded = [m["id"] for m in models if m.get("live")]          # what the engines say is in memory (llama.cpp: GET /models, loaded)
             task["model"] = next((m["id"] for m in models if m["id"] in loaded), models[0]["id"])
             _update_meta(sid, model=task["model"])
         ctx = model_ctx(task.get("model", "")) if task.get("model") else 0
