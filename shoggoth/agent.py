@@ -17,11 +17,13 @@ import threading
 import time
 import uuid
 
+import engines
 import folders as folderstore
 import lem
 import piup
 import provbase
 import router
+import servers
 import skills
 import store
 import uiauth
@@ -270,6 +272,15 @@ def _pi_model(m, window):
             "contextWindow": window, "maxTokens": max(4096, min(32768, window // 4))}
 
 
+def model_api(m):
+    """The API format Pi should use for one model: the model's own `api` when the list carries one, else the `formats` rules of the hosted
+    service it comes from (engines.d), else OpenAI chat completions."""
+    if m.get("api") in engines.APIS:
+        return m["api"]
+    entry = servers.get(m.get("engine") or "") or {}
+    return engines.api_for(entry.get("preset") or "", m.get("pi_model") or m.get("id"))
+
+
 def write_config(models, default, ctx=0):
     d = agent_dir()
     os.makedirs(d, exist_ok=True)
@@ -283,11 +294,20 @@ def write_config(models, default, ctx=0):
         else:
             ep = router.get(first["engine"]).pi_endpoint(_zest_port["v"]) or {}
             url, key = ep.get("base_url", ""), ep.get("key", name)
+        entries = []
+        for m in ms:
+            window = m["ctx"] if router.fixed_ctx(m["id"]) else (ctx if (ctx and m["id"] == default) else min(m["ctx"], DEFAULT_CTX))
+            e = _pi_model(dict(m, id=m["pi_model"]), window)
+            api = model_api(m)
+            e["api"] = api                                       # per model: one service can speak three formats
+            if api != "openai-completions":
+                e["baseUrl"] = engines.pi_base_url(api, url)
+            entries.append(e)
         providers[name] = {"baseUrl": url, "api": "openai-completions", "apiKey": key,
                            "compat": {"supportsDeveloperRole": False, "supportsUsageInStreaming": True},
-                           "models": [_pi_model(dict(m, id=m["pi_model"]),
-                                                m["ctx"] if router.fixed_ctx(m["id"]) else (ctx if (ctx and m["id"] == default) else min(m["ctx"], DEFAULT_CTX)))
-                                      for m in ms]}
+                           "models": entries}
+        if any(e["api"] == "anthropic-messages" for e in entries):
+            providers[name]["authHeader"] = True                 # services that front Claude may want the key as a Bearer token as well as x-api-key
     _write(os.path.join(d, "models.json"), {"providers": providers})
     chosen = router.info(default) or {}
     settings = {"defaultProvider": chosen.get("pi_provider", "lemonade"), "defaultProjectTrust": "never", "quietStartup": True,
