@@ -60,7 +60,7 @@ Shoggoth is not meant to be a replacement for various backends or front-ends. I 
 
 ![The Getting ready screen: the checklist is done and Shoggoth suggests a first model per size](docs/screenshots/welcome.png)
 
-**You need:** Linux on x86_64, a few common libraries (OpenSSL 3, zstd, libdrm), your graphics driver if you want the GPU, and internet for the first-run downloads. The AppImage runs on older systems such as Ubuntu 22.04. No FUSE? Run it with `--appimage-extract-and-run`.
+**You need:** Linux on x86_64 with glibc 2.38 or newer (Ubuntu 24.04, Debian 13, Fedora 39 or Linux Mint 22 and newer), a few common libraries (OpenSSL 3, zstd, libdrm), your graphics driver if you want the GPU, and internet for the first-run downloads. No FUSE? Run it with `--appimage-extract-and-run`.
 
 Close the browser tab and Shoggoth quits about two seconds later. Already have models, or your own Lemonade? Shoggoth finds them.
 

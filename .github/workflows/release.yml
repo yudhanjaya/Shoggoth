@@ -7,7 +7,7 @@ permissions:
   contents: write
 jobs:
   appimage:
-    runs-on: ubuntu-22.04   # older glibc keeps the AppImage portable
+    runs-on: ubuntu-24.04   # the bundled llama.cpp build needs glibc 2.38, so the image builds on 24.04
     steps:
       - uses: actions/checkout@v4
       - run: ./packaging/build-appimage.sh

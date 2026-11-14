@@ -90,6 +90,41 @@ class Builds(Env):
         self.assertEqual(llamacpp.NEEDS_GLIBC, (2, 38))
 
 
+class NewerLinux(Env):
+    """A build that won't start on an older Linux says which Linux it needs."""
+
+    GLIBC_ERROR = ("./llama-server: /lib/x86_64-linux-gnu/libc.so.6: version `GLIBC_2.38' not found "
+                   "(required by ./libggml-base.so)\n")
+
+    def test_a_glibc_not_found_error_names_2_38_and_the_distros(self):
+        with mock.patch.object(llamacpp.util, "run", return_value=(1, self.GLIBC_ERROR)), \
+                mock.patch.object(llamacpp, "_glibc", lambda: (2, 31)):
+            with self.assertRaises(RuntimeError) as e:
+                llamacpp.check_build("/x/llama-server", "b12375")
+        msg = str(e.exception)
+        for bit in ("needs a newer Linux", "glibc 2.38", "Ubuntu 24.04", "Debian 13", "Fedora 39",
+                    "Linux Mint 22", "this computer has 2.31"):
+            self.assertIn(bit, msg)
+
+    def test_an_old_glibc_without_a_message_still_says_which_linux(self):
+        with mock.patch.object(llamacpp.util, "run", return_value=(1, "Segmentation fault")), \
+                mock.patch.object(llamacpp, "_glibc", lambda: (2, 35)):
+            with self.assertRaises(RuntimeError) as e:
+                llamacpp.check_build("/x/llama-server", "b12375")
+        self.assertIn("glibc 2.38", str(e.exception))
+
+    def test_a_build_that_runs_is_accepted(self):
+        with mock.patch.object(llamacpp.util, "run", return_value=(0, "build 12375")):
+            llamacpp.check_build("/x/llama-server", "b12375")
+
+    def test_some_other_failure_is_not_called_an_old_linux(self):
+        with mock.patch.object(llamacpp.util, "run", return_value=(1, "cannot execute: x")), \
+                mock.patch.object(llamacpp, "_glibc", lambda: (2, 39)):
+            with self.assertRaises(RuntimeError) as e:
+                llamacpp.check_build("/x/llama-server", "b12375")
+        self.assertIn("won't start", str(e.exception))
+
+
 class LoadLog(Env):
     def test_what_a_load_took_is_read_from_the_load_log(self):
         with open(os.path.join(HERE, "fixtures", "kvlogs", "qwen3-0.6b-q4_0-q8-8192.log")) as f:

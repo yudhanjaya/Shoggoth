@@ -29,6 +29,7 @@ import util
 
 REPO = "ggml-org/llama.cpp"
 NEEDS_GLIBC = (2, 38)                 # what the official ubuntu builds link against (libggml-base needs GLIBC_2.38 on b12375)
+GLIBC_DISTROS = "Ubuntu 24.04, Debian 13, Fedora 39 or Linux Mint 22"
 HERE = os.path.dirname(os.path.abspath(__file__))
 PORTS = range(13340, 13360)
 _lock = threading.RLock()
@@ -191,11 +192,43 @@ def _env(build_dir):
     return env
 
 
+def _smoke(exe):
+    """(version, output) from `llama-server --version`, run the way start() runs it."""
+    _, out = util.run([exe, "--version"], 15, env=_env(os.path.dirname(os.path.abspath(exe))))
+    m = re.search(r"build (\d+)", out)
+    return ("b" + m.group(1) if m else None), out
+
+
 def version_of(exe):
     """'b12375' from `llama-server --version`, or None when it won't run. Run the way start() runs it."""
-    code, out = util.run([exe, "--version"], 15, env=_env(os.path.dirname(os.path.abspath(exe))))
-    m = re.search(r"build (\d+)", out)
-    return "b" + m.group(1) if m else None
+    return _smoke(exe)[0]
+
+
+def glibc_failure(out):
+    """The glibc version a build asked for when it wouldn't run ('GLIBC_2.38 not found'), or None."""
+    for line in str(out or "").splitlines():
+        m = re.search(r"GLIBC_(\d+)\.(\d+)", line)
+        if m and "not found" in line:
+            return (int(m.group(1)), int(m.group(2)))
+    return None
+
+
+def newer_linux(have=None):
+    """Why a build won't run here: the glibc it needs, and the distros that ship one at least that new. `have` is this computer's."""
+    return ("This llama.cpp build needs a newer Linux: %s (glibc %d.%d or later%s)."
+            % (GLIBC_DISTROS, NEEDS_GLIBC[0], NEEDS_GLIBC[1],
+               "; this computer has %d.%d" % have if have else ""))
+
+
+def check_build(exe, tag):
+    """Raise why a freshly unpacked build can't run: too old a Linux, or something else."""
+    ver, out = _smoke(exe)
+    if ver == tag:
+        return
+    have = _glibc()
+    if glibc_failure(out) or (have and have < NEEDS_GLIBC):
+        raise RuntimeError(newer_linux(have))
+    raise RuntimeError("The new llama.cpp won't start on this computer.")
 
 
 # ---------------------------------------------------------------- installing
@@ -325,12 +358,7 @@ def install(backend, release=None, cancel=None):
         exe = os.path.join(tmp, "llama-server")
         if not os.path.isfile(exe):
             raise RuntimeError("The download doesn't contain llama-server.")
-        if version_of(exe) != tag:
-            g = _glibc()
-            if g and g < NEEDS_GLIBC:
-                raise RuntimeError("This llama.cpp build needs a newer Linux (glibc %d.%d or later; this computer has %d.%d)."
-                                   % (NEEDS_GLIBC + g))
-            raise RuntimeError("The new llama.cpp won't start on this computer.")
+        check_build(exe, tag)
         with _lock:
             os.makedirs(os.path.dirname(final), exist_ok=True)
             shutil.rmtree(final, ignore_errors=True)

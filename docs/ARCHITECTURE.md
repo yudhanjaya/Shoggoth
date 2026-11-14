@@ -57,7 +57,7 @@ Each engine is a provider (`provider.yaml`, optionally `provider.py`). The regis
 
 ## Platform support and known limitations
 
-- **Supported OS:** Linux x86_64 with glibc 2.38 or newer (Ubuntu 24.04, Fedora 39 and later): llama.cpp's official builds need it, and the router can't run through a bundled loader because it starts each model's process from its own executable.
+- **Supported OS:** Linux x86_64 with glibc 2.38 or newer (Ubuntu 24.04, Debian 13, Fedora 39 or Linux Mint 22 and later): llama.cpp's official builds need it, and the router can't run through a bundled loader because it starts each model's process from its own executable.
 - **Tested hardware:** NVIDIA GPUs. The Vulkan and ROCm builds have not been exercised on real hardware.
 - **AMD telemetry** has been verified only against a simulated amdgpu sysfs tree and a screenshot from a two-Radeon VII system. Two identical AMD devices are matched to llama.cpp devices by order, so their usage may be reported swapped.
 - **Intel devices** are listed and selectable, but report capacity without live usage. The fit estimate treats them as idle.
