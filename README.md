@@ -62,7 +62,7 @@ Shoggoth is not meant to be a replacement for various backends or front-ends. I 
 
 **You need:** Linux on x86_64, a few common libraries (OpenSSL 3, zstd, libdrm), your graphics driver if you want the GPU, and internet for the first-run downloads. The AppImage runs on older systems such as Ubuntu 22.04. No FUSE? Run it with `--appimage-extract-and-run`.
 
-Closing the browser tab quits Shoggoth after about three minutes. Already have models, or your own Lemonade? Shoggoth finds them.
+Close the browser tab and Shoggoth quits about two seconds later. Already have models, or your own Lemonade? Shoggoth finds them.
 
 ## Picking a model
 

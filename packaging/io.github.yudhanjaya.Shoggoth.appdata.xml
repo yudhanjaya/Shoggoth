@@ -1,0 +1,52 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<component type="desktop-application">
+  <id>io.github.yudhanjaya.Shoggoth</id>
+  <name>Shoggoth</name>
+  <summary>Heavy on the cosmos. Light on your machine</summary>
+  <metadata_license>CC0-1.0</metadata_license>
+  <project_license>MIT</project_license>
+  <developer id="io.github.yudhanjaya">
+    <name>Yudhanjaya Wijeratne</name>
+  </developer>
+  <description>
+    <p>Shoggoth is one download that runs open-weights language models on your own hardware. Chat with them, draw diagrams, write documents, or let a model read and change the files in a folder while you watch. Shoggoth gives you the complete setup without needing much technical know-how.</p>
+    <ul>
+      <li>Private by default: chats run on your computer. Web search asks first.</li>
+      <li>Works on your files: choose a folder and the model reads, searches and edits it while you watch, asking before it changes anything.</li>
+      <li>Models that fit your computer: Shoggoth suggests models for your hardware and downloads them for you.</li>
+    </ul>
+  </description>
+  <launchable type="desktop-id">shoggoth.desktop</launchable>
+  <provides>
+    <binary>shoggoth</binary>
+  </provides>
+  <url type="homepage">https://github.com/yudhanjaya/Shoggoth</url>
+  <categories>
+    <category>Utility</category>
+    <category>Development</category>
+  </categories>
+  <keywords>
+    <keyword>llm</keyword>
+    <keyword>local</keyword>
+    <keyword>ai</keyword>
+    <keyword>chat</keyword>
+  </keywords>
+  <screenshots>
+    <screenshot type="default">
+      <image type="source" width="3000" height="1750">https://raw.githubusercontent.com/yudhanjaya/Shoggoth/main/docs/screenshots/chat.png</image>
+      <caption>Working in a folder: the model fixes a bug and runs the tests again.</caption>
+    </screenshot>
+    <screenshot>
+      <image type="source" width="3000" height="1750">https://raw.githubusercontent.com/yudhanjaya/Shoggoth/main/docs/screenshots/models.png</image>
+      <caption>Models: recommended picks for each size, with one button to set up and get them.</caption>
+    </screenshot>
+    <screenshot>
+      <image type="source" width="3000" height="2080">https://raw.githubusercontent.com/yudhanjaya/Shoggoth/main/docs/screenshots/welcome.png</image>
+      <caption>The Getting ready screen: set up the engine for your graphics card and pick a first model.</caption>
+    </screenshot>
+  </screenshots>
+  <releases>
+    <release version="4.3.0" date="2026-11-06"/>
+  </releases>
+  <content_rating type="oars-1.1"/>
+</component>
