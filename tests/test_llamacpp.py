@@ -130,3 +130,259 @@ class Args(unittest.TestCase):
 
 if __name__ == "__main__":
     unittest.main()
+
+
+# ---------------------------------------------------------------- Wave 0 review fixes (L1-L9)
+import hashlib  # noqa: E402
+import http.server  # noqa: E402
+import shutil  # noqa: E402
+import threading  # noqa: E402
+from unittest import mock  # noqa: E402
+
+
+class Profile(unittest.TestCase):
+    """A scratch data folder for the functions that use root()."""
+    def setUp(self):
+        self.d = tempfile.mkdtemp()
+        p = mock.patch.object(llamacpp, "root", lambda: self.d)
+        p.start()
+        self.addCleanup(p.stop)
+        self.addCleanup(shutil.rmtree, self.d, True)
+
+
+class KeyNotOnCommandLine(Profile):                      # L1
+    def test_key_goes_in_a_private_file(self):
+        cmd = llamacpp.command({"server": "/x/llama-server"}, 13340, "s3cretkey", "/models")
+        self.assertNotIn("--api-key", cmd)
+        self.assertNotIn("s3cretkey", " ".join(cmd))
+        self.assertEqual(cmd[cmd.index("--api-key-file") + 1], llamacpp._key_file())
+        llamacpp._write_private(llamacpp._key_file(), "s3cretkey\n")
+        self.assertEqual(os.stat(llamacpp._key_file()).st_mode & 0o777, 0o600)
+
+
+class SmokeTestEnv(unittest.TestCase):                   # L2
+    def test_version_check_runs_with_the_build_folder_on_the_library_path(self):
+        with mock.patch.object(llamacpp.util, "run", return_value=(0, "version: 1 (x)\nbuilt: build 12375")) as run:
+            self.assertEqual(llamacpp.version_of("/opt/b/llama-server"), "b12375")
+        self.assertTrue(run.call_args.kwargs["env"]["LD_LIBRARY_PATH"].startswith("/opt/b"))
+
+
+class Adopt(Profile):                                    # L3
+    def _info(self, **kw):
+        info = {"pid": os.getpid(), "port": self.port, "key": "k", "t": llamacpp._start_time(os.getpid()), "dir": "/d"}
+        info.update(kw)
+        llamacpp._save_run(info)
+
+    def setUp(self):
+        super().setUp()
+        for k in ("pid", "port", "key", "dir", "t"):
+            llamacpp._state[k] = None
+        outer = self
+
+        class H(http.server.BaseHTTPRequestHandler):     # /health open; everything else needs the key when protected
+            def log_message(self, *a):
+                pass
+
+            def do_GET(self):
+                ok = self.path == "/health" or not outer.protected or self.headers.get("Authorization") == "Bearer k"
+                self.send_response(200 if ok else 401)
+                self.send_header("Content-Length", "2")
+                self.end_headers()
+                self.wfile.write(b"{}")
+        self.protected = True
+        self.srv = http.server.ThreadingHTTPServer(("127.0.0.1", 0), H)
+        threading.Thread(target=self.srv.serve_forever, daemon=True).start()
+        self.addCleanup(self.srv.server_close)
+        self.addCleanup(self.srv.shutdown)
+        self.port = self.srv.server_address[1]
+
+    def test_adopts_a_verified_router(self):
+        self._info()
+        self.assertTrue(llamacpp._adopt())
+        self.assertEqual(llamacpp._state["t"], llamacpp._start_time(os.getpid()))
+
+    def test_missing_start_time_is_refused(self):
+        self._info(t=None)
+        self.assertFalse(llamacpp._adopt())
+
+    def test_something_that_ignores_the_key_is_refused(self):
+        self.protected = False                           # answers 200 to everyone, so it isn't a router with our key
+        self._info()
+        self.assertFalse(llamacpp._adopt())
+
+    def test_wrong_key_is_refused(self):
+        self._info(key="other")
+        self.assertFalse(llamacpp._adopt())
+
+
+class RunFile(Profile):                                  # L4
+    def test_private_from_the_start_and_stale_temp_removed(self):
+        stale = llamacpp._run_file() + ".tmp"
+        with open(stale, "w") as f:
+            f.write("old key")
+        os.chmod(stale, 0o644)
+        llamacpp._save_run({"key": "k"})
+        self.assertEqual(os.stat(llamacpp._run_file()).st_mode & 0o777, 0o600)
+        self.assertFalse(os.path.exists(stale))
+        with open(stale, "w") as f:
+            f.write("left behind")
+        llamacpp._state.update(pid=os.getpid(), t=None)
+        with mock.patch.object(llamacpp.os, "killpg"), mock.patch.object(llamacpp, "_start_time", return_value=None):
+            llamacpp.stop(grace=0)
+        self.assertEqual(os.listdir(self.d), [])
+
+    def test_stop_leaves_a_pid_that_is_no_longer_ours(self):
+        llamacpp._state.update(pid=os.getpid(), t="1")
+        with mock.patch.object(llamacpp.os, "killpg") as kill:
+            llamacpp.stop(grace=0)
+        kill.assert_not_called()
+        llamacpp._state["t"] = None
+
+
+class _Serve(http.server.BaseHTTPRequestHandler):
+    data = b""
+    ranges = True
+    log = []
+    drop = None
+
+    def log_message(self, *a):
+        pass
+
+    def do_GET(self):
+        rng = self.headers.get("Range")
+        _Serve.log.append(rng)
+        b, start = _Serve.data, 0
+        if rng and _Serve.ranges:
+            start = int(rng.split("=")[1].split("-")[0])
+            self.send_response(206)
+            self.send_header("Content-Range", "bytes %d-%d/%d" % (start, len(b) - 1, len(b)))
+        else:
+            self.send_response(200)
+        body = b[start:]
+        self.send_header("Content-Length", str(len(body)))
+        self.end_headers()
+        if _Serve.drop is not None:
+            cut, _Serve.drop = _Serve.drop, None
+            self.wfile.write(body[:cut])
+            self.wfile.flush()
+            self.close_connection = True
+            return
+        self.wfile.write(body)
+
+
+class Download(Profile):                                 # L5
+    def setUp(self):
+        super().setUp()
+        _Serve.data, _Serve.ranges, _Serve.log, _Serve.drop = bytes(range(251)) * 2000, True, [], None
+        self.srv = http.server.ThreadingHTTPServer(("127.0.0.1", 0), _Serve)
+        threading.Thread(target=self.srv.serve_forever, daemon=True).start()
+        self.addCleanup(self.srv.server_close)
+        self.addCleanup(self.srv.shutdown)
+        self.url = "http://127.0.0.1:%d/a" % self.srv.server_address[1]
+        self.sha = hashlib.sha256(_Serve.data).hexdigest()
+        self.out = os.path.join(self.d, "out")
+
+    def test_resumes_after_a_cut_with_range(self):
+        _Serve.drop = 100_000
+        with self.assertRaises(Exception):
+            llamacpp._download(self.url, self.out, self.sha, size=len(_Serve.data))
+        self.assertFalse(os.path.exists(self.out))
+        llamacpp._download(self.url, self.out, self.sha, size=len(_Serve.data))
+        self.assertEqual(open(self.out, "rb").read(), _Serve.data)
+        self.assertEqual(_Serve.log[0], None)
+        self.assertTrue(_Serve.log[1].startswith("bytes=") and _Serve.log[1] != "bytes=0-")
+
+    def test_server_ignoring_range_starts_over(self):
+        _Serve.drop, _Serve.ranges = 50_000, False
+        with self.assertRaises(Exception):
+            llamacpp._download(self.url, self.out, self.sha, size=len(_Serve.data))
+        llamacpp._download(self.url, self.out, self.sha, size=len(_Serve.data))
+        self.assertEqual(open(self.out, "rb").read(), _Serve.data)
+
+    def test_wrong_hash_is_thrown_away(self):
+        with self.assertRaises(RuntimeError) as c:
+            llamacpp._download(self.url, self.out, "0" * 64, size=len(_Serve.data))
+        self.assertIn("checksum", str(c.exception))
+        self.assertFalse(os.path.exists(self.out))
+        self.assertEqual(os.listdir(os.path.join(self.d, ".partial")), [])
+
+    def test_wrong_size_is_refused_before_the_hash(self):
+        with self.assertRaises(RuntimeError) as c:
+            llamacpp._download(self.url, self.out, self.sha, size=len(_Serve.data) + 5)
+        self.assertIn("cut short", str(c.exception))
+
+
+class Install(Profile):                                  # L6
+    def test_each_install_gets_its_own_folder(self):
+        seen = []
+
+        def fake_download(url, path, sha, cancel=None, size=0):
+            seen.append(os.path.dirname(path))
+            raise RuntimeError("stop here")
+        rel = _release("b5", ["llama-b5-bin-ubuntu-x64.tar.gz"])
+        with mock.patch.object(llamacpp, "_download", fake_download):
+            for _ in range(2):
+                with self.assertRaises(RuntimeError):
+                    llamacpp.install("cpu", rel)
+        self.assertNotEqual(seen[0], seen[1])
+        self.assertEqual([n for n in os.listdir(self.d) if n.startswith(".install-")], [])
+
+
+class Prune(Profile):                                    # L7
+    def test_never_removes_the_build_a_previous_shoggoth_left_running(self):
+        for tag in ("b1", "b2", "b3"):
+            os.makedirs(os.path.join(self.d, tag, "cpu"))
+            open(os.path.join(self.d, tag, "cpu", "llama-server"), "w").close()
+        llamacpp._state["dir"] = None
+        llamacpp._save_run({"pid": os.getpid(), "t": llamacpp._start_time(os.getpid()), "dir": os.path.join(self.d, "b1", "cpu")})
+        llamacpp._prune(keep=2)
+        self.assertTrue(os.path.isdir(os.path.join(self.d, "b1")))
+        os.remove(llamacpp._run_file())
+        llamacpp._prune(keep=2)
+        self.assertFalse(os.path.isdir(os.path.join(self.d, "b1")))
+
+
+class Hardlinks(unittest.TestCase):                      # L8
+    def _tar(self, members):
+        path = os.path.join(tempfile.mkdtemp(), "t.tar.gz")
+        with tarfile.open(path, "w:gz") as tf:
+            for kind, name, extra in members:
+                ti = tarfile.TarInfo(name)
+                if kind == "file":
+                    ti.size = len(extra)
+                    tf.addfile(ti, io.BytesIO(extra))
+                elif kind == "hard":
+                    ti.type, ti.linkname = tarfile.LNKTYPE, extra
+                    tf.addfile(ti)
+                elif kind == "fifo":
+                    ti.type = tarfile.FIFOTYPE
+                    tf.addfile(ti)
+        return path
+
+    def test_hard_link_inside_is_kept(self):
+        dest = tempfile.mkdtemp()
+        llamacpp._safe_extract(self._tar([("file", "b/libx.so.1.0", b"x"), ("hard", "b/libx.so.1", "b/libx.so.1.0")]), dest)
+        self.assertEqual(open(os.path.join(dest, "libx.so.1"), "rb").read(), b"x")
+        self.assertTrue(os.path.samefile(os.path.join(dest, "libx.so.1"), os.path.join(dest, "libx.so.1.0")))
+
+    def test_hard_link_outside_and_special_files_are_refused(self):
+        for members in ([("hard", "b/x", "../../etc/passwd")], [("hard", "b/x", "b/missing")], [("fifo", "b/pipe", None)]):
+            with self.assertRaises(RuntimeError):
+                llamacpp._safe_extract(self._tar(members), tempfile.mkdtemp())
+
+
+class PresetsParserSafe(unittest.TestCase):              # L9
+    def test_rejects_what_llama_cpp_would_misread(self):
+        p = os.path.join(tempfile.mkdtemp(), "p.ini")
+        for models in ({"m": {"model": "/models/Old #2/x.gguf"}}, {"m": {"model": "/m/a ;b"}}, {"m": {"1x": 1}},
+                       {"default": {"c": 1}}):
+            with self.assertRaises(ValueError):
+                llamacpp.write_presets(models, path=p)
+        llamacpp.write_presets({"m": {"model": "/models/a#b/x.gguf"}}, path=p)       # no space before #: fine
+
+    def test_a_model_called_star_cannot_replace_the_defaults(self):
+        p = os.path.join(tempfile.mkdtemp(), "p.ini")
+        llamacpp.write_presets({"*": {"ctx-size": 1}, "m": {"c": 2}}, {"flash-attn": "on"}, path=p)
+        got = llamacpp.read_presets(p)
+        self.assertEqual(got["*"], {"flash-attn": "on"})
+        self.assertEqual(open(p).read().count("[*]"), 1)

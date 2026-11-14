@@ -35,6 +35,9 @@ class Fake(http.server.BaseHTTPRequestHandler):
     ignore_range = False
     search_hits = 0
     corrupt = set()
+    branch = "main"            # the repo's default branch
+    no_lfs = set()             # files listed without an lfs entry (no sha256)
+    huge = False               # answer the tree request with a reply bigger than hf.MAX_JSON
 
     def log_message(self, *a):
         pass
@@ -51,11 +54,15 @@ class Fake(http.server.BaseHTTPRequestHandler):
     def do_GET(self):
         Fake.log.append((self.path, self.headers.get("Range"), self.headers.get("User-Agent")))
         path = self.path
-        if path.startswith("/api/models/%s/tree/main" % REPO):
+        if path == "/api/models/" + REPO:
+            return self.reply(200, json.dumps({"id": REPO, "default_branch": Fake.branch}).encode())
+        if path.startswith("/api/models/%s/tree/%s" % (REPO, Fake.branch)):
+            if Fake.huge:
+                return self.reply(200, b"[" + b"0," * hf.MAX_JSON + b"0]")
             tree = [{"type": "directory", "path": "sub"}]
             for name, b in DATA.items():
                 item = {"type": "file", "path": name, "size": len(b)}
-                if name.endswith(".gguf"):
+                if name.endswith(".gguf") and name not in Fake.no_lfs:
                     item["lfs"] = {"oid": hashlib.sha256(b).hexdigest(), "size": len(b)}
                     if name in Fake.corrupt:
                         item["lfs"]["oid"] = "0" * 64
@@ -70,8 +77,8 @@ class Fake(http.server.BaseHTTPRequestHandler):
             return self.reply(200, json.dumps([
                 m("random/Big-GGUF", 9000), m("bartowski/Mid-GGUF", 50), m("unsloth/Low-GGUF", 10),
                 m("nogguf/Thing", 99999, ("transformers",)), m("lmstudio-community/High-GGUF", 500)]).encode())
-        if path.startswith("/%s/resolve/main/" % REPO):
-            name = path.split("/resolve/main/", 1)[1]
+        if path.startswith("/%s/resolve/%s/" % (REPO, Fake.branch)):
+            name = path.split("/resolve/%s/" % Fake.branch, 1)[1]
             if name not in DATA:
                 return self.reply(404, b"no")
             return self.reply(302, b"", extra={"Location": "/cdn/" + name})
@@ -123,6 +130,7 @@ class Base(unittest.TestCase):
     def setUp(self):
         self.tmp = tempfile.mkdtemp()
         Fake.log, Fake.drop_after, Fake.ignore_range, Fake.corrupt = [], None, False, set()
+        Fake.branch, Fake.no_lfs, Fake.huge = "main", set(), False
         hf._cache.clear()
         self.addCleanup(shutil.rmtree, self.tmp, True)
 
@@ -281,6 +289,29 @@ class Download(Base):
         hf.download(REPO, "Q4_K_M", self.tmp)
         self.assertFalse([p for p, _, _ in Fake.log if "/cdn/" in p or "/resolve/" in p])
 
+    def test_existing_file_is_hashed_and_replaced_when_wrong(self):       # H1
+        d = os.path.join(self.tmp, "acme", "Tiny-GGUF")
+        os.makedirs(d)
+        dest = os.path.join(d, "Tiny-Q4_K_M.gguf")
+        with open(dest, "wb") as f:
+            f.write(b"\x01" * len(DATA["Tiny-Q4_K_M.gguf"]))            # right length, wrong bytes
+        hf.download(REPO, "Q4_K_M", self.tmp)
+        with open(dest, "rb") as f:
+            self.assertEqual(f.read(), DATA["Tiny-Q4_K_M.gguf"])
+
+    def test_file_with_no_checksum_is_refused(self):                      # H1
+        Fake.no_lfs = {"Tiny-Q4_K_M.gguf"}
+        with self.assertRaises(hf.HFError) as c:
+            hf.download(REPO, "Q4_K_M", self.tmp)
+        self.assertIn("checksum", str(c.exception))
+        self.assertFalse([p for p, _, _ in Fake.log if "/resolve/" in p])
+
+    def test_uses_the_repos_default_branch(self):                         # H2
+        Fake.branch = "master"
+        r = hf.download(REPO, "Q4_K_M", self.tmp)
+        self.assertTrue(os.path.isfile(r["files"][0]))
+        self.assertTrue(any("/resolve/master/" in p for p, _, _ in Fake.log))
+
     def test_unknown_quant_and_missing_mmproj(self):
         with self.assertRaises(hf.HFError):
             hf.download(REPO, "Q2_K", self.tmp)
@@ -313,6 +344,25 @@ class Search(Base):
             self.assertEqual(Fake.search_hits, before + 2)
         finally:
             hf._now = old
+
+    def test_cache_keeps_only_the_most_recent_queries(self):              # H3
+        old, hf.CACHE_MAX = hf.CACHE_MAX, 3
+        try:
+            for q in ("a", "b", "c", "d"):
+                hf.search(q)
+            self.assertEqual(list(hf._cache), ["b", "c", "d"])
+        finally:
+            hf.CACHE_MAX = old
+
+    def test_oversize_reply_is_refused(self):                             # H3
+        Fake.huge = True
+        old, hf.MAX_JSON = hf.MAX_JSON, 1000
+        try:
+            with self.assertRaises(hf.HFError) as c:
+                hf.files(REPO)
+        finally:
+            hf.MAX_JSON = old
+        self.assertIn("too large", str(c.exception))
 
     def test_empty_query(self):
         self.assertEqual(hf.search("  "), [])
