@@ -5,12 +5,16 @@ with a `provider.yaml` and, only when YAML can't say it, a `provider.py` definin
 Shoggoth talks to every provider through `Base`, so the rest of the program never needs to know which engine it is. Standard library
 only (YAML is read by the copy in _vendor).
 """
+import hashlib
+import hmac
+import http.client
 import json
 import os
 import re
 import shutil
 import signal
 import socket
+import ssl
 import string
 import subprocess
 import threading
@@ -60,11 +64,67 @@ def jpath(obj, path):
     return cur
 
 
-def http_json(url, key="", timeout=3, method="GET", body=None):
+class PinMismatch(OSError):
+    """The server answered with a different certificate from the one Shoggoth paired with. Nothing was sent to it."""
+
+
+def cert_fp(der):
+    """The fingerprint Shoggoth pins: sha256 of the certificate (DER), lowercase hex."""
+    return hashlib.sha256(der).hexdigest()
+
+
+class PinnedHTTPSConnection(http.client.HTTPSConnection):
+    """HTTPS to a server with a self-signed certificate that Shoggoth knows by fingerprint. The usual CA check can't apply (nobody signed
+    it), so instead the certificate must hash to `pin` exactly. It is checked right after the handshake, before a byte of the request
+    (or its key) is sent; a different certificate raises PinMismatch."""
+
+    def __init__(self, host, port=None, pin="", timeout=10):
+        pin = str(pin or "").lower().replace(":", "")
+        if not re.fullmatch(r"[0-9a-f]{64}", pin):
+            raise ValueError("a pin is the sha256 of the certificate, 64 hex characters")
+        ctx = ssl.SSLContext(ssl.PROTOCOL_TLS_CLIENT)
+        ctx.minimum_version = ssl.TLSVersion.TLSv1_2
+        ctx.check_hostname = False                    # the pin below replaces both checks, and is stricter than either
+        ctx.verify_mode = ssl.CERT_NONE
+        super().__init__(host, port, timeout=timeout, context=ctx)
+        self.pin = pin
+
+    def connect(self):
+        super().connect()
+        der = self.sock.getpeercert(binary_form=True) or b""
+        if not hmac.compare_digest(cert_fp(der), self.pin):
+            self.close()
+            raise PinMismatch("This server's certificate isn't the one Shoggoth paired with.")
+
+
+def _pinned_json(url, h, data, method, timeout, pin):
+    u = urllib.parse.urlsplit(url)
+    if u.scheme != "https":
+        raise PinMismatch("A pinned server must be reached over https.")
+    conn = PinnedHTTPSConnection(u.hostname, u.port or 443, pin=pin, timeout=timeout)
+    try:
+        conn.request(method, (u.path or "/") + ("?" + u.query if u.query else ""), body=data, headers=h)
+        r = conn.getresponse()
+        raw = r.read()
+        if r.status >= 400:
+            return r.status, {}
+        return r.status, json.loads(raw or b"{}")
+    finally:
+        conn.close()
+
+
+def http_json(url, key="", timeout=3, method="GET", body=None, pin=None):
+    """(status, json) from a URL; (0, {}) when it can't be reached. With `pin` (a certificate's sha256), the URL must be https and the
+    server must present exactly that certificate; any other certificate counts as unreachable and the request is never sent."""
     h = {"Authorization": "Bearer " + key} if key else {}
     data = None
     if body is not None:
         data, h["Content-Type"] = json.dumps(body).encode(), "application/json"
+    if pin:
+        try:
+            return _pinned_json(url, h, data, method, timeout, pin)
+        except (OSError, ValueError, http.client.HTTPException):
+            return 0, {}
     try:
         with urllib.request.urlopen(urllib.request.Request(url, data=data, headers=h, method=method), timeout=timeout) as r:
             return r.status, json.loads(r.read() or b"{}")
