@@ -13,6 +13,7 @@ import time
 
 import gguf
 import hardware
+import modelmeta
 import modelscan
 import registry
 import store
@@ -265,7 +266,7 @@ def catalog(reg=None, machine=None, refresh=False):
         chosen = chosen or next((p for p in rest if cap[p.id][0]), None) or runnable[0]
         want = int((store.load().get("chat") or {}).get("ctx") or 131072)            # the context window chats ask for
         used = min(want, e.get("context") or want)
-        e = dict(e, kv_ctx=used, kv_gb=gguf.kv_cache_gb(e.get("attn"), used))        # what remembering that much conversation costs in memory
+        e = dict(e, kv_ctx=used, kv_gb=gguf.kv_cache_gb(e.get("attn"), used, cache_type=_cache_type(e)))        # what remembering that much conversation costs in memory
         fit, why = chosen.fit(e, machine)
         ids = dict(e["ids"]) if e.get("listed_by") else {p.id: p.model_id(e) for p in runnable}
         out.append(dict(e, id=key, tier=tier, provider=chosen.id, need_gb=chosen.need_gb(e), fit=fit, why=why,
@@ -451,6 +452,15 @@ def creatures(lineages):
                 cur[l] = [f, t]
         have = store.update(add).get("creatures") or {}
     return {l: tuple(have.get(l, (fnv(l) % 9, fnv(l + "|tone") % 5))) for l in lineages}
+
+
+def _cache_type(e):
+    """The key/value cache type saved for this model (a llama.cpp name like q8_0), or "" for the default."""
+    for mid in [e.get("id")] + list((e.get("ids") or {}).values()):
+        t = mid and modelmeta.get(mid).get("cache_type")
+        if t:
+            return str(t)
+    return ""
 
 
 def picker(max_age=8):

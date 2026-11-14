@@ -2287,8 +2287,8 @@ function whatFor(m){
 function fitInfo(m){
   const v = vramAvail();
   if(!v || !m.size || m.recipe !== "llamacpp") return null;
-  // weights plus a margin for the conversation memory
-  const need = m.size + 0.8, r = v.avail > 0 ? need / v.avail : Infinity;
+  // what the server worked out for this model (weights, working space and the conversation memory); a flat margin when it has not listed it
+  const e = ((LIB.d || {}).models || []).find(x => (x.ids || {}).lemonade === m.id), need = e && e.need_gb ? e.need_gb : m.size + 0.8, r = v.avail > 0 ? need / v.avail : Infinity;
   // a model that fits this computer but is crowded out right now is a snug fit (amber), not a no (red)
   const cls = r <= .8 ? "ok" : r <= 1 || need <= v.total ? "tight" : "over";
   const who = v.holders.length ? v.holders[0].name : "";

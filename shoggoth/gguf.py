@@ -111,6 +111,7 @@ def _attention(kv, arch):
         return {}
     heads = max(heads) if isinstance(heads, list) else int(heads)
     kvh = g("attention.head_count_kv") or heads
+    per_layer = [int(x) for x in kvh] if isinstance(kvh, list) else None
     kvh = max(kvh) if isinstance(kvh, list) else int(kvh)
     emb = int(g("embedding_length") or 0)
     dk = int(g("attention.key_length") or (emb // heads if emb else 0))
@@ -118,7 +119,9 @@ def _attention(kv, arch):
     out = {"layers": layers, "kv_heads": kvh, "dk": dk, "dv": dv}
     if g("attention.kv_lora_rank"):                          # multi-head latent attention keeps one small latent per token
         out["latent"] = int(g("attention.kv_lora_rank")) + int(g("rope.dimension_count") or 0)
-    if g("full_attention_interval"):                         # hybrids with a recurrent part: only every Nth layer holds a cache
+    if per_layer:                                            # per-layer counts (0 where a layer keeps no cache): add up what each really holds
+        out["per_layer_kv"] = sum(n * (dk + dv) for n in per_layer if n > 0)
+    elif g("full_attention_interval"):                       # hybrids with a recurrent part: only every Nth layer holds a cache
         out["full_every"] = int(g("full_attention_interval"))
     if g("attention.sliding_window"):
         out["window"] = int(g("attention.sliding_window"))
@@ -129,14 +132,24 @@ def _attention(kv, arch):
 _GLOBAL_SHARE = {"gemma3": 1 / 6, "gemma3n": 1 / 5, "gemma4": 1 / 6, "gemma2": 0.5, "gpt-oss": 0.5, "cohere2": 0.25, "llama4": 0.25}
 
 
-def kv_cache_gb(attn, ctx, bytes_per=2):
-    """Memory the key/value cache takes for `ctx` tokens at 16 bits, in GB. A guide, not a promise: it errs towards the full cost."""
+# Bytes per cache element for each llama.cpp cache type (the GGML block size in bytes over the elements in a block).
+CACHE_BYTES = {"f32": 4.0, "f16": 2.0, "bf16": 2.0, "q8_0": 34 / 32, "q5_1": 24 / 32, "q5_0": 22 / 32, "q4_1": 20 / 32, "q4_0": 18 / 32, "iq4_nl": 18 / 32}
+
+
+def kv_cache_gb(attn, ctx, bytes_per=2, cache_type=None):
+    """Memory the key/value cache takes for `ctx` tokens, in GB, at 16 bits unless `cache_type` (a llama.cpp name like q8_0) says otherwise.
+    A guide, not a promise: it errs towards the full cost."""
     if not attn or not attn.get("layers") or not ctx:
         return 0.0
+    if cache_type:
+        bytes_per = CACHE_BYTES.get(str(cache_type).strip().lower(), bytes_per)
     layers = attn["layers"]
     if attn.get("full_every"):
         layers = max(1, layers // attn["full_every"])
-    per_token = (attn["latent"] if attn.get("latent") else attn["kv_heads"] * (attn["dk"] + attn["dv"])) * bytes_per
+    if attn.get("per_layer_kv"):                             # already summed over the layers that hold a cache
+        layers, per_token = 1, attn["per_layer_kv"] * bytes_per
+    else:
+        per_token = (attn["latent"] if attn.get("latent") else attn["kv_heads"] * (attn["dk"] + attn["dv"])) * bytes_per
     share = 1.0
     if attn.get("window") and ctx > attn["window"]:
         share = _GLOBAL_SHARE.get(attn.get("arch", ""), 0.5)
