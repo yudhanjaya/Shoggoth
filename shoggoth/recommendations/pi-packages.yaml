@@ -6,7 +6,7 @@
   version: "0.29.0"
   integrity: sha512-XcWbSok9sKMCuuxHo0i7RGcjndCOjpGD389HCoy9K/RMN4OPEz/4Z/KHk7p0d8eCEhdpjPxeJ9gUdDTh7TPIJA==
   enabled: false
-  notes: Read and write Word files. The name says Bun; check it runs under Node.
+  notes: Not for 5.0. Needs Bun, or downloads an unverified binary at run time (docs/plans/pi-packages-review.md).
 - name: "@sttronn/pi-sheets"
   version: "0.1.2"
   integrity: sha512-WRjt1w3gk9QJ+toH/vVHfL64J6GTSrSTUEaQ97hUMXQV3jlHk/wazUc35wYKHmR536fo54sDGPmN89FaKG+O1Q==
@@ -16,12 +16,12 @@
   version: "0.25.0"
   integrity: sha512-sci2d1EsouqqjKKwPRf/oE/frcFoeZVoczxXPwjMVVU9+BN+dC94VoOa8Xp9lkX7xAGceK6Sm10DXeu7n9Jz7g==
   enabled: false
-  notes: Subagents. Child Pi processes must inherit the approval gate and SHOGGOTH_ALLOW before this is turned on.
+  notes: Not for 5.0. Its subagents run without Shoggoth's approval gate and turn skill discovery back on.
 - name: billion-context
   version: "0.1.213"
   integrity: sha512-27GMDHpqImsGev2Pw2JUyWImzJChggJVUqo6RNNeZ4CWFMnuKReQWFghOAZTBU05pmYho/2K0UZ7WWjQ+aBBWQ==
   enabled: false
-  notes: Long context handling. May fight Shoggoth's own compaction.
+  notes: Not for 5.0. Ungated subagents, its own proxy, cancels compaction, updates itself at run time.
 - name: "@dietrichgebert/ponytail"
   version: "5.3.3"
   integrity: sha512-Gq0ESMi1ZkcY+dvH1dyhOzR3+pYQ/LGW39E4dExcCzhaLe1AMPE43sPrW/JbEiaC986dUWeSzs97WfTABLkdDg==
