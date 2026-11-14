@@ -35,6 +35,7 @@ import hf          # noqa: E402
 import library     # noqa: E402
 import llamaargs   # noqa: E402
 import llamacpp    # noqa: E402
+import migrate5    # noqa: E402
 import modelscan   # noqa: E402
 import piup        # noqa: E402
 import provbase    # noqa: E402
@@ -301,6 +302,8 @@ class Handler(BaseHTTPRequestHandler):
             self.send_json(setup_state())
         elif p == "/ui/engine/update":
             self.send_json(dict(llamacpp.UPD))
+        elif p == "/ui/engine/lemonade":
+            self.send_json(migrate5.leftovers(store.data_dir(), library.root()))
         elif p == "/ui/models/scan":
             self.send_json({"sources": modelscan.scan()})
         elif p == "/ui/models/source":
@@ -421,6 +424,7 @@ class Handler(BaseHTTPRequestHandler):
             "/ui/setup/mode": self.post_mode, "/ui/setup/done": self.post_done,
             "/ui/engine/check": self.post_engine_check, "/ui/engine/update": self.post_engine_update,
             "/ui/engine/use": self.post_engine_use, "/ui/engine/restart": self.post_engine_restart,
+            "/ui/engine/lemonade/delete": self.post_lemonade_delete,
             "/ui/sources/scan": self.post_sources_scan,
             "/ui/gateway": self.post_gateway, "/ui/cowork/new": self.post_cowork_new,
             "/ui/cowork/cmd": self.post_cowork_cmd, "/ui/cowork/answer": self.post_cowork_answer,
@@ -571,6 +575,11 @@ class Handler(BaseHTTPRequestHandler):
             threading.Thread(target=lambda: (llamacpp.stop(), _start_engine()), daemon=True).start()
             time.sleep(0.3)
         self.send_json({"ok": True, "engine": llamacpp.summary(s)})
+
+    def post_lemonade_delete(self, body):
+        """Delete only the files migrate5 counted as Lemonade's own (never model files), then report what is left."""
+        freed = migrate5.delete_lemonade(store.data_dir(), library.root())
+        self.send_json(dict(ok=True, **freed, **migrate5.leftovers(store.data_dir(), library.root())))
 
     # ---- speech to text
     def post_speech_setup(self, body):

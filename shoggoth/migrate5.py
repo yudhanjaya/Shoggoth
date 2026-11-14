@@ -10,7 +10,8 @@ What it does, one log line each:
   2. work out the new id of each model and save the alias map;
   3. carry Lemonade's saved per-model options (context size, extra llama-server options) into presets.ini;
   4. stop a lemond that Shoggoth started (one the person runs is left alone);
-  5. count the space Lemonade's own files take, so the page can offer to delete them (this module never does).
+  5. count the space Lemonade's own files take, so the page can offer to delete them; `delete_lemonade()` removes only the files
+     that count when the page asks (never a model file).
 
 Standard library only.
 """
@@ -419,17 +420,23 @@ def stop_lemond(data_dir, log=print, wait=10):
 
 
 # ---------------------------------------------------------------- step 5: the space Lemonade's own files take
-def lemonade_bytes(data_dir, library_dir, linked=None):
-    """(bytes that deleting Lemonade's own files would free, number of models that still depend on those files).
-    Lemonade's engines, its copies and its logs count. A model file counts for nothing when the library has a hard link to it (deleting
-    one name frees nothing); a model the library reaches by symbolic link depends on Lemonade's folder, so the page must say so."""
-    total, seen = 0, set()
+def _lemonade_roots(data_dir, library_dir, existing=True):
+    """The folders Lemonade keeps its own files in (its engines, its copies, its logs), as real paths. `existing` keeps only the
+    ones that are there now."""
     roots = [os.path.join(data_dir, "lemonade-data"), os.path.join(data_dir, "lemonade"), os.path.join(data_dir, "glibc-run")]
     if library_dir:
         roots.append(os.path.join(library_dir, "lemonade"))
-    for r in roots:
+    out = [os.path.realpath(r) for r in roots]
+    return [r for r in out if os.path.isdir(r)] if existing else out
+
+
+def lemonade_paths(data_dir, library_dir):
+    """[(path, size)] for the files Lemonade itself put there: engines, copies and logs, never a model file. The models--org--name
+    folders are model storage even when they sit under one of these roots, so nothing inside one is ever listed."""
+    out, seen = [], set()
+    for r in _lemonade_roots(data_dir, library_dir):
         for dirpath, dirnames, filenames in os.walk(r, followlinks=False):
-            if _HUB.match(os.path.basename(dirpath)):                     # model storage: counted below
+            if _HUB.match(os.path.basename(dirpath)):                     # model storage: never Lemonade's own file
                 dirnames[:] = []
                 continue
             for fn in filenames:
@@ -438,19 +445,63 @@ def lemonade_bytes(data_dir, library_dir, linked=None):
                     st = os.lstat(p)
                 except OSError:
                     continue
-                if (st.st_dev, st.st_ino) not in seen and not os.path.islink(p):
-                    seen.add((st.st_dev, st.st_ino))
-                    total += st.st_size
+                if (st.st_dev, st.st_ino) in seen or os.path.islink(p):
+                    continue
+                seen.add((st.st_dev, st.st_ino))
+                out.append((p, st.st_size))
+    log = os.path.join(data_dir, "lemond.log")
     try:
-        total += os.path.getsize(os.path.join(data_dir, "lemond.log"))
+        out.append((log, os.path.getsize(log)))
     except OSError:
         pass
+    return out
+
+
+def lemonade_bytes(data_dir, library_dir, linked=None):
+    """(bytes that deleting Lemonade's own files would free, number of models that still depend on those files).
+    Lemonade's engines, its copies and its logs count. A model file counts for nothing when the library has a hard link to it (deleting
+    one name frees nothing); a model the library reaches by symbolic link depends on Lemonade's folder, so the page must say so."""
+    total = sum(size for _, size in lemonade_paths(data_dir, library_dir))
     depend = 0
-    own = [os.path.realpath(r) for r in roots]
+    own = _lemonade_roots(data_dir, library_dir)
     for paths in (linked or {}).values():
         if any(os.path.islink(p) and any(os.path.realpath(p).startswith(o + os.sep) for o in own) for p in paths):
             depend += 1
     return total, depend
+
+
+def delete_lemonade(data_dir, library_dir):
+    """Delete only the files lemonade_paths() counted, which is what "Delete Lemonade's own files" frees: its engines, its copies and
+    its logs. Folders are left in place and model storage is never touched. Returns
+    {"deleted": int, "freed_bytes": int, "freed_gb": float, "errors": [str]}."""
+    roots = _lemonade_roots(data_dir, library_dir)
+    deleted = freed = 0
+    errors = []
+    for p, size in lemonade_paths(data_dir, library_dir):
+        if os.path.islink(p):                                             # a link is not Lemonade's file, and its target isn't either
+            continue
+        real = os.path.realpath(p)
+        if not any(real.startswith(r + os.sep) for r in roots):           # only what really lives in one of the roots
+            continue
+        try:
+            os.remove(p)
+        except OSError as e:
+            errors.append("%s: %s" % (p, e))
+            continue
+        deleted += 1
+        freed += size
+    return {"deleted": deleted, "freed_bytes": freed, "freed_gb": round(freed / 1e9, 2), "errors": errors}
+
+
+def leftovers(data_dir, library_dir):
+    """What the page's "Delete Lemonade's own files (N GB)" would free now: {"lemonade_bytes", "lemonade_gb", "depend_on_lemonade"},
+    counted the way run() counts them (the library's links to the models decide the dependency number) but doing no step."""
+    models = discover(data_dir, library_dir)
+    view = view_dir(data_dir)
+    linked = {m["id"]: [p for p in ([os.path.join(view, m["id"] + ".gguf")] + [os.path.join(view, m["id"], os.path.basename(f)) for f in m["files"]])
+                        if os.path.lexists(p)] for m in models}
+    nbytes, depend = lemonade_bytes(data_dir, library_dir, linked)
+    return {"lemonade_bytes": nbytes, "lemonade_gb": round(nbytes / 1e9, 2), "depend_on_lemonade": depend}
 
 
 # ---------------------------------------------------------------- the whole thing

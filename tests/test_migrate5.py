@@ -280,6 +280,93 @@ class Summary(Base):
             self.assertIn(word, text)
 
 
+class LemonadeOwnFiles(Base):
+    """Advanced > Engines > "Delete Lemonade's own files": the counted files go, every model file stays."""
+    def model_files(self):
+        """{path: (inode, size)} for the model storage: the shared cache and the library's lemonade folder."""
+        out = {}
+        for root in (self.hub, os.path.join(self.lib, "lemonade")):
+            for dp, _, fns in os.walk(root):
+                for fn in fns:
+                    q = os.path.join(dp, fn)
+                    st = os.stat(q)
+                    out[q] = (st.st_ino, st.st_size)
+        return out
+
+    def test_paths_are_the_engine_files_never_a_model(self):
+        log = os.path.join(self.data, "lemond.log")
+        with open(log, "wb") as f:
+            f.write(b"L" * 300)
+        paths = [q for q, _ in migrate5.lemonade_paths(self.data, self.lib)]
+        for name in ("lemond-backend.bin", "config.json", "user_models.json", "server_models.json", "recipe_options.json"):
+            self.assertIn(os.path.join(self.data, "lemonade-data", name), paths)
+        self.assertIn(log, paths)
+        self.assertFalse([q for q in paths if q.lower().endswith(".gguf")], paths)
+        self.assertFalse([q for q in paths if "snapshots" in q or "blobs" in q or "models--" in q], paths)
+
+    def test_delete_removes_the_engine_files_and_leaves_every_model(self):
+        engine = os.path.join(self.data, "lemonade-data", "lemond-backend.bin")
+        outside = os.path.join(self.tmp, "keep-me.bin")
+        with open(outside, "wb") as f:
+            f.write(b"K" * 100)
+        models = self.model_files()
+        r = migrate5.delete_lemonade(self.data, self.lib)
+        self.assertGreater(r["deleted"], 0)
+        self.assertGreater(r["freed_bytes"], 0)
+        self.assertEqual(r["errors"], [])
+        self.assertFalse(os.path.exists(engine))
+        self.assertFalse(os.path.exists(os.path.join(self.data, "lemonade-data", "user_models.json")))
+        for q, meta in models.items():
+            st = os.stat(q)
+            self.assertEqual((st.st_ino, st.st_size), meta, q)
+        self.assertTrue(os.path.isfile(outside))
+        self.assertEqual(migrate5.leftovers(self.data, self.lib)["lemonade_bytes"], 0)
+
+    def test_a_link_under_a_root_is_not_followed(self):
+        target = os.path.join(self.tmp, "outside.bin")
+        with open(target, "wb") as f:
+            f.write(b"T" * 4096)
+        link = os.path.join(self.data, "lemonade-data", "outside.bin")
+        os.symlink(target, link)
+        paths = [q for q, _ in migrate5.lemonade_paths(self.data, self.lib)]
+        self.assertNotIn(link, paths)
+        r = migrate5.delete_lemonade(self.data, self.lib)
+        self.assertEqual(r["errors"], [])
+        self.assertTrue(os.path.isfile(target))
+        self.assertTrue(os.path.lexists(link))
+
+    def test_leftovers_match_the_run_summary(self):
+        s = self.run_it()
+        left = migrate5.leftovers(self.data, self.lib)
+        self.assertEqual(sorted(left), ["depend_on_lemonade", "lemonade_bytes", "lemonade_gb"])
+        self.assertEqual(left["lemonade_bytes"], s["lemonade_bytes"])
+        self.assertEqual(left["lemonade_gb"], s["lemonade_gb"])
+        self.assertEqual(left["depend_on_lemonade"], s["depend_on_lemonade"])
+
+    def test_the_delete_route_reports_what_is_left(self):
+        import server
+        import store
+        engine = os.path.join(self.data, "lemonade-data", "lemond-backend.bin")
+        model = os.path.join(self.lib, "lemonade", "models--unsloth--Qwen3.6-35B-A3B-MTP-GGUF", "snapshots", "abc123",
+                             "Qwen3.6-35B-A3B-MTP-Q4_K_XL.gguf")
+        self.assertTrue(os.path.isfile(model))
+
+        class Fake:
+            def send_json(self, obj, code=200):
+                self.answer, self.code = obj, code
+
+        fake = Fake()
+        with mock.patch.object(server.store, "data_dir", lambda: self.data), mock.patch.object(server.library, "root", lambda: self.lib):
+            self.assertEqual(store.data_dir(), self.data)                 # the route reads the folder patched into server
+            server.Handler.post_lemonade_delete(fake, {})
+        self.assertEqual(fake.code, 200)
+        self.assertTrue(fake.answer["ok"])
+        self.assertGreater(fake.answer["deleted"], 0)
+        self.assertFalse(os.path.exists(engine))
+        self.assertTrue(os.path.isfile(model))
+        self.assertIn("lemonade_gb", fake.answer)
+
+
 class Idempotent(Base):
     def test_second_run_changes_nothing(self):
         first = self.run_it()

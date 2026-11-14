@@ -177,6 +177,8 @@ class Devices(Env):
         st = {b["name"]: (b["state"], b["version"]) for b in r["backends"]}
         self.assertEqual(st["vulkan"], ("installed", "b12375"))
         self.assertEqual(st["cuda13"], ("installable", None))
+        self.assertEqual([x["recipe"] for x in hardware.backends() if x["recipe"] == "llamacpp"], ["llamacpp"])   # one recipe, no Lemonade
+        self.assertEqual(sorted(b["name"] for b in r["backends"]), ["cpu", "cuda12", "cuda13", "rocm", "vulkan"])
 
 
 class ChatContext(Env):
