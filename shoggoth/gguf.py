@@ -100,7 +100,7 @@ class _Reader:
 
 _WANTED = (".context_length", ".block_count", ".embedding_length", ".attention.head_count", ".attention.head_count_kv", ".attention.key_length",
            ".attention.value_length", ".attention.sliding_window", ".attention.kv_lora_rank", ".attention.key_length_mla",
-           ".rope.dimension_count", ".full_attention_interval")
+           ".rope.dimension_count", ".full_attention_interval", ".expert_count")
 
 
 def _attention(kv, arch):
@@ -187,8 +187,48 @@ def read_header(path):
     arch = out.get("general.architecture") or ""
     ft = out.get("general.file_type")
     return {"attn": _attention(out, arch), "architecture": arch, "name": out.get("general.name") or "", "file_type": ft, "quant": FTYPE.get(ft, "") if isinstance(ft, int) else "",
-            "context": int(out.get("%s.context_length" % arch) or 0), "size_label": out.get("general.size_label") or "",
+            "context": int(out.get("%s.context_length" % arch) or 0), "experts": int(out.get("%s.expert_count" % arch) or 0), "size_label": out.get("general.size_label") or "",
             "type": out.get("general.type") or "model", "version": version, "kv": len(out)}
+
+
+def expert_bytes(path):
+    """(bytes in the expert tensors, bytes in all tensors) of one GGUF file, from its tensor list. (0, 0) when it can't be read.
+
+    Expert tensors are the ffn_*_exps ones: what `--n-cpu-moe` moves to the processor's memory. A tensor's size is the gap to the next
+    tensor's offset, so no table of quantization sizes is needed."""
+    try:
+        with open(path, "rb") as f:
+            if f.read(4) != b"GGUF":
+                return 0, 0
+            r = _Reader(f)
+            r.unpack("<I")
+            n_tensors, nkv = r.unpack("<Q"), r.unpack("<Q")
+            align = 32
+            for _ in range(min(nkv, MAX_KV)):
+                key = r.string()
+                v = r.value(r.unpack("<I"), keep=key == "general.alignment")
+                if key == "general.alignment" and isinstance(v, int) and v > 0:
+                    align = v
+            if n_tensors > 1 << 20:
+                return 0, 0
+            tensors = []
+            for _ in range(n_tensors):
+                name = r.string()
+                dims = r.unpack("<I")
+                r.skip(8 * dims + 4)                         # the sizes and the type
+                tensors.append((r.unpack("<Q"), name))
+            data_start = -(-f.tell() // align) * align
+            end = os.path.getsize(path) - data_start
+    except (OSError, ValueError, struct.error):
+        return 0, 0
+    tensors.sort()
+    exps = total = 0
+    for i, (off, name) in enumerate(tensors):
+        size = (tensors[i + 1][0] if i + 1 < len(tensors) else end) - off
+        total += size
+        if "_exps" in name:
+            exps += size
+    return exps, total
 
 
 _NOT_CHAT = {"clip": "projector", "dflash": "drafter", "parakeet": "speech", "whisper": "speech", "moonshine": "speech", "bert": "embedding",
