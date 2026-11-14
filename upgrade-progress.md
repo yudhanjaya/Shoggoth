@@ -55,3 +55,39 @@ Report:
 To proceed, re-run this task with file writes and shell commands enabled (e.g. `--yolo`).
 ```
 </details>
+
+## S3 (2026-11-14T18:46:47+05:30)
+
+- exit code 0, 0 new commit(s), tests: ---------------------------------------------------------------------- Ran 596 tests in 119.978s  OK (skipped=2) 
+
+<details><summary>Worker report (tail)</summary>
+
+```
+arted 2026-11-14T18:40:06+05:30
+I could not carry out S3. Everything mutating is blocked in this run: `write_file`, `edit_file`, and `shell_command` all fail with:
+
+> Tool requires permissions. Use --yolo (or --dangerously-skip-permissions) to enable file writes and shell commands in print mode.
+
+That includes writes inside the allowed scratchpad, so I could not edit, run tests, or commit.
+
+## Report
+
+**What I did:** Read `upgrade-plan.md` in full (rules first), then investigated the S3 code paths: `shoggoth/llamatune.py` (`results`, `run`, `rollback`), `shoggoth/tuning.py` (`tuning_for`, `_record`, `action`), `shoggoth/migrate5.py` (`args_to_preset`), plus `tests/test_tuning_for.py`, `tests/test_llamatune.py`, and the tuning rendering in `index.html` (read-only, to confirm which fields the page uses).
+
+**What I found:** A 5.x record has `applied` as a dict of preset keys (or `None`) plus `saved_before`. A 4.x Lemonade record has `applied` as a `llamacpp_args` string. `llamatune.rollback()` currently iterates `res["applied"]` as keys and does `saved_before.get(...)`; with a string that means iterating characters and corrupting `presets.ini`. `tuning.tuning_for()` sets `can_undo=bool(r.get("applied"))`, so the page also offers Undo for these old records.
+
+**Files changed:** none.
+
+**Tests run:** none (shell blocked), so I have no result to report.
+
+**Not done:** the S3 fix, its test, and the required `S3:` commit are all undone. I also could not verify the existing suite.
+
+**Proposed change (for a run with write permission):**
+- In `llamatune.py`, add `LEMONADE_UNDO` and `written_by_lemonade(res)` returning true when `engine == "lemonade"`, `source in ("lemtune","lemonade")`, or `applied` is present and not a dict.
+- In `rollback()`, right after the `not res or not res.get("applied")` check, return `(False, LEMONADE_UNDO)` when `written_by_lemonade(res)`, before touching presets.
+- In `tuning.tuning_for()`, set `can_undo=bool(r.get("applied")) and not llamatune.written_by_lemonade(r)`, and put `"legacy": True` / the note into `details` (keep the top-level key set unchanged so `test_tuning_for.py`'s `KEYS` assertion still passes).
+- Tests: in `test_llamatune.py`, save a legacy record (`applied` = `"--threads 8 -fa on"`, `engine: "lemonade"`), assert `rollback` returns `(False, ...)` mentioning Lemonade and that `read_presets()` is unchanged; in `test_tuning_for.py`, assert such a record has `can_undo is False`.
+
+No files or system state were modified by me.
+```
+</details>
