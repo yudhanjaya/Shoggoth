@@ -126,13 +126,13 @@ class Folder(Env):
         self.assertGreater(d["free_gb"], 0)
         self.assertFalse(d["missing"])
 
-    def test_a_library_folder_that_has_gone_is_said_so_and_lemonade_is_left_alone(self):
+    def test_a_library_folder_that_has_gone_is_said_so_and_the_engine_is_left_alone(self):
         shutil.rmtree(self.lib)                                   # its disk was unplugged
         d = library.models_disk()
         self.assertTrue(d["missing"])
         self.assertGreater(d["free_gb"], 0)                       # measured on the nearest folder that exists, not an error
         self.assertTrue(library.summary()["missing"])
-        ok, msg = library.apply_to_lemonade()
+        ok, msg = library.reload_engine()
         self.assertFalse(ok)
         self.assertIn("can't be found", msg)
 
@@ -140,6 +140,10 @@ class Folder(Env):
 class MemoryForContext(Env):
     """What a long conversation costs in memory is part of whether a model fits."""
     LLAMA_8B = {"block_count": 32, "embedding_length": 4096, "attention.head_count": 32, "attention.head_count_kv": 8}
+
+    def setUp(self):
+        super().setUp()
+        library.store.update(lambda s: s["chat"].update(ctx=131072, ctx_set=True))      # a 128k window the person chose (the default is auto)
 
     def test_the_cache_is_worked_out_from_the_models_own_shape(self):
         write_gguf(os.path.join(self.lib, "lemonade", "a", "Llama-Q4.gguf"), arch="llama", ctx=131072, size=5 * GB, shape=self.LLAMA_8B)
@@ -303,48 +307,46 @@ class Views(Env):
     def test_only_what_the_engine_can_run_and_doesnt_already_keep(self):
         views = library.sync_views(self.cat(), self.reg)
         self.assertEqual(list(views), ["fast"])                                    # the big engine reads its files in place
-        names = sorted(os.listdir(views["fast"]))
+        names = sorted(n for n in os.listdir(views["fast"]) if not n.startswith("."))
         self.assertEqual(names, ["Extra-Q4.gguf"])                                 # not Own (kept by the engine), not the qwen4exp file
         self.assertTrue(os.path.islink(os.path.join(views["fast"], "Extra-Q4.gguf")))
 
-    def test_stale_links_go_but_real_files_stay(self):
+    def test_its_own_stale_links_go_but_real_files_and_other_links_stay(self):
         views = library.sync_views(self.cat(), self.reg)
         v = views["fast"]
-        os.symlink("/nonexistent", os.path.join(v, "Gone.gguf"))
+        os.remove(os.path.join(self.elsewhere, "Extra-Q4.gguf"))                    # the file it linked has gone from the library
+        os.symlink("/nonexistent", os.path.join(v, "Migrated.gguf"))                # a link migrate5 made: not the view's to remove
         real = os.path.join(v, "MINE.txt")
         with open(real, "w") as f:
             f.write("keep me")
+        library._index.update(loaded=False, d={})
         library.sync_views(self.cat(), self.reg)
-        self.assertFalse(os.path.lexists(os.path.join(v, "Gone.gguf")))
+        self.assertFalse(os.path.lexists(os.path.join(v, "Extra-Q4.gguf")))
+        self.assertTrue(os.path.islink(os.path.join(v, "Migrated.gguf")))
         self.assertTrue(os.path.isfile(real))
 
-    def test_config_for_a_lemonade_zest_runs(self):
-        c = library.lemonade_config()
-        self.assertEqual(c["models_dir"], os.path.join(self.lib, "lemonade"))
-        self.assertEqual(c["extra_models_dir"], os.path.join(self.tmp, "data", "views", "lemonade"))
+    def test_a_file_another_link_already_shows_is_not_shown_twice(self):
+        v = os.path.join(library.views_base(), "fast")
+        os.makedirs(v)
+        os.symlink(os.path.join(self.elsewhere, "Extra-Q4.gguf"), os.path.join(v, "Extra-GGUF-Q4.gguf"))     # migrate5's name for it
+        library.sync_views(self.cat(), self.reg)
+        self.assertEqual(sorted(n for n in os.listdir(v) if not n.startswith(".")), ["Extra-GGUF-Q4.gguf"])
+
+    def test_a_split_or_vision_model_gets_a_folder(self):
+        write_gguf(os.path.join(self.elsewhere, "Big-Q4-00001-of-00002.gguf"), size=GB)
+        write_gguf(os.path.join(self.elsewhere, "Big-Q4-00002-of-00002.gguf"), size=GB)
+        write_gguf(os.path.join(self.elsewhere, "vis", "Vis-Q4.gguf"), size=GB)
+        write_gguf(os.path.join(self.elsewhere, "vis", "mmproj-Vis-F16.gguf"), arch="clip", kind="mmproj")
+        v = library.sync_views(self.cat(), self.reg)["fast"]
+        self.assertEqual(sorted(os.listdir(os.path.join(v, "Big-Q4"))), ["Big-Q4-00001-of-00002.gguf", "Big-Q4-00002-of-00002.gguf"])
+        self.assertEqual(sorted(os.listdir(os.path.join(v, "Vis-Q4"))), ["Vis-Q4.gguf", "mmproj-Vis-F16.gguf"])
+        os.remove(os.path.join(self.elsewhere, "Big-Q4-00002-of-00002.gguf"))      # incomplete now: its folder goes
+        library._index.update(loaded=False, d={})
+        library.sync_views(self.cat(), self.reg)
+        self.assertFalse(os.path.lexists(os.path.join(v, "Big-Q4")))
 
 
 class Imports(Env):
-    def test_an_imported_folder_never_links_a_file_the_engine_cannot_run(self):
-        src = os.path.join(self.tmp, "other")
-        write_gguf(os.path.join(src, "plain", "Plain-Q4.gguf"), arch="gemma3")
-        write_gguf(os.path.join(src, "strata", "Flash-00001-of-00001.gguf"), arch="qwen4exp")
-        write_gguf(os.path.join(src, "mixed", "Fine-Q4.gguf"), arch="gemma3")
-        write_gguf(os.path.join(src, "mixed", "Odd-Q4.gguf"), arch="qwen4exp")
-        sources = [{"kind": "folder", "path": src, "label": "Other"}]
-
-        def accepts(path):
-            return self.reg.get("fast").can_run({"format": "gguf", "architecture": gguf.read_header(path)["architecture"]})[0]
-        old = modelscan.farm_dir
-        modelscan.farm_dir = lambda: os.path.join(self.tmp, "farm")
-        try:
-            linked = modelscan.sync_farm(sources, accept=accepts)
-            names = sorted(f for _, _, fs in os.walk(os.path.join(self.tmp, "farm")) for f in fs)
-        finally:
-            modelscan.farm_dir = old
-        self.assertEqual(names, ["Fine-Q4.gguf", "Plain-Q4.gguf"])
-        self.assertEqual(linked, 2)
-
     def test_entries_carry_the_name_chats_use(self):
         write_gguf(os.path.join(self.lib, "lemonade", "a", "A-Q4.gguf"), size=2 * GB)
         e = self.by_stem()["A-Q4"]
@@ -362,7 +364,7 @@ class Layout(Env):
         s.setdefault("models", {})["imports"] = [{"kind": "folder", "path": self.elsewhere, "label": "x"}]
         __import__("store").save(s)
         library.sync_views(self.cat(), self.reg)
-        self.assertEqual(sorted(os.listdir(self.lib)), ["lemonade"])
+        self.assertEqual(sorted(os.listdir(self.lib)), ["lemonade", "llamacpp"])     # lemonade/ here only because the test wrote a file there
         self.assertTrue(os.path.islink(os.path.join(self.tmp, "data", "views", "fast", "B-Q4.gguf")))
         self.assertEqual(library.views_base(), os.path.join(self.tmp, "data", "views"))
 
@@ -378,8 +380,7 @@ class Places(Env):
     def test_set_root_makes_the_folders_and_refuses_the_unwritable(self):
         new = os.path.join(self.tmp, "elsewhere", "My Models")
         self.assertEqual(library.set_root(new), new)
-        for sub in ("lemonade",):
-            self.assertTrue(os.path.isdir(os.path.join(new, sub)))
+        self.assertEqual(os.listdir(new), ["llamacpp"])                       # downloads go here; 4.x's lemonade/ is only read
         self.assertEqual(library.root(), new)
         with self.assertRaises(ValueError):
             library.set_root("/proc/zest")

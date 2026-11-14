@@ -104,9 +104,9 @@ class UnwritableHome(unittest.TestCase):
     def test_saving_settings_works_after_the_fallback(self):
         os.environ["XDG_CONFIG_HOME"] = "/proc/nonexistent"
         s = store.load()
-        s["builtin"]["api_key"] = "k"
+        s["gateway"]["api_key"] = "k"
         store.save(s)
-        self.assertEqual(store.load()["builtin"]["api_key"], "k")
+        self.assertEqual(store.load()["gateway"]["api_key"], "k")
 
     def test_a_writable_home_is_used_as_is(self):
         os.environ["XDG_CONFIG_HOME"] = os.path.join(self.tmp, "cfg")

@@ -1,4 +1,4 @@
-"""Keeps Pi (the agent) up to date, the way engine.py does for Lemonade.
+"""Keeps Pi (the agent) up to date, the way llamacpp.py does for llama.cpp.
 
 Looks on the npm registry, downloads the new release, checks it against the checksum npm publishes, unpacks it into
 Shoggoth's own data folder next to the copy that came with the AppImage (which is never touched), runs it once to make sure

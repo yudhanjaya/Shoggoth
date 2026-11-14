@@ -60,7 +60,7 @@ class ThePicks(Env):
                                      "Gemma-4-26B-A4B-it-MTP-GGUF", "GLM-4.7-Flash-GGUF", "Gemma-4-31B-it-MTP-GGUF", "Qwen3.8-27B-GGUF"])
         for r in rec.values():
             self.assertTrue(r["title"] and r["take"] and r["size_gb"], r["id"])
-            self.assertEqual(r["provider"], "Lemonade")
+            self.assertEqual(r["provider"], "llama.cpp")
         self.assertNotIn("Muse-Glimmer-30B-GGUF", rec)
 
     def test_a_model_lemonade_doesnt_list_says_where_to_fetch_it(self):
@@ -81,9 +81,9 @@ class ThePicks(Env):
         self.assertEqual([c["title"] for c in recs.models()["coming_soon"]], ["LFM3", "GLM 5.3 Flash"])
         self.assertTrue(all(c["take"] for c in recs.models()["coming_soon"]))
 
-    def test_recommendations_name_no_engine_but_lemonade(self):
+    def test_recommendations_name_no_engine_but_llamacpp(self):
         for r in recs.models()["recommended"]:
-            self.assertEqual(r["provider"], "Lemonade", r["id"])
+            self.assertEqual(r["provider"], "llama.cpp", r["id"])
         for f in recs.models()["first_run"]:
             self.assertNotIn("engine", f)
 
