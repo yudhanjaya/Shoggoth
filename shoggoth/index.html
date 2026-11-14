@@ -1396,7 +1396,6 @@ h3.themesec{font:600 13px var(--sans);color:var(--faint);margin:0 0 12px}
         <button data-view="server"><span>Server</span></button>
         <button data-view="hardware"><span>Hardware</span></button>
         <button data-view="backends"><span>Engines</span></button>
-        <button data-view="settings"><span>Engine settings</span></button>
         <button data-view="tuning"><span>Tuning</span></button>
         <button data-view="themes"><span>Themes</span></button>
       </div>
@@ -1544,16 +1543,17 @@ h3.themesec{font:600 13px var(--sans);color:var(--faint);margin:0 0 12px}
       <div id="prefs"></div>
       <div id="engparts" hidden>
         <div id="bkpart">
-          <p class="help" style="margin:0 0 10px">Lemonade runs several kinds of model (chat, speech, pictures and more). Each kind can run on different hardware, called a <b>backend</b>. Pick the one you want, or install one that's missing. Changes apply the next time a model loads.</p>
+          <p class="help" style="margin:0 0 10px">llama.cpp comes in builds for different kinds of graphics card, called a <b>backend</b>. Pick the one Shoggoth should use, or install one that's missing. Changes apply the next time llama.cpp starts.</p>
           <details class="panel bkhelp"><summary>Which backend should I pick?</summary>
         <dl class="bkdl">
-          <dt>Auto</dt><dd>Let Lemonade choose the best one for your computer. This is the right answer for almost everyone.</dd>
-          <dt>CUDA</dt><dd>For NVIDIA graphics cards. The fastest option if you have one.</dd>
-          <dt>ROCm</dt><dd>For AMD graphics cards. Fast, but supports fewer cards than Vulkan.</dd>
-          <dt>Vulkan</dt><dd>Works on almost any graphics card (NVIDIA, AMD and Intel). A good choice when CUDA or ROCm isn't an option. It can be a little slower.</dd>
-          <dt>CPU</dt><dd>Uses the main processor. Works on any computer but is the slowest, so it suits small models.</dd>
+          <dt>Auto</dt><dd>Let Shoggoth pick the build for this computer. This is the right answer for almost everyone.</dd>
+          <dt>CUDA 12</dt><dd>For NVIDIA graphics cards.</dd>
+          <dt>CUDA 13</dt><dd>For NVIDIA graphics cards. Needs a recent driver.</dd>
+          <dt>Vulkan</dt><dd>For NVIDIA, AMD and Intel cards. A good fallback.</dd>
+          <dt>ROCm</dt><dd>For AMD cards.</dd>
+          <dt>Processor only</dt><dd>Uses the main processor. Works anywhere, and is the slowest.</dd>
         </dl>
-        <p class="note">A green dot means installed. “Update needed” means Lemonade has a newer build for that backend.</p>
+        <p class="note">A green dot means installed.</p>
       </details>
           <div id="bk"></div>
         </div>
@@ -1571,7 +1571,7 @@ h3.themesec{font:600 13px var(--sans);color:var(--faint);margin:0 0 12px}
     <!-- SERVER -->
     <section class="view" id="v-server"><div class="pad"><div class="wrap"><div id="server"></div>
       <section class="panel srvlog" id="srvlog">
-        <div class="connhead"><h3>Activity log</h3><span class="help2" style="margin:0">What the helper has been doing. Useful when something goes wrong.</span></div>
+        <div class="connhead"><h3>Activity log</h3><span class="help2" style="margin:0">What llama.cpp has been doing. Useful when something goes wrong.</span></div>
         <div class="logbar">
           <input type="search" id="logq" placeholder="Filter log lines" aria-label="Filter log lines">
           <label><input type="checkbox" id="logauto" checked> Follow</label>
@@ -1581,13 +1581,6 @@ h3.themesec{font:600 13px var(--sans);color:var(--faint);margin:0 0 12px}
       </section>
     </div></div></section>
 
-
-    <!-- SETTINGS -->
-    <section class="view" id="v-settings"><div class="pad"><div class="wrap">
-      <p class="lede">Every setting Lemonade offers. Lemonade runs your small and medium models. Changes save as you make them. You'll rarely need this page. Settings for a single model are in Models, on its card under <b>Settings</b>.</p>
-      <div class="setbar"><input type="search" id="setq" placeholder="Search settings" aria-label="Search settings"><span class="chip" id="setcount"></span></div>
-      <div id="settings"></div>
-    </div></div></section>
 
   </main>
 </div>
@@ -1704,8 +1697,8 @@ async function api(path, opts={}){
 }
 
 /* ======================= navigation ======================= */
-const TITLES = {specimens:"Specimens", welcome:"Welcome", cowork:"Chat", chat:"Earlier chats", skills:"Skills", docs:"Docs", models:"Models", help:"Help", advanced:"Advanced", server:"Server", hardware:"Hardware", backends:"Engines", settings:"Engine settings", prefs:"Settings", tuning:"Tuning", themes:"Themes"};
-const ADV = ["advanced","server","hardware","backends","settings","tuning","themes"];
+const TITLES = {specimens:"Specimens", welcome:"Welcome", cowork:"Chat", chat:"Earlier chats", skills:"Skills", docs:"Docs", models:"Models", help:"Help", advanced:"Advanced", server:"Server", hardware:"Hardware", backends:"Engines", prefs:"Settings", tuning:"Tuning", themes:"Themes"};
+const ADV = ["advanced","server","hardware","backends","tuning","themes"];
 function show(v){
   if(v === "setup" || v === "prefs") v = "backends";                               // the old Settings page was split up: updates and "my own server" live on Engines
   S.view = v;
@@ -1729,7 +1722,6 @@ function show(v){
   if(v === "specimens") (async () => { await pkLoad(true); while(S.pk.busy) await new Promise(r => setTimeout(r, 200)); renderSpecimens(); })();
   if(v === "backends"){ loadBackends(); enginesExtras(); }
   if(v === "hardware") hwMemoryPaint();
-  if(v === "settings") loadSettings();
   if(v === "backends" || v === "welcome") refreshSetup(true);
   if(v === "welcome"){ libLoad(); pkLoad(true); }
   if(v === "tuning") tnShow();
@@ -1766,9 +1758,9 @@ const gpuFor = d => d && d.gpu_key ? S.gpus.find(g => g.key === d.gpu_key) : nul
 const groupNames = list => { const c = {}; list.forEach(n => c[n] = (c[n] || 0) + 1); return Object.entries(c).map(([n, k]) => k > 1 ? `${k} × ${n}` : n); };
 const shortName = n => String(n).replace(/^(NVIDIA|AMD|Intel)(\(R\))?\s+/i, "").replace(/^GeForce\s+/i, "").replace(/^Radeon\s+/i, "Radeon ");
 function activeGpus(){ return activeDevs().map(gpuFor).filter(Boolean); }
-/* Processes Lemonade starts itself: their VRAM frees up when it loads a different model. */
-const isLemonadeProc = p => /llama-server|sd-server|whisper|lemond|stable-diffusion|ggml-rpc/i.test(p.name);
-/* VRAM the next model can really use on the active devices: free memory, plus whatever Lemonade itself holds. */
+/* Processes llama.cpp starts itself: their VRAM frees up when it loads a different model. */
+const isEngineProc = p => /llama-server|llama-bench|sd-server|whisper|stable-diffusion|ggml-rpc/i.test(p.name);
+/* VRAM the next model can really use on the active devices: free memory, plus whatever llama.cpp itself holds. */
 function vramAvail(){
   const devs = activeDevs(); if(!devs.length) return null;
   let total = 0, avail = 0, live = false; const holders = {};
@@ -1777,9 +1769,9 @@ function vramAvail(){
     if(!g){ total += d.mib/1024; avail += d.mib/1024; continue; }       // no telemetry: assume empty
     live = true;
     const t = gb(g.mem_total_mb), used = gb(g.mem_used_mb);
-    const mine = (g.procs || []).filter(isLemonadeProc).reduce((a,p) => a + gb(p.mem_mb), 0);
+    const mine = (g.procs || []).filter(isEngineProc).reduce((a,p) => a + gb(p.mem_mb), 0);
     total += t; avail += Math.max(0, t - used + mine);
-    for(const p of g.procs || []) if(!isLemonadeProc(p)) holders[p.name] = (holders[p.name] || 0) + gb(p.mem_mb);
+    for(const p of g.procs || []) if(!isEngineProc(p)) holders[p.name] = (holders[p.name] || 0) + gb(p.mem_mb);
   }
   return {total, avail, live, holders: Object.entries(holders).map(([name, g]) => ({name, gb: g})).sort((a,b) => b.gb - a.gb)};
 }
@@ -1810,9 +1802,9 @@ async function loadModels(){
   }
 }
 function renderStatus(){
-  const anyLoaded = S.loaded || (S.ms && S.ms.loaded) || null, up = S.up || !!anyLoaded;   // a model another server runs counts even when Lemonade is off
+  const anyLoaded = S.loaded || (S.ms && S.ms.loaded) || null, up = S.up || !!anyLoaded;   // a model another server runs counts even when llama.cpp is off
   const eng = SU.st && SU.st.mode === "builtin" ? SU.st.engine : null;
-  S.engNote = up ? "" : eng ? (eng.state === "unsupported" ? "Shoggoth's own engine needs a newer Linux. See Advanced > Engines." : eng.state === "error" ? "The part that runs AI couldn't start. See Advanced > Engines." : "The part that runs AI is getting ready…") : "The part that runs AI isn't running.";
+  S.engNote = up ? "" : eng ? (!eng.installed ? "llama.cpp isn't set up yet. See Advanced > Engines." : eng.error ? "llama.cpp couldn't start. See Advanced > Engines." : "llama.cpp is getting ready…") : "llama.cpp isn't running.";
   // Live speed: exact for Shoggoth's own chat, approximate (~) for other apps using the Server. It sits in the model bar.
   let sp = "";
   if(S.live && S.live.tFirst && S.live.tps) sp = fmtRate(S.live.tps) + " tok/s";
@@ -1837,14 +1829,18 @@ document.addEventListener("visibilitychange", tick);
 
 
 /* ======================= friendly problems ======================= */
-// Lemonade and llama.cpp errors are written for engineers. This turns the common ones into a sentence a person can act on.
+// Engine errors are written for engineers. This turns the common ones into a sentence a person can act on.
 function friendlyProblem(raw, what){
   const r = String(raw || ""), t = r.toLowerCase();
+  if(/llama\.cpp isn't set up yet|llama\.cpp is not set up yet/.test(t))
+    return {title: "llama.cpp isn't set up yet", body: "Shoggoth needs its llama.cpp before it can run models.", hint: "Download it on Advanced > Engines.", engines: true};
+  if(/needs a newer linux|glibc \d+\.\d+/.test(t))
+    return {title: "This llama.cpp build needs a newer Linux", body: "The llama.cpp build Shoggoth downloaded needs a newer Linux: Ubuntu 24.04, Debian 13, Fedora 39 or Linux Mint 22.", hint: "Use a newer Linux, or connect a server you run on another computer from Advanced > Engines.", engines: true};
   if(/out of memory|cudamalloc|\boom\b|failed to allocate|insufficient memory|not enough memory|vram/.test(t))
     return {title: "Not enough memory", body: `${what || "This model"} needs more graphics (or system) memory than is free right now.`, hint: "Close other programs that use the graphics card, unload other models, choose a smaller version, or shorten its context window under Settings for this model."};
   const arch = (r.match(/unknown model architecture:?\s*['"“]?([\w.-]+)/i) || r.match(/architecture\s*['"“]([\w.-]+)['"”]?\s*(?:is )?(?:not supported|unsupported)/i) || [])[1];
   if(arch || /unsupported.*architecture|architecture.*(not supported|unsupported)/.test(t))
-    return {title: "This model needs a newer engine", body: `${what || "This model"} is built on a design (an “architecture”)${arch ? ` called ${arch}` : ""} that the llama.cpp inside your Lemonade doesn't know yet. That's normal for a brand-new model: llama.cpp learns it first, then Lemonade picks up the new llama.cpp.`, hint: "Update Lemonade on Engines. If it still fails after that, this model isn't available on Lemonade yet. Pick another model for now.", engines: true};
+    return {title: "This model needs a newer engine", body: `${what || "This model"} is built on a design (an “architecture”)${arch ? ` called ${arch}` : ""} that this llama.cpp doesn't know yet. That's normal for a brand-new model: llama.cpp learns it first.`, hint: "Update llama.cpp on Engines. If it still fails after that, this model isn't available on this llama.cpp yet. Pick another model for now.", engines: true};
   if(/invalid gguf|bad magic|not a gguf|gguf.*(corrupt|truncated)|tensor.*(missing|out of range)/.test(t))
     return {title: "The model file looks damaged", body: `${what || "This model"} didn't download completely, or the file is broken.`, hint: "Delete it from Models and get it again."};
   if(/failed to load model|llama-server (exited|failed)|model.*(could not|couldn't) be loaded|unknown model/.test(t))
@@ -2288,7 +2284,7 @@ function fitInfo(m){
   const v = vramAvail();
   if(!v || !m.size || m.recipe !== "llamacpp") return null;
   // what the server worked out for this model (weights, working space and the conversation memory); a flat margin when it has not listed it
-  const e = ((LIB.d || {}).models || []).find(x => (x.ids || {}).lemonade === m.id), need = e && e.need_gb ? e.need_gb : m.size + 0.8, r = v.avail > 0 ? need / v.avail : Infinity;
+  const e = ((LIB.d || {}).models || []).find(x => (x.ids || {}).llamacpp === m.id), need = e && e.need_gb ? e.need_gb : m.size + 0.8, r = v.avail > 0 ? need / v.avail : Infinity;
   // a model that fits this computer but is crowded out right now is a snug fit (amber), not a no (red)
   const cls = r <= .8 ? "ok" : r <= 1 || need <= v.total ? "tight" : "over";
   const who = v.holders.length ? v.holders[0].name : "";
@@ -2315,7 +2311,7 @@ function savedLine(m){
 /* the model's creature, small, at the head of its card (when model pictures are on) */
 function libPic(id, extra){ if(!picturesOn() || !id) return ""; const m = Object.assign({id}, pkFind(id) || {}, extra || {}); return `<span class="cthumb" style="--tone:${crTone(m)}">${crPic(m, {crop: true, label: false})}</span>`; }
 /* "Leave some graphics memory free so my computer doesn't slow": the same row on every model card, whichever engine runs it. */
-const HR = {d: {lemonade: 0}, set: {}, t: 0};
+const HR = {d: {llamacpp: 0}, set: {}, t: 0};
 async function hrLoad(){ if(Date.now() - HR.t < 4000) return; HR.t = Date.now(); try{ const r = await api("/ui/model/headroom"); HR.d = r.default || HR.d; HR.set = r.set || {}; }catch{} }
 const hrGb = (id, engine) => id in HR.set ? HR.set[id] : (HR.d[engine] || 0);
 function headroomRow(id, engine){
@@ -2337,13 +2333,13 @@ function cardHTML(m, extra, title, quiet){            // quiet: in a long list t
   let act;
   if(!m.downloaded){
     act = job ? `<div class="dlrow" style="flex:1"><div class="prog" style="flex:1"><i style="width:${job.percent}%"></i></div>${job.percent}%</div><button class="btn" data-canceldl="${esc(m.id)}">Cancel</button>`
-      : S.dlSupported === false ? `<button class="btn" data-copycmd="${esc(m.id)}">${ICON.copy} Copy download command</button>`
+      : S.dlSupported === false ? `<span class="help" style="margin:0">Downloads aren't available in this copy.</span>`
       : `<button class="btn${quiet ? "" : " primary"}" data-dl="${esc(m.id)}">Get it${m.size ? " · " + (m.size < 10 ? m.size.toFixed(1) : Math.round(m.size)) + " GB" : ""}</button>`;
   } else act = `<button class="btn primary" data-chat="${esc(m.id)}">Chat with it</button><button class="btn" data-opts="${esc(m.id)}">${ICON.sliders} Settings</button>`;
   const sh = m.downloaded ? speedHistory(m.id) : null, [shWord, shCls] = sh ? speedWord(sh.tps) : ["", ""];
   const spLine = sh ? `<div class="speedline"><span class="sw ${shCls}">${shWord}</span><span>About <b class="num">${fmtRate(sh.tps)}</b> tok/s on this computer${sh.n > 1 ? ` <small>(from ${sh.n} answers)</small>` : ""}</span></div>` : "";
   return `<article class="card ${isLoaded?"loaded":""}" data-id="${esc(m.id)}">
-    <div class="ctop">${libPic(m.id, {title: friendly(m), size_gb: m.size})}<h3>${esc(title || (recPick(m.id) || {}).title || friendly(m))}</h3>${isLoaded?'<span class="chip ok">Loaded</span>':m.downloaded?'<span class="chip">On this computer</span>':""}${m.downloaded && m.recipe === "llamacpp" ? tnTag("lemonade", m.id) : ""}</div>
+    <div class="ctop">${libPic(m.id, {title: friendly(m), size_gb: m.size})}<h3>${esc(title || (recPick(m.id) || {}).title || friendly(m))}</h3>${isLoaded?'<span class="chip ok">Loaded</span>':m.downloaded?'<span class="chip">On this computer</span>':""}${m.downloaded && m.recipe === "llamacpp" ? tnTag("llamacpp", m.id) : ""}</div>
     <p class="what">${esc(whatFor(m))}</p>${extra || ""}
     <div class="row"><span>${m.size ? `${sizeWord(m.size)} <span class="mono num">· ${m.size.toFixed(m.size<10?1:0)} GB</span>` : ""}</span></div>
     ${f ? `<div class="fitwrap"><div class="fit ${f.cls}" role="img" aria-label="${esc(f.note)}"><i style="width:${f.pct}%"></i></div><div class="fitnote ${f.cls}" style="margin-top:6px">${esc(f.note)}</div></div>` : ""}
@@ -2355,7 +2351,7 @@ function cardHTML(m, extra, title, quiet){            // quiet: in a long list t
         ${m.checkpoint ? `<div class="mono mid">${esc(String(m.checkpoint).split("\n")[0])}</div>` : ""}
         ${m.context_length ? `<div class="mid">Remembers up to ${fmtTok(m.context_length)} tokens of conversation</div>` : ""}
         ${savedLine(m)}
-        ${m.downloaded ? headroomRow(m.id, "lemonade") : ""}
+        ${m.downloaded ? headroomRow(m.id, "llamacpp") : ""}
         <div class="dact">${m.downloaded ? `<button class="btn danger" data-delete="${esc(m.id)}">${ICON.trash} Delete from this computer</button>` : ""}</div>
       </div></details>
   </article>`;
@@ -2448,7 +2444,7 @@ function bigCard(e){          // an installed model that another engine runs (no
 }
 const LARGE_LINKS = [["Strata", "https://github.com/Niko1221/Strata"], ["Basalt", "https://github.com/jesdga95/basalt"], ["Maya", "https://github.com/mw00/project-maya"]];
 const largeNote = () => `<div class="largenote"><b>Running very large models</b>
-  <p>Shoggoth runs large models through Lemonade. Only the ones Lemonade can serve are listed here. For models with over a hundred billion parameters, Lemonade and llama.cpp are not yet as good as Strata, Basalt and Maya. That is true as of November 2026. It will change. To run models that size, set one of these up yourself. Then connect it under <b>Advanced</b>, <b>Connect a server</b>.</p>
+  <p>Shoggoth runs models with llama.cpp. Only models llama.cpp can serve are listed here. For models with over a hundred billion parameters, llama.cpp is not yet as good as Strata, Basalt and Maya. That is true as of November 2026. It will change. To run models that size, set one of these up yourself. Then connect it under <b>Advanced</b>, <b>Connect a server</b>.</p>
   <div class="links">${LARGE_LINKS.map(([n, u]) => `<a href="${u}" target="_blank" rel="noopener noreferrer">${n} on GitHub</a>`).join("")}</div></div>`;
 function libGrid(items){ return items.length ? `<div class="grid">${items.join("")}</div>` : ""; }
 function libSection(t, cards, note){ return cards.length || note ? `<section class="picktier"><div class="tierhead"><h3>${esc(t[1])}</h3>${t[2] ? `<p>${esc(t[2])}</p>` : ""}</div>${note || ""}${cards.length ? `<div class="grid">${cards.join("")}</div>` : ""}</section>` : ""; }
@@ -2459,9 +2455,9 @@ function libInstalled(){
   const seen = new Set();
   for(const e of cat){
     if(!(!q || e.title.toLowerCase().includes(q) || e.stem.toLowerCase().includes(q))) continue;
-    const lid = (e.ids || {}).lemonade, lm = lid && S.models.find(x => x.id === lid);
+    const lid = (e.ids || {}).llamacpp, lm = lid && S.models.find(x => x.id === lid);
     if(lm){ seen.add(lm.id); by.tier[e.tier || libTier(e.size_bytes / 1e9)].push(cardHTML(lm, "", titles[lm.id], true)); }
-    else if(e.provider && e.provider !== "lemonade" && e.ref !== undefined) by.tier[e.tier || "large"].push(bigCard(e));
+    else if(e.provider && e.provider !== "llamacpp" && e.ref !== undefined) by.tier[e.tier || "large"].push(bigCard(e));
   }
   for(const m of S.models.filter(m => m.downloaded && !seen.has(m.id) && libMatch(m, q)))
     by.tier[isChatModel(m) ? libTier(m.size) : "other"].push(cardHTML(m, "", titles[m.id], true));
@@ -2469,17 +2465,16 @@ function libInstalled(){
 }
 /* what a pick says about itself, from models.yaml: it is true of the model whether or not an engine is installed yet */
 function recFacts(it, gb){
-  const bits = [gb ? `Needs about ${gb < 10 ? gb.toFixed(1) : Math.round(gb)} GB of memory` : "", `Runs on ${it.provider || "Lemonade"}`, it.tools ? "Can use tools" : "", it.vision ? "Understands pictures" : "", it.reasoning ? "Thinks before it answers" : ""].filter(Boolean);
+  const bits = [gb ? `Needs about ${gb < 10 ? gb.toFixed(1) : Math.round(gb)} GB of memory` : "", `Runs on ${it.provider || "llama.cpp"}`, it.tools ? "Can use tools" : "", it.vision ? "Understands pictures" : "", it.reasoning ? "Thinks before it answers" : ""].filter(Boolean);
   return `<ul class="facts">${bits.map(b => `<li>${esc(b)}</li>`).join("")}</ul>`;
 }
 const recExtra = (it, gb) => `${it.label ? `<p class="pickhead"><span class="chip lem">${esc(it.label)}</span></p>` : ""}${it.take ? `<p class="take">${inline(it.take)}</p>` : ""}${recFacts(it, gb)}`;
-const lemReady = () => !!(SU.st && SU.st.lemonade.reachable);
-/* a pick the engine does not list (Lemonade is not installed yet, or the model is a custom one): the card is drawn from models.yaml */
+/* a pick the engine does not list (llama.cpp is not installed yet, or the model is a custom one): the card is drawn from models.yaml */
 function recGetCard(it){
   const gb = it.size_gb || 0, job = dlJob(it.id), f = fitInfo({size: gb, recipe: "llamacpp"}), size = gb < 10 ? gb.toFixed(1) : Math.round(gb);
   const act = job ? `<div class="dlrow" style="flex:1"><div class="prog" style="flex:1"><i style="width:${job.percent}%"></i></div>${job.percent}%</div><button class="btn" data-canceldl="${esc(it.id)}">Cancel</button>`
     : PICK.id === it.id ? `<button class="btn" disabled>Getting ready…</button>`
-    : `<button class="btn primary" data-recget="${esc(it.id)}">${lemReady() ? "Get it" : "Set up and get it"} · ${size} GB</button>`;
+    : `<button class="btn primary" data-recget="${esc(it.id)}">Get it · ${size} GB</button>`;
   return `<article class="card" data-id="${esc(it.id)}"><div class="ctop">${libPic(it.id, {title: it.title, size_gb: it.size_gb})}<h3>${esc(it.title || friendly(it.id))}</h3></div>
     ${recExtra(it, gb)}
     ${f ? `<div class="fitwrap"><div class="fit ${f.cls}" role="img" aria-label="${esc(f.note)}"><i style="width:${f.pct}%"></i></div><div class="fitnote ${f.cls}" style="margin-top:6px">${esc(f.note)}</div></div>` : ""}
@@ -2487,7 +2482,7 @@ function recGetCard(it){
     <details class="more"><summary>Details</summary><div class="mbody"><div class="mono mid">${esc(it.id)}</div>${it.download ? `<div class="mono mid">${esc(it.download.checkpoint)}</div>` : ""}</div></details></article>`;
 }
 const recSoonCard = c => `<article class="card soon" aria-label="${esc(c.title)}, coming soon"><span class="soonband" aria-hidden="true">COMING SOON!</span><div class="ctop"><h3>${esc(c.title)}</h3></div>${c.take ? `<p class="take">${inline(c.take)}</p>` : ""}</article>`;
-/* the person chose a pick before Lemonade was installed: set up, then fetch it */
+/* the person chose a pick before llama.cpp was ready: set up, then fetch it */
 const PICK = {id: store.get("shoggoth.pendingpick", "")};
 async function recFetch(it){
   const room = await diskProblem(it.size_gb);
@@ -2500,13 +2495,13 @@ async function recFetch(it){
 }
 async function recGet(id){
   const it = recModels().recommended.find(x => x.id === id); if(!it) return;
-  if(lemReady()) return recFetch(it);
+  if(SU.st && SU.st.engine.installed && !engineNeedsBuild(SU.st.engine)) return recFetch(it);
   PICK.id = id; store.set("shoggoth.pendingpick", id); W.go = true; toast("Shoggoth will set itself up, then get " + (it.title || id) + ".");
   show("welcome");
 }
-/* once Lemonade is running and fitted to the graphics card, fetch the pick that started the setup */
+/* once llama.cpp is ready, fetch the pick that started the setup */
 function recResume(){
-  if(!PICK.id || !lemReady() || !backendsInstalled().length || PICK.busy) return;
+  if(!PICK.id || PICK.busy) return; const eng = SU.st && SU.st.engine; if(!eng || !eng.installed || engineNeedsBuild(eng)) return;
   const it = recModels().recommended.find(x => x.id === PICK.id);
   PICK.busy = true; const id = PICK.id; PICK.id = ""; store.set("shoggoth.pendingpick", "");
   if(!it){ PICK.busy = false; return; }
@@ -2528,17 +2523,17 @@ function libEverything(){
   for(const m of S.models.filter(m => libKind(m, LIB.kind) && libMatch(m, q)).sort((a, b) => b.downloaded - a.downloaded || a.id.localeCompare(b.id)))
     by[isChatModel(m) ? libTier(m.size) : "other"].push(cardHTML(m, "", titles[m.id], true));
   if(["all", "chat"].includes(LIB.kind)){
-    for(const e of ((LIB.d || {}).models || []).filter(e => e.provider && e.provider !== "lemonade" && (!q || e.title.toLowerCase().includes(q)))) by.large.push(bigCard(e));
+    for(const e of ((LIB.d || {}).models || []).filter(e => e.provider && e.provider !== "llamacpp" && (!q || e.title.toLowerCase().includes(q)))) by.large.push(bigCard(e));
   }
-  const note = `<p class="help" style="margin:0">Everything Lemonade offers, including models that haven't been tested here. Recommended for this computer has the ones that have.</p>`;
-  if(!S.models.length && !lemReady()) return note + `<div class="empty-note">Lemonade isn't set up yet, so there is no list to show. Pick a model under <b>Recommended for this computer</b> and Shoggoth sets it up first.</div>`;
+  const note = `<p class="help" style="margin:0">Every model Shoggoth knows about, including ones that haven't been tested here. Recommended for this computer has the ones that have.</p>`;
+  if(!S.models.length) return note + `<div class="empty-note">No models yet. Pick one under <b>Recommended for this computer</b> to get one.</div>`;
   return note + (LIB_TIERS.map(t => libSection(t, by[t[0]], t[0] === "large" && !q ? largeNote() : "")).join("") || `<div class="empty-note">Nothing matches.</div>`);
 }
 function renderModels(){
   if(!LIB_TABS.some(t => t[0] === LIB.tab)) LIB.tab = "installed";
   libFilters();
-  const noBackend = S.bk && S.bk.length && !backendsInstalled().length;
-  $("#modelsbanner").innerHTML = noBackend ? `<div class="note-warn" style="margin-bottom:12px">Shoggoth still needs one small piece before models can run. <a href="#welcome" data-go="welcome">Finish getting ready</a>.</div>` : "";
+  const noBackend = S.bk && S.bk.length && !(SU.st && SU.st.engine.installed);
+  $("#modelsbanner").innerHTML = noBackend ? `<div class="note-warn" style="margin-bottom:12px">Shoggoth still needs llama.cpp before models can run. <a href="#welcome" data-go="welcome">Finish getting ready</a>.</div>` : "";
   $("#libwhere").innerHTML = libWhereHTML();
   $("#libdl").innerHTML = libDlHTML();
   const open = new Set($$("#grid details.more[open]").map(d => d.closest(".card")?.dataset.id));
@@ -2551,7 +2546,7 @@ function renderModels(){
 function libAddOpen(){ $("#addbody").innerHTML = `
   <div class="addopt"><b>From Hugging Face</b><span>Paste a link to a model page.</span><button class="btn" type="button" data-add="hf">Paste a link</button></div>
   <div class="addopt"><b>From a folder</b><span>Use models you already have in a folder on this computer.</span><button class="btn" type="button" data-add="folder">Choose a folder…</button></div>
-  <div class="addopt"><b>Find models already here</b><span>Shoggoth looks in the usual places, like LM Studio and Ollama.</span><button class="btn" type="button" data-add="scan">Look</button></div>
+  <div class="addopt"><b>Find models already here</b><span>Shoggoth looks in the usual places, like LM Studio.</span><button class="btn" type="button" data-add="scan">Look</button></div>
   <div id="addres"></div>`; $("#adddlg").showModal(); }
 async function libAddFolder(path, label, kind){
   const r = await api("/ui/library/folder", {method: "POST", body: JSON.stringify({path, label, kind})});
@@ -2564,8 +2559,10 @@ $("#adddlg").addEventListener("click", async e => {
   if(b.dataset.add === "scan"){
     res.innerHTML = '<p class="help">Looking…</p>';
     try{
-      const r = await api("/ui/models/scan"); LIB.found = r.sources;
-      res.innerHTML = r.sources.length ? `<div class="addfound">${r.sources.map((s, i) => `<label><input type="checkbox" data-i="${i}" ${s.label === "Downloads" ? "" : "checked"}><span><b>${esc(s.label)}</b> <small>${s.count} model${s.count === 1 ? "" : "s"} · ${fmtBytes(s.bytes)} · ${esc(s.path)}</small></span></label>`).join("")}</div><div class="line"><button class="btn primary" type="button" data-adduse="1">Use the ticked ones</button></div>` : '<p class="help">Nothing found in the usual places. You can choose a folder instead.</p>';
+      const r = await api("/ui/models/scan"), all = r.sources || [], ollama = all.some(s => s.kind === "ollama");
+      LIB.found = all.filter(s => s.kind !== "ollama");
+      const why = ollama ? `<p class="help">Ollama keeps its models in its own files, so Shoggoth doesn't import them. <button class="btn" type="button" data-go2="backends">Connect Ollama on Engines</button></p>` : "";
+      res.innerHTML = LIB.found.length ? `<div class="addfound">${LIB.found.map((s, i) => `<label><input type="checkbox" data-i="${i}" ${s.label === "Downloads" ? "" : "checked"}><span><b>${esc(s.label)}</b> <small>${s.count} model${s.count === 1 ? "" : "s"} · ${fmtBytes(s.bytes)} · ${esc(s.path)}</small></span></label>`).join("")}</div><div class="line"><button class="btn primary" type="button" data-adduse="1">Use the ticked ones</button></div>${why}` : `<p class="help">Nothing found in the usual places. You can choose a folder instead.</p>${why}`;
     }catch(err){ res.innerHTML = `<p class="errline">${esc(err.message)}</p>`; }
   }
   if(b.dataset.adduse){
@@ -2600,7 +2597,6 @@ $("#v-models").addEventListener("click", async e => {
   else if(t.dataset.opts) openOptions(t.dataset.opts);
   else if(t.dataset.delete) askDelete(t.dataset.delete);
   else if(t.dataset.chat) chatWith(t.dataset.chat);
-  else if(t.dataset.copycmd){ navigator.clipboard?.writeText("lemonade pull " + t.dataset.copycmd); toast("Copied: lemonade pull " + t.dataset.copycmd); }
 });
 
 
@@ -2681,7 +2677,7 @@ async function hfLookup(){
 }
 async function hfDownload(){
   const d = HF.data, v = d?.versions.find(x => x.quant === HF.pick); if(!v) return;
-  const id = "user." + d.name.replace(/[^A-Za-z0-9._-]/g, "-") + "-" + v.quant;
+  const id = d.name.replace(/[-_.]?gguf$/i, "") + "-" + v.quant.toUpperCase();
   const body = {model_name: id, checkpoint: `${d.repo}:${v.quant}`, recipe: "llamacpp", stream: true, subscribe: false};
   if(d.mmproj) body.mmproj = d.mmproj;
   const room = await diskProblem(v.gb);
@@ -2691,7 +2687,7 @@ async function hfDownload(){
     await api("/api/v1/pull", {method:"POST", headers:{"Content-Type":"application/json"}, body:JSON.stringify(body)});
     $("#hfdlg").close(); toast("Download started. You can keep using Shoggoth while it works.");
     await loadModels(); await pollDownloads(); S.filter = "downloaded"; store.set("shoggoth.filter3", S.filter); if(S.view === "models") renderModels();
-  }catch(e){ HF.err = "Lemonade couldn't start that download: " + e.message; renderHF(); showProblem(e.message, d?.name || "This model"); }
+  }catch(e){ HF.err = "Shoggoth couldn't start that download: " + e.message; renderHF(); showProblem(e.message, d?.name || "This model"); }
 }
 $("#hfbody").addEventListener("click", e => {
   if(e.target.closest("#hfgo")) return hfLookup();
@@ -2703,7 +2699,7 @@ $("#hfcancel").addEventListener("click", () => $("#hfdlg").close());
 $("#hfopen")?.addEventListener("click", openHF);
 
 /* ======================= per-model options ======================= */
-let OD = null;   // the dialog's state: model, what Lemonade reports, and what the user changed
+let OD = null;   // the dialog's state: model, what llama.cpp reports, and what the user changed
 const CTX_PRESETS = [2048, 4096, 8192, 16384, 32768, 65536, 131072, 262144];
 const OPT_META = {
   ctx_size: {l: "Context window", h: "How many tokens of conversation the model can see when another app loads it. Shoggoth's own chat always asks for the size in its model bar (128k unless you change it there). Larger windows need more VRAM."},
@@ -3037,17 +3033,19 @@ async function aeLoad(saved){
 }
 
 /* ======================= setup / getting started ======================= */
-const SU = {st: null, busy: {}, sources: null, sel: new Set(), msg: {}, check: null, checkErr: "", sig: "", autoChecked: false,
+const SU = {st: null, busy: {}, cfg: null, sources: null, sel: new Set(), msg: {}, check: null, checkErr: "", sig: "", autoChecked: false,
             pi: {info: null, check: null, err: "", autoChecked: false}};
 const fmtBytes = n => n >= 1e9 ? (n/1e9).toFixed(1) + " GB" : n >= 1e6 ? Math.round(n/1e6) + " MB" : Math.round(n/1e3) + " KB";
 const autoCheckOn = () => store.get("shoggoth.autocheck", true);
-const llamaRecipe = () => (S.bk || []).find(r => r.recipe === "llamacpp");
-const backendsInstalled = () => (llamaRecipe()?.backends || []).filter(b => b.state === "installed");
+const engineNeedsBuild = eng => !eng.installed || (!!eng.bundled && eng.recommended !== "cpu");
+const engineBuildBackend = eng => eng.recommended || "cpu";
+
 const downloadedChat = () => S.models.filter(m => m.downloaded && m.recipe === "llamacpp" && !(m.labels || []).includes("embeddings"));
 const dlJob = id => (S.downloads || []).find(j => j.model_name === id && ["downloading", "paused"].includes(j.status));
 
 async function refreshSetup(force){
   try{ SU.st = await api("/ui/setup"); }catch{ return; }
+  try{ SU.cfg = (await api("/ui/config")).config || {}; }catch{}
   try{ SU.pi.info = await api("/ui/pi"); }catch{}
   if(autoCheckOn() && !SU.pi.autoChecked && SU.pi.info && SU.pi.info.active){ SU.pi.autoChecked = true; doPiCheck(true); }
   if(SU.st.mode === "builtin" && autoCheckOn() && !SU.autoChecked && SU.st.engine.running){ SU.autoChecked = true; doCheck(true); }
@@ -3066,9 +3064,9 @@ async function doPiCheck(silent){
   SU.busy.pcheck = false; updateNavDot(); if(inSetup()) renderSetup(true); if(S.view === "cowork") cwRenderSide();
 }
 function updatePanel(){
-  const u = SU.up || {state: "idle", items: {}}, working = u.state === "working", names = {zest: "Shoggoth", lemonade: "The part that runs AI (Lemonade)", pi: "The agent helper (Pi)"};
+  const u = SU.up || {state: "idle", items: {}}, working = u.state === "working", names = {zest: "Shoggoth", llamacpp: "llama.cpp", pi: "The agent helper (Pi)"};
   const dot = {current: "ok", updated: "ok", working: "busy", checking: "busy", error: "bad", manual: "busy", skipped: "ok"};
-  const rows = ["zest", "lemonade", "pi"].filter(k => u.items[k]).map(k => { const it = u.items[k];
+  const rows = ["zest", "llamacpp", "pi"].filter(k => u.items[k]).map(k => { const it = u.items[k];
     return `<div class="line"><span class="stat-dot ${dot[it.state] || "busy"}"></span><span class="grow"><b>${names[k]}:</b> ${esc(it.text)}${it.page ? ` <a href="${esc(it.page)}" target="_blank" rel="noopener noreferrer">Releases</a>` : ""}</span></div>`; }).join("");
   return `<section class="step" id="step-upd"><header><span class="num">↻</span><h3>Update everything</h3></header><div class="sbody">
     <p class="lead">One button looks for newer versions of everything Shoggoth uses, checks each download, and installs what it finds. Nothing is replaced until the download has been verified.</p>
@@ -3119,48 +3117,41 @@ function wLibAct(a){                     // the folder question's buttons (Model
   if(a === "again"){ LIB.notNow = false; return S.view === "welcome" ? renderWelcome(true) : renderModels(); }
 }
 /* may Shoggoth start fetching things? Once the folder question is answered, or when there is nothing to ask because things are already here. */
-const wGo = () => W.go || !!(LIB.d && (LIB.d.chosen || LIB.notNow)) || downloadedChat().length > 0 || (SU.st && SU.st.mode === "existing" && SU.st.lemonade.reachable);
+const wGo = () => W.go || !!(LIB.d && (LIB.d.chosen || LIB.notNow)) || downloadedChat().length > 0 || (SU.st && SU.st.mode === "connected");
 function wRows(){
-  const st = SU.st, eng = st.engine, u = eng.update, r = llamaRecipe(), go = wGo(), rows = [];
+  const st = SU.st, eng = st.engine, u = eng.update || {}, go = wGo(), rows = [];
   // 1. the computer
   const m = (LIB.d || {}).machine || {}, found = st.gpus_found || [], gpus = (m.gpus && m.gpus.length ? m.gpus.map(shortName) : (found.length ? found : (S.gpus || [])).map(g => shortName(g.name)));
   rows.push({s: "done", t: "Looked at your computer", x: gpus.length ? `${groupNames(gpus).join(" and ")}${m.ram_gb ? ", " + Math.round(m.ram_gb) + " GB of RAM" : ""}` : "No graphics card found, so Shoggoth will use settings that work on any computer."});
-  // 2. the part that runs AI
+  if(st.mode === "connected"){
+    rows.push({s: "done", t: "Models run on the servers you connect", x: "Connect one on Advanced > Engines."});
+    return {rows, rec: null, go};
+  }
+  const dl = ["downloading", "installing"].includes(u.state), pct = u.total ? Math.round(100 * u.bytes / u.total) : 0;
+  // 2. llama.cpp itself
   let h;
-  if(st.mode === "existing") h = st.lemonade.reachable ? {s: "done", t: "Found what runs AI on this computer", x: "Shoggoth will use it."} : {s: "problem", t: "The part that runs AI isn't answering", x: `Shoggoth is set to use one at ${st.existing.host}:${st.existing.port}.`, a: [["Use Shoggoth's own instead", "mode-builtin", true], ["Change the address", "go:setup"]]};
-  else if(!eng.available){
-    const dl = ["downloading", "verifying", "installing"].includes(u.state), pct = u.total ? Math.round(100 * u.bytes / u.total) : 0;
-    h = u.state === "error" ? {s: "problem", t: "Couldn't get the part that runs AI", x: u.error, a: [["Try again", "engine-update", true]]}
-      : dl ? {s: "working", t: "Getting the part that runs AI", x: `Downloading… ${pct}%`, pct}
-      : {s: go ? "working" : "waiting", t: "Getting the part that runs AI", x: "A small download, about 7 MB. Shoggoth keeps it up to date."};
-  }else if(eng.state === "unsupported") h = {s: "waiting", t: "Shoggoth's own engine needs a newer Linux", x: eng.error, a: [["Use a Lemonade I already run", "mode-existing-pick", true]]};
-  else if(eng.state === "error") h = {s: "problem", t: "The part that runs AI didn't start", x: eng.error, a: [["Try again", "engine-restart", true]]};
-  else h = st.lemonade.reachable ? {s: "done", t: "The part that runs AI is ready", x: ""} : {s: "working", t: "Starting the part that runs AI", x: "A few seconds."};
+  if(!eng.installed) h = u.state === "error" ? {s: "problem", t: "Couldn't get llama.cpp", x: u.error, a: [["Try again", "llama-install", true]]}
+    : dl ? {s: "working", t: "Getting llama.cpp", x: `Downloading… ${pct}%`, pct}
+    : {s: go ? "working" : "waiting", t: "Getting llama.cpp", x: "A small download. Shoggoth gets the build for this computer."};
+  else if(eng.error) h = {s: "problem", t: "llama.cpp couldn't start", x: eng.error, a: [["Try again", "engine-restart", true]]};
+  else h = eng.running ? {s: "done", t: "llama.cpp is ready", x: `${eng.tag} · ${eng.backend_name}`} : {s: "working", t: "Starting llama.cpp", x: ""};
   rows.push(h);
-  // 3. fitted to the graphics card
-  const todo = r ? r.backends.filter(x => ["installable", "update_required"].includes(x.state)) : [], rec = todo.find(x => x.name === r.default) || todo.find(x => x.name === "vulkan") || todo[0];
+  // 3. the build for this computer
   let f;
-  if(r && backendsInstalled().length) f = {s: "done", t: "Fitted to your graphics card", x: ""};
-  else if(!st.lemonade.reachable) f = {s: "waiting", t: "Fitting it to your graphics card", x: ""};
-  else if(!r) f = {s: "working", t: "Fitting it to your graphics card", x: "Looking at what your computer needs."};
-  else if(!rec) f = {s: "problem", t: "Your computer needs a setting Shoggoth can't choose by itself", x: "Lemonade didn't offer anything Shoggoth can install automatically.", a: [["Look at the options", "go:backends", true]]};
-  else if(SU.msg.backend) f = {s: "problem", t: "Couldn't fit it to your graphics card", x: SU.msg.backend, a: [["Try again", "w-fit", true]]};
-  else f = {s: go ? "working" : "waiting", t: "Fitting it to your graphics card", x: "One download that makes models run well. It takes a minute or two."};
+  if(!engineNeedsBuild(eng)) f = {s: "done", t: "Set up for this computer", x: eng.recommended === "cpu" ? "Runs on the processor." : `Uses ${eng.backend_name || eng.backend}.`};
+  else if(dl) f = {s: "working", t: "Getting the build for your graphics card", x: `Downloading… ${pct}%`, pct};
+  else if(u.state === "error") f = {s: "problem", t: "Couldn't get the build for your graphics card", x: u.error, a: [["Try again", "llama-install", true]]};
+  else f = {s: go ? "working" : "waiting", t: "Getting the build for your graphics card", x: "One download that makes models run well on this computer."};
   rows.push(f);
-  return {rows, rec, go};
+  return {rows, rec: engineNeedsBuild(eng) ? engineBuildBackend(eng) : null, go};
 }
 function wAuto(rec, go){
-  const st = SU.st, eng = st.engine;
-  if(!go) return;
-  if(st.mode === "builtin" && !eng.available && eng.update.state === "idle" && !W.auto.helper){ W.auto.helper = true; suBusy("update", async () => { await suPost("/ui/engine/update"); }); }
-  if(st.lemonade.reachable && llamaRecipe() && !backendsInstalled().length && rec && !SU.busy["inst-" + rec.name] && !W.auto["fit-" + rec.name] && !SU.msg.backend){ W.auto["fit-" + rec.name] = true; wFit(rec.name); }
-}
-function wFit(name){
-  return suBusy("inst-" + name, async () => {
-    SU.msg.backend = "";
-    try{ const r = await suPost("/ui/backend/install", {recipe: "llamacpp", backend: name}); if(r.switched) toast(`Shoggoth will use the ${r.switched.toUpperCase()} setting for your graphics card.`); }catch(err){ SU.msg.backend = err.message; }
-    S.bk = (await api("/ui/backends")).recipes; S.info = await api("/ui/info").catch(() => S.info);
-  });
+  const st = SU.st;
+  if(!go || !st || st.mode !== "builtin" || !engineNeedsBuild(st.engine)) return;
+  const u = st.engine.update || {};
+  if(["downloading", "installing"].includes(u.state) || W.auto.build) return;
+  W.auto.build = true;
+  suBusy("install", async () => { await suPost("/ui/backend/install", {backend: engineBuildBackend(st.engine)}); });
 }
 const wIcon = s => ({done: "✓", working: "…", waiting: "·", problem: "!"})[s];
 function wRowHTML(r){
@@ -3220,51 +3211,20 @@ function renderWelcome(force){
 
 /* ---- step 1: the engine */
 function engineStep(){
-  const st = SU.st, eng = st.engine, b = SU.busy, mode = st.mode;
-  const verLabel = eng.active ? `${eng.active.version} <span class="faint">(${eng.active.source === "bundled" ? "came with Shoggoth" : "downloaded update"})</span>` : "";
-  const bi = mode === "builtin";
-  let chip = bi ? (eng.state === "unsupported" ? `<span class="chip">Needs newer Linux</span>` : eng.state === "error" ? `<span class="chip" style="color:var(--bad)">Needs attention</span>` : eng.running && st.lemonade.reachable ? `<span class="chip ok">Running</span>` : `<span class="chip lem">Starting…</span>`)
-                : (st.lemonade.reachable ? `<span class="chip ok">Connected</span>` : `<span class="chip" style="color:var(--bad)">Not reachable</span>`);
+  const st = SU.st, eng = st.engine, bi = st.mode === "builtin";
+  const chip = bi ? (!eng.installed ? `<span class="chip">Not installed</span>` : eng.running ? `<span class="chip ok">Running</span>` : `<span class="chip lem">Installed</span>`)
+                  : (st.connected > 0 ? `<span class="chip ok">${st.connected} connected</span>` : `<span class="chip">No servers yet</span>`);
   const built = `<div class="choice" role="radio" aria-checked="${bi}" tabindex="0" data-act="mode-builtin">
-      <div class="ct"><span class="rad"></span>Built-in Lemonade ${eng.bundled ? '<span class="chip lem">Recommended</span>' : ""}</div>
-      <p>${eng.available ? `Shoggoth runs its own private copy in the background and stops it when you close Shoggoth. It has its own settings and port, so it never touches another Lemonade on this computer.` : `This copy of Shoggoth doesn't include Lemonade. Download it once (about 7 MB) and Shoggoth will run it for you.`}</p>
-      ${eng.available ? `<p class="mono" style="font-size:12px">Version ${verLabel}</p>` : `<button class="btn primary" data-act="engine-update" ${b.update || eng.update.state === "downloading" ? "disabled" : ""}>Download Lemonade</button>`}
+      <div class="ct"><span class="rad"></span>Run models on this computer</div>
+      <p>Shoggoth runs its own llama.cpp, in the background, and stops it when you close Shoggoth. It has its own settings and port, so it never touches another server on this computer.${eng.bundled && eng.recommended !== "cpu" ? " A faster build for your graphics card can be downloaded on Engines." : ""}</p>
     </div>`;
-  const ex = st.existing;
-  const exist = `<div class="choice" role="radio" aria-checked="${!bi}" tabindex="0" data-act="mode-existing-pick">
-      <div class="ct"><span class="rad"></span>A Lemonade I already run</div>
-      <p>${ex.reachable ? `Found one answering at <b>${esc(ex.host)}:${ex.port}</b>.` : `Nothing is answering at ${esc(ex.host)}:${ex.port} right now.`} Connect Shoggoth to a Lemonade Server you installed yourself, for example one running as a system service.</p>
-      <div class="row2"><input type="text" id="exhost" value="${esc(ex.host)}" aria-label="Lemonade address" spellcheck="false"><input type="number" id="export" value="${ex.port}" aria-label="Port"></div>
-      <input type="password" id="exkey" placeholder="API key (only if yours needs one)" aria-label="API key" autocomplete="off">
-      <button class="btn" data-act="mode-existing">${bi ? "Use this one instead" : "Connect"}</button>
+  const conn = `<div class="choice" role="radio" aria-checked="${!bi}" tabindex="0" data-act="mode-connected">
+      <div class="ct"><span class="rad"></span>Use servers I connect</div>
+      <p>Shoggoth doesn't run models on this computer. Connect Ollama, LM Studio, another Shoggoth or any OpenAI-style server on Engines.</p>
+      <button class="btn" data-go="backends">Open Engines</button>
     </div>`;
-  let panel = "";
-  if(bi){
-    const u = eng.update, chk = SU.check;
-    let status;
-    if(eng.state === "unsupported") status = `<div class="line"><span class="stat-dot"></span><span class="grow"><b>The built-in Lemonade can't run on this Linux.</b></span></div><p class="note">${esc(eng.error)}</p><div class="line"><button class="btn" data-act="mode-existing-pick">Use a Lemonade I already run</button></div>`;
-    else if(eng.state === "error") status = `<div class="line"><span class="stat-dot bad"></span><span class="grow"><b>Lemonade couldn't start.</b></span></div><div class="note-bad">${esc(eng.error)}</div>${eng.log_tail.length ? `<pre class="tail">${esc(eng.log_tail.join("\n"))}</pre>` : ""}<div class="line"><button class="btn" data-act="engine-restart">Try again</button><button class="btn" data-act="mode-existing-pick">Use a Lemonade I already run</button></div>`;
-    else status = `<div class="line"><span class="stat-dot ${eng.running && st.lemonade.reachable ? "ok" : "busy"}"></span><span class="grow">${eng.running && st.lemonade.reachable ? `Running privately on port ${eng.port}` : "Starting Lemonade…"}</span>${b.restart ? "" : `<button class="btn" data-act="engine-restart">Restart</button>`}</div>`;
-    let upd = "";
-    if(["downloading", "verifying", "installing"].includes(u.state)){
-      const pct = u.total ? Math.round(100 * u.bytes / u.total) : 0;
-      upd = `<div><div class="line"><span class="grow">${u.state === "downloading" ? `Downloading Lemonade ${esc(u.version)}… ${pct}%` : u.state === "verifying" ? "Checking the download against GitHub's checksum…" : "Installing…"}</span><span class="mono faint">${fmtBytes(u.bytes)} / ${fmtBytes(u.total)}</span></div><div class="prog" style="margin-top:8px"><i style="width:${pct}%"></i></div></div>`;
-    } else if(u.state === "done"){
-      const running = eng.active && eng.active.version === u.version;
-      upd = running ? `<div class="line"><span class="stat-dot ok"></span><span class="grow">Lemonade ${esc(u.version)} is installed and running.</span></div>`
-                    : `<div class="line"><span class="stat-dot ok"></span><span class="grow">Lemonade ${esc(u.version)} is ready. Restart Lemonade to switch to it${S.loaded ? " (this unloads the model that's loaded now)" : ""}.</span><button class="btn primary" data-act="engine-restart">Restart now</button></div>`;
-    } else if(u.state === "error") upd = `<div class="note-bad">${esc(u.error)}</div>`;
-    else if(chk && chk.update_available) upd = `<div class="line"><span class="stat-dot busy"></span><span class="grow"><b>Lemonade ${esc(chk.latest)} is available</b> (${fmtBytes(chk.size)}). <a href="${esc(chk.page)}" target="_blank" rel="noopener">What's new</a></span><button class="btn primary" data-act="engine-update">Update now</button></div>`;
-    else if(chk) upd = `<div class="line"><span class="stat-dot ok"></span><span class="grow">You have the latest Lemonade (${esc(chk.latest)}).</span></div>`;
-    else if(SU.checkErr) upd = `<div class="note-warn">${esc(SU.checkErr)}</div>`;
-    const progs = eng.programs.length > 1 ? `<div class="line"><span class="faint" style="font-size:13px">Installed:</span>${eng.programs.map(p => `<span class="chip ${p.active ? "lem" : ""}">${esc(p.version)} · ${p.source === "bundled" ? "came with Shoggoth" : "downloaded"}</span>`).join("")}${eng.programs.some(p => p.source === "bundled" && !p.active) ? `<button class="btn ghost" data-act="engine-use-bundled" style="min-height:32px">Go back to the version that came with Shoggoth</button>` : ""}</div>` : "";
-    panel = `<div class="panel2">${status}
-      <div class="line"><button class="btn" data-act="engine-check" ${b.check || ["downloading", "verifying", "installing"].includes(u.state) ? "disabled" : ""}>${b.check ? "Checking…" : "Check for Lemonade updates"}</button>
-        <label class="aechk" style="margin-left:auto"><input type="checkbox" data-act="autocheck" ${autoCheckOn() ? "checked" : ""}> Look for updates when Shoggoth opens</label></div>
-      ${upd}${progs}</div>`;
-  }
-  const lead = `Lemonade is the engine that runs AI models on your computer. Everything stays on this machine. Choose where it comes from:`;
-  return stepShell(1, "eng", "Lemonade, the engine", st.lemonade.reachable, chip, `<p class="lead">${lead}</p><div class="choices" role="radiogroup" aria-label="Which Lemonade">${built}${exist}</div>${panel}`);
+  const lead = `llama.cpp is the program that runs models on this computer. Everything stays on this machine. Choose where models run:`;
+  return stepShell(1, "eng", "llama.cpp, the engine", bi ? (eng.installed && eng.running) : st.connected > 0, chip, `<p class="lead">${lead}</p><div class="choices" role="radiogroup" aria-label="Where models run">${built}${conn}</div>`);
 }
 
 function renderSetup(force){
@@ -3272,10 +3232,12 @@ function renderSetup(force){
   if(S.view === "backends") return renderPrefs(force);
 }
 /* ======================= Advanced > Engines: one card per engine, from the provider data ======================= */
-const ENG = {d: null, srv: {presets: [], servers: []}, checks: {}, msg: "", sig: ""};
+const ENG = {d: null, srv: {presets: [], servers: []}, checks: {}, msg: "", sig: "", left: null, check: null};
+const LEFTOVERS = "/ui/engine/lemonade";        // Lemonade's own files: what the 4.x migration left, offered here to delete
 const ENG_TIER = {"small-medium": "Small and medium models", large: "Large models"};
 async function engLoad(){
-  try{ [ENG.d, ENG.srv] = await Promise.all([api("/ui/providers"), api("/ui/servers")]); }catch(e){ ENG.msg = e.message; }
+  try{ [ENG.d, ENG.srv, ENG.left] = await Promise.all([api("/ui/providers"), api("/ui/servers"), api(LEFTOVERS).catch(() => null)]); }catch(e){ ENG.msg = e.message; }
+  try{ if(!SU.st) SU.st = await api("/ui/setup"); SU.cfg = ((await api("/ui/config")).config) || SU.cfg || {}; }catch{}
   renderEngines();
 }
 function engUpdateRow(p){
@@ -3314,9 +3276,52 @@ function engConnect(){                   // the form that connects one
     <p class="help" id="srvhint" style="margin:6px 0 0">${esc(first.hint || "")}</p>
     <p class="help" id="srvresult" style="margin:6px 0 0" role="status">${esc(ENG.probeMsg || "")}</p></section>`;
 }
+/* The 4.x leftovers: Lemonade's own files, offered here so a person can get the space back. */
+function llamaLeftovers(){
+  const l = ENG.left || {}, bytes = l.lemonade_bytes || 0, gb = l.lemonade_gb || 0, n = l.depend_on_lemonade || 0;   // Lemonade's own files
+  if(!(bytes > 0)) return "";
+  const warn = n > 0 ? `<p class="help" style="margin:0">${n} model(s) still reach their files through Lemonade's folder. Shoggoth doesn't delete model files.</p>` : "";
+  return `<div class="panel2"><div class="line"><b>Lemonade's own files: ${gb.toFixed(1)} GB</b></div>${warn}
+    <div class="line"><button class="btn danger" data-llama="leftovers-delete">Delete Lemonade's own files (${gb.toFixed(1)} GB)</button></div>
+    <p class="help" style="margin:0">Frees only Lemonade's own files, such as its downloads and logs. It can't be undone.</p></div>`;
+}
+/* llama.cpp, the engine Shoggoth runs models with on this computer. */
+function llamaCard(){
+  const eng = (SU.st || {}).engine || {}, cfg = SU.cfg || {}, u = eng.update || {}, chk = ENG.check;
+  const dl = ["downloading", "installing"].includes(u.state), pct = u.total ? Math.round(100 * u.bytes / u.total) : 0;
+  const devs = (S.info || {}).devices || [];
+  const chip = `<span class="chip">On this computer</span>${engineNeedsBuild(eng) && eng.installed ? '<span class="chip lem">Faster build available</span>' : ""}`;
+  const stat = !eng.installed ? `<span><b>Not installed</b></span>`
+    : `<span><b class="mono">${esc(eng.tag)}</b> · ${esc(eng.backend_name || eng.backend || "")}${eng.bundled ? " · came with Shoggoth" : ""}</span>`
+      + (eng.running ? `<span><b>Running</b> · port ${esc(eng.port)}</span>` : `<span>Not running right now. It starts when a model needs it.</span>`);
+  let prog = "";
+  if(dl) prog = `<div><div class="line"><span class="grow">${u.state === "downloading" ? `Downloading llama.cpp ${esc(u.tag || "")}… ${u.total ? pct + "%" : ""}` : "Installing llama.cpp…"}</span>${u.total ? `<span class="mono faint">${fmtBytes(u.bytes)} / ${fmtBytes(u.total)}</span>` : ""}</div><div class="prog ${u.total ? "" : "ind"}" style="margin-top:8px"><i style="width:${pct}%"></i></div></div>`;
+  else if(u.state === "done") prog = `<div class="line"><span class="stat-dot ok"></span><span class="grow">llama.cpp ${esc(u.tag || "")} is installed. Restart it to use it${S.loaded ? " (this unloads the model that's loaded now)" : ""}.</span><button class="btn primary" data-llama="restart">Restart now</button></div>`;
+  else if(u.state === "error") prog = `<div class="note-bad">${esc(u.error)}</div>`;
+  const chkRow = !ENG.check ? "" : chk.update_available
+    ? `<div class="line"><span class="stat-dot busy"></span><span class="grow"><b>llama.cpp ${esc(chk.latest)} is available.</b></span><button class="btn primary" data-llama="update">Update now</button></div>`
+    : `<div class="line"><span class="stat-dot ok"></span><span class="grow">You have the latest llama.cpp (${esc(chk.latest)}).</span></div>`;
+  const builds = (eng.builds || []).length ? `<details class="engmore" data-part="llamacpp-builds"><summary>Installed builds</summary><div class="estat">${eng.builds.map(b => {
+      const cur = b.tag === eng.tag && b.backend === eng.backend;
+      return `<div class="erow"><span><b class="mono">${esc(b.tag)}</b> · ${esc(b.name)}${b.bundled ? " · came with Shoggoth" : ""}</span>${cur ? '<span class="chip ok">In use</span>' : `<button class="btn" data-llama="use" data-tag="${esc(b.tag)}" data-backend="${esc(b.backend)}">Go back</button>`}</div>`; }).join("")}</div></details>` : "";
+  return `<section class="panel engine" data-pid="llamacpp"><div class="ehead"><h3>llama.cpp</h3>${chip}</div>
+    <p class="help" style="margin:0">The engine that runs models on this computer. Shoggoth starts it when a model needs it and stops it when you close Shoggoth.</p>
+    <div class="estat">${stat}</div>
+    ${eng.error ? `<div class="note-bad">${esc(eng.error)}</div>` : ""}
+    ${engineNeedsBuild(eng) ? `<div class="erow"><button class="btn${eng.installed ? "" : " primary"}" data-llama="install" ${dl ? "disabled" : ""}>${eng.installed ? "Get the build for your graphics card" : "Download llama.cpp"}</button></div>` : ""}
+    ${prog}${chkRow}
+    <div class="erow"><button class="btn" data-llama="check" ${dl ? "disabled" : ""}>Check for llama.cpp updates</button><button class="btn" data-llama="restart">Restart</button></div>
+    <div class="erow"><label class="help" style="margin:0">Keep up to <select data-llama="max" aria-label="Models loaded at once">${[1,2,3,4,5,6,7,8].map(x => `<option value="${x}" ${x === eng.max_loaded ? "selected" : ""}>${x}</option>`).join("")}</select> models loaded</label>
+      <label class="aechk"><input type="checkbox" data-llama="enabled" ${cfg.enabled !== false ? "checked" : ""}> Use llama.cpp</label></div>
+    <div class="erow"><label class="help" style="margin:0">Graphics cards <select data-llama="device" aria-label="Graphics cards"><option value="" ${!cfg.device ? "selected" : ""}>Automatic</option>${devs.map(d => `<option value="${esc(d.id)}" ${String(cfg.device || "").toLowerCase() === d.id ? "selected" : ""}>${esc(shortName(d.name))} · ${Math.round(d.mib / 1024)} GB</option>`).join("")}</select></label></div>
+    ${builds}
+    ${llamaLeftovers()}
+    <details class="engmore" data-part="llamacpp"><summary>Backends</summary><div class="engslot" data-slot="llamacpp"></div></details></section>`;
+}
 function engCard(p){
+  if(p.id === "llamacpp") return llamaCard();
   if(p.connected) return engConnCard(p);
-  const run = p.running || [], zestRuns = run.some(r => r.owner === "zest"), more = {lemonade: "Kinds of model and the hardware they use"}[p.id];
+  const run = p.running || [], zestRuns = run.some(r => r.owner === "zest");
   const stat = [p.installed ? `<span><b>${p.version ? "Version " + esc(p.version) : "Installed"}</b></span>` : `<span><b>Not installed</b></span>`,
     run.length ? run.map(r => `<span><b>Running</b> · ${r.owner === "zest" ? "started by Shoggoth" : "started by you"}${r.port ? ", port " + r.port : ""}</span>`).join("") : `<span>Not running right now. Shoggoth starts it when a model needs it.</span>`].join("");
   const cons = p.consent ? `<div class="note-warn"><b>This engine wants to ${p.consent.will.map(esc).join(" and ")}.</b>${p.consent.code ? " It also runs its own Python code inside Shoggoth." : ""}${p.consent.unsafe_install ? " Its installer has no checksum to check." : ""}<details style="margin-top:6px"><summary>Exactly what it will run</summary><div class="mono mid">${p.consent.commands.map(c => esc(c.where) + ": " + esc((c.command || []).join(" "))).join("<br>")}</div></details><div class="erow" style="margin-top:8px"><button class="btn primary" data-eng="approve" data-id="${esc(p.id)}">Allow it</button></div></div>` : "";
@@ -3325,7 +3330,7 @@ function engCard(p){
     <div class="estat">${stat}</div>${(p.problems || []).length ? `<div class="note-warn">${p.problems.map(esc).join("<br>")}</div>` : ""}${cons}
     ${p.approved ? engUpdateRow(p) : ""}
     ${zestRuns ? `<div class="erow"><button class="btn" data-eng="stop" data-id="${esc(p.id)}">Stop it</button><span class="help" style="margin:0">Frees the memory it is using. It starts again when a model needs it.</span></div>` : ""}
-    ${more ? `<details class="engmore" data-part="${esc(p.id)}"><summary>${more}</summary><div class="engslot" data-slot="${esc(p.id)}"></div></details>` : ""}</section>`;
+    </section>`;
 }
 function engToolLinks(p){                // links for an engine from tools.yaml (`provider: <its id>`)
   const t = recAllTools().find(t => t.kind === "engine" && t.provider === p.id);
@@ -3337,21 +3342,21 @@ function engMore(){                      // engines from tools.yaml that aren't 
 }
 function engMount(){                     // the engine-specific parts live in a holding area and move into their card
   const hold = $("#engparts");
-  for(const [id, node] of [["lemonade", $("#bkpart")]]){
+  for(const [id, node] of [["llamacpp", $("#bkpart")]]){
     const slot = document.querySelector(`#engcards .engslot[data-slot="${id}"]`);
     if(slot && node && node.parentNode !== slot) slot.appendChild(node);
   }
 }
 function renderEngines(){
   const d = ENG.d, host = $("#engcards"); if(!d) return;
-  const sig = JSON.stringify([d, ENG.srv, ENG.checks, ENG.msg, ENG.probeMsg]);
+  const sig = JSON.stringify([d, ENG.srv, ENG.checks, ENG.msg, ENG.probeMsg, ENG.left, ENG.check, SU.st && SU.st.engine, SU.cfg]);
   if(sig === ENG.sig) return;
   if(host.contains(document.activeElement) && /^(INPUT|SELECT|TEXTAREA)$/.test(document.activeElement.tagName)) return;
   ENG.sig = sig;
   const open = new Set([...document.querySelectorAll("#engcards details.engmore[open]")].map(x => x.dataset.part));
   const hold = $("#engparts");
   for(const n of [$("#bkpart")]) if(n && n.parentNode !== hold) hold.appendChild(n);     // keep them alive while the cards are rebuilt
-  host.innerHTML = d.providers.map(engCard).join("");
+  host.innerHTML = [llamaCard(), ...d.providers.filter(p => p.id !== "llamacpp").map(engCard)].join("");
   engMount();
   document.querySelectorAll("#engcards details.engmore").forEach(x => { if(open.has(x.dataset.part)) x.open = true; });
   const form = ["#srvpre", "#srvurl", "#srvkey"].map(q => { const n = $(q); return n ? n.value : null; });
@@ -3400,6 +3405,37 @@ document.addEventListener("click", async e => {
   await engLoad();
 });
 
+/* Advanced > Engines: the llama.cpp card's settings and buttons */
+document.addEventListener("change", async e => {
+  const el = e.target.closest && e.target.closest("[data-llama]"); if(!el || !el.closest("#v-backends")) return;
+  try{
+    if(el.dataset.llama === "max"){ const r = await api("/ui/config", {method: "POST", body: JSON.stringify({max_loaded: +el.value})}); SU.cfg = r.config || SU.cfg; toast("Shoggoth keeps up to " + el.value + " models loaded."); }
+    else if(el.dataset.llama === "enabled"){ const r = await api("/ui/config", {method: "POST", body: JSON.stringify({enabled: el.checked})}); SU.cfg = r.config || SU.cfg; toast(el.checked ? "llama.cpp will run models." : "llama.cpp won't run models on this computer."); }
+    else if(el.dataset.llama === "device"){ const r = await api("/ui/device", {method: "POST", body: JSON.stringify({device: el.value})}); toast(r.restarted ? "Saved. Models load again when you use them." : "Saved. Applies to the next model you load."); }
+    else return;
+    await engLoad(); await refreshSetup(true); renderStatus();
+  }catch(err){ toast(err.message); }
+});
+document.addEventListener("click", async e => {
+  const b = e.target.closest && e.target.closest("#v-backends [data-llama]"); if(!b || b.tagName === "SELECT") return;
+  const a = b.dataset.llama, eng = (SU.st || {}).engine || {};
+  try{
+    if(a === "install") await api("/ui/backend/install", {method: "POST", body: JSON.stringify({backend: engineBuildBackend(eng)})});
+    else if(a === "update"){ ENG.check = null; await api("/ui/engine/update", {method: "POST", body: "{}"}); }
+    else if(a === "check") ENG.check = await api("/ui/engine/check", {method: "POST", body: "{}"});
+    else if(a === "restart"){ await api("/ui/engine/restart", {method: "POST", body: "{}"}); toast("Restarting llama.cpp. Models load again when you use them."); }
+    else if(a === "use"){ await api("/ui/engine/use", {method: "POST", body: JSON.stringify({tag: b.dataset.tag, backend: b.dataset.backend})}); toast("Switched build. Models load again when you use them."); }
+    else if(a === "leftovers-delete"){
+      const gb = (ENG.left || {}).lemonade_gb || 0;         // Lemonade's own files, in GB
+      if(!confirm(`Delete Lemonade's own files? This frees ${gb.toFixed(1)} GB. It can't be undone.`)) return;
+      const r = await api(LEFTOVERS + "/delete", {method: "POST", body: "{}"});
+      toast(`Deleted. ${(r.freed_gb || 0).toFixed(1)} GB free.`);
+    }
+    else return;
+    await engLoad(); await refreshSetup(true); renderStatus();
+  }catch(err){ toast(err.message); }
+});
+
 async function enginesExtras(){
   try{ SU.pi.info = await api("/ui/pi"); }catch{}
   const box = $("#pibox"); if(box) box.innerHTML = SU.pi.info ? piPanel() : "";
@@ -3414,7 +3450,7 @@ function renderPrefs(force){
   if(!force && (sig === SU.sig || typing)) return; SU.sig = sig;
   host.innerHTML = `${updatePanel()}
     <details class="panel" id="ownserver"><summary><b>My own server and the first-run screen</b></summary><div style="margin-top:12px;display:grid;gap:14px">
-      <p class="help" style="margin:0">Most people never need this. Shoggoth runs its own copy of what runs AI. If you run one yourself, for example as a system service, you can point Shoggoth at it here.</p>
+      <p class="help" style="margin:0">Most people never need this. Shoggoth runs its own llama.cpp. If you run one yourself, for example as a system service, you can point Shoggoth at it here.</p>
       ${engineStep()}
       <div class="line"><button class="btn" type="button" data-go="welcome">Show the first-run screen again</button></div></div></details>`;
   updateNavDot();
@@ -3439,27 +3475,25 @@ const setupClick = async e => {
   if(el.dataset.go) return show(el.dataset.go);
   const a = el.dataset.act;
   if(a === "autocheck") { store.set("shoggoth.autocheck", el.checked); return; }
-  if(a === "mode-builtin") return suBusy("mode", async () => { SU.st = await suPost("/ui/setup/mode", {mode: "builtin"}); S.models = []; await waitLemonade(); await loadModels(); });
-  if(a === "mode-existing-pick"){ $("#exhost")?.focus(); return; }
-  if(a === "mode-existing") return suBusy("mode", async () => { SU.st = await suPost("/ui/setup/mode", {mode: "existing", host: $("#exhost").value.trim(), port: +$("#export").value, api_key: $("#exkey").value}); await waitLemonade(); await loadModels(); });
+  if(a === "mode-builtin") return suBusy("mode", async () => { SU.st = await suPost("/ui/setup/mode", {mode: "builtin"}); S.models = []; await waitEngine(); await loadModels(); });
+  if(a === "mode-connected") return suBusy("mode", async () => { SU.st = await suPost("/ui/setup/mode", {mode: "connected"}); await waitEngine(); await loadModels(); });
   if(a === "engine-check") return doCheck(false);
   if(a === "engine-update") return suBusy("update", async () => { await suPost("/ui/engine/update"); SU.check = null; });
-  if(a === "engine-restart") return suBusy("restart", async () => { await suPost("/ui/engine/restart"); await waitLemonade(); });
+  if(a === "llama-install") return suBusy("install", async () => { await suPost("/ui/backend/install", {backend: engineBuildBackend(SU.st.engine)}); });
+  if(a === "engine-restart") return suBusy("restart", async () => { await suPost("/ui/engine/restart"); await waitEngine(); });
   if(a === "update-all"){ SU.up = await suPost("/ui/update/all"); renderSetup(true); return; }
   if(a === "update-restart") return suBusy("restart", async () => { await suPost("/ui/update/restart"); toast("Restarting Shoggoth… this page reloads in a few seconds."); setTimeout(() => location.reload(), 8000); });
   if(a === "pi-check") return doPiCheck(false);
   if(a === "pi-update") return suBusy("pupdate", async () => { SU.pi.check = null; await suPost("/ui/pi/update"); });
   if(a === "pi-use-bundled") return suBusy("pi", async () => { await suPost("/ui/pi/use", {version: "bundled"}); toast("Using the Pi that came with Shoggoth."); });
   if(a === "pi-use-newest") return suBusy("pi", async () => { await suPost("/ui/pi/use", {version: ""}); });
-  if(a === "engine-use-bundled") return suBusy("restart", async () => { await suPost("/ui/engine/use", {version: "bundled"}); await waitLemonade(); });
   if(a === "install") return suBusy("inst-" + el.dataset.backend, async () => {
     SU.msg.backend = "";
-    try{ const r = await suPost("/ui/backend/install", {recipe: "llamacpp", backend: el.dataset.backend}); if(r.switched) toast(`Lemonade will use the ${r.switched.toUpperCase()} backend. You can change this on the Engines page.`); }catch(err){ SU.msg.backend = err.message; }
+    try{ const r = await suPost("/ui/backend/install", {recipe: "llamacpp", backend: el.dataset.backend}); if(r.switched) toast(`llama.cpp will use the ${r.switched.toUpperCase()} backend. You can change this on the Engines page.`); }catch(err){ SU.msg.backend = err.message; }
     S.bk = (await api("/ui/backends")).recipes; S.info = await api("/ui/info").catch(() => S.info);
   });
   if(a === "dl") return startDownload(el.dataset.model);
   if(a === "cancel-dl") return cancelDownload(el.dataset.model);
-  if(a === "w-fit") { SU.msg.backend = ""; const r = llamaRecipe(); const rec = r && r.backends.find(x => ["installable", "update_required"].includes(x.state)); if(rec) W.auto["fit-" + rec.name] = false; return renderWelcome(true); }
   if(a === "w-add"){ show("models"); return libAddOpen(); }
   if(a === "w-own"){ show("backends"); setTimeout(() => { const d = $("#ownserver"); if(d){ d.open = true; d.scrollIntoView({block: "start"}); } }, 400); return; }
   if(a === "finish"){ await suPost("/ui/setup/done", {done: true}); SU.st.setup_done = true; show("cowork"); }
@@ -3476,8 +3510,13 @@ $("#prefs").addEventListener("change", async e => {
   if(e.target.dataset && e.target.dataset.act === "autocheck") store.set("shoggoth.autocheck", e.target.checked);
 });
 $("#prefs").addEventListener("keydown", e => { if((e.key === "Enter" || e.key === " ") && e.target.matches(".choice[data-act]")){ e.preventDefault(); e.target.click(); } });
-async function waitLemonade(){
-  for(let i = 0; i < 60; i++){ await refreshSetup(true); if(SU.st.lemonade.reachable && (SU.st.mode !== "builtin" || SU.st.engine.running)) break; if(["error", "unsupported"].includes(SU.st.engine.state)) break; await new Promise(r => setTimeout(r, 1000)); }
+async function waitEngine(){
+  for(let i = 0; i < 60; i++){
+    await refreshSetup(true);
+    const st = SU.st || {}, e = st.engine || {};
+    if(st.mode !== "builtin" || e.running || e.error) break;
+    await new Promise(r => setTimeout(r, 1000));
+  }
   await pollServer(); await loadModels(); try{ S.bk = (await api("/ui/backends")).recipes; }catch{} renderStatus();
 }
 setInterval(() => { if(!document.hidden && SU.up && SU.up.state === "working") refreshUpdate(); }, 1500);
@@ -3558,7 +3597,6 @@ const ADV_CARDS = [
   ["server", "Server", "Let other apps use your models, like Hermes or any chat app. See who is asking, live. Read the activity log."],
   ["hardware", "Hardware", "Watch your graphics card fill up as models load. Choose which one Shoggoth uses."],
   ["backends", "Engines", "Pick how models run on your computer, or install a faster option."],
-  ["settings", "Engine settings", "Every setting the engine offers, searchable. Changes save as you make them."],
   ["tuning", "Tuning", "Make a model run faster on this computer. Shoggoth measures the settings and keeps only what clearly helps."],
   ["themes", "Themes", "Change how Shoggoth looks. Light Touch is the default; there are fifteen to try."]
 ];
@@ -3618,12 +3656,12 @@ function tnPaint(){
     if(!rows.length) return "";
     return `<section class="panel"><h3>${title}</h3>${rows.map(t => `<div class="line"><span class="grow"><b>${esc(t.title)}</b> <span class="faint">${esc(t.detail || "")}</span><br>${tnGain(t.tuned)}${t.tuned.reasons && t.tuned.reasons.length ? ` <span class="faint">${esc(t.tuned.reasons[0])}</span>` : ""}${t.tuning && t.tuning.speed ? ` <span class="chip">Measured ${tnFmt(t.tuning.speed.decode)} tokens/s</span>` : ""}
         </span>
-      ${t.engine === "lemonade" ? `<button class="btn" data-tn="test" data-engine="${t.engine}" data-id="${esc(t.id)}" ${running ? "disabled" : ""}>Test speed</button>` : ""}
+      ${t.engine === "llamacpp" ? `<button class="btn" data-tn="test" data-engine="${t.engine}" data-id="${esc(t.id)}" ${running ? "disabled" : ""}>Test speed</button>` : ""}
       <button class="btn ${t.tuned.has && !t.tuned.stale ? "" : "primary"}" data-tn="plan" data-engine="${t.engine}" data-id="${esc(t.id)}" ${running ? "disabled" : ""}>${t.tuned.has ? "Tune again" : "Tune"}</button>
       ${t.tuned.can_undo ? `<button class="btn ghost" data-tn="undo" data-engine="${t.engine}" data-id="${esc(t.id)}" ${running ? "disabled" : ""}>Undo</button>` : ""}</div>`).join("")}</section>`;
   };
   host.innerHTML = `<p class="lede">Tuning finds the settings that make a model answer faster on this computer. Shoggoth measures the model as it is, tries changes one at a time, and keeps only the ones that clearly help. Answers stay the same: nothing here changes how a model is compressed. A tune takes the graphics cards for a while, so it never starts without your say-so.</p>
-    ${jobBox}${planBox}${group("lemonade", `Small and medium models <span class="faint">· Lemonade</span>`)}
+    ${jobBox}${planBox}${group("llamacpp", `Small and medium models <span class="faint">· llama.cpp</span>`)}
     ${!d.targets.length ? '<p class="help">Nothing to tune yet. <a href="#models" data-go="models">Get a model</a> first.</p>' : ""}${TN.msg ? `<div class="note-bad">${esc(TN.msg)}</div>` : ""}`;
 }
 $("#tuning").addEventListener("change", e => { if(e.target.id === "tnmode") TN.opts.mode = e.target.value; if(e.target.id === "tngoal") TN.opts.goal = e.target.value; if(e.target.id === "tnuse") TN.opts.use = e.target.value; if(e.target.id === "tnmode" && TN.sel) tnPlan(TN.sel); });
@@ -3942,146 +3980,6 @@ $("#server").addEventListener("click", async e => {
       const rd = r.body.getReader(); while(!(await rd.read()).done){}
     }catch(err){ toast("The test didn't work: " + err.message); }
     b.disabled = false; srvFetch();
-  }
-});
-
-/* ======================= settings ======================= */
-const SET = {cfg: null, defaults: null, q: ""};
-const SET_GROUPS = {
-  "Models and downloads": ["models_dir","extra_models_dir","max_loaded_models","ctx_size","auto_evict","auto_evict_threshold_pct","default_model_source","disable_model_filtering","auto_check_model_updates","auto_update_models","download_rate_limit","offline","global_timeout"],
-  "Server": ["host","port","websocket_port","allowed_origins","broadcast","inhibit_suspend"],
-  "Logging": ["log_level","log_file","log_max_file_size_mb","log_max_files"]
-};
-const SET_META = {
-  models_dir: {l:"Model storage folder", h:"Where downloaded models are kept. “auto” follows your Hugging Face cache settings."},
-  extra_models_dir: {l:"Extra models folder", h:"A folder Lemonade searches for GGUF files to import."},
-  max_loaded_models: {l:"Models loaded at once", h:"How many models of each type can stay in memory together."},
-  ctx_size: {l:"Default context window", h:"Used when a model has no context size of its own. Shoggoth sets 128k (131,072) for its own Lemonade, which is enough for long chats and agent work. -1 sizes it automatically."},
-  auto_evict: {l:"Unload models automatically when memory is low"},
-  auto_evict_threshold_pct: {l:"Memory threshold for unloading", h:"A fraction, for example 0.9 means 90% full."},
-  default_model_source: {l:"Where to download models from", opts:["huggingface","modelscope"]},
-  disable_model_filtering: {l:"Show models even if this hardware can't run them"},
-  auto_check_model_updates: {l:"Check for model updates"},
-  auto_update_models: {l:"Download model updates automatically"},
-  download_rate_limit: {l:"Download speed limit", h:"Leave empty for no limit."},
-  offline: {l:"Offline mode", h:"Never contact the network."},
-  global_timeout: {l:"Request timeout (seconds)"},
-  host: {l:"Listen address", h:"Changing this would disconnect Shoggoth from Lemonade. Edit Lemonade's config.json and restart it if you really need to.", locked:true},
-  port: {l:"Port", h:"Changing this would disconnect Shoggoth from Lemonade. Edit Lemonade's config.json and restart it if you really need to.", locked:true},
-  websocket_port: {l:"WebSocket port", h:"“auto” picks a free port. Applies after Lemonade restarts."},
-  allowed_origins: {l:"Allowed web origins", h:"Browser pages (CORS) allowed to call Lemonade directly. Shoggoth doesn't need this."},
-  broadcast: {l:"Announce this server on the network"},
-  inhibit_suspend: {l:"Keep the computer awake while models run"},
-  log_level: {l:"Log level", opts:["trace","debug","info","warning","error"]},
-  log_file: {l:"Log file", h:"auto, disabled, enabled, or a file path."},
-  log_max_file_size_mb: {l:"Largest log file (MB)"},
-  log_max_files: {l:"Old log files to keep"},
-  enable_dgpu_gtt: {l:"Allow discrete GPUs to use system memory (GTT)"},
-  rocm_channel: {l:"ROCm channel"},
-  rocm_install_method: {l:"ROCm install method", opts:["auto","pip","tarball"]},
-  no_fetch_executables: {l:"Never download backend programs"},
-  "llamacpp.args": {l:"Extra arguments for every model", h:"Added to every llama-server start. Per-model arguments are set from Models."},
-  "llamacpp.backend": {l:"Backend", kind:"backend"},
-  "llamacpp.device": {l:"Devices", h:"Choose and order devices on the Hardware page.", link:"hardware"},
-  "llamacpp.prefer_system": {l:"Prefer a llama.cpp installed on this system"}
-};
-const humanize = k => k.replace(/_/g, " ").replace(/^./, c => c.toUpperCase());
-function setFlat(){
-  const out = [], seen = new Set();
-  const cfg = SET.cfg || {}, def = SET.defaults || {};
-  const engines = {};
-  const add = (group, path, value) => { out.push({group, path, value, def: path.reduce((o,k) => o?.[k], def)}); seen.add(path.join(".")); };
-  for(const [g, keys] of Object.entries(SET_GROUPS)) for(const k of keys) if(k in cfg) add(g, [k], cfg[k]);
-  for(const [k, v] of Object.entries(cfg)){
-    if(k.startsWith("_") || k === "config_version" || seen.has(k)) continue;
-    if(v && typeof v === "object" && !Array.isArray(v)){
-      const rec = (S.bk || []).find(r => r.recipe.replace(/-/g, "") === k);
-      const title = k === "telemetry" ? "Telemetry" : (rec ? rec.name : humanize(k));
-      for(const [k2, v2] of Object.entries(v)) add("Engine: " + title, [k, k2], v2);
-      engines[k] = 1;
-    } else add("Advanced", [k], v);
-  }
-  // keys that exist only in the defaults (not yet written to config.json)
-  return out;
-}
-function setRow(f){
-  const key = f.path.join("."), meta = SET_META[key] || SET_META[f.path.at(-1)] || {};
-  const leaf = f.path.at(-1), label = meta.l || (/_bin$/.test(leaf) ? humanize(leaf.replace(/_bin$/, "")) + " program" : humanize(leaf));
-  const help = meta.h || (/_bin$/.test(leaf) ? "“builtin” uses Lemonade's own download. Or give the path of a program of your own." : "");
-  const v = f.value, locked = meta.locked, type = typeof v;
-  let ctl;
-  if(meta.link) ctl = `<input type="text" value="${esc(v)}" disabled aria-label="${esc(label)}"><button type="button" class="btn" data-goto="${meta.link}">Open ${esc(humanize(meta.link))}</button>`;
-  else if(v !== null && typeof v === "object") ctl = `<pre>${esc(JSON.stringify(v, null, 1))}</pre>`;
-  else if(type === "boolean") ctl = `<button type="button" class="sw" role="switch" aria-checked="${v}" data-sw="${esc(key)}" ${locked?"disabled":""}><i></i>${v?"On":"Off"}</button>`;
-  else if(type === "number") ctl = `<input type="number" step="any" value="${v}" data-set="${esc(key)}" aria-label="${esc(label)}" ${locked?"disabled":""}>`;
-  else {
-    let list = meta.opts, id = "dl-" + key.replace(/\W/g, "_");
-    if(meta.kind === "backend"){ const rec = (S.bk || []).find(r => r.recipe.replace(/-/g, "") === f.path[0]); list = ["auto", ...(rec ? rec.backends.filter(b => b.state !== "unsupported").map(b => b.name) : [])]; }
-    ctl = `<input type="text" value="${esc(v ?? "")}" data-set="${esc(key)}" aria-label="${esc(label)}" spellcheck="false" ${list?`list="${id}"`:""} ${locked?"disabled":""}>${list?`<datalist id="${id}">${list.map(o => `<option value="${esc(o)}">`).join("")}</datalist>`:""}`;
-  }
-  const changed = f.def !== undefined && JSON.stringify(f.def) !== JSON.stringify(v) && !locked && !meta.link && (v === null || typeof v !== "object");
-  return `<div class="setrow" data-key="${esc(key)}" data-text="${esc((label + " " + key + " " + help).toLowerCase())}">
-    <div class="lab"><b>${esc(label)}</b>${help ? `<span class="help">${esc(help)}</span>` : ""}<code>${esc(key)}</code></div>
-    <div class="ctl">${ctl}<div style="display:flex;gap:10px;align-items:center"><span class="st" aria-live="polite"></span>${changed ? `<button type="button" class="reset" data-resetset="${esc(key)}" title="Default: ${esc(JSON.stringify(f.def))}">Reset to default</button>` : ""}</div></div>
-  </div>`;
-}
-function renderSettings(){
-  const host = $("#settings"); if(!SET.cfg){ host.innerHTML = ""; return; }
-  const open = new Set($$("details.setgrp[open]", host).map(d => d.dataset.g));
-  const first = !host.children.length;
-  const flat = setFlat(), groups = {};
-  for(const f of flat) (groups[f.group] ||= []).push(f);
-  const order = [...Object.keys(SET_GROUPS), ...Object.keys(groups).filter(g => g.startsWith("Engine:")).sort(), "Advanced"].filter(g => groups[g]);
-  host.innerHTML = order.map(g => `<details class="setgrp" data-g="${esc(g)}" ${first ? (g === "Models and downloads" || g === "Engine: Llama.cpp GPU" ? "open" : "") : (open.has(g) ? "open" : "")}>
-    <summary>${esc(g)}<small>${groups[g].length}</small></summary><div class="setrows">${groups[g].map(setRow).join("")}</div></details>`).join("");
-  filterSettings();
-}
-function filterSettings(){
-  const q = ($("#setq").value || "").trim().toLowerCase(); let n = 0;
-  $$("#settings .setrow").forEach(r => { const hit = !q || r.dataset.text.includes(q); r.hidden = !hit; if(hit) n++; });
-  $$("#settings details.setgrp").forEach(d => { const any = $$(".setrow:not([hidden])", d).length > 0; d.hidden = !any; if(q && any) d.open = true; });
-  $("#setcount").textContent = q ? `${n} match${n === 1 ? "" : "es"}` : `${$$("#settings .setrow").length} settings`;
-}
-async function loadSettings(){
-  try{
-    if(!S.bk){ try{ S.bk = (await api("/ui/backends")).recipes; }catch{} }
-    const r = await api("/ui/config"); SET.cfg = r.config; SET.defaults = r.defaults; renderSettings(); $("#setq").parentElement.hidden = !$$("#settings .setrow").length;
-  }catch(e){
-    $("#settings").innerHTML = `<div class="empty-note">Couldn't read Lemonade's settings: ${esc(e.message)}</div>`;
-    $("#setcount").textContent = ""; $("#setq").parentElement.hidden = true;
-  }
-}
-async function saveSetting(key, value, row, revert){
-  const path = key.split("."), st = $(".st", row); st.className = "st"; st.textContent = "Saving…";
-  const nested = path.reduceRight((acc, k) => ({[k]: acc}), value);
-  try{
-    await api("/ui/config", {method:"POST", headers:{"Content-Type":"application/json"}, body:JSON.stringify(nested)});
-    let o = SET.cfg; for(const k of path.slice(0, -1)) o = o[k]; o[path.at(-1)] = value;
-    st.textContent = "Saved"; setTimeout(() => { if(st.textContent === "Saved") st.textContent = ""; }, 2500);
-    S.info = await api("/ui/info").catch(() => S.info); renderStatus();
-    return true;
-  }catch(e){ st.className = "st err"; st.textContent = e.message; revert?.(); return false; }
-}
-$("#setq").addEventListener("input", filterSettings);
-$("#settings").addEventListener("change", e => {
-  const el = e.target.closest("[data-set]"); if(!el) return;
-  const key = el.dataset.set, old = key.split(".").reduce((o, k) => o?.[k], SET.cfg), row = el.closest(".setrow");
-  let v = el.value;
-  if(typeof old === "number"){ v = v === "" ? NaN : Number(v); if(Number.isNaN(v)){ el.value = old; return; } }
-  if(v === old) return;
-  saveSetting(key, v, row, () => { el.value = old ?? ""; }).then(ok => { if(ok) renderSettingsRowReset(row, key); });
-});
-function renderSettingsRowReset(){ const s = $("#settings"), sc = $(".view.active").scrollTop; const act = document.activeElement; renderSettings(); $(".view.active").scrollTop = sc; }
-$("#settings").addEventListener("click", async e => {
-  const sw = e.target.closest("[data-sw]"), rs = e.target.closest("[data-resetset]"), go = e.target.closest("[data-goto]");
-  if(go) return show(go.dataset.goto);
-  if(sw){
-    const key = sw.dataset.sw, cur = sw.getAttribute("aria-checked") === "true", row = sw.closest(".setrow");
-    if(await saveSetting(key, !cur, row)) renderSettingsRowReset();
-  }
-  if(rs){
-    const key = rs.dataset.resetset, def = key.split(".").reduce((o, k) => o?.[k], SET.defaults), row = rs.closest(".setrow");
-    if(await saveSetting(key, def, row)) renderSettingsRowReset();
   }
 });
 
@@ -5023,8 +4921,8 @@ function liveHTML(d, active){
   if(!g) return `<div class="big num">${(d.mib/1024).toFixed(0)}<small>GB VRAM</small></div><p class="notel">No live numbers for this device. Shoggoth reads NVIDIA cards with nvidia-smi and AMD cards from the Linux amdgpu driver.</p>`;
   const used = gb(g.mem_used_mb), total = gb(g.mem_total_mb), free = total - used;
   const [line, area] = sparkPath(S.hist[g.key] || []);
-  const procs = {}; for(const p of g.procs || []) { const k = isLemonadeProc(p) ? "Lemonade" : p.name; procs[k] = (procs[k] || 0) + gb(p.mem_mb); }
-  const chips = Object.entries(procs).sort((a,b) => b[1] - a[1]).map(([n, v]) => `<span class="chip ${n==="Lemonade"?"lem":""}" title="VRAM held by ${esc(n)}">${esc(n)} · ${v.toFixed(1)} GB</span>`).join("");
+  const procs = {}; for(const p of g.procs || []) { const k = isEngineProc(p) ? "llama.cpp" : p.name; procs[k] = (procs[k] || 0) + gb(p.mem_mb); }
+  const chips = Object.entries(procs).sort((a,b) => b[1] - a[1]).map(([n, v]) => `<span class="chip ${n==="llama.cpp"?"lem":""}" title="VRAM held by ${esc(n)}">${esc(n)} · ${v.toFixed(1)} GB</span>`).join("");
   const low = free < 1 ? `<span class="chip warn">Only ${Math.max(0, free).toFixed(1)} GB free</span>` : `<span class="chip">${free.toFixed(1)} GB free</span>`;
   return `<div class="big num">${used.toFixed(1)}<small>/ ${total.toFixed(0)} GB VRAM</small></div>
     <div class="holders" aria-label="What is using this card's memory">${low}${chips}</div>
@@ -5092,11 +4990,11 @@ function renderHardware(){
   const i = S.info;
   $("#engine").innerHTML = i ? `
     <dt>Backend</dt><dd>${esc(i.backend?.current === "auto" ? `auto (${i.backend?.resolved || "?"})` : i.backend?.current || "?")}</dd>
-    <dt>llama.cpp build</dt><dd>${esc(i.llama_version || "bundled with Lemonade (not inspectable)")}</dd>
-    <dt>Binary</dt><dd>${esc(i.llama_bin || "managed by Lemonade")}</dd>
+    <dt>llama.cpp build</dt><dd>${esc(i.llama_tag || "not installed")}</dd>
+    <dt>Version</dt><dd>${esc(i.llama_version || "Not installed")}</dd>
+    <dt>Binary</dt><dd>${esc(i.llama_bin || "Not installed")}</dd>
     <dt>Device list</dt><dd>llamacpp.device = ${esc(i.device || "(automatic)")}</dd>
-    <dt>Extra args</dt><dd>${esc(i.llama_args || "—")}</dd>
-    <dt>Lemonade</dt><dd>${esc(i.lemonade)} · Shoggoth ${esc(i.zest)}</dd>` : "";
+    <dt>Shoggoth</dt><dd>${esc(i.zest)}</dd>` : "";
 }
 function setDraft(list){ S.draft = list; renderHardware(); }
 $("#gpus").addEventListener("click", e => {
@@ -5154,7 +5052,7 @@ function renderBackends(){
       <header><h3>${esc(r.name)}</h3><span class="chip">${esc(r.modality)}</span>${r.experimental?'<span class="chip">experimental</span>':""}<span class="grow"></span>${r.recipe==="llamacpp"?'<span class="chip lem">drives chat models</span>':""}</header>
       <p class="eng">${esc(ENGINE_INFO[r.recipe] || ENGINE_BY_MODALITY[r.modality] || "A helper program that runs one kind of model.")}</p>
       <div class="bopts" role="${r.selectable?"radiogroup":"group"}" aria-label="${esc(r.name)} backend">${auto}${opts}</div>
-      ${r.selectable ? "" : `<p class="note">Lemonade picks the backend for this engine automatically.</p>`}
+      ${r.selectable ? "" : `<p class="note">Shoggoth picks the backend for this engine automatically.</p>`}
     </section>`;
   }).join("") + `</div>`;
 }
@@ -5171,7 +5069,7 @@ $("#bk").addEventListener("click", async e => {
   if(ins){
     const [recipe, backend] = ins.dataset.install.split(":"), r = S.bk.find(x => x.recipe === recipe), b = r.backends.find(x => x.name === backend);
     $("#idname").textContent = `${b.state === "update_required" ? "Update" : "Install"} ${r.name} · ${backend}`;
-    $("#idtext").innerHTML = `Lemonade will download <b class="mono">${esc(b.file || backend)}</b> from <span class="mono" style="overflow-wrap:anywhere">${esc(b.release_url || "its release page")}</span>. This can take a few minutes.`;
+    $("#idtext").innerHTML = `Shoggoth will download <b class="mono">${esc(b.file || backend)}</b> from the llama.cpp releases on GitHub. This can take a few minutes.`;
     pendingInstall = {recipe, backend, btn: ins}; $("#instdlg").showModal();
   }
 });
@@ -5445,7 +5343,7 @@ function cwModelBar(){
   else if(ms.loaded) st.textContent = "Another model is in memory. Choosing this one frees it first.";
   else st.textContent = "Starts when you send a message" + (m && m.start && !m.live && m.start_s >= 45 ? ` · ${m.start.toLowerCase()}` : "");
   st.title = st.textContent;
-  if(S.engNote && !ms.loaded && !loading && m && m.engine === "lemonade") st.textContent = S.engNote;
+  if(S.engNote && !ms.loaded && !loading) st.textContent = S.engNote;
   else if(S.spText && (here || CW.running) && !loading) st.textContent += " · " + S.spText;
   st.title = st.textContent;
   const fr = $("#mbfree"); fr.hidden = !ms.loaded || loading || !!CW.running;   // it can't unload mid-answer, so it steps aside

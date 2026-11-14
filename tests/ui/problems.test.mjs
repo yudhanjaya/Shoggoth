@@ -9,7 +9,9 @@ const friendlyProblem = new Function(html.slice(a, b) + "; return friendlyProble
 
 const cases = [
   ["llama_model_load: error loading model: unknown model architecture: 'lfm3'", "LFM3", "This model needs a newer engine", /called lfm3/],
-  ["error: unknown model architecture: 'lfm3'\nfailed to load model", "LFM3", "This model needs a newer engine", /Lemonade picks up the new llama.cpp/],
+  ["error: unknown model architecture: 'lfm3'\nfailed to load model", "LFM3", "This model needs a newer engine", /llama.cpp learns it first/],
+  ["llama.cpp isn't set up yet.", "Qwen", "llama.cpp isn't set up yet", /Download it/],
+  ["This llama.cpp build needs a newer Linux: Ubuntu 24.04 (glibc 2.38 or later).", "Qwen", "This llama.cpp build needs a newer Linux", /Ubuntu 24\.04/],
   ["CUDA error: out of memory\nfailed to load model", "Qwen", "Not enough memory", /Qwen needs more/],
   ["failed to load model", "Qwen", "The model wouldn't start", /couldn't be loaded/],
   ["llama-server exited with code 1", "Qwen", "The model wouldn't start", /Qwen/],
@@ -20,7 +22,7 @@ const cases = [
 for (const [raw, what, title, body] of cases) {
   const p = friendlyProblem(raw, what);
   assert.equal(p.title, title, raw);
-  assert.match(p.body, body, raw);
+  assert.match(p.body + " " + p.hint, body, raw);
 }
 assert.equal(friendlyProblem("unknown model architecture: 'lfm3'", "LFM3").engines, true, "points at Engines");
 console.log("ok: " + cases.length + " problems");

@@ -3234,56 +3234,68 @@
   "setup_done": false,
   "mode": "builtin",
   "mode_saved": null,
-  "forced": false,
+  "client_only": false,
   "engine": {
-   "available": true,
-   "state": "running",
+   "installed": true,
    "running": true,
    "port": 13307,
-   "error": null,
-   "log_tail": [],
-   "programs": [
+   "tag": "b12375",
+   "backend": "cuda13",
+   "backend_name": "NVIDIA CUDA 13",
+   "bundled": false,
+   "pinned": "",
+   "builds": [
     {
-     "version": "2026.42.1",
-     "source": "bundled",
-     "active": true
+     "tag": "b12375",
+     "backend": "cuda13",
+     "name": "NVIDIA CUDA 13",
+     "bundled": false
     }
    ],
-   "active": {
-    "version": "2026.42.1",
-    "source": "bundled"
-   },
-   "pinned": "",
-   "bundled": true,
-   "arch_supported": true,
+   "backends": [
+    {
+     "id": "cpu",
+     "name": "Processor only"
+    },
+    {
+     "id": "vulkan",
+     "name": "Vulkan (AMD, Intel, NVIDIA)"
+    },
+    {
+     "id": "cuda12",
+     "name": "NVIDIA CUDA 12"
+    },
+    {
+     "id": "cuda13",
+     "name": "NVIDIA CUDA 13"
+    },
+    {
+     "id": "rocm",
+     "name": "AMD ROCm"
+    }
+   ],
+   "recommended": "cuda13",
+   "max_loaded": 2,
+   "device": "",
+   "error": null,
    "update": {
     "state": "idle",
     "bytes": 0,
     "total": 0,
-    "version": null,
+    "tag": null,
+    "backend": null,
     "error": null
-   }
+   },
+   "log": "/home/user/zest/zd/llamacpp/llama-server.log"
   },
-  "existing": {
-   "host": "127.0.0.1",
-   "port": 13305,
-   "reachable": true
-  },
-  "lemonade": {
-   "reachable": true,
-   "target": "127.0.0.1:13307"
-  },
+  "connected": 0,
   "models": {
    "storage": "hf",
    "custom_dir": "",
    "hf_dir": "/home/user/.cache/huggingface/hub",
    "imports": [],
-   "live": {
-    "models_dir": "/home/user/zest/models/lemonade",
-    "extra_models_dir": "/home/user/zest/zd/views/lemonade"
-   }
+   "view": "/home/user/zest/zd/views/llamacpp"
   },
-  "arch_supported": true,
   "gpus_found": [
    {
     "vendor": "NVIDIA",
@@ -3311,273 +3323,53 @@
   "recipes": [
    {
     "recipe": "llamacpp",
-    "name": "Llama.cpp GPU",
-    "modality": "Text generation",
+    "name": "llama.cpp",
+    "modality": "llm",
     "experimental": false,
     "order": 0,
     "selectable": true,
-    "default": "cuda",
+    "default": "cuda13",
     "current": "auto",
     "backends": [
      {
       "name": "cpu",
       "state": "installable",
-      "message": "Backend is supported but not installed.",
-      "version": "b11393",
-      "release_url": "https://github.com/ggml-org/llama.cpp/releases/tag/b11393",
-      "file": "llama-b11393-bin-ubuntu-x64.tar.gz"
+      "message": "Processor only",
+      "version": null,
+      "release_url": null,
+      "file": null
      },
      {
-      "name": "cuda",
+      "name": "vulkan",
+      "state": "installable",
+      "message": "Vulkan (AMD, Intel, NVIDIA)",
+      "version": null,
+      "release_url": null,
+      "file": null
+     },
+     {
+      "name": "cuda12",
+      "state": "installable",
+      "message": "NVIDIA CUDA 12",
+      "version": null,
+      "release_url": null,
+      "file": null
+     },
+     {
+      "name": "cuda13",
       "state": "installed",
-      "message": "",
-      "version": "b11395",
-      "release_url": "https://github.com/lemonade-sdk/llama.cpp/releases/tag/b11395",
-      "file": "llama-b11395-ubuntu-cuda-sm_89-x64.tar.xz"
+      "message": "NVIDIA CUDA 13",
+      "version": "b12375",
+      "release_url": null,
+      "file": null
      },
      {
-      "name": "vulkan",
+      "name": "rocm",
       "state": "installable",
-      "message": "Backend is supported but not installed.",
-      "version": "b11393",
-      "release_url": "https://github.com/ggml-org/llama.cpp/releases/tag/b11393",
-      "file": "llama-b11393-bin-ubuntu-vulkan-x64.tar.gz"
-     }
-    ]
-   },
-   {
-    "recipe": "whispercpp",
-    "name": "Whisper.cpp",
-    "modality": "Speech-to-text",
-    "experimental": false,
-    "order": 2,
-    "selectable": true,
-    "default": "vulkan",
-    "current": "auto",
-    "backends": [
-     {
-      "name": "cpu",
-      "state": "installable",
-      "message": "Backend is supported but not installed.",
-      "version": "v1.8.4",
-      "release_url": "https://github.com/lemonade-sdk/whisper.cpp-rocm/releases/tag/v1.8.4",
-      "file": "whisper-v1.8.4-linux-cpu-x86_64.tar.gz"
-     },
-     {
-      "name": "vulkan",
-      "state": "installable",
-      "message": "Backend is supported but not installed.",
-      "version": "v1.8.4",
-      "release_url": "https://github.com/lemonade-sdk/whisper.cpp-rocm/releases/tag/v1.8.4",
-      "file": "whisper-v1.8.4-linux-vulkan-x86_64.tar.gz"
-     }
-    ]
-   },
-   {
-    "recipe": "moonshine",
-    "name": "Moonshine",
-    "modality": "Speech-to-text",
-    "experimental": false,
-    "order": 3,
-    "selectable": false,
-    "default": "cpu",
-    "current": "auto",
-    "backends": [
-     {
-      "name": "cpu",
-      "state": "installable",
-      "message": "Backend is supported but not installed.",
-      "version": "moonshine0.0.62",
-      "release_url": "https://github.com/lemonade-sdk/moonshine-server-rocm/releases/tag/moonshine0.0.62",
-      "file": "moonshine-server-moonshine0.0.62-linux-x64.tar.gz"
-     }
-    ]
-   },
-   {
-    "recipe": "kokoro",
-    "name": "Kokoro",
-    "modality": "Text-to-speech",
-    "experimental": false,
-    "order": 4,
-    "selectable": false,
-    "default": "cpu",
-    "current": "auto",
-    "backends": [
-     {
-      "name": "cpu",
-      "state": "installable",
-      "message": "Backend is supported but not installed.",
-      "version": "b21",
-      "release_url": "https://github.com/lemonade-sdk/Kokoros/releases/tag/b21",
-      "file": "kokoros-linux-x86_64.tar.gz"
-     }
-    ]
-   },
-   {
-    "recipe": "sd-cpp",
-    "name": "StableDiffusion.cpp",
-    "modality": "Image generation",
-    "experimental": false,
-    "order": 5,
-    "selectable": true,
-    "default": "cuda",
-    "current": "auto",
-    "backends": [
-     {
-      "name": "cpu",
-      "state": "installable",
-      "message": "Backend is supported but not installed.",
-      "version": "master-894-017cc8e",
-      "release_url": "https://github.com/lemonade-sdk/stable-diffusion.cpp/releases/tag/master-894-017cc8e",
-      "file": "sd-master-017cc8e-bin-Linux-Ubuntu-24.04-x86_64.zip"
-     },
-     {
-      "name": "cuda",
-      "state": "installable",
-      "message": "Backend is supported but not installed.",
-      "version": "master-894-017cc8e",
-      "release_url": "https://github.com/lemonade-sdk/stable-diffusion.cpp/releases/tag/master-894-017cc8e",
-      "file": "sd-master-017cc8e-ubuntu-cuda-sm_89-x64.tar.xz"
-     },
-     {
-      "name": "vulkan",
-      "state": "installable",
-      "message": "Backend is supported but not installed.",
-      "version": "master-894-017cc8e",
-      "release_url": "https://github.com/lemonade-sdk/stable-diffusion.cpp/releases/tag/master-894-017cc8e",
-      "file": "sd-master-017cc8e-bin-Linux-Ubuntu-24.04-x86_64-vulkan.zip"
-     }
-    ]
-   },
-   {
-    "recipe": "thinksound",
-    "name": "ThinkSound",
-    "modality": "Audio generation",
-    "experimental": true,
-    "order": 12,
-    "selectable": true,
-    "default": "cuda",
-    "current": "auto",
-    "backends": [
-     {
-      "name": "cuda",
-      "state": "installable",
-      "message": "Backend is supported but not installed.",
-      "version": "v0.1.2",
-      "release_url": "https://github.com/pwilkin/thinksound.cpp/releases/tag/v0.1.2",
-      "file": "thinksound-cuda-linux-x64.tar.gz"
-     },
-     {
-      "name": "vulkan",
-      "state": "installable",
-      "message": "Backend is supported but not installed.",
-      "version": "v0.1.2",
-      "release_url": "https://github.com/pwilkin/thinksound.cpp/releases/tag/v0.1.2",
-      "file": "thinksound-vulkan-linux-x64.tar.gz"
-     }
-    ]
-   },
-   {
-    "recipe": "acestep",
-    "name": "ACE-Step",
-    "modality": "Audio generation",
-    "experimental": true,
-    "order": 13,
-    "selectable": true,
-    "default": "cuda",
-    "current": "auto",
-    "backends": [
-     {
-      "name": "cuda",
-      "state": "installable",
-      "message": "Backend is supported but not installed.",
-      "version": "v0.1.1",
-      "release_url": "https://github.com/pwilkin/acestep.cpp/releases/tag/v0.1.1",
-      "file": "acestep-cuda-linux-x64.tar.gz"
-     },
-     {
-      "name": "vulkan",
-      "state": "installable",
-      "message": "Backend is supported but not installed.",
-      "version": "v0.1.1",
-      "release_url": "https://github.com/pwilkin/acestep.cpp/releases/tag/v0.1.1",
-      "file": "acestep-vulkan-linux-x64.tar.gz"
-     }
-    ]
-   },
-   {
-    "recipe": "onnxruntime",
-    "name": "ONNX Runtime",
-    "modality": "Text classification",
-    "experimental": true,
-    "order": 14,
-    "selectable": false,
-    "default": "cpu",
-    "current": "auto",
-    "backends": [
-     {
-      "name": "cpu",
-      "state": "installable",
-      "message": "Backend is supported but not installed.",
-      "version": "0.3.7",
-      "release_url": "https://github.com/lemonade-sdk/ort-server/releases/tag/0.3.7",
-      "file": "ort-server-0.3.7-linux-x64.tar.gz"
-     }
-    ]
-   },
-   {
-    "recipe": "trellis",
-    "name": "TRELLIS.2",
-    "modality": "3D generation",
-    "experimental": true,
-    "order": 15,
-    "selectable": true,
-    "default": "cuda",
-    "current": "auto",
-    "backends": [
-     {
-      "name": "cuda",
-      "state": "installable",
-      "message": "Backend is supported but not installed.",
-      "version": "v0.4.3",
-      "release_url": "https://github.com/pwilkin/trellis.cpp/releases/tag/v0.4.3",
-      "file": "trellis-cuda-linux-x64.tar.gz"
-     },
-     {
-      "name": "vulkan",
-      "state": "installable",
-      "message": "Backend is supported but not installed.",
-      "version": "v0.4.3",
-      "release_url": "https://github.com/pwilkin/trellis.cpp/releases/tag/v0.4.3",
-      "file": "trellis-vulkan-linux-x64.tar.gz"
-     }
-    ]
-   },
-   {
-    "recipe": "openmoss",
-    "name": "OpenMOSS TTS",
-    "modality": "Text-to-speech",
-    "experimental": true,
-    "order": 16,
-    "selectable": true,
-    "default": "cuda",
-    "current": "auto",
-    "backends": [
-     {
-      "name": "cuda",
-      "state": "installable",
-      "message": "Backend is supported but not installed.",
-      "version": "v0.3.0",
-      "release_url": "https://github.com/pwilkin/openmoss/releases/tag/v0.3.0",
-      "file": "moss-tts-cuda-linux-x64.tar.gz"
-     },
-     {
-      "name": "vulkan",
-      "state": "installable",
-      "message": "Backend is supported but not installed.",
-      "version": "v0.3.0",
-      "release_url": "https://github.com/pwilkin/openmoss/releases/tag/v0.3.0",
-      "file": "moss-tts-vulkan-linux-x64.tar.gz"
+      "message": "AMD ROCm",
+      "version": null,
+      "release_url": null,
+      "file": null
      }
     ]
    }
@@ -3613,9 +3405,9 @@
   ],
   "devices_assumed": false,
   "needs_backend": false,
-  "lemonade": "127.0.0.1:13307",
   "mode": "builtin",
-  "zest": "3.4.3"
+  "zest": "3.4.3",
+  "llama_tag": "b12375"
  },
  "/ui/library": {
   "root": "/home/user/zest/models",
@@ -3720,7 +3512,7 @@
     "kv_gb": 0.03,
     "id": "gemma-3-270m-it-ud-iq2-m-182787104",
     "tier": "small",
-    "provider": "lemonade",
+    "provider": "llamacpp",
     "need_gb": 0.2,
     "fit": "fits",
     "why": "",
@@ -3735,7 +3527,7 @@
      }
     },
     "ids": {
-     "lemonade": "gemma-3-270m-it-UD-IQ2_M",
+     "llamacpp": "gemma-3-270m-it-UD-IQ2_M",
      "llama-server": "gemma-3-270m-it-UD-IQ2_M"
     },
     "ref": "gemma-3-270m-it-UD-IQ2_M",
@@ -3758,8 +3550,8 @@
     "mmproj": "",
     "mtp": false,
     "folder": "/home/user/zest/models/lemonade/models--unsloth--gemma-3-270m-it-GGUF/snapshots/c90975dbd40c0c7b275fefaae758c3415c906238",
-    "source": "Lemonade",
-    "owner": "lemonade",
+    "source": "llama.cpp",
+    "owner": "llamacpp",
     "attn": {
      "layers": 18,
      "kv_heads": 1,
@@ -3772,7 +3564,7 @@
     "kv_gb": 0.03,
     "id": "gemma-3-270m-it-q4-k-m-253115424",
     "tier": "small",
-    "provider": "lemonade",
+    "provider": "llamacpp",
     "need_gb": 0.3,
     "fit": "fits",
     "why": "",
@@ -3787,7 +3579,7 @@
      }
     },
     "ids": {
-     "lemonade": "gemma270m-q4",
+     "llamacpp": "gemma270m-q4",
      "llama-server": "gemma-3-270m-it-Q4_K_M"
     },
     "ref": "gemma270m-q4",
@@ -4078,9 +3870,9 @@
  "/ui/providers": {
   "providers": [
    {
-    "id": "lemonade",
-    "name": "Lemonade",
-    "summary": "Runs everyday models quickly (llama.cpp and others) and loads them in seconds.",
+    "id": "llamacpp",
+    "name": "llama.cpp",
+    "summary": "Runs chat and writing models on this computer, and stops when you close Shoggoth.",
     "tier": "small-medium",
     "trusted": true,
     "approved": true,
@@ -4097,9 +3889,9 @@
       "owner": "zest"
      }
     ],
-    "bin": "/home/user/zest/lem",
+    "bin": "/home/user/zest/zd/llamacpp/llama-server",
     "problems": [],
-    "version": "2026.42.1",
+    "version": "b12375",
     "consent": null,
     "update": {
      "state": "idle",
@@ -4167,323 +3959,70 @@
  },
  "/ui/config": {
   "config": {
-   "_generated": "GENERATED by docs/tools/gen_backend_boilerplate.py -- do not hand-edit per-recipe sections (they come from each backend's descriptor config_defaults()). Global keys are hand-maintained in this file. Regenerate and verify with that script; CI --check fails on drift.",
-   "acestep": {
-    "backend": "auto",
-    "cuda_bin": "builtin",
-    "rocm_bin": "builtin",
-    "vulkan_bin": "builtin"
-   },
-   "allowed_origins": "",
-   "auto_check_model_updates": true,
-   "auto_evict": false,
-   "auto_evict_threshold_pct": 0.9,
-   "auto_update_models": false,
-   "broadcast": true,
-   "cloud_providers": [],
-   "config_version": 2,
-   "ctx_size": 131072,
-   "default_model_source": "huggingface",
-   "disable_model_filtering": false,
-   "download_rate_limit": "",
-   "ds4": {
-    "args": ""
-   },
-   "enable_dgpu_gtt": false,
-   "extra_models_dir": "/home/user/zest/zd/views/lemonade",
-   "flm": {
-    "args": "",
-    "prefer_system": false
-   },
-   "global_timeout": 86400,
-   "host": "localhost",
-   "hrx": {
-    "args": "",
-    "hrx_bin": "builtin"
-   },
-   "inhibit_suspend": true,
-   "kokoro": {
-    "cpu_bin": "builtin"
-   },
-   "llamacpp": {
-    "args": "",
-    "backend": "auto",
-    "cpu_args": "",
-    "cpu_bin": "builtin",
-    "cuda_bin": "builtin",
-    "device": "",
-    "prefer_system": true,
-    "rocm_args": "",
-    "rocm_bin": "builtin",
-    "vulkan_args": "",
-    "vulkan_bin": "builtin"
-   },
-   "log_file": "auto",
-   "log_level": "info",
-   "log_max_file_size_mb": 10,
-   "log_max_files": 5,
-   "max_loaded_models": 1,
-   "models_dir": "/home/user/zest/models/lemonade",
-   "moonshine": {
-    "args": "",
-    "cpu_args": "",
-    "cpu_bin": "builtin"
-   },
-   "no_fetch_executables": false,
-   "offline": false,
-   "onnxruntime": {
-    "args": "",
-    "cpu_args": "",
-    "cpu_bin": "builtin"
-   },
-   "openmoss": {
-    "backend": "auto",
-    "cuda_bin": "builtin",
-    "vulkan_bin": "builtin"
-   },
-   "port": 13305,
-   "rocm_channel": "stable",
-   "rocm_install_method": "auto",
-   "ryzenai": {
-    "server_bin": "builtin"
-   },
-   "sdcpp": {
-    "args": "",
-    "backend": "auto",
-    "cfg_scale": 7,
-    "cpu_args": "",
-    "cpu_bin": "builtin",
-    "cuda_args": "",
-    "cuda_bin": "builtin",
-    "height": 512,
-    "rocm_args": "",
-    "rocm_bin": "builtin",
-    "steps": 20,
-    "vulkan_args": "",
-    "vulkan_bin": "builtin",
-    "width": 512
-   },
-   "telemetry": {
-    "enabled": false,
-    "hide_inputs": false,
-    "hide_outputs": false,
-    "hide_thinking": false,
-    "max_queue_capacity": 1000,
-    "otlp": {
-     "batch_timeout_s": 1,
-     "endpoint": "http://localhost:4318/v1/traces",
-     "headers": {},
-     "max_retries": 0,
-     "protocol": "http/protobuf",
-     "retry_backoff_base_s": 5,
-     "semantics": [
-      "openinference",
-      "otel_genai"
-     ],
-     "send_batch_size": 100
-    },
-    "session": {
-     "headers": {
-      "client": [],
-      "id": []
-     }
-    },
-    "trust_incoming_trace_context": false
-   },
-   "thenoise": {
-    "backend": "auto",
-    "lora_dir": "",
-    "rocm_bin": "builtin",
-    "upscaler_dir": ""
-   },
-   "thinksound": {
-    "backend": "auto",
-    "cuda_bin": "builtin",
-    "rocm_bin": "builtin",
-    "vulkan_bin": "builtin"
-   },
-   "trellis": {
-    "args": "",
-    "backend": "auto",
-    "cuda_bin": "builtin",
-    "rocm_bin": "builtin",
-    "vulkan_bin": "builtin"
-   },
-   "vllm": {
-    "args": "",
-    "backend": "auto"
-   },
-   "websocket_port": "auto",
-   "whispercpp": {
-    "args": "",
-    "backend": "auto",
-    "cpu_args": "",
-    "cpu_bin": "builtin",
-    "npu_args": "",
-    "npu_bin": "builtin"
-   }
+   "max_loaded": 2,
+   "enabled": true,
+   "device": "",
+   "backend": "auto",
+   "tag": ""
   },
-  "defaults": {
-   "_generated": "GENERATED by docs/tools/gen_backend_boilerplate.py -- do not hand-edit per-recipe sections (they come from each backend's descriptor config_defaults()). Global keys are hand-maintained in this file. Regenerate and verify with that script; CI --check fails on drift.",
-   "acestep": {
-    "backend": "auto",
-    "cuda_bin": "builtin",
-    "rocm_bin": "builtin",
-    "vulkan_bin": "builtin"
-   },
-   "allowed_origins": "",
-   "auto_check_model_updates": true,
-   "auto_evict": false,
-   "auto_evict_threshold_pct": 0.9,
-   "auto_update_models": false,
-   "broadcast": true,
-   "cloud_providers": [],
-   "config_version": 2,
-   "ctx_size": -1,
-   "default_model_source": "huggingface",
-   "disable_model_filtering": false,
-   "download_rate_limit": "",
-   "ds4": {
-    "args": ""
-   },
-   "enable_dgpu_gtt": false,
-   "extra_models_dir": "",
-   "flm": {
-    "args": "",
-    "prefer_system": false
-   },
-   "global_timeout": 600,
-   "host": "localhost",
-   "hrx": {
-    "args": "",
-    "hrx_bin": "builtin"
-   },
-   "inhibit_suspend": true,
-   "kokoro": {
-    "cpu_bin": "builtin"
-   },
-   "llamacpp": {
-    "args": "",
-    "backend": "auto",
-    "cpu_args": "",
-    "cpu_bin": "builtin",
-    "cuda_bin": "builtin",
-    "prefer_system": true,
-    "rocm_args": "",
-    "rocm_bin": "builtin",
-    "vulkan_args": "",
-    "vulkan_bin": "builtin"
-   },
-   "log_file": "auto",
-   "log_level": "info",
-   "log_max_file_size_mb": 10,
-   "log_max_files": 5,
-   "max_loaded_models": 1,
-   "models_dir": "auto",
-   "moonshine": {
-    "args": "",
-    "cpu_args": "",
-    "cpu_bin": "builtin"
-   },
-   "no_fetch_executables": false,
-   "offline": false,
-   "onnxruntime": {
-    "args": "",
-    "cpu_args": "",
-    "cpu_bin": "builtin"
-   },
-   "openmoss": {
-    "backend": "auto",
-    "cuda_bin": "builtin",
-    "vulkan_bin": "builtin"
-   },
-   "port": 13305,
-   "rocm_channel": "stable",
-   "rocm_install_method": "auto",
-   "ryzenai": {
-    "server_bin": "builtin"
-   },
-   "sdcpp": {
-    "args": "",
-    "backend": "auto",
-    "cfg_scale": 7,
-    "cpu_args": "",
-    "cpu_bin": "builtin",
-    "cuda_args": "",
-    "cuda_bin": "builtin",
-    "height": 512,
-    "rocm_args": "",
-    "rocm_bin": "builtin",
-    "steps": 20,
-    "vulkan_args": "",
-    "vulkan_bin": "builtin",
-    "width": 512
-   },
-   "telemetry": {
-    "enabled": false,
-    "hide_inputs": false,
-    "hide_outputs": false,
-    "hide_thinking": false,
-    "max_queue_capacity": 1000,
-    "otlp": {
-     "batch_timeout_s": 1,
-     "endpoint": "http://localhost:4318/v1/traces",
-     "headers": {},
-     "max_retries": 0,
-     "protocol": "http/protobuf",
-     "retry_backoff_base_s": 5,
-     "semantics": [
-      "openinference",
-      "otel_genai"
-     ],
-     "send_batch_size": 100
+  "engine": {
+   "installed": true,
+   "running": true,
+   "port": 13307,
+   "tag": "b12375",
+   "backend": "cuda13",
+   "backend_name": "NVIDIA CUDA 13",
+   "bundled": false,
+   "pinned": "",
+   "builds": [
+    {
+     "tag": "b12375",
+     "backend": "cuda13",
+     "name": "NVIDIA CUDA 13",
+     "bundled": false
+    }
+   ],
+   "backends": [
+    {
+     "id": "cpu",
+     "name": "Processor only"
     },
-    "session": {
-     "headers": {
-      "client": [],
-      "id": []
-     }
+    {
+     "id": "vulkan",
+     "name": "Vulkan (AMD, Intel, NVIDIA)"
     },
-    "trust_incoming_trace_context": false
+    {
+     "id": "cuda12",
+     "name": "NVIDIA CUDA 12"
+    },
+    {
+     "id": "cuda13",
+     "name": "NVIDIA CUDA 13"
+    },
+    {
+     "id": "rocm",
+     "name": "AMD ROCm"
+    }
+   ],
+   "recommended": "cuda13",
+   "max_loaded": 2,
+   "device": "",
+   "error": null,
+   "update": {
+    "state": "idle",
+    "bytes": 0,
+    "total": 0,
+    "tag": null,
+    "backend": null,
+    "error": null
    },
-   "thenoise": {
-    "backend": "auto",
-    "lora_dir": "",
-    "rocm_bin": "builtin",
-    "upscaler_dir": ""
-   },
-   "thinksound": {
-    "backend": "auto",
-    "cuda_bin": "builtin",
-    "rocm_bin": "builtin",
-    "vulkan_bin": "builtin"
-   },
-   "trellis": {
-    "args": "",
-    "backend": "auto",
-    "cuda_bin": "builtin",
-    "rocm_bin": "builtin",
-    "vulkan_bin": "builtin"
-   },
-   "vllm": {
-    "args": "",
-    "backend": "auto"
-   },
-   "websocket_port": "auto",
-   "whispercpp": {
-    "args": "",
-    "backend": "auto",
-    "cpu_args": "",
-    "cpu_bin": "builtin",
-    "npu_args": "",
-    "npu_bin": "builtin"
-   }
+   "log": "/home/user/zest/zd/llamacpp/llama-server.log"
   }
  },
  "/ui/tuning": {
   "targets": [
    {
-    "engine": "lemonade",
+    "engine": "llamacpp",
     "id": "gemma-3-270m-it-UD-IQ2_M",
     "title": "gemma-3-270m-it-UD-IQ2_M",
     "detail": "Lemonade \u00b7 llama.cpp",
@@ -4500,7 +4039,7 @@
     }
    },
    {
-    "engine": "lemonade",
+    "engine": "llamacpp",
     "id": "gemma270m-q4",
     "title": "gemma270m-q4",
     "detail": "Lemonade \u00b7 llama.cpp",
@@ -5191,5 +4730,21 @@
    }
   ],
   "servers": []
+ },
+ "/ui/engine/lemonade": {
+  "lemonade_bytes": 0,
+  "lemonade_gb": 0.0,
+  "depend_on_lemonade": 0
+ },
+ "/ui/model/headroom": {
+  "default": {
+   "llamacpp": 0.0
+  },
+  "set": {}
+ },
+ "/ui/update": {
+  "state": "idle",
+  "error": null,
+  "items": {}
  }
 }
