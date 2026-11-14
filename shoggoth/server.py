@@ -348,6 +348,8 @@ class Handler(BaseHTTPRequestHandler):
             self.send_json(zestup.status())
         elif p == "/ui/skills":
             self.send_json({"sets": skills.scan()})
+        elif p == "/ui/skills/own":
+            self.send_json({"skills": skills.own_list()})
         elif p == "/ui/search":
             self.get_search(parse_qs(u.query))
         elif p == "/ui/model/headroom":
@@ -422,6 +424,8 @@ class Handler(BaseHTTPRequestHandler):
             "/ui/cowork/allow/remove": self.post_allow_remove, "/ui/cowork/folder": self.post_cowork_folder, "/ui/skills/install": self.post_skills_install, "/ui/pi/check": self.post_pi_check,
             "/ui/pi/update": self.post_pi_update, "/ui/library/root": self.post_library_root, "/ui/library/folder": self.post_library_folder, "/ui/providers/approve": self.post_provider_approve, "/ui/providers/check": self.post_provider_check, "/ui/providers/update": self.post_provider_update, "/ui/providers/stop": self.post_provider_stop, "/ui/providers/reload": self.post_provider_reload, "/ui/servers": self.post_servers, "/ui/tuning/plan": self.post_tuning_plan, "/ui/model/meta": self.post_model_meta, "/ui/tuning/run": self.post_tuning_run, "/ui/tuning/cancel": self.post_tuning_cancel, "/ui/tuning/action": self.post_tuning_action, "/ui/update/all": self.post_update_all, "/ui/update/restart": self.post_update_restart, "/ui/pi/use": self.post_pi_use,
             "/ui/skills/remove": self.post_skills_remove, "/ui/skills/toggle": self.post_skills_toggle,
+            "/ui/skills/own/save": self.post_own_save, "/ui/skills/own/delete": self.post_own_delete,
+            "/ui/chat/make-skill": self.post_make_skill,
             "/ui/models/storage": self.post_storage, "/ui/models/imports": self.post_imports,
         }.get(p)
         if not handler:
@@ -877,6 +881,17 @@ class Handler(BaseHTTPRequestHandler):
             skills.toggle(str(body.get("key", "")), bool(body.get("enabled")))
         agent.restart_idle()
         self.send_json({"ok": True, "sets": skills.scan()})
+
+    def post_own_save(self, body):
+        r = skills.own_save(body.get("name"), body.get("text"))
+        self.send_json(dict(r, ok=True, skills=skills.own_list()))
+
+    def post_own_delete(self, body):
+        r = skills.own_delete(body.get("name"))
+        self.send_json(dict(r, ok=True, skills=skills.own_list()))
+
+    def post_make_skill(self, body):
+        self.send_json(agent.make_skill(str(body.get("chat", ""))))
 
     def post_cowork_folder(self, body):
         agent.set_folder(str(body.get("id", "")), body.get("cwd", ""))

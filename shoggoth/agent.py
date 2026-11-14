@@ -46,6 +46,10 @@ CHAT_SEARCH = " You can look things up with the web_search tool; the user is ask
 JOB_PROMPT = ("This is a background job. Nobody is watching each step, so work on your own toward the goal and only stop to ask "
               "the user something when you are truly blocked. Work in rounds: in each one make the most useful progress you can, "
               "then stop and say in one short sentence what you changed.")
+MAKE_SKILL_PROMPT = ("Look back over this conversation. If something here worked and will come up again, distil it into a skill: "
+                     "the steps that worked, in order, short enough for a small model, with one example. Call save_skill with a "
+                     "short name, a description saying when to use it, and the numbered steps as the body. If nothing here is "
+                     "worth keeping, say so in one sentence and save nothing.")
 NOT_CHAT = ("sd-cpp", "whispercpp", "kokoro", "moonshine", "acestep", "thinksound", "trellis", "openmoss")
 JOB_ACTIVE = ("queued", "working", "paused")
 JOB_FINAL = ("done", "stopped", "failed")
@@ -1108,6 +1112,18 @@ def command(sid, cmd):
                 s.loading = False
     s.send(cmd)
     return {"ok": True}
+
+
+def make_skill(sid):
+    """The chat menu's "Make a skill from this chat": send the chat's Pi session the fixed prompt that asks it to distil what worked
+    and call save_skill. The approval card for the save still comes from skillsmith, so nothing is kept without the person's yes."""
+    t = get_task(sid)
+    if not t:
+        raise ValueError("That chat isn't here any more.")
+    if _is_job(t):
+        raise ValueError("That is a background job, not a chat, so there is no one to ask about a skill.")
+    command(sid, {"type": "prompt", "message": MAKE_SKILL_PROMPT})
+    return {"ok": True, "prompt": MAKE_SKILL_PROMPT}
 
 
 def set_mode(sid, mode):

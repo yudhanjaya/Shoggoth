@@ -58,9 +58,13 @@ def frontmatter(path):
     """name and description from a SKILL.md, tolerant of quotes and folded (`>`/`|`) values."""
     try:
         with open(path, encoding="utf8", errors="replace") as f:
-            text = f.read(20000)
+            return frontmatter_of(f.read(20000))
     except OSError:
         return {}
+
+
+def frontmatter_of(text):
+    """name and description from the text of a SKILL.md. The Skills page's textarea checks the whole file the same way."""
     m = re.match(r"---\s*\n(.*?)\n---", text, re.S)
     if not m:
         return {}
@@ -254,12 +258,17 @@ def saved(name):
     if not os.path.isfile(os.path.join(path, "SKILL.md")):
         return False
     toggle("%s/%s" % (OWN, name), turn_on)
+    _notify()
+    return True
+
+
+def _notify():
+    """Tell the listeners (agent.py's restart_idle, so an idle task picks the change up on its next message)."""
     for cb in list(on_changed):
         try:
             cb()
         except Exception:
             pass
-    return True
 
 
 def toggle(key, enabled):
@@ -451,3 +460,95 @@ def remove(sid):
         st["sets"].pop(sid, None)
         st["disabled"] = [k for k in st["disabled"] if not k.startswith(sid + "/")]
         _save(st)
+
+
+# ---------------------------------------------------------------- the skills a model wrote: list, edit, delete
+MAX_OWN_TEXT = 16 * 1024          # the whole SKILL.md the page sends back
+MAX_OWN_BODY = 8 * 1024           # save_skill's body limit, checked again here
+MAX_OWN_DESCRIPTION = 300
+# C0/C1 controls (except \n and \t) and Unicode bidi controls would make the file read differently from what was checked.
+BAD_CHARS = re.compile("[\u0000-\u0008\u000B-\u001F\u007F-\u009F\u200E\u200F\u202A-\u202E\u2066-\u2069]")
+OWN_SLUG = re.compile(r"[a-z0-9]+(-[a-z0-9]+)*")
+
+
+def _own_folder(name):
+    """The folder of one of the model's skills. The name must be a slug, and the result must sit directly in the own folder."""
+    name = name if isinstance(name, str) else ""
+    if not name or len(name) > 40 or not OWN_SLUG.fullmatch(name):
+        raise ValueError("A skill's name is lowercase letters, digits and single hyphens, at most 40 characters.")
+    base = os.path.realpath(own_skills_dir())
+    path = os.path.join(base, name)
+    if os.path.dirname(os.path.realpath(path)) != base:
+        raise ValueError("That isn't one of the skills your models wrote.")
+    return path
+
+
+def own_list():
+    """The "Written by your models" set as the page edits it: each skill's whole SKILL.md (a plain textarea) and its source.json."""
+    out = []
+    for name, path in _skills_in(own_skills_dir()):
+        try:
+            with open(os.path.join(path, "SKILL.md"), encoding="utf8", errors="replace") as f:
+                text = f.read(MAX_OWN_TEXT + 1)
+        except OSError:
+            continue
+        fm = frontmatter_of(text)
+        key = "%s/%s" % (OWN, name)
+        out.append({"name": name, "key": key, "title": fm.get("name") or name, "description": fm.get("description", ""),
+                    "enabled": key not in _off(_state()), "bytes": _du(path), "source": _source(path), "text": text})
+    return out
+
+
+def own_save(name, text):
+    """Rewrite one of the model's skills from the page's textarea.
+
+    It edits; it does not create, so a skill only appears here after save_skill and the person's yes. Checked like save_skill:
+    a slug name, the same size limits, and no control or direction-changing characters. source.json is left as it was."""
+    path = _own_folder(name)
+    if not os.path.isfile(os.path.join(path, "SKILL.md")):
+        raise ValueError("That skill isn't there any more.")
+    text = text if isinstance(text, str) else ""
+    text = text.replace("\r\n", "\n").replace("\r", "\n")
+    if len(text.encode()) > MAX_OWN_TEXT:
+        raise ValueError("That is %d bytes; one skill is at most %d." % (len(text.encode()), MAX_OWN_TEXT))
+    if BAD_CHARS.search(text):
+        raise ValueError("The text must be plain: no control or direction-changing characters.")
+    m = re.match(r"---\s*\n(.*?)\n---[ \t]*\n?", text, re.S)
+    if not m:
+        raise ValueError("A skill starts with a --- line, then name and description, then another --- line.")
+    fm = frontmatter_of(text)
+    if fm.get("name") != name:
+        raise ValueError("The name in the --- header must be %s, which is this skill's folder." % name)
+    description = fm.get("description", "")
+    if not description:
+        raise ValueError("The --- header needs a description: one or two sentences saying when to use the skill.")
+    if len(description) > MAX_OWN_DESCRIPTION:
+        raise ValueError("The description is %d characters; the limit is %d." % (len(description), MAX_OWN_DESCRIPTION))
+    body = text[m.end():]
+    if not body.strip():
+        raise ValueError("The skill has no steps: after the --- header, write what to do.")
+    if len(body.encode()) > MAX_OWN_BODY:
+        raise ValueError("The steps are %d bytes; the limit is %d." % (len(body.encode()), MAX_OWN_BODY))
+    target = os.path.join(path, "SKILL.md")
+    tmp = target + ".tmp-%d" % os.getpid()
+    with open(tmp, "w", encoding="utf8") as f:
+        f.write(text if text.endswith("\n") else text + "\n")
+    os.replace(tmp, target)
+    _notify()
+    return {"name": name, "key": "%s/%s" % (OWN, name)}
+
+
+def own_delete(name):
+    """Delete one of the model's skills: its folder and its switches, so state.json keeps no key for it."""
+    path = _own_folder(name)
+    if not os.path.isdir(path):
+        raise ValueError("That skill isn't there any more.")
+    key = "%s/%s" % (OWN, name)
+    with _lock:
+        shutil.rmtree(path, ignore_errors=True)
+        st = _state()
+        st["disabled"] = [k for k in st["disabled"] if k != key]
+        st["enabled"] = [k for k in st["enabled"] if k != key]
+        _save(st)
+    _notify()
+    return {"name": name}
