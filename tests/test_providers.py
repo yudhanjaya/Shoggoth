@@ -93,7 +93,7 @@ class Validation(unittest.TestCase):
 class Loading(Env):
     def test_bundled_providers_load(self):
         r = self.registry()
-        self.assertEqual(sorted(p.id for p in r.all()), ["lemonade"])
+        self.assertEqual(sorted(p.id for p in r.all()), ["lemonade", "llamacpp"])
         self.assertEqual(r.errors, [])
         # the template folder starts with _ and is never loaded
         self.assertNotIn("my-engine", r.providers)
@@ -360,7 +360,7 @@ class ConnectedServers(Env):
         servers.add("ollama", "http://h:1")
         store.update(lambda s: s["servers"][0].__setitem__("id", "lemonade"))
         r = self.registry()
-        self.assertEqual(sorted(p.id for p in r.all()), ["lemonade"])
+        self.assertEqual(sorted(p.id for p in r.all()), ["lemonade", "llamacpp"])
         self.assertIn("lemonade", r.errors[-1]["error"])
 
     def test_a_server_that_is_down_does_not_slow_loading(self):
@@ -390,7 +390,7 @@ class EnginesPage(Env):
         d = self.real().summary()
         self.assertEqual(d["user_folder"], self.user)
         by = {p["id"]: p for p in d["providers"]}
-        self.assertEqual(sorted(by), ["lemonade"])
+        self.assertEqual(sorted(by), ["lemonade", "llamacpp"])
         for p in by.values():
             self.assertTrue({"state", "text", "error"} <= set(p["update"]))
             self.assertIn(p["update"]["state"], ("idle", "working", "done", "error", "deferred"))

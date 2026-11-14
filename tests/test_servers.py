@@ -421,9 +421,9 @@ class NothingShippedForOtherEngines(unittest.TestCase):
                     bad.append((rel, "maya"))
         self.assertEqual(bad, [])
 
-    def test_the_only_bundled_engine_is_lemonade(self):
+    def test_the_only_bundled_engines_are_the_ones_shoggoth_runs(self):
         folders = [d for d in os.listdir(os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", "shoggoth", "providers")) if not d.startswith("_")]
-        self.assertEqual(folders, ["lemonade"])
+        self.assertEqual(sorted(folders), ["lemonade", "llamacpp"])
 
 
 if __name__ == "__main__":
