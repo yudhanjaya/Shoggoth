@@ -10,7 +10,7 @@ import threading
 import store
 
 _lock = threading.Lock()
-KEYS = ("speed", "headroom_gb", "note")
+KEYS = ("speed", "headroom_gb", "note", "cache_type", "measured_gb", "measured_ctx", "auto_ctx", "auto_moe")
 
 
 def _path():

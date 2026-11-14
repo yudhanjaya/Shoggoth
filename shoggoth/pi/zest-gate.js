@@ -13,7 +13,10 @@
 // without asking in ask and edits modes, but only when the whole command line is made of allowed commands joined by
 // && || ; or |, with nothing that could hide another command (substitution, redirection, backslashes, newlines).
 //
+// save_skill is the one exception to all of the above: it always asks the person itself (see zest-skillsmith.js), so the gate stays out of its way.
+//
 // Questions reach Shoggoth as Pi's extension_ui_request "select" dialogs; Shoggoth draws them as approval cards.
+import fs from "node:fs";
 import path from "node:path";
 
 // propose_job only opens a form for the person to review; nothing is changed until they press Start
@@ -110,8 +113,25 @@ export default function (pi) {
     },
   });
 
+  // save_skill (zest-skillsmith.js) asks the person itself, in every mode, with a card showing the whole skill. If the gate asked
+  // as well there would be two cards for one decision, and in plan mode the gate would refuse it before the person could answer.
+  // So the gate lets it through, but only when the tool really is the one from zest-skillsmith.js: a tool of the same name from
+  // anywhere else (a package) is not recognised, and is gated like any other.
+  // Compared by full path to the copy that sits beside this gate, not by file name: a package could ship its own
+  // zest-skillsmith.js, and a name match alone would let its save_skill through ungated.
+  const real = (p) => { try { return fs.realpathSync(p); } catch { return path.resolve(p); } };
+  const SKILLSMITH = real(path.join(path.dirname(new URL(import.meta.url).pathname), "zest-skillsmith.js"));
+  const isSkillsmith = () => {
+    try {
+      const t = pi.getAllTools().find((x) => x.name === "save_skill");
+      const p = String((t && t.sourceInfo && t.sourceInfo.path) || "");
+      return !!p && real(p) === SKILLSMITH;
+    } catch { return false; }
+  };
+
   pi.on("tool_call", async (event, ctx) => {
     const tool = event.toolName;
+    if (tool === "save_skill" && isSkillsmith()) return undefined;
     // A web search reads nothing on this computer but sends the person's words to a search engine, so it asks in every mode
     // except "auto" (including read-only plan mode), and "Allow for this session" covers the rest of the conversation.
     if (tool === "web_search" && mode !== "auto" && !granted.has(tool)) {

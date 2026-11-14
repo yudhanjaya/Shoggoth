@@ -19,6 +19,7 @@ import uuid
 
 import folders as folderstore
 import lem
+import pipkgs
 import piup
 import provbase
 import router
@@ -32,6 +33,7 @@ GATE = os.path.join(HERE, "pi", "zest-gate.js")
 SKILLS_EXT = os.path.join(HERE, "pi", "zest-skills.js")
 SEARCH_EXT = os.path.join(HERE, "pi", "zest-search.js")
 JOB_EXT = os.path.join(HERE, "pi", "zest-job.js")
+SKILLSMITH_EXT = os.path.join(HERE, "pi", "zest-skillsmith.js")
 MODES = ("ask", "edits", "auto", "plan")
 FORWARD = {"prompt", "steer", "follow_up", "abort", "clear_queue", "get_state", "get_session_stats", "set_model",
            "set_thinking_level", "compact", "get_available_models", "get_commands", "new_session"}
@@ -296,7 +298,34 @@ def write_config(models, default, ctx=0):
                 "images": {"autoResize": False}}
     if default:
         settings["defaultModel"] = chosen.get("pi_model", default)
+    if pi_packages():
+        settings["packages"] = pi_packages()
     _write(os.path.join(d, "settings.json"), settings)
+
+
+def pi_packages():
+    """The unpacked folders of the Pi packages that are switched on (none by default: every package starts off). Pi loads a folder
+    path as a local package as is; its skills are not loaded from here (--no-skills), skills.live_dir() hands them over instead."""
+    return [p["dir"] for p in pipkgs.active()]
+
+
+def _sync_packages():
+    """Make settings.json's `packages` match what is switched on right now, so installing or removing a package applies to the
+    next task that starts without waiting for the next write_config."""
+    path = os.path.join(agent_dir(), "settings.json")
+    try:
+        with open(path) as f:
+            cur = json.load(f)
+    except (OSError, ValueError):
+        return
+    want = pi_packages()
+    if (cur.get("packages") or []) == want:
+        return
+    if want:
+        cur["packages"] = want
+    else:
+        cur.pop("packages", None)
+    _write(path, cur)
 
 
 def _write(path, obj):
@@ -340,13 +369,17 @@ def set_search(enabled=None, provider=None, brave_key=None, tavily_key=None):
         restart_idle()       # Pi learns whether it has the tool when it starts
 
 
-def _env(mode="ask", inject=(), extra_folders=(), allow=(), jobs=False):
+def _env(mode="ask", inject=(), extra_folders=(), allow=(), jobs=False, own_skills="", task_id="", model=""):
     e = dict(os.environ)
+    for k in ("SHOGGOTH_OWN_SKILLS", "SHOGGOTH_TASK_ID", "SHOGGOTH_MODEL"):
+        e.pop(k, None)                     # never inherited: save_skill is offered only where Shoggoth says so
     e.update(PI_CODING_AGENT_DIR=agent_dir(), PI_OFFLINE="1", PI_TELEMETRY="0", PI_SKIP_VERSION_CHECK="1",
              SHOGGOTH_APPROVAL=mode, SHOGGOTH_INJECT=json.dumps(list(inject)), NO_COLOR="1",
              SHOGGOTH_FOLDERS=json.dumps(list(extra_folders)), SHOGGOTH_ALLOW=json.dumps(list(allow)),
              SHOGGOTH_SEARCH="1" if search_enabled() else "0", SHOGGOTH_SEARCH_URL="http://127.0.0.1:%d/ui/search" % _zest_port["v"],
              SHOGGOTH_SEARCH_KEY=uiauth.token(), SHOGGOTH_JOBS="1" if jobs else "0")
+    if own_skills:                         # the folder save_skill writes to; without it the tool does not exist
+        e.update(SHOGGOTH_OWN_SKILLS=own_skills, SHOGGOTH_TASK_ID=task_id, SHOGGOTH_MODEL=model)
     return e
 
 
@@ -674,7 +707,7 @@ class Session:
         t = self.task
         sdir = os.path.join(store.data_dir(), "cowork", "sessions", self.id)
         os.makedirs(sdir, exist_ok=True)
-        args = cmd + ["--mode", "rpc", "--session-dir", sdir, "--no-approve", "-e", GATE, "-e", SKILLS_EXT, "-e", SEARCH_EXT, "-e", JOB_EXT]
+        args = cmd + ["--mode", "rpc", "--session-dir", sdir, "--no-approve", "-e", GATE, "-e", SKILLS_EXT, "-e", SEARCH_EXT, "-e", JOB_EXT, "-e", SKILLSMITH_EXT]
         chat = bool(t.get("chat"))
         if chat:
             inject = skills.inline()                   # no tools in a plain chat, so the short skills are put in the prompt
@@ -698,8 +731,12 @@ class Session:
             chosen = router.info(t["model"]) or {}
             args += ["--provider", chosen.get("pi_provider", "lemonade"), "--model", chosen.get("pi_model", t["model"])]
         extra = [f for f in t.get("folders", [])]
+        _sync_packages()
+        # A background job has nobody to ask, so it cannot propose skills (without SHOGGOTH_OWN_SKILLS the tool is not offered).
+        own = "" if _is_job(t) else skills.own_skills_dir()
         allow = list(folderstore.get(_origin(t))["allow"]) + list((t.get("job") or {}).get("allow", []))
-        self.proc = subprocess.Popen(args, cwd=t["cwd"], env=_env(t.get("mode", "ask"), inject, extra, allow, jobs=not _is_job(t)),
+        self.proc = subprocess.Popen(args, cwd=t["cwd"], env=_env(t.get("mode", "ask"), inject, extra, allow, jobs=not _is_job(t),
+                                                  own_skills=own, task_id=self.id, model=t.get("model", "")),
                                      stdin=subprocess.PIPE, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
         threading.Thread(target=self._read, daemon=True).start()
         threading.Thread(target=self._read_err, daemon=True).start()
@@ -821,6 +858,11 @@ class Session:
         elif t == "tool_execution_end":
             self.doing = "Thinking…"
             self.mark("think")
+            res = rec.get("result") if isinstance(rec.get("result"), dict) else {}
+            det = res.get("details") if isinstance(res.get("details"), dict) else {}
+            if rec.get("toolName") == "save_skill" and not rec.get("isError") and det.get("saved") is True:
+                # Pi's message only says it happened; skills.saved() checks the folder on disk before doing anything
+                threading.Thread(target=skills.saved, args=(str(det.get("name") or ""),), daemon=True).start()
         elif t == "extension_ui_request":
             if rec.get("method") in ("select", "confirm", "input", "editor"):
                 self.pending[rec["id"]] = rec
@@ -1053,6 +1095,9 @@ def restart_idle():
     for sid, s in list(_sessions.items()):
         if not s.running and not s.loading and not s.pending and sid not in _ctl:
             stop(sid)
+
+
+skills.on_changed.append(restart_idle)       # a skill a model saved (and you approved) is picked up by idle chats on their next message
 
 
 def reaper():

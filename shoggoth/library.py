@@ -6,6 +6,7 @@ person chooses (the Models folder); downloads go in its llamacpp/ subfolder (lem
 links) so an engine is only ever shown files it can run. Nothing is copied or moved. Standard library only.
 """
 import json
+import math
 import os
 import re
 import shutil
@@ -15,6 +16,7 @@ import gguf
 import hardware
 import modelmeta
 import modelscan
+import provbase
 import registry
 import store
 
@@ -96,7 +98,7 @@ def set_root(path):
 
 
 # ---------------------------------------------------------------- reading files
-INDEX_VERSION = 2          # 2: headers also carry the model's attention shape (for the memory the context costs)
+INDEX_VERSION = 3          # 3: headers also carry the expert count and, for expert models, how many bytes the experts take
 
 
 def _index_path():
@@ -121,6 +123,8 @@ def _header(path):
     if hit and hit.get("size") == st.st_size and hit.get("mtime") == int(st.st_mtime) and hit.get("v") == INDEX_VERSION:
         return hit.get("h")
     h = gguf.read_header(rp)
+    if h and h.get("experts"):
+        h["exps_bytes"], h["tensor_bytes"] = gguf.expert_bytes(rp)
     _index["d"][rp] = {"size": st.st_size, "mtime": int(st.st_mtime), "h": h, "v": INDEX_VERSION}
     return h
 
@@ -164,6 +168,11 @@ def _entries_in(folder, label, owner):
         h = _header(first)
         if h is None:
             continue
+        exps = tensors = 0
+        if h.get("experts"):                                  # a mixture of experts: how much of the file is expert weights (all shards)
+            for path, _ in shards:
+                e_b, t_b = (h.get("exps_bytes") or 0, h.get("tensor_bytes") or 0) if path == first else gguf.expert_bytes(path)
+                exps, tensors = exps + e_b, tensors + t_b
         near = projectors.get(d) or projectors.get(os.path.dirname(d)) or []
         role = gguf.role_of(h.get("architecture", ""), stem, d)
         if role != "chat":
@@ -171,7 +180,7 @@ def _entries_in(folder, label, owner):
         out.append({"stem": stem, "files": [p for p, _ in shards], "size_bytes": sum(s for _, s in shards), "complete": len(shards) == g["n"],
                     "format": "gguf", "architecture": h.get("architecture", ""), "quant": h.get("quant", ""), "context": h.get("context", 0),
                     "size_label": h.get("size_label", ""), "title": _pretty(stem, h), "vision": bool(near), "mmproj": near[0] if near else "",
-                    "mtp": "mtp" in stem.lower(), "folder": d, "source": label, "owner": owner,
+                    "mtp": "mtp" in stem.lower(), "experts": h.get("experts", 0), "expert_share": round(exps / tensors, 3) if tensors else 0.0, "folder": d, "source": label, "owner": owner,
                     "attn": dict(h.get("attn") or {}, arch=h.get("architecture", ""))})
     return out
 
@@ -263,17 +272,154 @@ def catalog(reg=None, machine=None, refresh=False):
         chosen = next((p for p in runnable if p.prefers(e)), None)          # an engine that asked for this kind of model gets it
         chosen = chosen or (next((p for p in big if cap[p.id][0]), None) if tier == "large" else None)
         chosen = chosen or next((p for p in rest if cap[p.id][0]), None) or runnable[0]
-        want = int((store.load().get("chat") or {}).get("ctx") or 131072)            # the context window chats ask for
-        used = min(want, e.get("context") or want)
-        e = dict(e, kv_ctx=used, kv_gb=gguf.kv_cache_gb(e.get("attn"), used, cache_type=_cache_type(e)))        # what remembering that much conversation costs in memory
-        fit, why = chosen.fit(e, machine)
         ids = dict(e["ids"]) if e.get("listed_by") else {p.id: p.model_id(e) for p in runnable}
+        e = dict(e, ids=ids, **pick_context(dict(e, ids=ids), machine, chosen, ids.get(chosen.id) if chosen.id == "llamacpp" else None))      # the window it will be loaded with, and what that costs
+        fit, why = chosen.fit(e, machine)
         out.append(dict(e, id=key, tier=tier, provider=chosen.id, need_gb=chosen.need_gb(e), fit=fit, why=why,
                         providers={k: {"ok": ok, "reason": r} for k, (ok, r) in cap.items()}, ids=ids,
                         ref=chosen.ref(ids[chosen.id]) if ids.get(chosen.id) else "", engine_name=chosen.name))
     order = {t: i for i, t in enumerate(TIERS)}
     out.sort(key=lambda m: (order.get(m["tier"], 9), (m["need_gb"] or 0), m["title"].lower()))
     return out
+
+
+# ---------------------------------------------------------------- the context window, and where the experts go
+CTX_STEPS = (16384, 32768, 65536, 131072)        # what "auto" picks from, besides the model's own maximum
+FALLBACK_CTX = 131072                            # a model that doesn't say what it can do
+
+
+def _meta_for(e, key):
+    for mid in [e.get("id")] + list((e.get("ids") or {}).values()):
+        v = mid and modelmeta.get(mid).get(key)
+        if v:
+            return v
+    return None
+
+
+def record_measured(model_id, gb, ctx=None):
+    """Remember how much memory a load of this model really took (model, conversation and working buffers, in GB) at this context.
+    The estimate for the same model at the same context then uses it (provbase need_gb). Call it after a load, with the sum of the
+    buffer sizes llama-server reports or the memory the process holds."""
+    if not model_id or not gb or gb <= 0:
+        return
+    modelmeta.update(model_id, measured_gb=round(float(gb), 2), measured_ctx=int(ctx) if ctx else None)
+
+
+def _price(e, machine, chosen, ctx, moe, cache=None):
+    """The entry as it would be at this context with `moe` layers' experts on the processor: (entry, fit, why)."""
+    ent = dict(e, kv_ctx=ctx, kv_gb=gguf.kv_cache_gb(e.get("attn"), ctx, cache_type=cache or _cache_type(e)), n_cpu_moe=moe or 0)
+    ent.pop("measured_gb", None)
+    m = _meta_for(e, "measured_gb")
+    if m and int(_meta_for(e, "measured_ctx") or 0) == ctx:               # a real measurement is only good for the context it was taken at
+        ent["measured_gb"] = m
+    fit, why = chosen.fit(ent, machine)
+    return ent, fit, why
+
+
+def _moe_layers_for(e, machine, ctx, cache=None):
+    """How many layers' experts must sit on the processor for the rest to fit in graphics memory, or None when even all of them isn't enough."""
+    layers = (e.get("attn") or {}).get("layers") or 0
+    share = e.get("expert_share") or 0.0
+    if not layers or not share:
+        return None
+    size = e.get("size_bytes", 0) / 1e9 * 1.1
+    over = size + gguf.kv_cache_gb(e.get("attn"), ctx, cache_type=cache or _cache_type(e)) - provbase.gpu_room(machine)
+    if over > size * share:
+        return None
+    return max(1, min(layers, math.ceil(layers * over / (size * share))))
+
+
+def _number(v):
+    try:
+        return int(str(v).strip())
+    except (TypeError, ValueError):
+        return 0
+
+
+def pick_context(e, machine, chosen, preset_id=None):
+    """The context window and expert placement for one model: {ctx, ctx_auto, ctx_why, kv_ctx, kv_gb, n_cpu_moe, moe_auto}.
+
+    The person's choice wins: a number in Settings (chat.ctx), or a ctx-size they put in the model's preset. Otherwise ("auto") the
+    largest of 16k, 32k, 64k, 128k and the model's own maximum that fits in the memory here. A mixture-of-experts model that fits no
+    window on the graphics card alone but does with its experts in RAM gets n-cpu-moe. With `preset_id`, the choice is stored in that
+    model's section of the llama.cpp presets file."""
+    import llamacpp
+    top = e.get("context") or 0
+    cfg = (store.load().get("chat") or {}).get("ctx")
+    saved = {}
+    if preset_id:
+        try:
+            saved = llamacpp.read_presets().get(preset_id) or {}
+        except Exception:  # noqa: BLE001
+            saved = {}
+    cache = _cache_type(e) or str(saved.get("cache-type-k") or "")
+    if not cache and preset_id:                                                      # what a llama.cpp load uses unless told otherwise
+        cache = llamacpp.DEFAULTS["cache-type-k"]
+    last_ctx, last_moe = _number(_meta_for(e, "auto_ctx")), _number(_meta_for(e, "auto_moe"))
+    own_ctx = _number(saved.get("ctx-size"))
+    own_ctx = own_ctx if own_ctx and own_ctx != last_ctx else 0                     # a size Shoggoth didn't write is the person's
+    own_moe = _number(saved.get("n-cpu-moe"))
+    own_moe = own_moe if own_moe and own_moe != last_moe else 0
+    fixed = _number(cfg) or own_ctx
+    if fixed:
+        ctx = min(fixed, top) if top else fixed
+        ent, fit, why = _price(e, machine, chosen, ctx, _number(saved.get("n-cpu-moe")), cache)
+        return {"ctx": ctx, "ctx_auto": False, "ctx_why": "", "kv_ctx": ctx, "kv_gb": ent["kv_gb"], "n_cpu_moe": ent["n_cpu_moe"], "moe_auto": False,
+                **({"measured_gb": ent["measured_gb"]} if "measured_gb" in ent else {})}
+    steps = sorted({c for c in CTX_STEPS if c <= top} | {top}) if top else list(CTX_STEPS)
+    passes = [(own_moe, False)] if own_moe else [(0, False)] + ([(None, True)] if e.get("experts") else [])     # None: work out how many layers
+    choice = None
+    for moe, auto_moe in passes:
+        for ctx in reversed(steps):
+            n = _moe_layers_for(e, machine, ctx, cache) if moe is None else moe
+            if n is None:
+                continue
+            ent, fit, why = _price(e, machine, chosen, ctx, n, cache)
+            if fit in ("fits", "partial"):
+                choice = (ctx, n, auto_moe, ent)
+                break
+        if choice:
+            break
+    room = "%d GB of %s" % (round(machine.get("vram_gb") or machine.get("ram_gb") or 0), "graphics memory" if machine.get("vram_gb") else "RAM")
+    if choice:
+        ctx, n, auto_moe, ent = choice
+        if auto_moe:
+            why = "Set to %dk. The experts of %d layers stay in RAM so the rest fits in %s." % (ctx // 1024, n, room)
+        elif ctx == steps[-1] and top:
+            why = "Set to %dk, the most this model supports." % (ctx // 1024)
+        else:
+            why = "Set to %dk, the most that fits in %s." % (ctx // 1024, room)
+    else:
+        ctx = steps[0]
+        n, auto_moe = own_moe, False
+        ent, fit, _ = _price(e, machine, chosen, ctx, n, cache)
+        why = "Nothing larger fits in %s, so %dk." % (room, ctx // 1024)
+    if preset_id:
+        _store_auto(preset_id, ctx, n if auto_moe else 0, bool(own_moe))
+    return {"ctx": ctx, "ctx_auto": True, "ctx_why": why, "kv_ctx": ctx, "kv_gb": ent["kv_gb"], "n_cpu_moe": ent["n_cpu_moe"], "moe_auto": auto_moe,
+            **({"measured_gb": ent["measured_gb"]} if "measured_gb" in ent else {})}
+
+
+def _store_auto(preset_id, ctx, moe, own_moe):
+    """Put the automatic choice in the model's presets section (only when it changed), and remember what was written, so a later value
+    that differs can be told from the person's."""
+    try:
+        import llamacpp
+        presets = llamacpp.read_presets()
+        sec = dict(presets.get(preset_id) or {})
+        before = dict(sec)
+        sec["ctx-size"] = str(ctx)
+        if moe:
+            sec["n-cpu-moe"] = str(moe)
+        elif not own_moe:
+            sec.pop("n-cpu-moe", None)
+        if sec != before:
+            presets = {k: v for k, v in presets.items() if k != "*"}
+            presets[preset_id] = sec
+            llamacpp.write_presets(presets, llamacpp.DEFAULTS)
+        modelmeta.update(preset_id, auto_ctx=ctx, auto_moe=moe or None)
+    except Exception:  # noqa: BLE001
+        pass
 
 
 # ---------------------------------------------------------------- per-engine views

@@ -1,0 +1,16 @@
+# llama-server b12375 cuda13 on the RTX 3080, Qwen3-0.6B-Q4_0.gguf (428970080 bytes), -c 32768 -ngl 99 -fa on -ctk q8_0 -ctv q8_0 -np 1. Lines kept from the -lv 4 load log.
+0.00.296.848 I cmn  common_param:   - CUDA0   : NVIDIA GeForce RTX 3080 (9875 MiB, 8897 MiB free)
+0.00.480.923 I print_info: file size   = 403.42 MiB (4.50 BPW) 
+0.00.569.265 I print_info: arch                  = qwen3
+0.00.569.268 I print_info: n_layer               = 28
+0.00.569.274 I print_info: n_head                = 16
+0.00.569.275 I print_info: n_head_kv             = 8
+0.00.569.276 I print_info: n_embd_head_k         = 128
+0.00.569.276 I print_info: n_embd_head_v         = 128
+0.00.569.285 I print_info: n_expert              = 0
+0.00.612.485 I load_tensors:   CPU_Mapped model buffer size =    83.46 MiB
+0.00.612.486 I load_tensors:        CUDA0 model buffer size =   319.96 MiB
+0.00.765.521 I llama_context:  CUDA_Host  output buffer size =     0.58 MiB
+0.00.768.783 I llama_kv_cache: size = 1904.00 MiB ( 32768 cells,  28 layers,  1/1 seqs), K (q8_0):  952.00 MiB, V (q8_0):  952.00 MiB
+0.00.801.355 I sched_reserve:      CUDA0 compute buffer size =   176.01 MiB
+0.00.801.359 I sched_reserve:  CUDA_Host compute buffer size =    40.02 MiB

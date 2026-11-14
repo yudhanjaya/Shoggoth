@@ -91,6 +91,26 @@ def port_range(spec):
     return out
 
 
+MOE_RAM_RESERVE_GB = 8          # RAM left for the system when experts are kept in memory
+
+
+def gpu_room(machine):
+    """Graphics memory a model may take, in GB: 90% of the card, or 88% of all the cards when layers spread over several."""
+    if len(machine.get("gpus") or []) > 1:
+        return machine.get("vram_gb", 0) * 0.88
+    return machine.get("best_gpu_gb", 0) * 0.9
+
+
+def moe_on_cpu_gb(entry):
+    """Memory the expert weights take on the processor side when the preset sets n-cpu-moe: the experts' share of the file (read from the
+    GGUF tensor list) times the share of layers moved, with the same 10% working space the estimate adds to the model."""
+    size = entry.get("size_bytes", 0) / 1e9 * 1.1
+    layers = (entry.get("attn") or {}).get("layers") or 0
+    n = int(entry.get("n_cpu_moe") or 0)
+    frac = min(1.0, n / layers) if layers and n else 1.0
+    return size * (entry.get("expert_share") or 0.0) * frac
+
+
 class Context:
     """What a provider may ask Shoggoth for: where things live. Providers never reach into Shoggoth's modules."""
     def __init__(self, library="", data="", settings=None, save=None):
@@ -219,18 +239,29 @@ class Base:
 
     def need_gb(self, entry):
         """Memory (graphics, plus RAM for the part that spills over) the entry needs to run on this provider, in GB: the model, a little
-        working space, and what the context window costs (entry["kv_gb"], worked out from the model's own shape)."""
+        working space, and what the context window costs (entry["kv_gb"], worked out from the model's own shape).
+        What a load of this model really took (entry["measured_gb"], recorded after a load) wins over the estimate."""
+        if entry.get("measured_gb"):
+            return round(float(entry["measured_gb"]), 1)
         return round(entry.get("size_bytes", 0) / 1e9 * 1.1 + (entry.get("kv_gb") or 0), 1)
 
     def fit(self, entry, machine):
-        """("fits" | "tight" | "no", reason) for this entry on this computer."""
+        """("fits" | "partial" | "tight" | "no", reason) for this entry on this computer.
+
+        "partial" is a mixture-of-experts model whose preset keeps experts on the processor (entry["n_cpu_moe"]): the graphics card takes the
+        rest, and the experts use RAM, all but 8 GB of it."""
         need = self.need_gb(entry)
         gpu, vram, ram = machine.get("best_gpu_gb", 0), machine.get("vram_gb", 0), machine.get("ram_gb", 0)
-        room = vram * 0.88 if len(machine.get("gpus") or []) > 1 else gpu * 0.9          # layers spread over several cards
+        room = gpu_room(machine)
         kv = entry.get("kv_gb") or 0
         part = " (%d GB of that is the memory for a %dk conversation)" % (round(kv), (entry.get("kv_ctx") or 0) // 1024) if kv >= 1.5 else ""
         if gpu and need <= room:
             return "fits", ""
+        if gpu and entry.get("experts") and entry.get("n_cpu_moe"):
+            on_cpu = moe_on_cpu_gb(entry) if entry.get("expert_share") else 0.0          # share unknown: only the total is checked
+            gpu_part = need - on_cpu if on_cpu else 0.0
+            if gpu_part <= room and need <= vram * 0.9 + max(0.0, ram - MOE_RAM_RESERVE_GB):
+                return "partial", "Needs about %d GB%s; the experts run on the processor (%d GB of RAM), so it is slower than on the graphics card." % (need, part, round(on_cpu))
         if need <= vram * 0.9 + ram * 0.5:
             return "tight", "Needs about %d GB%s; it will run partly on the processor, so it will be slower." % (need, part)
         return "no", "Needs about %d GB%s; this computer has %d GB of graphics memory and %d GB of RAM." % (need, part, vram, ram)
