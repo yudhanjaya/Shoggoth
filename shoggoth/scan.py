@@ -29,7 +29,8 @@ PROC = "/proc"
 TIMEOUT = 1.5
 WORKERS = 8
 FRESH = 20                                  # seconds a scan is reused when the page opens the picker again
-LABELS = {"specialized": "Specialized inference engine", "local": "Local inference engine", "hosted": "Hosted service"}
+LABELS = {"specialized": "Specialized inference engine", "local": "Local inference engine", "hosted": "Hosted service",
+          "shared": "Inference engine"}
 _lock = threading.Lock()
 _last = {"at": 0.0, "found": []}
 
@@ -184,10 +185,14 @@ def identify(defs, port, comm, cmd, fetch):
     left = [d for d in defs if port in d["ports"] and not d["identify"]]       # a definition with a signature that failed is ruled out
     if len(left) == 1:
         return named(left[0], "port")
-    if len(left) > 1 and len({d["category"] for d in left}) == 1:
-        cat = left[0]["category"]
-        return {"engine": None, "name": LABELS[cat], "category": cat, "how": "category",
-                "candidates": [{"id": d["id"], "name": d["name"]} for d in left]}
+    if len(left) > 1:
+        # Several engines use this port and none says which it is. One category when they share one; otherwise "shared",
+        # specialized engines listed first, since those are the ones that most often sit on the common ports.
+        cats = {d["category"] for d in left}
+        cat = left[0]["category"] if len(cats) == 1 else "shared"
+        left = sorted(left, key=lambda d: d["category"] != "specialized")          # stable: otherwise the definitions' own order
+        return {"engine": None, "name": LABELS[cat] + ("" if len(cats) == 1 else " on port %d" % port), "category": cat, "how": "category",
+                "candidates": [{"id": d["id"], "name": d["name"], "category": d["category"]} for d in left]}
     return {"engine": None, "name": "OpenAI-style server on port %d" % port, "category": None, "how": "generic", "candidates": []}
 
 
@@ -264,6 +269,13 @@ def _explain(r):
         if r["category"] == "specialized":
             return ("One of the engines built for running very large models on home hardware, such as %s. They all serve an OpenAI-style "
                     "API, so Shoggoth can use this one without knowing which it is." % ", ".join(names))
+        if r["category"] == "shared":
+            spec = [c["name"] for c in r["candidates"] if c.get("category") == "specialized"]
+            rest = [c["name"] for c in r["candidates"] if c.get("category") != "specialized"]
+            parts = (["engines built for very large models on home hardware (%s)" % ", ".join(spec)] if spec else []) + \
+                    (["other local engines (%s)" % ", ".join(rest)] if rest else [])
+            return ("Several engines use port %d by default: %s. It serves an OpenAI-style API, so Shoggoth can use it without "
+                    "knowing which one it is. Tell Shoggoth which it is, and it will remember." % (r["port"], " and ".join(parts)))
         return "Could be any of %s. Shoggoth can use it without knowing which." % ", ".join(names)
     if r["how"] == "generic":
         return "It speaks the OpenAI API, but Shoggoth can't tell which program it is."

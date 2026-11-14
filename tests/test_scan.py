@@ -142,10 +142,11 @@ class Identifying(unittest.TestCase):
         self.assertEqual((r["engine"], r["how"], r["category"], r["name"]), (None, "category", "specialized", "Specialized inference engine"))
         self.assertEqual([c["id"] for c in r["candidates"]], ["strata", "maya"])
 
-    def test_mixed_categories_fall_back_to_the_generic_name(self):
+    def test_mixed_categories_share_one_bucket(self):
         defs = [defn(id="a", name="A", ports=[9000]), defn(id="b", name="B", category="specialized", ports=[9000])]
         r = scan.identify(defs, 9000, "", "", self.answers())
-        self.assertEqual((r["engine"], r["how"], r["name"]), (None, "generic", "OpenAI-style server on port 9000"))
+        self.assertEqual((r["engine"], r["how"], r["category"], r["name"]), (None, "category", "shared", "Inference engine on port 9000"))
+        self.assertEqual([c["id"] for c in r["candidates"]], ["b", "a"])                     # specialized first
 
     def test_one_candidate_with_no_signature_is_named_by_its_port(self):
         defs = [defn(id="solo", name="Solo", ports=[9100])]
@@ -156,10 +157,13 @@ class Identifying(unittest.TestCase):
         r = scan.identify(defs, 9, "", "", lambda p: (200, {"server": "HServe/1.0"}, None))
         self.assertEqual(r["engine"], "h")
 
-    def test_bundled_definitions_do_not_file_an_unknown_8080_as_specialized(self):
-        """llamafile, RamaLama and TGI are local engines on 8080 with no signature, so they share it with Strata and Maya: no one category fits."""
+    def test_an_unknown_8080_is_one_shared_bucket_with_specialized_engines_first(self):
+        """llamafile, RamaLama and TGI are local engines on 8080 with no signature, so they share it with Strata and Maya."""
         r = scan.identify(engines.definitions(), 8080, "", "", self.answers())
-        self.assertEqual((r["category"], r["how"]), (None, "generic"))
+        self.assertEqual((r["category"], r["how"], r["name"]), ("shared", "category", "Inference engine on port 8080"))
+        cats = [c["category"] for c in r["candidates"]]
+        self.assertEqual(cats, sorted(cats, key=lambda c: c != "specialized"))
+        self.assertIn("Strata", [c["name"] for c in r["candidates"]])
         on_8080 = {d["id"] for d in engines.definitions() if 8080 in d["ports"]}
         self.assertTrue({"strata", "maya", "llamafile", "ramalama", "tgi"} <= on_8080)
 
