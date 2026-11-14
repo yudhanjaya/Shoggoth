@@ -12,7 +12,8 @@ version: 1
 # `size_gb`, `tools`, `vision` and `reasoning` are what the card says until the engine can list the model itself, and `size_gb` sorts it
 # into Small (under 10 GB), Medium (10 to 24 GB) or Large. `id` is the engine's name for the model (`also`: the same model under another
 # name). `download` is for a model the engine does not list: where to fetch it (a Hugging Face `checkpoint`, and optionally `mmproj` for
-# pictures). `label` is an optional chip on the card (it also shows in the chat's model picker), `take` the text. The cards keep this order.
+# pictures). `quants` maps a few quantisations, by the name in the repo, to their size in GB, so a card can offer a smaller one.
+# `label` is an optional chip on the card (it also shows in the chat's model picker), `take` the text. The cards keep this order.
 # Text is the owner's own words; do not paraphrase it. No speed figures: they can't be predicted for other people's computers.
 recommended:
   # Small: runs on almost any computer, starts in seconds.
@@ -20,6 +21,12 @@ recommended:
     title: LFM2.5-8B-A1B
     size_gb: 5.2
     tools: true
+    download:
+      checkpoint: unsloth/LFM2.5-8B-A1B-GGUF:LFM2.5-8B-A1B-UD-Q4_K_M.gguf
+    quants:
+      Q4_K_M: 5.32
+      Q6_K: 7.09
+      Q8_0: 9.01
     take: >-
       Competent all-rounder. Terse language, handles tool calls reasonably well, fast - an excellent all-round pick.
   # Not in Lemonade's list: Shoggoth fetches the bartowski Q4_K_M and adds it as a custom model. It needs Lemonade 2026.41.1 or newer
@@ -31,6 +38,10 @@ recommended:
     tools: true
     download:
       checkpoint: bartowski/MiMo-V2.6-Distill-Qwen-9B-GGUF:MiMo-V2.6-Distill-Qwen-9B-Q4_K_M.gguf
+    quants:
+      Q4_K_M: 5.84
+      Q6_K: 7.79
+      Q8_0: 9.55
     take: >-
       An upgraded version of Qwen 9B. Improved tool calling, managed to pass our code debug tests without issues. A little verbose:
       tends to go on at length, prone to looping sometimes.
@@ -39,6 +50,13 @@ recommended:
     size_gb: 7.75
     tools: true
     vision: true
+    download:
+      checkpoint: unsloth/gemma-4-12b-it-GGUF:gemma-4-12b-it-Q4_K_M.gguf
+      mmproj: unsloth/gemma-4-12b-it-GGUF:mmproj-F16.gguf
+    quants:
+      Q4_K_M: 7.12
+      Q6_K: 9.79
+      Q8_0: 12.67
     take: >-
       Arguably the best conversationalist of the lot at this size; perhaps not the best at tool-calling. Lacks nuanced reasoning and may
       hallucinate wildly in long-context tasks.
@@ -49,6 +67,13 @@ recommended:
     size_gb: 23.8
     tools: true
     vision: true
+    download:
+      checkpoint: unsloth/Qwen3.6-35B-A3B-MTP-GGUF:Qwen3.6-35B-A3B-UD-Q4_K_M.gguf
+      mmproj: unsloth/Qwen3.6-35B-A3B-MTP-GGUF:mmproj-F16.gguf
+    quants:
+      Q4_K_M: 22.66
+      Q6_K: 30.01
+      Q8_0: 37.80
     take: >-
       The current king of getting shit done on a single GPU. A Mixture-of-Experts model that only activates 3B of its 35B parameters;
       exceptional tool calling for its size. Very AI-esque conversation, but the default pick.
@@ -57,6 +82,13 @@ recommended:
     size_gb: 18.5
     tools: true
     vision: true
+    download:
+      checkpoint: unsloth/gemma-4-26B-A4B-it-GGUF:gemma-4-26B-A4B-it-UD-Q4_K_M.gguf
+      mmproj: unsloth/gemma-4-26B-A4B-it-GGUF:mmproj-F16.gguf
+    quants:
+      Q4_K_M: 16.95
+      Q6_K: 23.17
+      Q8_0: 26.86
     take: >-
       The alternate to Qwen 3.6. Slightly smaller, but excellent at long-context tasks, multilingual work and reasoning; not as good at
       Qwen at coding tasks.
@@ -64,6 +96,12 @@ recommended:
     title: GLM-4.7-Flash
     size_gb: 17.5
     tools: true
+    download:
+      checkpoint: unsloth/GLM-4.7-Flash-GGUF:GLM-4.7-Flash-Q4_K_M.gguf
+    quants:
+      Q4_K_M: 18.31
+      Q6_K: 24.69
+      Q8_0: 31.84
     take: >-
       A fast model but a prolific bullshitter. Hallucinates wildly, especially if you give it coding or tool-calling tasks. Run if you
       prefer its writing style or can't run Qwen.
@@ -72,6 +110,13 @@ recommended:
     size_gb: 20.0
     tools: true
     vision: true
+    download:
+      checkpoint: unsloth/gemma-4-31B-it-GGUF:gemma-4-31B-it-Q4_K_M.gguf
+      mmproj: unsloth/gemma-4-31B-it-GGUF:mmproj-F16.gguf
+    quants:
+      Q4_K_M: 18.32
+      Q6_K: 25.20
+      Q8_0: 32.64
     take: >-
       Excels at conversation, writing, and general tasks; is not as good as the Qwen models at tool-calling, agentic work, or coding.
       Good balance of speed and power; think of it as Gemini's Flash model in a box.
@@ -81,6 +126,13 @@ recommended:
     tools: true
     vision: true
     reasoning: true
+    download:
+      checkpoint: unsloth/Qwen3.8-27B-GGUF:Qwen3.8-27B-UD-Q4_K_M.gguf
+      mmproj: unsloth/Qwen3.8-27B-GGUF:mmproj-F16.gguf
+    quants:
+      Q4_K_M: 16.56
+      Q6_K: 21.98
+      Q8_0: 29.05
     take: >-
       Excellent at coding for its size, but utterly neurotic and slow. Empires have risen and fallen in the time it takes to respond.
       Use if you're very patient.

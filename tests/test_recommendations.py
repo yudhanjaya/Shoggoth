@@ -67,7 +67,15 @@ class ThePicks(Env):
         mimo = next(r for r in recs.models()["recommended"] if r["id"].startswith("user.MiMo"))
         self.assertEqual(mimo["download"]["checkpoint"], "bartowski/MiMo-V2.6-Distill-Qwen-9B-GGUF:MiMo-V2.6-Distill-Qwen-9B-Q4_K_M.gguf")
         self.assertEqual(mimo["download"]["recipe"], "llamacpp")
-        self.assertEqual([r["id"] for r in recs.models()["recommended"] if "download" in r], [mimo["id"]])
+        self.assertEqual([r["id"] for r in recs.models()["recommended"] if "download" not in r], [])
+
+    def test_every_model_says_where_to_fetch_it_and_how_big_its_quants_are(self):
+        for r in recs.models()["recommended"]:
+            self.assertRegex(r["download"]["checkpoint"], r"^(unsloth|bartowski)/[^:]+:[^:]+\.gguf$", r["id"])
+            self.assertTrue(2 <= len(r["quants"]) <= 4, r["id"])
+            self.assertTrue(all(v > 0 for v in r["quants"].values()), r["id"])
+            if r["vision"]:
+                self.assertRegex(r["download"]["mmproj"], r"^(unsloth|bartowski)/[^:]+:mmproj[^:]*\.gguf$", r["id"])
 
     def test_the_two_models_that_are_not_ready_show_as_coming_soon(self):
         self.assertEqual([c["title"] for c in recs.models()["coming_soon"]], ["LFM3", "GLM 5.3 Flash"])
@@ -116,6 +124,19 @@ class Yours(Env):
         joined = "\n".join(s["problems"])
         self.assertIn("recommended[0]: `size_gb` must be a number above 0", joined)
         self.assertIn("first_run[0]: `size` must be one of", joined)
+
+    def test_quants_are_names_and_sizes_in_gb(self):
+        self.mine("models", "recommended:\n  - {id: A, quants: {Q4_K_M: 5.2, Q8_0: 8}}\n  - {id: B, quants: {Q4_K_M: big, Q6_K: 0, Q8_0: null}}\n"
+                            "  - {id: C, quants: [5.2]}\n")
+        s = recs.summary()
+        self.assertEqual(s["models"]["recommended"][0]["quants"], {"Q4_K_M": 5.2, "Q8_0": 8})
+        self.assertEqual(s["models"]["recommended"][1]["quants"], {})
+        self.assertEqual(s["models"]["recommended"][2]["quants"], {})
+        joined = "\n".join(s["problems"])
+        self.assertIn("recommended[1].quants: `Q4_K_M` must be a size in GB", joined)
+        self.assertIn("recommended[1].quants: `Q6_K` must be a size in GB", joined)
+        self.assertIn("recommended[1].quants: `Q8_0` must be a size in GB", joined)
+        self.assertIn("recommended[2].quants: must be a group of settings", joined)
 
     def test_a_file_that_isnt_yaml_falls_back_to_zests_own(self):
         self.mine("tools", "tools: [\n")

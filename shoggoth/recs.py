@@ -119,6 +119,25 @@ class _Check:
 
 
 # ---------------------------------------------------------------- models.yaml
+def clean_quants(q, where, c):
+    """`quants`: a group of settings, quant name -> size in GB (above 0). Returns {} when there is none or it has a mistake."""
+    out = {}
+    if q is None:
+        return out
+    if not isinstance(q, dict) or not q:
+        c.bad(where, "must be a group of settings, like Q4_K_M: 5.2 (quant name, size in GB).")
+        return out
+    for k, v in q.items():
+        name = str(k).strip()
+        if not name:
+            c.bad(where, "a quant needs a name.")
+        elif isinstance(v, bool) or not isinstance(v, (int, float)) or v <= 0:
+            c.bad(where, "`%s` must be a size in GB, a number above 0." % name)
+        else:
+            out[name] = v
+    return out
+
+
 def clean_models(doc, c):
     """The usable part of a parsed models.yaml: {recommended, first_run, coming_soon}."""
     out = {"recommended": [], "first_run": [], "coming_soon": []}
@@ -131,7 +150,7 @@ def clean_models(doc, c):
     ids = set()
     for i, m in c.items(doc, "recommended", ""):
         w = "recommended[%d]" % i
-        c.keys(m, w, ["id", "also", "label", "take", "title", "provider", "size_gb", "tools", "vision", "reasoning", "download"])
+        c.keys(m, w, ["id", "also", "label", "take", "title", "provider", "size_gb", "tools", "vision", "reasoning", "download", "quants"])
         mid = c.text(m, "id", w, need=True)
         if mid in ids:
             c.bad(w, "%s is listed twice." % mid)
@@ -139,7 +158,8 @@ def clean_models(doc, c):
             ids.add(mid)
             ent = {"id": mid, "also": c.words(m, "also", w), "label": c.text(m, "label", w) or "", "take": c.text(m, "take", w) or "",
                    "title": c.text(m, "title", w) or "", "provider": c.text(m, "provider", w) or "Lemonade", "size_gb": c.number(m, "size_gb", w),
-                   "tools": c.flag(m, "tools", w), "vision": c.flag(m, "vision", w), "reasoning": c.flag(m, "reasoning", w)}
+                   "tools": c.flag(m, "tools", w), "vision": c.flag(m, "vision", w), "reasoning": c.flag(m, "reasoning", w),
+                   "quants": clean_quants(m.get("quants"), w + ".quants", c)}
             dl = m.get("download")
             if dl is not None:
                 dw = w + ".download"
