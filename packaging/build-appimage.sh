@@ -77,7 +77,7 @@ find "$APPDIR" -name __pycache__ -prune -exec rm -rf {} +
 ./packaging/fetch-vendor.sh
 cp shoggoth/*.py shoggoth/index.html shoggoth/docs.md "$APPDIR/usr/share/shoggoth/"
 cp shoggoth/pi/* "$APPDIR/usr/share/shoggoth/pi/"
-cp -r shoggoth/skills shoggoth/vendor shoggoth/_vendor shoggoth/providers shoggoth/recommendations "$APPDIR/usr/share/shoggoth/"
+cp -r shoggoth/skills shoggoth/vendor shoggoth/_vendor shoggoth/providers shoggoth/recommendations shoggoth/engines.d "$APPDIR/usr/share/shoggoth/"
 mkdir -p "$APPDIR/usr/share/shoggoth/fonts" && cp docs/plans/assets/fonts/OFL-*.txt "$APPDIR/usr/share/shoggoth/fonts/"   # the fonts embedded in index.html
 # the sandboxed catalog test runs as another user: everything we ship must be world-readable
 chmod -R a+rX "$APPDIR/usr/share/shoggoth"

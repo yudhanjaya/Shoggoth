@@ -1,0 +1,13 @@
+# A definition is data: it names an engine and says how to recognise it. It can start, install or run nothing, and engines.py refuses any key outside its schema.
+id: unsloth
+name: Unsloth
+category: local
+summary: Unsloth's local server.
+url: http://127.0.0.1:8888
+ports: [8888]
+match: [unsloth]
+formats:
+  - {api: openai-completions}
+loads: fixed
+key: optional
+hint: Use the address Unsloth prints when it starts. This default is a guess; check it.

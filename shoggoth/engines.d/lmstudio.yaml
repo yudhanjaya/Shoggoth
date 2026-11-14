@@ -1,0 +1,16 @@
+# A definition is data: it names an engine and says how to recognise it. It can start, install or run nothing, and engines.py refuses any key outside its schema.
+id: lmstudio
+name: LM Studio
+category: local
+summary: A desktop app that runs models and loads each one when it is asked for.
+url: http://127.0.0.1:1234
+ports: [1234]
+match: [lms, lmstudio, LM Studio]
+identify:
+  - {path: /api/v0/models}
+formats:
+  - {api: openai-completions}
+loads: ollama
+key: none
+docs: https://lmstudio.ai
+hint: Turn on the local server in LM Studio (Developer tab), then use the address it shows.

@@ -40,6 +40,7 @@ import modelscan   # noqa: E402
 import piup        # noqa: E402
 import provbase    # noqa: E402
 import recs        # noqa: E402
+import scan        # noqa: E402
 import registry    # noqa: E402
 import router      # noqa: E402
 import skills      # noqa: E402
@@ -328,6 +329,8 @@ class Handler(BaseHTTPRequestHandler):
             self.send_json(registry.default().summary())
         elif p == "/ui/servers":
             self.send_json({"presets": servers.presets(), "servers": servers.public()})
+        elif p == "/ui/sources":
+            self.send_json(scan.sources(own_ports=(self.server.server_address[1],)))
         elif p == "/ui/tuning":
             self.send_json({"targets": tuning.targets(), "job": tuning.status()})
         elif p == "/ui/tuning/job":
@@ -392,6 +395,7 @@ class Handler(BaseHTTPRequestHandler):
             "/ui/setup/mode": self.post_mode, "/ui/setup/done": self.post_done,
             "/ui/engine/check": self.post_engine_check, "/ui/engine/update": self.post_engine_update,
             "/ui/engine/use": self.post_engine_use, "/ui/engine/restart": self.post_engine_restart,
+            "/ui/sources/scan": self.post_sources_scan,
             "/ui/gateway": self.post_gateway, "/ui/cowork/new": self.post_cowork_new,
             "/ui/cowork/cmd": self.post_cowork_cmd, "/ui/cowork/answer": self.post_cowork_answer,
             "/ui/cowork/mode": self.post_cowork_mode, "/ui/cowork/delete": self.post_cowork_delete,
@@ -788,6 +792,10 @@ class Handler(BaseHTTPRequestHandler):
     def post_provider_reload(self, body):
         self.send_json(registry.reload().summary())
 
+    def post_sources_scan(self, body):
+        """Look at what is listening on this computer again (the Look again button) and return the same shape as GET /ui/sources."""
+        self.send_json(scan.sources(own_ports=(self.server.server_address[1],), fresh=True))
+
     def post_servers(self, body):
         """Probe and connect, or remove, a server the person runs themselves. Shoggoth only ever talks to these; it never starts or stops them."""
         act = body.get("action")
@@ -1035,6 +1043,9 @@ def main():
         sys.exit(provcheck.main(args[1:]))
     if args[:1] == ["recommendations"]:
         sys.exit(recs.main(args[1:]))
+    if args[:1] == ["engines"]:
+        import engines
+        sys.exit(engines.main(args[1:]))
     ap = argparse.ArgumentParser(description="Shoggoth: a console for Lemonade Server")
     ap.add_argument("--host", default=os.environ.get("SHOGGOTH_HOST", "127.0.0.1"), help="address to listen on (default 127.0.0.1)")
     ap.add_argument("--port", type=int, default=int(os.environ.get("SHOGGOTH_PORT", "13306")), help="port to listen on (default 13306)")

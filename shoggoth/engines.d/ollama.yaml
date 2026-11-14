@@ -1,0 +1,16 @@
+# A definition is data: it names an engine and says how to recognise it. It can start, install or run nothing, and engines.py refuses any key outside its schema.
+id: ollama
+name: Ollama
+category: local
+summary: Runs models on your computer and loads each one the first time it is asked for.
+url: http://127.0.0.1:11434
+ports: [11434]
+match: [ollama]
+identify:
+  - {path: /api/version, json: "$.version"}
+formats:
+  - {api: openai-completions}
+loads: ollama
+key: none
+docs: https://ollama.com
+hint: Ollama's usual address. Start Ollama first. Pull a model with `ollama pull`.

@@ -1,0 +1,17 @@
+# A definition is data: it names an engine and says how to recognise it. It can start, install or run nothing, and engines.py refuses any key outside its schema.
+id: llama-server
+name: llama.cpp server
+category: local
+summary: The server that comes with llama.cpp. It serves the model it was started with.
+url: http://127.0.0.1:8080
+ports: [8080]
+match: [llama-server]
+identify:
+  - {path: /props, json: "$.default_generation_settings"}
+formats:
+  - {api: openai-completions}
+context: {path: /props, json: "$.default_generation_settings.n_ctx"}
+loads: fixed
+key: optional
+docs: https://github.com/ggml-org/llama.cpp
+hint: The address you gave llama-server with --host and --port.
