@@ -3409,8 +3409,8 @@ document.addEventListener("click", async e => {
 document.addEventListener("change", async e => {
   const el = e.target.closest && e.target.closest("[data-llama]"); if(!el || !el.closest("#v-backends")) return;
   try{
-    if(el.dataset.llama === "max"){ const r = await api("/ui/config", {method: "POST", body: JSON.stringify({max_loaded: +el.value})}); SU.cfg = r.config || SU.cfg; toast("Shoggoth keeps up to " + el.value + " models loaded."); }
-    else if(el.dataset.llama === "enabled"){ const r = await api("/ui/config", {method: "POST", body: JSON.stringify({enabled: el.checked})}); SU.cfg = r.config || SU.cfg; toast(el.checked ? "llama.cpp will run models." : "llama.cpp won't run models on this computer."); }
+    if(el.dataset.llama === "max"){ const r = await api("/ui/config", {method: "POST", body: JSON.stringify({max_loaded: +el.value})}); SU.cfg = r.config || SU.cfg; toast(r.restarted ? "Saved. Models load again when you use them." : "Shoggoth keeps up to " + el.value + " models loaded."); }
+    else if(el.dataset.llama === "enabled"){ const r = await api("/ui/config", {method: "POST", body: JSON.stringify({enabled: el.checked})}); SU.cfg = r.config || SU.cfg; toast(!el.checked ? "llama.cpp won't run models on this computer." : r.restarted ? "Saved. Models load again when you use them." : "llama.cpp will run models."); }
     else if(el.dataset.llama === "device"){ const r = await api("/ui/device", {method: "POST", body: JSON.stringify({device: el.value})}); toast(r.restarted ? "Saved. Models load again when you use them." : "Saved. Applies to the next model you load."); }
     else return;
     await engLoad(); await refreshSetup(true); renderStatus();
@@ -3420,7 +3420,7 @@ document.addEventListener("click", async e => {
   const b = e.target.closest && e.target.closest("#v-backends [data-llama]"); if(!b || b.tagName === "SELECT") return;
   const a = b.dataset.llama, eng = (SU.st || {}).engine || {};
   try{
-    if(a === "install") await api("/ui/backend/install", {method: "POST", body: JSON.stringify({backend: engineBuildBackend(eng)})});
+    if(a === "install"){ await api("/ui/backend/install", {method: "POST", body: JSON.stringify({backend: engineBuildBackend(eng)})}); toast("Downloading llama.cpp."); }
     else if(a === "update"){ ENG.check = null; await api("/ui/engine/update", {method: "POST", body: "{}"}); }
     else if(a === "check") ENG.check = await api("/ui/engine/check", {method: "POST", body: "{}"});
     else if(a === "restart"){ await api("/ui/engine/restart", {method: "POST", body: "{}"}); toast("Restarting llama.cpp. Models load again when you use them."); }
