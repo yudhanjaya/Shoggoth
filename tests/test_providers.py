@@ -15,7 +15,7 @@ import unittest
 HERE = os.path.dirname(os.path.abspath(__file__))
 sys.path.insert(0, os.path.join(HERE, "..", "shoggoth"))
 
-import engine  # noqa: E402
+import llamacpp  # noqa: E402
 import provbase  # noqa: E402
 import provcheck  # noqa: E402
 import registry  # noqa: E402
@@ -93,17 +93,18 @@ class Validation(unittest.TestCase):
 class Loading(Env):
     def test_bundled_providers_load(self):
         r = self.registry()
-        self.assertEqual(sorted(p.id for p in r.all()), ["lemonade", "llamacpp"])
+        self.assertEqual(sorted(p.id for p in r.all()), ["llamacpp"])
         self.assertEqual(r.errors, [])
         # the template folder starts with _ and is never loaded
         self.assertNotIn("my-engine", r.providers)
 
-    def test_architecture_rules_route_the_right_files(self):
+    def test_llamacpp_is_on_by_default_and_runs_gguf(self):
         r = self.registry()
-        big = {"format": "gguf", "architecture": "qwen4exp"}
-        plain = {"format": "gguf", "architecture": "gemma4"}
-        self.assertFalse(r.get("lemonade").can_run(big)[0])          # Lemonade's llama.cpp doesn't know this architecture
-        self.assertTrue(r.get("lemonade").can_run(plain)[0])
+        self.assertTrue(r.get("llamacpp").can_run({"format": "gguf", "architecture": "gemma4"})[0])
+        self.assertFalse(r.get("llamacpp").can_run({"format": "safetensors", "architecture": "gemma4"})[0])
+        import store
+        store.update(lambda st: st.setdefault("llamacpp", {}).update(enabled=False))
+        self.assertFalse(r.get("llamacpp").can_run({"format": "gguf", "architecture": "gemma4"})[0])      # turned off: nothing goes to it
 
     def test_wrong_folders_are_skipped_and_explained(self):
         self.add("broken-yaml", "id: [unclosed\n")
@@ -119,10 +120,10 @@ class Loading(Env):
         self.assertIn("fine", r.providers)                  # a bad neighbour never takes the good one down
         self.assertEqual(len(r.errors), 2)
         self.assertTrue(all(e["folder"] and e["error"] for e in r.errors))
-        self.assertIn("lemonade", r.providers)
+        self.assertIn("llamacpp", r.providers)
 
     def test_duplicate_id_is_reported(self):
-        self.add("lemonade-copy", "id: lemonade\nname: Copy\napi_version: 1\nrun: {mode: external}\nendpoint: {base_url: 'http://x/v1'}\n")
+        self.add("llamacpp-copy", "id: llamacpp\nname: Copy\napi_version: 1\nrun: {mode: external}\nendpoint: {base_url: 'http://x/v1'}\n")
         r = self.registry()
         self.assertTrue(any("already uses the id" in e["error"] for e in r.errors))
 
@@ -317,7 +318,7 @@ class ConnectedServers(Env):
         from tests import test_servers
         return test_servers.fake_server(models=models)
 
-    def test_a_saved_server_becomes_an_engine_after_lemonade(self):
+    def test_a_saved_server_becomes_an_engine_after_llamacpp(self):
         import servers
         url, stop = self.server()
         try:
@@ -358,10 +359,10 @@ class ConnectedServers(Env):
         import servers
         import store
         servers.add("ollama", "http://h:1")
-        store.update(lambda s: s["servers"][0].__setitem__("id", "lemonade"))
+        store.update(lambda s: s["servers"][0].__setitem__("id", "llamacpp"))
         r = self.registry()
-        self.assertEqual(sorted(p.id for p in r.all()), ["lemonade", "llamacpp"])
-        self.assertIn("lemonade", r.errors[-1]["error"])
+        self.assertEqual(sorted(p.id for p in r.all()), ["llamacpp"])
+        self.assertIn("llamacpp", r.errors[-1]["error"])
 
     def test_a_server_that_is_down_does_not_slow_loading(self):
         import servers
@@ -371,14 +372,37 @@ class ConnectedServers(Env):
         self.assertLess(time.time() - t, 1.0)
 
 
-class LemonadeNames(Env):
-    def test_a_file_is_never_given_the_name_of_another_quant_of_the_same_repo(self):
-        p = self.registry().get("lemonade")
-        p._downloaded = lambda: [{"id": "gemma270m-q4", "checkpoint": "unsloth/gemma-3-270m-it-GGUF:Q4_K_M"}]
-        hub = "/h/hub/models--unsloth--gemma-3-270m-it-GGUF/snapshots/abc/"
-        self.assertEqual(p.model_id({"files": [hub + "gemma-3-270m-it-Q4_K_M.gguf"], "quant": "Q4_K_M"}), "gemma270m-q4")
-        self.assertIsNone(p.model_id({"files": [hub + "gemma-3-270m-it-UD-IQ2_M.gguf"], "quant": "IQ2_M"}))      # that one is not registered
-        self.assertEqual(p.model_id({"files": [hub + "gemma-3-270m-it-weird.gguf"], "quant": ""}), "gemma270m-q4")      # no quant to go by
+class LlamacppNames(Env):
+    def test_a_model_is_named_as_the_router_will_name_it(self):
+        p = self.registry().get("llamacpp")
+        f = os.path.join(self.tmp, "m", "gemma-3-270m-it-Q4_K_M.gguf")
+        os.makedirs(os.path.dirname(f))
+        open(f, "w").close()
+        self.assertEqual(p.model_id({"stem": "gemma-3-270m-it-Q4_K_M", "files": [f]}), "gemma-3-270m-it-Q4_K_M")
+        self.assertIsNone(p.model_id({"stem": "x", "files": [f], "complete": False}))         # a split model with a part missing
+        self.assertEqual(p.ref("gemma-3-270m-it-Q4_K_M"), "gemma-3-270m-it-Q4_K_M")           # the default engine's names are the chat names
+
+    def test_a_file_migrate5_linked_keeps_its_new_id(self):
+        p = self.registry().get("llamacpp")
+        f = os.path.join(self.tmp, "hub", "gemma-3-270m-it-Q4_K_M.gguf")
+        os.makedirs(os.path.dirname(f))
+        open(f, "w").close()
+        view = llamacpp.models_dir()
+        os.makedirs(view, exist_ok=True)
+        os.symlink(f, os.path.join(view, "gemma-3-270m-it-GGUF-Q4_K_M.gguf"))
+        self.assertEqual(p.model_id({"stem": "gemma-3-270m-it-Q4_K_M", "files": [f]}), "gemma-3-270m-it-GGUF-Q4_K_M")
+
+    def test_view_ids_reads_links_and_folders(self):
+        view = os.path.join(self.tmp, "view")
+        os.makedirs(os.path.join(view, "Big-Q4"))
+        for n in ("a.gguf", "b1.gguf", "mm.gguf"):
+            open(os.path.join(self.tmp, n), "w").close()
+        os.symlink(os.path.join(self.tmp, "a.gguf"), os.path.join(view, "A-Q4.gguf"))
+        os.symlink(os.path.join(self.tmp, "b1.gguf"), os.path.join(view, "Big-Q4", "Big-Q4-00001-of-00002.gguf"))
+        os.symlink(os.path.join(self.tmp, "mm.gguf"), os.path.join(view, "Big-Q4", "mmproj-F16.gguf"))
+        prov = sys.modules["zest_provider_llamacpp"]
+        got = prov.view_ids(view)
+        self.assertEqual(got, {os.path.realpath(os.path.join(self.tmp, "a.gguf")): "A-Q4", os.path.realpath(os.path.join(self.tmp, "b1.gguf")): "Big-Q4"})
 
 
 class EnginesPage(Env):
@@ -390,7 +414,7 @@ class EnginesPage(Env):
         d = self.real().summary()
         self.assertEqual(d["user_folder"], self.user)
         by = {p["id"]: p for p in d["providers"]}
-        self.assertEqual(sorted(by), ["lemonade", "llamacpp"])
+        self.assertEqual(sorted(by), ["llamacpp"])
         for p in by.values():
             self.assertTrue({"state", "text", "error"} <= set(p["update"]))
             self.assertIn(p["update"]["state"], ("idle", "working", "done", "error", "deferred"))
@@ -400,20 +424,20 @@ class EnginesPage(Env):
         gp = provbase.GenericProvider({"id": "x", "name": "X", "api_version": 1}, self.tmp, provbase.Context())
         self.assertEqual(gp.update_status(), {"state": "idle", "text": "", "error": None})
 
-    def test_lemonade_reports_its_download_in_the_common_shape(self):
-        old = dict(engine.UPD)
+    def test_llamacpp_reports_its_download_in_the_common_shape(self):
+        old = dict(llamacpp.UPD)
         try:
-            engine.UPD.update(state="downloading", version="9.9", bytes=3, total=10, error=None)
-            u = self.real().get("lemonade").update_status()
+            llamacpp.UPD.update(state="downloading", tag="b9999", backend="cuda13", bytes=3, total=10, error=None)
+            u = self.real().get("llamacpp").update_status()
             self.assertEqual((u["state"], u["total"]), ("working", 10))
-            self.assertIn("9.9", u["text"])
-            engine.UPD.update(state="error", error="no network")
-            self.assertEqual(self.real().get("lemonade").update_status()["state"], "error")
-            engine.UPD.update(state="done", version="9.9", error=None)
-            self.assertEqual(self.real().get("lemonade").update_status()["state"], "done")
+            self.assertIn("b9999", u["text"])
+            llamacpp.UPD.update(state="error", error="no network")
+            self.assertEqual(self.real().get("llamacpp").update_status()["state"], "error")
+            llamacpp.UPD.update(state="done", error=None)
+            self.assertEqual(self.real().get("llamacpp").update_status()["state"], "done")
         finally:
-            engine.UPD.clear()
-            engine.UPD.update(old)
+            llamacpp.UPD.clear()
+            llamacpp.UPD.update(old)
 
     def test_consent_names_the_program_and_shows_the_real_command(self):
         d = os.path.join(self.user, "demo")

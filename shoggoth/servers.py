@@ -3,8 +3,12 @@ OpenAI-style server). Shoggoth uses them and never starts, stops, updates or sig
 
 A saved server is {id, preset, name, url, key}. The registry turns each one into a ConnectedServer, an engine that is only an address.
 Standard library only."""
+import ipaddress
+import json
 import time
+import urllib.error
 import urllib.parse
+import urllib.request
 
 import engines
 import provbase
@@ -124,15 +128,69 @@ def remove(sid):
     store.update(put)
 
 
+GEMINI_HOST = "generativelanguage.googleapis.com"
+
+
+def is_gemini(url):
+    return (urllib.parse.urlsplit(str(url or "")).hostname or "").lower() == GEMINI_HOST
+
+
+def api_base(url):
+    """The OpenAI-style base for a saved address: <url>/v1, except Gemini, whose OpenAI-style door is .../v1beta/openai."""
+    if is_gemini(url):
+        return "https://%s/v1beta/openai" % GEMINI_HOST
+    return url + "/v1"
+
+
+def _gemini_models(key, timeout=1.5):
+    """(status, [{id, ctx}]) from Gemini's own list (GET /v1beta/models), the chat models only (engines.gemini_chat_models)."""
+    req = urllib.request.Request("https://%s/v1beta/models?pageSize=1000" % GEMINI_HOST, headers={"x-goog-api-key": key} if key else {})
+    try:
+        with urllib.request.urlopen(req, timeout=timeout) as r:
+            d = json.loads(r.read() or b"{}")
+            status = r.status
+    except urllib.error.HTTPError as e:
+        return (401 if e.code in (400, 401, 403) and not key else e.code), []
+    except (OSError, ValueError):
+        return 0, []
+    ctx = {str(m.get("name", ""))[7:]: int(m.get("inputTokenLimit") or 0) for m in (d.get("models") or []) if isinstance(m, dict)}
+    return status, [{"id": n, "ctx": ctx.get(n, 0)} for n in engines.gemini_chat_models(d)]
+
+
+def list_models(url, key="", pin=None, timeout=1.5):
+    """(status, [{id, ctx}]) from a saved address. status 0 means it didn't answer."""
+    if is_gemini(url):
+        return _gemini_models(key, timeout)
+    status, d = provbase.http_json(api_base(url) + "/models", key, timeout=timeout, pin=pin)
+    out = []
+    if status == 200:
+        for m in (d.get("data") or []):
+            if isinstance(m, dict) and m.get("id"):
+                ctx = ((m.get("meta") or {}).get("n_ctx") if isinstance(m.get("meta"), dict) else 0) or 0
+                out.append({"id": str(m["id"]), "ctx": int(ctx) if str(ctx).isdigit() else 0})
+    return status, out
+
+
 def probe(url, key="", pin=None):
     """Ask a server what it has. Never raises, never takes longer than a couple of seconds. {reachable, needs_key, models}."""
     try:
         base = normalise(url)
     except ValueError:
         return {"reachable": False, "needs_key": False, "models": []}
-    status, d = provbase.http_json(base + "/v1/models", key, timeout=1.5, pin=pin)
-    models = provbase.jpath(d, "$.data[*].id") if status == 200 else []
-    return {"reachable": status != 0, "needs_key": status in (401, 403), "models": [str(m) for m in models]}
+    status, ms = list_models(base, key, pin)
+    return {"reachable": status != 0, "needs_key": status in (401, 403), "models": [m["id"] for m in ms] if status == 200 else []}
+
+
+def is_local(url):
+    """Is the address this computer or the local network (loopback or a private address)?"""
+    host = (urllib.parse.urlsplit(url).hostname or "").lower()
+    if host in ("localhost",):
+        return True
+    try:
+        ip = ipaddress.ip_address(host)
+    except ValueError:
+        return host.endswith(".local")
+    return ip.is_loopback or ip.is_private or ip.is_link_local
 
 
 def discover(connected=None):
@@ -142,7 +200,7 @@ def discover(connected=None):
     pres = presets()
     by_url = {}
     for p in pres:
-        if p.get("url"):
+        if p.get("url") and p.get("category") != "hosted" and is_local(normalise(p["url"])):     # hosted services are never contacted uninvited
             by_url.setdefault(normalise(p["url"]), []).append(p)
     have = {_canon(normalise(h["url"])) for h in (connected if connected is not None else all())}
     import concurrent.futures
@@ -188,6 +246,8 @@ def connect_found(found=None, typed=None):
             res["already"].append(f["url"])
         elif f["needs_key"]:
             res["needs_key"].append(f["url"])
+        elif not is_local(f["url"]) or not f.get("models"):
+            continue                            # only a server on this computer or network that lists models is connected without asking
         else:
             try:
                 e = add(f["preset"], f["url"], "", f["name"])
@@ -202,12 +262,13 @@ class ConnectedServer(provbase.GenericProvider):
 
     def __init__(self, entry, ctx):
         spec = {"id": entry["id"], "name": entry.get("name") or entry["id"], "api_version": 1, "tier": "", "run": {"mode": "external"},
-                "endpoint": {"base_url": entry["url"] + "/v1"}, "memory": {"group": ""}}
+                "endpoint": {"base_url": api_base(entry["url"])}, "memory": {"group": ""}}
         super().__init__(spec, "", ctx)
+        self._url = entry["url"]
         self._seen = (0.0, [], 0)
 
     def _entry(self):
-        return get(self.id) or {"url": self.spec["endpoint"]["base_url"][:-3], "key": ""}
+        return get(self.id) or {"url": self._url, "key": ""}
 
     def _key(self):
         return self._entry().get("key", "")
@@ -217,13 +278,8 @@ class ConnectedServer(provbase.GenericProvider):
         if time.time() - t < 5:
             return v
         e = self._entry()
-        status, d = provbase.http_json(e["url"] + "/v1/models", e.get("key", ""), timeout=1.5, pin=e.get("fp"))
-        out = []
-        if status == 200:
-            for m in (d.get("data") or []):
-                if isinstance(m, dict) and m.get("id"):
-                    ctx = ((m.get("meta") or {}).get("n_ctx") if isinstance(m.get("meta"), dict) else 0) or 0
-                    out.append({"id": str(m["id"]), "ctx": int(ctx) if str(ctx).isdigit() else 0, "port": 0, "owner": "yours"})
+        status, ms = list_models(e["url"], e.get("key", ""), e.get("fp"))
+        out = [dict(m, port=0, owner="yours") for m in ms] if status == 200 else []
         self._seen = (time.time(), out, status)
         return out
 
@@ -242,7 +298,7 @@ class ConnectedServer(provbase.GenericProvider):
         e = self._entry()
         for m in self._models():
             if model_id is None or m["id"] == model_id:
-                return {"base_url": e["url"] + "/v1", "key": e.get("key", ""), "model": m["id"], "ctx": m["ctx"], "owner": "yours", "pin": e.get("fp") or ""}
+                return {"base_url": api_base(e["url"]), "key": e.get("key", ""), "model": m["id"], "ctx": m["ctx"], "owner": "yours", "pin": e.get("fp") or ""}
         return None
 
     def ensure(self, model_id, progress, opts=None):

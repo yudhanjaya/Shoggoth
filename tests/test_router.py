@@ -18,7 +18,6 @@ sys.path.insert(0, os.path.join(HERE, "..", "shoggoth"))
 
 import gateway  # noqa: E402
 import library  # noqa: E402
-import lem  # noqa: E402
 import provbase  # noqa: E402
 import registry  # noqa: E402
 import router  # noqa: E402
@@ -309,7 +308,6 @@ class Picker(Env):
 
 class GatewayRouting(Env):
     def test_a_request_for_another_engines_model_goes_there(self):
-        lem.configure("127.0.0.1", 1, "")                                  # the default engine is elsewhere and must not be touched
         body = json.dumps({"model": "big/m1", "messages": []}).encode()
         scheme, host, port, key, path, new_body, err = gateway._route("/v1/chat/completions", body)
         self.assertIsNone(err)
@@ -401,14 +399,18 @@ class GatewayRouting(Env):
         class H:
             def send_json(self, obj, code=200, extra=None):
                 sent["obj"] = obj
-        orig = lem.request
-        lem.request = lambda *a, **k: (200, {"data": [{"id": "Lemonade-Model", "object": "model"}]})
+        asked = []
+        orig, orig_ep = gateway.provbase.http_json, self.fast.endpoint
+        gateway.provbase.http_json = lambda url, *a, **k: (asked.append(url), (200, {"data": [{"id": "Default-Model", "object": "model"}]}))[1] \
+            if url.startswith("http://127.0.0.1:1/") else orig(url, *a, **k)
+        self.fast.endpoint = lambda model_id=None: {"base_url": "http://127.0.0.1:1/v1", "key": ""}
         try:
             self.assertTrue(gateway._models_for_apps(H()))
         finally:
-            lem.request = orig
+            gateway.provbase.http_json, self.fast.endpoint = orig, orig_ep
+        self.assertEqual(asked[0], "http://127.0.0.1:1/v1/models")         # the default provider's own list first
         ids = [m["id"] for m in sent["obj"]["data"]]
-        self.assertIn("Lemonade-Model", ids)
+        self.assertIn("Default-Model", ids)
         self.assertIn("big/m1", ids)
         self.assertNotIn("fast/m1", ids)                                   # the default engine lists its own models itself
 

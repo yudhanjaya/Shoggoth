@@ -6,7 +6,7 @@ import unittest
 
 sys.path.insert(0, os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", "shoggoth"))
 
-import engine  # noqa: E402
+import zestup as engine  # noqa: E402  (vkey lives in zestup now)
 
 
 class VersionOrder(unittest.TestCase):

@@ -746,7 +746,7 @@ def models_on_cards(gpus):
             e = next((fmap.get(os.path.realpath(a)) or fmap.get(os.path.basename(a)) for a in args if a.lower().endswith(".gguf")
                       and (fmap.get(os.path.realpath(a)) or fmap.get(os.path.basename(a)))), None)
             name = str(p.get("name") or "")
-            engine = "lemonade" if re.search(r"llama-server|sd-server|whisper|lemond|stable-diffusion|ggml-rpc", name, re.I) else name.lower()
+            engine = "llamacpp" if re.search(r"llama-server|sd-server|whisper|lemond|stable-diffusion|ggml-rpc", name, re.I) else name.lower()
             if not e:
                 e = _live_on(engine)
             key = (e or {}).get("title") or engine

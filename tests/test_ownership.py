@@ -1,4 +1,4 @@
-"""What is Shoggoth's to stop, and what isn't: a process number given to another program, models another program loaded into your Lemonade.
+"""What is Shoggoth's to stop, and what isn't: a process number given to another program; everything its own llama.cpp loaded.
 Run: python3 -m unittest discover tests"""
 import os
 import shutil
@@ -12,8 +12,7 @@ import unittest
 
 sys.path.insert(0, os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", "shoggoth"))
 
-import engine  # noqa: E402
-import lem  # noqa: E402
+import llamacpp  # noqa: E402
 import provbase  # noqa: E402
 import store  # noqa: E402
 
@@ -28,7 +27,7 @@ def _load(name):
     return mod
 
 
-lemonade_provider = _load("lemonade")
+llamacpp_provider = _load("llamacpp")
 
 
 class Patch(unittest.TestCase):
@@ -51,42 +50,33 @@ class Patch(unittest.TestCase):
         setattr(mod, name, value)
 
 
-class LemonadeMakesWay(Patch):
+class LlamacppMakesWay(Patch):
     def setUp(self):
         super().setUp()
-        saved = {}
-        ctx = provbase.Context(settings=lambda pid: saved.get(pid, {}), save=lambda pid, **kv: saved.setdefault(pid, {}).update(kv))
-        self.p = lemonade_provider.Provider({"id": "lemonade", "name": "Lemonade", "api_version": 1}, self.tmp, ctx)
-        self.loaded = ["zest-loaded", "other-app"]
+        self.p = llamacpp_provider.Provider({"id": "llamacpp", "name": "llama.cpp", "api_version": 1}, self.tmp, provbase.Context())
+        self.loaded = ["a", "b"]
         self.unloaded = []
-        self.patch(lem, "get", lambda path, timeout=8: {"all_models_loaded": [{"model_name": m} for m in self.loaded]})
+        self.patch(llamacpp, "loaded_ids", lambda: list(self.loaded))
 
-        def request(method, path, body=None, timeout=10, **k):
-            if path == "/v1/unload":
-                self.unloaded.append((body or {}).get("model_name"))
-                self.loaded = [m for m in self.loaded if body and m != body.get("model_name")]
-            return 200, {}
-        self.patch(lem, "request", request)
-        self.p._mine(add="zest-loaded")
+        def unload(mid):
+            self.unloaded.append(mid)
+            self.loaded.remove(mid)
+            return True, ""
+        self.patch(llamacpp, "unload", unload)
 
-    def test_in_a_lemonade_you_run_only_zests_models_are_unloaded(self):
-        self.patch(engine, "running", lambda: False)
+    def test_its_own_router_is_emptied_and_keeps_running(self):
+        stopped = []
+        self.patch(llamacpp, "stop", lambda *a: stopped.append(1))
+        self.assertEqual(self.p.make_way(), (True, ""))
+        self.assertEqual(self.unloaded, ["a", "b"])
+        self.assertEqual(self.p.stop(), (True, ""))                            # "free everything" frees the models, not the router
+        self.assertEqual(stopped, [])
+
+    def test_a_model_that_wont_unload_is_said_so(self):
+        self.patch(llamacpp, "unload", lambda mid: (False, "llama.cpp couldn't free %s." % mid))
         ok, msg = self.p.make_way()
         self.assertFalse(ok)
-        self.assertIn("other-app", msg)
-        self.assertEqual(self.unloaded, ["zest-loaded"])
-
-    def test_models_it_loaded_as_zest_are_still_its_own(self):
-        saved = {"lemonade": {"loaded_by_zest": ["old-one"]}}
-        ctx = provbase.Context(settings=lambda pid: saved.get(pid, {}), save=lambda pid, **kv: saved.setdefault(pid, {}).update(kv))
-        p = lemonade_provider.Provider({"id": "lemonade", "name": "Lemonade", "api_version": 1}, self.tmp, ctx)
-        self.assertEqual(p._mine(add="new-one"), ["old-one", "new-one"])
-        self.assertEqual(saved["lemonade"]["loaded_by_shoggoth"], ["old-one", "new-one"])
-
-    def test_a_lemonade_zest_runs_is_emptied(self):
-        self.patch(engine, "running", lambda: True)
-        self.assertEqual(self.p.make_way(), (True, ""))
-        self.assertEqual(self.unloaded, [None])
+        self.assertIn("a", msg)
 
 
 class ProcessNumbers(unittest.TestCase):
@@ -106,7 +96,7 @@ class ProcessNumbers(unittest.TestCase):
             other.wait()
 
 
-class LemonadeReplies(unittest.TestCase):
+class RouterReplies(unittest.TestCase):
     def test_a_garbled_reply_is_status_0_not_an_exception(self):
         s = socket.socket()
         s.bind(("127.0.0.1", 0))
@@ -118,10 +108,9 @@ class LemonadeReplies(unittest.TestCase):
             c.sendall(b"not http at all\r\n\r\n")
             c.close()
         threading.Thread(target=serve, daemon=True).start()
-        status, payload = lem.request("GET", "/v1/health", host="127.0.0.1", port=s.getsockname()[1], timeout=5)
+        status, payload = llamacpp.request("GET", "/health", port=s.getsockname()[1], key="", timeout=5)
         s.close()
         self.assertEqual(status, 0)
-        self.assertTrue(payload["error"])
 
 
 if __name__ == "__main__":

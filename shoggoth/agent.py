@@ -333,7 +333,7 @@ def write_config(models, default, ctx=0):
             providers[name]["authHeader"] = True                 # services that front Claude may want the key as a Bearer token as well as x-api-key
     _write(os.path.join(d, "models.json"), {"providers": providers})
     chosen = router.info(default) or {}
-    settings = {"defaultProvider": chosen.get("pi_provider", "lemonade"), "defaultProjectTrust": "never", "quietStartup": True,
+    settings = {"defaultProvider": chosen.get("pi_provider", "llamacpp"), "defaultProjectTrust": "never", "quietStartup": True,
                 "enableInstallTelemetry": False, "autoCompaction": True,
                 # Pi's resizer needs photon-node, which the AppImage doesn't ship, and fails every picture without it; the chat box already shrinks them
                 "images": {"autoResize": False}}
@@ -770,7 +770,7 @@ class Session:
                 args += ["--append-system-prompt", note]
         if t.get("model"):
             chosen = router.info(t["model"]) or {}
-            args += ["--provider", chosen.get("pi_provider", "lemonade"), "--model", chosen.get("pi_model", t["model"])]
+            args += ["--provider", chosen.get("pi_provider", "llamacpp"), "--model", chosen.get("pi_model", t["model"])]
         extra = [f for f in t.get("folders", [])]
         _sync_packages()
         # A background job has nobody to ask, so it cannot propose skills (without SHOGGOTH_OWN_SKILLS the tool is not offered).

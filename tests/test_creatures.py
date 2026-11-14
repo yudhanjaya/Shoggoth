@@ -43,7 +43,7 @@ class ModelsOnCards(unittest.TestCase):
     def setUp(self):
         self._cmd, self._map = library._cmdline, library._file_map
         library._file_map = lambda: {"/m/qwen/Q-IQ3_S-00001-of-00002.gguf": {"title": "Qwen3.8 Flash-Next", "ids": {"strata": "q"}},
-                                     "Gemma-Q4.gguf": {"title": "Gemma 4", "ids": {"lemonade": "gemma"}}}
+                                     "Gemma-Q4.gguf": {"title": "Gemma 4", "ids": {"llamacpp": "gemma"}}}
 
     def tearDown(self):
         library._cmdline, library._file_map = self._cmd, self._map
@@ -55,7 +55,7 @@ class ModelsOnCards(unittest.TestCase):
                            {"pid": 3, "name": "python3", "mem_mb": 300}, {"pid": None, "name": "[no data]", "mem_mb": 200}]}]
         got = library.models_on_cards(gpus)[0]["models"]
         self.assertEqual([(m["model"], m["engine"], m["mem_mb"]) for m in got],
-                         [("Qwen3.8 Flash-Next", "strata", 9000), ("Gemma 4", "lemonade", 4000), (None, "python3", 300)])
+                         [("Qwen3.8 Flash-Next", "strata", 9000), ("Gemma 4", "llamacpp", 4000), (None, "python3", 300)])
 
 
 class ModelsOnCardsFallback(ModelsOnCards):

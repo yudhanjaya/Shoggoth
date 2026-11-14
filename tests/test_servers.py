@@ -414,7 +414,7 @@ class Routes(Env):
 
 
 class NothingShippedForOtherEngines(unittest.TestCase):
-    """Shoggoth ships Lemonade only. Other servers are connected by address, and nothing here may install, start, update or tune them."""
+    """Shoggoth ships its own llama.cpp only. Other servers are connected by address, and nothing here may install, start, update or tune them."""
     # names and default addresses only; models.yaml has the owner's own "coming soon" text, which says "Project Maya"
     ALLOWED = {"servers.py", os.path.join("recommendations", "models.yaml"), "index.html", "docs.md"}
 
@@ -438,7 +438,7 @@ class NothingShippedForOtherEngines(unittest.TestCase):
 
     def test_the_only_bundled_engines_are_the_ones_shoggoth_runs(self):
         folders = [d for d in os.listdir(os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", "shoggoth", "providers")) if not d.startswith("_")]
-        self.assertEqual(sorted(folders), ["lemonade", "llamacpp"])
+        self.assertEqual(sorted(folders), ["llamacpp"])
 
 
 if __name__ == "__main__":

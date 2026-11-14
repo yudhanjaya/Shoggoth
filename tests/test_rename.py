@@ -1,5 +1,5 @@
 """Shoggoth used to be called Zest. These check the pieces that keep an old install working after the rename (the settings
-folder and the ZEST_* variables are in test_store.py; Lemonade's list is in test_ownership.py).
+folder and the ZEST_* variables are in test_store.py; the engine list is in test_providers.py).
 Run: python3 -m unittest discover tests"""
 import os
 import sys
@@ -7,7 +7,7 @@ import unittest
 
 sys.path.insert(0, os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", "shoggoth"))
 
-import engine  # noqa: E402
+import llamacpp as engine  # noqa: E402  (zestup asks GitHub through llamacpp._get_json)
 import zestup  # noqa: E402
 
 

@@ -8,6 +8,7 @@ Builds live in <data>/llamacpp/<tag>/<backend>/. The two newest tags are kept. T
 (usr/llamacpp/<tag>/cpu), so Shoggoth works offline on first run; it is used only until a downloaded build is there.
 """
 import hashlib
+import http.client
 import json
 import os
 import re
@@ -407,7 +408,7 @@ def request(method, path, body=None, timeout=10, port=None, key=None):
             return e.code, json.loads(e.read() or b"{}")
         except ValueError:
             return e.code, {}
-    except (urllib.error.URLError, OSError, ValueError):
+    except (urllib.error.URLError, OSError, ValueError, http.client.HTTPException):      # HTTPException: a reply cut off or garbled
         return 0, {}
 
 

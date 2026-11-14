@@ -132,11 +132,20 @@ class Provider(provbase.GenericProvider):
             llamacpp.write_presets(presets, llamacpp.DEFAULTS)
             if isl:
                 llamacpp.unload(model_id)
-            llamacpp.reload()
+        elif isl:
+            llamacpp.unload(model_id)                # a forced reload
+        llamacpp.reload()                            # the router reads the presets again (the library may have chosen a new window)
         progress("Loading %s…" % model_id)
         ok, msg = llamacpp.load(model_id)
         if not ok:
             raise provbase.ProviderError(msg)
+        try:
+            gb = llamacpp.measured_gb(model_id)      # what the load really took, from the load log
+            if gb:
+                import library
+                library.record_measured(model_id, gb, self.loaded(model_id)[1] or None)
+        except Exception:  # noqa: BLE001 - a measurement is a bonus; the model is loaded either way
+            pass
         return self.endpoint(model_id)
 
     def stop(self, model_id=None):
