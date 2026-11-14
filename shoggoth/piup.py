@@ -155,8 +155,9 @@ def _sri(path):
     return "sha512-" + base64.b64encode(h.digest()).decode()
 
 
-def _download(url, dest, integrity, progress=False):
+def _download(url, dest, integrity, progress=False, max_bytes=None):
     req = urllib.request.Request(url, headers={"User-Agent": "Shoggoth"})
+    got = 0
     with urllib.request.urlopen(req, timeout=30) as r, open(dest, "wb") as out:
         if progress:
             UPD["total"] = int(r.headers.get("Content-Length") or 0)
@@ -165,13 +166,16 @@ def _download(url, dest, integrity, progress=False):
             if not chunk:
                 break
             out.write(chunk)
+            got += len(chunk)
+            if max_bytes and got > max_bytes:
+                raise RuntimeError("The download is far larger than expected, so it was stopped.")
             if progress:
                 UPD["bytes"] += len(chunk)
     if _sri(dest) != integrity:
         raise RuntimeError("The download didn't match npm's checksum, so it was thrown away. Try again.")
 
 
-def _extract(tar_path, dest, only=None):
+def _extract(tar_path, dest, only=None, limit=MAX_UNPACKED):
     """Unpack an npm tarball (its files sit under `package/`): regular files only, nothing that escapes `dest`."""
     real, total = os.path.realpath(dest), 0
     with tarfile.open(tar_path, "r:gz") as tf:
@@ -188,7 +192,7 @@ def _extract(tar_path, dest, only=None):
             if not target.startswith(real + os.sep):
                 raise RuntimeError("The download contains an unsafe path, so it was rejected.")
             total += m.size
-            if total > MAX_UNPACKED:
+            if total > limit:
                 raise RuntimeError("The download is far larger than expected, so it was rejected.")
             os.makedirs(os.path.dirname(target), exist_ok=True)
             with tf.extractfile(m) as src, open(target, "wb") as out:
