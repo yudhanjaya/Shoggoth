@@ -118,7 +118,10 @@ class Base(unittest.TestCase):
             os.environ["SHOGGOTH_DATA_DIR"] = self._env
         shutil.rmtree(self.tmp, ignore_errors=True)
 
-    def entry(self, name, version, integrity="", enabled=True):
+    def entry(self, name, version, integrity=None, enabled=True):
+        if integrity is None:                       # pin what the fake registry serves; pass "" for an entry with no checksum
+            _, data, over = self.reg.pkgs[name][version] if name in self.reg.pkgs and version in self.reg.pkgs[name] else (None, b"", None)
+            integrity = over or sri(data)
         return [{"name": name, "version": version, "integrity": integrity, "enabled": enabled, "notes": ""}]
 
 
@@ -142,6 +145,24 @@ class Installing(Base):
             pipkgs.install("bun-docx")                      # disabled
         with self.assertRaises(RuntimeError):
             pipkgs.install("left-pad")                      # not on the list
+
+    def test_an_enabled_entry_without_a_checksum_is_refused(self):
+        self.reg.add("a", "1.0.0")
+        with self.assertRaises(RuntimeError) as c:
+            pipkgs.install("a", self.entry("a", "1.0.0", ""))
+        self.assertIn("tested", str(c.exception))
+        self.assertEqual(pipkgs.installed(), [])
+
+    def test_curated_does_not_enable_an_entry_without_a_checksum(self):
+        lst = os.path.join(self.tmp, "list.yaml")
+        with open(lst, "w") as f:
+            f.write("- {name: a, version: 1.0.0, enabled: true}\n- {name: b, version: 1.0.0, integrity: sha512-xx, enabled: true}\n")
+        old, pipkgs.LIST_FILE = pipkgs.LIST_FILE, lst
+        try:
+            got = {e["name"]: e["enabled"] for e in pipkgs.curated()}
+        finally:
+            pipkgs.LIST_FILE = old
+        self.assertEqual(got, {"a": False, "b": True})
 
     def test_an_entry_without_a_version_is_refused(self):
         with self.assertRaises(RuntimeError):
@@ -289,6 +310,23 @@ class Dependencies(Base):
         try:
             with self.assertRaises(RuntimeError):
                 pipkgs.install("app", self.entry("app", "1.0.0"))
+        finally:
+            pipkgs._meta = orig
+
+
+    def test_a_tarball_with_another_scheme_is_refused(self):
+        self.reg.add("app", "1.0.0")
+        orig = pipkgs._meta
+
+        def meta(name, version):
+            m = orig(name, version)
+            m["dist"]["tarball"] = m["dist"]["tarball"].replace("http://", "https://", 1)    # same host, other scheme than the registry's
+            return m
+        pipkgs._meta = meta
+        try:
+            with self.assertRaises(RuntimeError) as c:
+                pipkgs.install("app", self.entry("app", "1.0.0"))
+            self.assertIn("outside", str(c.exception))
         finally:
             pipkgs._meta = orig
 

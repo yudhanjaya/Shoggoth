@@ -273,6 +273,44 @@ def _problem(label, error, line=None):
     return p
 
 
+MAX_YAML_NODES = 20000       # nodes after aliases are expanded
+MAX_YAML_DEPTH = 40
+
+
+class YamlTooBig(yaml.YAMLError):
+    problem = "it uses too many anchors/aliases or is nested too deeply"
+
+
+def _yaml_load(text):
+    """yaml.safe_load, but the node graph is measured first: aliases make a few lines expand into a huge value ("billion laughs"),
+    so a file whose expanded size or depth is over the limit is refused before anything is built."""
+    loader = yaml.SafeLoader(text)
+    try:
+        node = loader.get_single_node()
+        if node is not None:
+            sizes, active = {}, set()
+
+            def size(n, depth):
+                if depth > MAX_YAML_DEPTH or id(n) in active:        # too deep, or an anchor that contains itself
+                    raise YamlTooBig()
+                if id(n) in sizes:
+                    return sizes[id(n)]
+                active.add(id(n))
+                total = 1
+                kids = n.value if isinstance(n, yaml.SequenceNode) else [x for kv in n.value for x in kv] if isinstance(n, yaml.MappingNode) else []
+                for k in kids:
+                    total += size(k, depth + 1)
+                    if total > MAX_YAML_NODES:
+                        raise YamlTooBig()
+                active.discard(id(n))
+                sizes[id(n)] = total
+                return total
+            size(node, 0)
+        return loader.construct_document(node) if node is not None else None
+    finally:
+        loader.dispose()
+
+
 def read_file(fname, label=None):
     """([definitions], [problems]) for one file. A bad definition is left out and reported; the rest still load."""
     label = label or os.path.basename(fname)
@@ -284,7 +322,7 @@ def read_file(fname, label=None):
     if len(text) > MAX_FILE:
         return [], [_problem(label, "the file is bigger than %d KB." % (MAX_FILE // 1000))]
     try:
-        doc = json.loads(text) if fname.lower().endswith(".json") else yaml.safe_load(text)
+        doc = json.loads(text) if fname.lower().endswith(".json") else _yaml_load(text)
     except json.JSONDecodeError as e:
         return [], [_problem(label, "isn't valid JSON: %s." % e.msg, e.lineno)]
     except yaml.YAMLError as e:
@@ -305,17 +343,28 @@ def read_file(fname, label=None):
 
 def load():
     """{engines, problems}: bundled definitions first, then yours (same id replaces, enabled false hides)."""
-    byid, order, probs = {}, [], []
+    byid, order, probs, pinned = {}, [], [], {}
     for folder, tag in ((BUNDLED, "engines.d"), (user_dir(), "engines.d")):
         seen_files = _files(folder)
         for fname in seen_files:
             defs, p = read_file(fname, "%s/%s" % (tag, os.path.basename(fname)))
             probs += p
             for d in defs:
+                if folder == BUNDLED:
+                    if d["category"] == "hosted":
+                        pinned[d["id"]] = urllib.parse.urlsplit(d["url"]).netloc.lower()
+                elif d["id"] in pinned and d["enabled"] and urllib.parse.urlsplit(d["url"]).netloc.lower() != pinned[d["id"]]:
+                    # Your key for a known service must keep going to that service; a copy of it can't send it elsewhere.
+                    probs.append(_problem("%s/%s" % (tag, os.path.basename(fname)),
+                                          "`%s` is a built-in service that lives at %s, so a definition can't move it to another address. Use a new `id` for a different service." % (d["id"], pinned[d["id"]])))
+                    continue
                 if d["id"] not in byid:
                     order.append(d["id"])
                 byid[d["id"]] = d
     engines = [byid[i] for i in order if byid[i]["enabled"]]
+    for e in engines:
+        if e["category"] == "hosted":
+            e["host"] = urllib.parse.urlsplit(e["url"]).hostname or ""      # where the key goes, for the UI to show beside the key field
     engines.sort(key=lambda e: e["id"] == "other")           # the catch-all is always last
     return {"engines": engines, "problems": probs}
 
