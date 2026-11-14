@@ -1,0 +1,14 @@
+# A definition is data: it names an engine and says how to recognise it. It can start, install or run nothing, and engines.py refuses any key outside its schema.
+# Another Shoggoth on your network that shares its models (lan.py). It is never found by the port scan: its beacon finds it, and pairing
+# fills in the https address, the key and the pinned certificate. Category local: the model runs on a computer on your own network,
+# nothing goes to an outside service, and its key comes from pairing rather than from an account (hosted would wrongly mark it a paid
+# service; specialized is the bucket for engines that can't be told apart on a shared port).
+id: shoggoth
+name: Another Shoggoth
+category: local
+summary: A Shoggoth on another computer on your network that shares its models with you.
+formats:
+  - {api: openai-completions}
+loads: router
+key: required
+hint: "Turn on sharing on the other computer's Server page. It then appears under Other Shoggoths; connect it there and type the code it shows."
