@@ -2,27 +2,21 @@
 OpenAI-style server). Shoggoth uses them and never starts, stops, updates or signals them. Lemonade is the only engine Shoggoth manages.
 
 A saved server is {id, preset, name, url, key}. The registry turns each one into a ConnectedServer, an engine that is only an address.
-Standard library only (YAML is read by the copy in _vendor)."""
-import os
-import sys
+Standard library only."""
 import time
 import urllib.parse
 
-HERE = os.path.dirname(os.path.abspath(__file__))
-sys.path.insert(0, os.path.join(HERE, "_vendor"))
-import yaml  # noqa: E402
+import engines
+import provbase
+import store
 
-import provbase  # noqa: E402
-import store  # noqa: E402
-
-PRESET_FILE = os.path.join(HERE, "recommendations", "servers.yaml")
 RESERVED = {"lemonade"}
 _LOCAL = {"localhost", "::1"}
 
 
 def presets():
-    with open(PRESET_FILE) as f:
-        return [dict(p) for p in yaml.safe_load(f)]
+    """The engines Shoggoth knows by name: the definitions in engines.d (see engines.py)."""
+    return engines.presets()
 
 
 def normalise(url):

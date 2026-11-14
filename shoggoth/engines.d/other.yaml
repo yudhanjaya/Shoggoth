@@ -1,0 +1,10 @@
+# A definition is data: it names an engine and says how to recognise it. It can start, install or run nothing, and engines.py refuses any key outside its schema.
+id: other
+name: Another server
+category: local
+summary: Any server that speaks the OpenAI API.
+formats:
+  - {api: openai-completions}
+loads: fixed
+key: optional
+hint: Any server that speaks the OpenAI API. Type its address, for example http://192.168.1.20:8000.

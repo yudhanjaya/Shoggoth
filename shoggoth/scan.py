@@ -1,0 +1,292 @@
+"""Finding the inference servers already running on this computer, on any port, and saying what each one is.
+
+1. List what is listening: LISTEN sockets from /proc/net/tcp and tcp6, matched to a process through /proc/<pid>/fd for the processes
+   Shoggoth may read (the others' ports are still probed, just unnamed).
+2. Ask each port what it is: `GET /v1/models`, then the engine definitions (engines.py) decide, first match wins: the process name, then
+   a signature in a reply, then the category the candidates share ("Specialized inference engine"), else "OpenAI-style server on port N".
+3. Read the context length the definition says where to find.
+
+It only reads and sends GETs. It never starts or stops anything, never looks at other computers, and runs only when asked (start-up,
+opening the Models page, Look again), never on a timer. The /proc folder can be passed in, so tests use a fake one. Standard library only.
+"""
+import concurrent.futures
+import ipaddress
+import json
+import os
+import re
+import threading
+import time
+import urllib.error
+import urllib.parse
+import urllib.request
+
+import engines
+import provbase
+import servers
+import store
+
+PROC = "/proc"
+TIMEOUT = 1.5
+WORKERS = 8
+FRESH = 20                                  # seconds a scan is reused when the page opens the picker again
+LABELS = {"specialized": "Specialized inference engine", "local": "Local inference engine", "hosted": "Hosted service"}
+_lock = threading.Lock()
+_last = {"at": 0.0, "found": []}
+
+
+# ---------------------------------------------------------------- what is listening
+def _ip(hexaddr):
+    raw = bytes.fromhex(hexaddr)
+    if len(raw) == 4:
+        return ipaddress.IPv4Address(raw[::-1])
+    return ipaddress.IPv6Address(b"".join(raw[i:i + 4][::-1] for i in range(0, 16, 4)))     # four words, each little-endian
+
+
+def parse_tcp(text):
+    """[(ip, port, inode)] for the LISTEN rows (state 0A) of one /proc/net/tcp or tcp6 file."""
+    out = []
+    for ln in text.splitlines():
+        f = ln.split()
+        if len(f) < 10 or f[3] != "0A":
+            continue
+        try:
+            addr, _, port = f[1].rpartition(":")
+            out.append((_ip(addr), int(port, 16), int(f[9])))
+        except ValueError:
+            continue
+    return out
+
+
+def _read(path):
+    try:
+        with open(path, "rb") as f:
+            return f.read(65536)
+    except OSError:
+        return b""
+
+
+def owners(proc, inodes):
+    """{inode: (pid, process name, first two words of the command)} for the sockets in `inodes` that belong to a process we may read."""
+    want, out = {"socket:[%d]" % i: i for i in inodes}, {}
+    try:
+        pids = [p for p in os.listdir(proc) if p.isdigit()]
+    except OSError:
+        return out
+    for pid in pids:
+        try:
+            fds = os.listdir(os.path.join(proc, pid, "fd"))
+        except OSError:
+            continue                                       # someone else's process, or gone
+        mine = []
+        for fd in fds:
+            try:
+                t = os.readlink(os.path.join(proc, pid, "fd", fd))
+            except OSError:
+                continue
+            if t in want and want[t] not in out:
+                mine.append(want[t])
+        if not mine:
+            continue
+        comm = _read(os.path.join(proc, pid, "comm")).decode("utf8", "replace").strip()
+        words = [w for w in _read(os.path.join(proc, pid, "cmdline")).decode("utf8", "replace").split("\0") if w][:2]
+        for i in mine:
+            out[i] = (int(pid), comm, " ".join(words))
+    return out
+
+
+def listening(proc=PROC):
+    """Every port in LISTEN state, once: [{port, host, pid, process, cmd}] with `host` the address to probe. pid is 0 when unreadable."""
+    rows = []
+    for name in ("tcp", "tcp6"):
+        rows += parse_tcp(_read(os.path.join(proc, "net", name)).decode("utf8", "replace"))
+    own = owners(proc, {r[2] for r in rows})
+    by_port = {}
+    for ip, port, inode in rows:
+        host = "127.0.0.1" if ip.is_unspecified or (ip.version == 4 and ip.is_loopback) else "[::1]" if ip.is_loopback else \
+            "[%s]" % ip if ip.version == 6 else str(ip)
+        pid, comm, cmd = own.get(inode, (0, "", ""))
+        cur = by_port.get(port)
+        if cur is None or (not cur["pid"] and pid) or (host == "127.0.0.1" and cur["host"] != "127.0.0.1"):
+            by_port[port] = {"port": port, "host": host, "pid": pid or (cur or {}).get("pid", 0),
+                             "process": comm or (cur or {}).get("process", ""), "cmd": cmd or (cur or {}).get("cmd", "")}
+    return [by_port[p] for p in sorted(by_port)]
+
+
+# ---------------------------------------------------------------- asking a port
+def _get(base, path, key="", timeout=TIMEOUT):
+    """(status, lower-case headers, parsed JSON or None) for one GET. Status 0 when nothing HTTP answers."""
+    h = {"Authorization": "Bearer " + key} if key else {}
+    try:
+        with urllib.request.urlopen(urllib.request.Request(base + path, headers=h), timeout=timeout) as r:
+            status, head, raw = r.status, r.headers, r.read(1_000_000)
+    except urllib.error.HTTPError as e:
+        status, head, raw = e.code, e.headers, b""
+    except (OSError, ValueError):
+        return 0, {}, None
+    try:
+        d = json.loads(raw) if raw else None
+    except ValueError:
+        d = None
+    return status, {k.lower(): v for k, v in head.items()}, d
+
+
+def _process_hit(d, comm, cmd):
+    """True when a definition's `match` names this process: its name, or a word of its command (a path counts by its last part)."""
+    words = [comm] + cmd.split()
+    toks = {w.lower() for w in words if w} | {os.path.basename(w).lower() for w in words if w}
+    joined = (comm + " " + cmd).lower()
+    for m in d["match"]:
+        m = m.lower()
+        if m in toks or ((" " in m or "." in m) and m in joined):
+            return True
+    return False
+
+
+def _signature_hit(sig, fetch):
+    status, head, d = fetch(sig["path"])
+    if status != 200:
+        return False
+    if "header" in sig:
+        v = head.get(sig["header"].lower(), "")
+        return (sig["equals"].lower() == v.lower() if "equals" in sig else sig["contains"].lower() in v.lower()) if v else False
+    if "json" in sig:
+        got = [x for x in provbase.jpath(d, sig["json"]) if x is not None] if d is not None else []
+        if "equals" in sig:
+            return any(str(x) == sig["equals"] for x in got)
+        if "contains" in sig:
+            return any(sig["contains"] in str(x) for x in got)
+        return bool(got)
+    return True
+
+
+def identify(defs, port, comm, cmd, fetch):
+    """What is on this port. `fetch(path)` -> (status, headers, json). Returns {engine, name, category, how, candidates} where how is
+    process | signature | port | category | generic, and candidates is [{id, name}] (more than one only when how is category)."""
+    def named(d, how):
+        return {"engine": d["id"], "name": d["name"], "category": d["category"], "how": how, "candidates": [{"id": d["id"], "name": d["name"]}]}
+    for d in defs:
+        if d["match"] and _process_hit(d, comm, cmd):
+            return named(d, "process")
+    cache = {}
+
+    def once(path):
+        if path not in cache:
+            cache[path] = fetch(path)
+        return cache[path]
+    withsig = sorted((d for d in defs if d["identify"]), key=lambda d: port not in d["ports"])        # the ones that usually live here first
+    for d in withsig:
+        if any(_signature_hit(s, once) for s in d["identify"]):
+            return named(d, "signature")
+    left = [d for d in defs if port in d["ports"] and not d["identify"]]       # a definition with a signature that failed is ruled out
+    if len(left) == 1:
+        return named(left[0], "port")
+    if len(left) > 1 and len({d["category"] for d in left}) == 1:
+        cat = left[0]["category"]
+        return {"engine": None, "name": LABELS[cat], "category": cat, "how": "category",
+                "candidates": [{"id": d["id"], "name": d["name"]} for d in left]}
+    return {"engine": None, "name": "OpenAI-style server on port %d" % port, "category": None, "how": "generic", "candidates": []}
+
+
+def _ctx_of(m):
+    meta = m.get("meta") if isinstance(m.get("meta"), dict) else {}
+    for v in (meta.get("n_ctx"), m.get("max_model_len"), m.get("context_length"), m.get("context_window")):
+        if isinstance(v, int) and not isinstance(v, bool) and v > 0:
+            return v
+    return 0
+
+
+def _explain(r):
+    if r["how"] == "category":
+        names = [c["name"] for c in r["candidates"]]
+        if r["category"] == "specialized":
+            return ("One of the engines built for running very large models on home hardware, such as %s. They all serve an OpenAI-style "
+                    "API, so Shoggoth can use this one without knowing which it is." % ", ".join(names))
+        return "Could be any of %s. Shoggoth can use it without knowing which." % ", ".join(names)
+    if r["how"] == "generic":
+        return "It speaks the OpenAI API, but Shoggoth can't tell which program it is."
+    return ""
+
+
+def _look(s, defs, timeout):
+    """Everything one port has to say, or None when it isn't an inference server."""
+    base = "http://%s:%d" % (s["host"], s["port"])
+    status, d = provbase.http_json(base + "/v1/models", timeout=timeout)
+    if status == 0:
+        return None                                            # not HTTP, or not answering
+    who = identify(defs, s["port"], s["process"], s["cmd"], lambda p: _get(base, p, timeout=timeout))
+    items = [m for m in (d.get("data") if isinstance(d, dict) else None) or [] if isinstance(m, dict) and m.get("id")]
+    speaks = status in (401, 403) or (status == 200 and isinstance(d, dict) and isinstance(d.get("data"), list))
+    if not speaks and who["how"] not in ("process", "signature"):
+        return None
+    ctx = 0
+    dd = next((x for x in defs if x["id"] == who["engine"]), None)
+    if dd and dd["context"]:
+        st, _, cd = _get(base, dd["context"]["path"], timeout=timeout)
+        got = [x for x in provbase.jpath(cd, dd["context"]["json"]) if isinstance(x, int) and not isinstance(x, bool) and x > 0] if st == 200 and cd is not None else []
+        ctx = got[0] if got else 0
+    models = [{"id": str(m["id"]), "ctx": _ctx_of(m) or ctx} for m in items]
+    r = dict(s, url=base, preset=who["engine"] or "other", needs_key=status in (401, 403), models=models, context=ctx, **who)
+    r["explain"] = _explain(r)
+    return r
+
+
+def scan(proc=PROC, defs=None, own_ports=(), timeout=TIMEOUT):
+    """The inference servers listening here, not counting Shoggoth's own: [{port, host, url, pid, process, cmd, engine, name, category, how,
+    candidates, preset, needs_key, models: [{id, ctx}], context, explain}], by port."""
+    defs = engines.definitions() if defs is None else defs
+    mine = set(own_ports)
+    socks = [s for s in listening(proc) if s["port"] not in mine and s["pid"] != os.getpid()]
+    if not socks:
+        return []
+    with concurrent.futures.ThreadPoolExecutor(max_workers=WORKERS) as pool:
+        got = list(pool.map(lambda s: _safe(_look, s, defs, timeout), socks))
+    return [g for g in got if g]
+
+
+def _safe(fn, *a):
+    try:
+        return fn(*a)
+    except Exception:  # noqa: BLE001 - one odd port must not stop the rest being listed
+        return None
+
+
+# ---------------------------------------------------------------- what the page shows
+def _own(extra):
+    s = store.load()
+    ports = set(extra)
+    for k in ("gateway", "builtin"):
+        p = (s.get(k) or {}).get("port")
+        if isinstance(p, int):
+            ports.add(p)
+    return ports
+
+
+def latest(own_ports=(), fresh=False, **kw):
+    """(found, when) from the last scan, scanning again when asked or when it is older than FRESH seconds."""
+    with _lock:
+        if fresh or time.time() - _last["at"] > FRESH:
+            _last["found"], _last["at"] = scan(own_ports=_own(own_ports), **kw), time.time()
+        return _last["found"], _last["at"]
+
+
+def _state(entry, defs):
+    r = servers.probe(entry["url"], entry.get("key", ""))
+    d = next((x for x in defs if x["id"] == entry.get("preset")), None) or {}
+    host = (urllib.parse.urlsplit(entry["url"]).hostname or "").lower()
+    cloud = d.get("category") == "hosted"
+    return {"id": entry["id"], "kind": "cloud" if cloud else "engine", "name": entry.get("name") or entry["id"], "engine": entry.get("preset", ""),
+            "url": entry["url"], "state": "needs_key" if r["needs_key"] else "ready" if r["reachable"] else "offline", "models": len(r["models"]),
+            "loads": d.get("loads", "fixed"), "leaves_computer": cloud or host not in ("127.0.0.1", "localhost", "::1")}
+
+
+def sources(own_ports=(), fresh=False, **kw):
+    """The /ui/sources reply: {sources: [...connected...], found: [...answering but not connected...], scanned_at}.
+    Each source is {id, kind, name, engine, url, state, models, loads, leaves_computer}; each found server is a scan() entry."""
+    found, when = latest(own_ports, fresh, **kw)
+    defs = engines.definitions()
+    have = servers.all()
+    with concurrent.futures.ThreadPoolExecutor(max_workers=WORKERS) as pool:
+        srcs = list(pool.map(lambda e: _state(e, defs), have))
+    canon = {servers._canon(servers.normalise(h["url"])) for h in have}
+    return {"sources": srcs, "found": [f for f in found if servers._canon(f["url"]) not in canon], "scanned_at": when,
+            "problems": engines.problems()}

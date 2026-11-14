@@ -1,0 +1,13 @@
+# A definition is data: it names an engine and says how to recognise it. It can start, install or run nothing, and engines.py refuses any key outside its schema.
+id: maya
+name: Maya
+category: specialized
+summary: Runs very large models on home hardware.
+url: http://127.0.0.1:8080
+ports: [8080]
+match: [maya]
+formats:
+  - {api: openai-completions}
+loads: fixed
+key: optional
+hint: Use the address Maya prints when it starts. This default is a guess; check it.

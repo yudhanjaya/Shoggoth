@@ -88,10 +88,16 @@ class Saving(Env):
         self.assertEqual(servers.add("ollama", "")["url"], "http://127.0.0.1:11434")
 
     def test_presets_have_no_launch_fields(self):
+        """Every bundled definition passes the schema: the known keys only, so nothing in one can start or install anything."""
+        import engines
         names = {p["id"] for p in servers.presets()}
         self.assertTrue({"ollama", "lmstudio", "llama-server", "strata", "maya", "unsloth", "other"} <= names)
-        for p in servers.presets():
-            self.assertLessEqual(set(p), {"id", "name", "url", "hint"})
+        for f in sorted(os.listdir(engines.BUNDLED)):
+            if f.endswith(engines.EXTS):
+                defs, probs = engines.read_file(os.path.join(engines.BUNDLED, f))
+                self.assertEqual((f, probs), (f, []))
+                for d in defs:
+                    self.assertEqual(set(d), set(engines.KEYS), f)
 
 
 class Discovering(Env):
@@ -393,15 +399,24 @@ class Routes(Env):
         finally:
             sa()
 
+    def test_sources_and_the_scan_button(self):
+        import scan
+        st, raw = self.call("GET", "/ui/sources")
+        d = json.loads(raw)
+        self.assertEqual((st, sorted(d)), (200, ["found", "problems", "scanned_at", "sources"]))
+        st, raw = self.call("POST", "/ui/sources/scan", {})
+        self.assertEqual((st, sorted(json.loads(raw))), (200, ["found", "problems", "scanned_at", "sources"]))
+        self.assertGreater(scan._last["at"], 0)
+
     def test_it_needs_the_page_key(self):
-        for m, path in (("GET", "/ui/servers"), ("POST", "/ui/servers")):
+        for m, path in (("GET", "/ui/servers"), ("POST", "/ui/servers"), ("GET", "/ui/sources"), ("POST", "/ui/sources/scan")):
             self.assertEqual(self.call(m, path, {}, auth=False)[0], 401)
 
 
 class NothingShippedForOtherEngines(unittest.TestCase):
     """Shoggoth ships Lemonade only. Other servers are connected by address, and nothing here may install, start, update or tune them."""
     # names and default addresses only; models.yaml has the owner's own "coming soon" text, which says "Project Maya"
-    ALLOWED = {"servers.py", os.path.join("recommendations", "servers.yaml"), os.path.join("recommendations", "models.yaml"), "index.html", "docs.md"}
+    ALLOWED = {"servers.py", os.path.join("recommendations", "models.yaml"), "index.html", "docs.md"}
 
     def test_shipped_code_has_no_strata_or_maya_setup(self):
         root = os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", "shoggoth")
@@ -417,7 +432,7 @@ class NothingShippedForOtherEngines(unittest.TestCase):
                 for marker in ("strata launch", "strata tune", "strata update", "install.sh", "import strata"):
                     if marker in text:
                         bad.append((rel, marker))
-                if "maya" in text and rel not in self.ALLOWED:
+                if "maya" in text and rel not in self.ALLOWED and not rel.startswith("engines.d" + os.sep):
                     bad.append((rel, "maya"))
         self.assertEqual(bad, [])
 
