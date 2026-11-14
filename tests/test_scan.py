@@ -274,11 +274,36 @@ class Sources(Env):
         port, stop = serve({"/v1/models": (200, {"data": []}, {})})
         try:
             root = self.proc_for(port)
-            self.assertEqual(len(scan.sources(proc=root, defs=[], fresh=True)["found"]), 1)
+            self.assertEqual(len(scan.sources(proc=root, defs=[], fresh=True, include_other=True)["found"]), 1)
+            self.assertEqual(len(scan.sources(proc=root, defs=[], fresh=True)["found"]), 0)     # unnamed and empty: not offered
         finally:
             stop()
-        self.assertEqual(len(scan.sources(proc=root, defs=[])["found"]), 1)                   # server gone, same scan within 20 s
-        self.assertEqual(len(scan.sources(proc=root, defs=[], fresh=True)["found"]), 0)
+        self.assertEqual(len(scan.sources(proc=root, defs=[], include_other=True)["found"]), 1)  # server gone, same scan within 20 s
+        self.assertEqual(len(scan.sources(proc=root, defs=[], fresh=True, include_other=True)["found"]), 0)
+
+
+class RealServers(Env):
+    """Lists seen on the developer's machine."""
+    def test_voicebox_is_speech(self):
+        names = ["tts-1", "tts-1-hd", "gpt-4o-mini-tts", "qwen", "qwen_custom_voice", "luxtts", "chatterbox", "tada", "kokoro", "omnivoice"]
+        items = [{"id": n, "object": "model", "owned_by": "voicebox", "description": d} for n, d in zip(names,
+                 ["Alias", "Alias", "Alias", "Qwen TTS", "Qwen CustomVoice", "LuxTTS", "Chatterbox TTS", "TADA", "Kokoro", "OmniVoice"])]
+        self.assertEqual(scan.classify(items), (0, "speech"))
+
+    def test_a_bare_401_from_an_unnamed_app_is_not_offered(self):
+        # hex (a speech app) answers 401 with an empty body; a real engine that wants a key says why
+        for body, offered in (({}, False), ({"error": {"message": "Invalid API key", "type": "invalid_request_error"}}, True)):
+            port, stop = serve({"/v1/models": (401, body, {})})
+            try:
+                got = scan.sources(proc=self.proc_for(port), defs=[], fresh=True)["found"]
+            finally:
+                stop()
+            self.assertEqual(bool(got), offered)
+            if offered:
+                self.assertTrue(got[0]["needs_key"])
+
+    def test_plain_chat_names_stay_chat(self):
+        self.assertEqual(scan.classify([{"id": "Qwen3-0.6B-Q4_0"}, {"id": "gemma-4-12b-it"}]), (2, "chat"))
 
 
 class Roles(Env):

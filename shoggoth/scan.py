@@ -196,7 +196,7 @@ def _ctx_of(m):
 
 
 SPEECH_WORDS = {"whisper", "parakeet", "kokoro", "tts", "asr", "stt", "piper", "bark", "xtts", "canary", "moonshine", "voxtral", "sensevoice",
-                "transcribe", "transcription", "speech", "wav2vec", "vits"}
+                "transcribe", "transcription", "speech", "wav2vec", "vits", "voice", "voices", "chatterbox", "omnivoice"}
 EMBED_WORDS = {"bge", "e5", "embed", "embedding", "embeddings", "minilm", "gte", "rerank", "reranker", "colbert"}
 CHAT_CAPS = {"chat", "completion", "completions", "chat_completion", "chat-completion", "text", "text-generation", "generate", "tools", "vision"}
 
@@ -206,7 +206,7 @@ def _words(*vals):
 
 
 def _kind_of_words(ws):
-    if ws & SPEECH_WORDS:
+    if ws & SPEECH_WORDS or any(w.endswith("tts") for w in ws):         # LuxTTS, OpenTTS: one word, a speech engine
         return "speech"
     if ws & EMBED_WORDS:
         return "embeddings"
@@ -214,7 +214,7 @@ def _kind_of_words(ws):
 
 
 def model_kind(m):
-    """chat | speech | embeddings | other for one /v1/models item. Conservative: unless the evidence says otherwise it is chat."""
+    """chat | speech | embeddings | other | unknown for one /v1/models item. "chat" only on evidence; "unknown" when nothing says."""
     arch = m.get("architecture") if isinstance(m.get("architecture"), dict) else {}
     out = arch.get("output_modalities", m.get("output_modalities"))
     if isinstance(out, list) and out:
@@ -237,7 +237,7 @@ def model_kind(m):
                 continue
             if _kind_of_words(w):
                 return _kind_of_words(w)
-    return _kind_of_words(_words(str(m.get("id", "")), m.get("owned_by"))) or "chat"
+    return _kind_of_words(_words(str(m.get("id", "")), m.get("owned_by"), m.get("description"), m.get("name"))) or "unknown"
 
 
 def classify(items):
@@ -245,10 +245,13 @@ def classify(items):
     if not items:
         return 0, "chat"
     kinds = [model_kind(m) for m in items]
-    n = kinds.count("chat")
-    if n:
-        return n, "chat"
-    return 0, "speech" if "speech" in kinds else "embeddings" if "embeddings" in kinds else "other"
+    sure, unknown = kinds.count("chat"), kinds.count("unknown")
+    other = len(kinds) - sure - unknown
+    # A list that is mostly speech or embedding models, with nothing that says chat, is that kind of server: Voicebox lists voice
+    # names (tada, kokoro) beside its TTS aliases, and the names alone don't give the rest away.
+    if sure == 0 and other > unknown:
+        return 0, "speech" if "speech" in kinds else "embeddings" if "embeddings" in kinds else "other"
+    return sure + unknown, "chat"
 
 
 def _explain(r):
@@ -282,6 +285,8 @@ def _look(s, defs, timeout):
         ctx = got[0] if got else 0
     models = [{"id": str(m["id"]), "ctx": _ctx_of(m) or ctx} for m in items]
     chat, role = classify(items)
+    if not items and who["how"] not in ("process", "signature") and (status == 200 or not d):
+        role = "other"          # unnamed with nothing to offer, or a bare 401 with no body (OpenAI-style servers explain themselves): not a card
     r = dict(s, url=base, chat_models=chat, role=role, preset=who["engine"] or "other", needs_key=status in (401, 403), models=models, context=ctx, **who)
     r["explain"] = _explain(r)
     return r
