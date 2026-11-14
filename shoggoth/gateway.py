@@ -433,6 +433,26 @@ def _route(path, body):
     return r["scheme"], r["host"], r["port"], r["key"], r["path"], r["body"], None
 
 
+def _shoggoth_marks():
+    """{model id: {"fit", "loaded"}} from the engine picker, so an app can see whether a model fits this computer and is loaded now."""
+    try:
+        import library
+        return {m["id"]: {"fit": m["fit"], "loaded": m["live"]} for m in library.picker(30)["models"]}
+    except Exception:  # noqa: BLE001 - a model list without these notes is still a useful answer
+        return {}
+
+
+def _mark_models(items, marks):
+    """Add Shoggoth's own note to each model another app is told about, where the picker knows that model."""
+    for m in items:
+        if not isinstance(m, dict):
+            continue
+        mid = m.get("id")
+        if isinstance(mid, str) and mid in marks:
+            m["shoggoth"] = dict(marks[mid])
+    return items
+
+
 def _models_for_apps(h):
     """GET /v1/models for other apps: the default engine's list plus the models other engines can serve. Returns True when answered."""
     dflt = router.default_provider()
@@ -446,6 +466,7 @@ def _models_for_apps(h):
     if status != 200 or not isinstance(d, dict) or not isinstance(d.get("data"), list):
         return False
     d["data"] += [{"id": m["id"], "object": "model", "created": 0, "owned_by": m["engine"]} for m in router.chat_models() if m["engine"] != getattr(dflt, "id", "")]
+    _mark_models(d["data"], _shoggoth_marks())
     h.send_json(d)
     return True
 

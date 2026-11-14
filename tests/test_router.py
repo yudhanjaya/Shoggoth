@@ -413,6 +413,9 @@ class GatewayRouting(Env):
         self.assertIn("Default-Model", ids)
         self.assertIn("big/m1", ids)
         self.assertNotIn("fast/m1", ids)                                   # the default engine lists its own models itself
+        item = next(m for m in sent["obj"]["data"] if m["id"] == "big/m1")
+        picked = next(m for m in library.picker(max_age=0)["models"] if m["id"] == "big/m1")
+        self.assertEqual(item["shoggoth"], {"fit": picked["fit"], "loaded": picked["live"]})
 
 
 if __name__ == "__main__":

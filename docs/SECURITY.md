@@ -8,6 +8,7 @@ Shoggoth's UI can change settings, start engines, and run commands inside a fold
 | --- | --- | --- | --- |
 | UI server | `127.0.0.1:13306` | The browser UI and `/ui/*`, `/api/*` | Session cookie, or bearer token |
 | Gateway | `127.0.0.1:13308` | OpenAI-compatible endpoints for other applications | API key, always required |
+| Gateway, LAN side | `0.0.0.0:13308` when sharing is on | The same endpoints for other Shoggoths on the network | HTTPS only, plus that Shoggoth's own pairing key |
 | Built-in Lemonade | Private port | Inference | Random `LEMONADE_API_KEY`, known only to Shoggoth |
 
 ## UI authentication
@@ -25,6 +26,16 @@ Shoggoth's UI can change settings, start engines, and run commands inside a fold
 - Use `--host 0.0.0.0` only on a trusted network. The UI is authenticated, but traffic is not encrypted.
 - The gateway can be opened to the local network from **Advanced > Server**. Any holder of the API key can then use the loaded models. Traffic is unencrypted. **Make a new key** invalidates the previous key immediately.
 - The gateway cannot download, delete, or install anything, or change settings.
+
+## Sharing with other Shoggoths
+
+- The network side of the gateway speaks HTTPS only, TLS 1.2 or newer. The certificate is self-signed and made once, on the first share, then kept in the config folder.
+- Plain HTTP from another device is not served. The connection is answered with a short message that tells the person to use `https://` and to trust the certificate shown on the Server page.
+- Pairing uses a 6-digit code. The code is shown on the server and typed on the client, and the exchange runs over the TLS link the client has already pinned to the certificate fingerprint it saw in the beacon.
+- Each paired client gets its own key. The server keeps only a hash of each key, so the keys cannot be read back out of the settings file.
+- **Remove** revokes a key at once.
+- The beacon is a UDP packet every 2 seconds on port 13309. It carries the computer's name, a profile id, the Shoggoth version, the gateway port, the certificate fingerprint and the model count. It carries no model names, chats, folders or keys.
+- Keys for the hosted services (OpenRouter, Nous Portal, OpenCode, Command Code and Google Gemini) are stored in the settings file, which is kept at mode `600`.
 
 ## Agent approval gate
 

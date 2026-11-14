@@ -98,6 +98,22 @@ class Listening(Env):
         self.assertIsNone(li.feed(lan.encode(dict(INFO, fp=fp)), "192.168.1.20"))
         self.assertEqual(li.found(), [])
 
+    def test_a_paired_shoggoth_at_a_new_address_is_found_again(self):
+        fp = "cd" * 32
+        store.update(lambda s: s["servers"].append({"id": "desk", "preset": "shoggoth", "name": "desk-pc", "url": "https://192.168.1.20:13308",
+                                                    "key": "shoggoth-peer-x", "fp": fp}))
+        li = lan.Listener()
+        orig, lan.handshake_ok = lan.handshake_ok, lambda host, port, pin, timeout=3: True
+        try:
+            li.feed(lan.encode(dict(INFO, fp=fp)), "192.168.1.77")
+            for _ in range(100):                                        # the handshake check runs in its own thread
+                if servers.get("desk")["url"] == "https://192.168.1.77:13308":
+                    break
+                time.sleep(0.02)
+        finally:
+            lan.handshake_ok = orig
+        self.assertEqual(servers.get("desk")["url"], "https://192.168.1.77:13308")     # found by fingerprint, not by address
+
     def test_real_udp(self):
         with socket.socket(socket.AF_INET, socket.SOCK_DGRAM) as s:
             s.bind(("127.0.0.1", 0))

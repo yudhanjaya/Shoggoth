@@ -9,6 +9,8 @@ import threading
 DEFAULTS = {
     "mode": None,            # "builtin" (Shoggoth runs its own llama.cpp) or "connected" (only servers you connected)
     "setup_done": False,
+    # A person who chose another Shoggoth on the network and does not want llama.cpp downloaded on this computer yet.
+    "client_only": False,
     # Shoggoth's own llama.cpp: backend (cpu, vulkan, cuda12, cuda13, rocm; "" = the newest build here), tag (a pinned build, "" = newest),
     # device (llama.cpp's name, like cuda0; "" = all), max_loaded (keep up to N models loaded), enabled (false turns it off)
     "llamacpp": {"backend": "", "tag": "", "device": "", "max_loaded": 1},

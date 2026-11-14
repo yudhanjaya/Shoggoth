@@ -131,11 +131,16 @@ def current_mode():
 
 
 # ---------------------------------------------------------------- state for the setup screen
+def paired_shoggoth():
+    """True when another Shoggoth is connected and paired (its certificate pinned): its models can be used without llama.cpp here."""
+    return any(h.get("preset") == "shoggoth" and h.get("fp") for h in servers.all())
+
+
 def setup_state():
     s = store.load()
     return {
         "setup_done": bool(s["setup_done"]),
-        "mode": effective_mode(s), "mode_saved": s["mode"],
+        "mode": effective_mode(s), "mode_saved": s["mode"], "client_only": bool(s.get("client_only")),
         "engine": llamacpp.summary(s),
         "connected": len(servers.all()),
         "models": {"storage": s["models"]["storage"], "custom_dir": s["models"]["custom_dir"],
@@ -519,6 +524,10 @@ class Handler(BaseHTTPRequestHandler):
             raise ValueError("Unknown choice.")
         s = store.load()
         s["mode"] = mode
+        if mode == "connected" and paired_shoggoth():
+            s["client_only"] = True        # another Shoggoth on the network serves the models: nothing to download here yet
+        elif mode == "builtin":
+            s["client_only"] = False       # "also run models on this computer"
         store.save(s)
         apply_mode(s)
         self.send_json(setup_state())

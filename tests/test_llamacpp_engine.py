@@ -312,6 +312,22 @@ class Routes(Env):
         self.assertEqual(json.loads(self.call("POST", "/ui/setup/mode", {"mode": "connected"})[1])["mode"], "connected")
         self.assertEqual(self.call("POST", "/ui/setup/mode", {"mode": "existing-lemonade"})[0], 400)
 
+    def test_choosing_a_paired_shoggoth_skips_the_engine_download(self):
+        store.update(lambda s: s["servers"].append({"id": "desk", "preset": "shoggoth", "name": "desk-pc", "url": "https://192.168.1.5:13308",
+                                                    "key": "shoggoth-peer-x", "fp": "ab" * 32}))
+        st, raw = self.call("POST", "/ui/setup/mode", {"mode": "connected"})
+        self.assertEqual((st, json.loads(raw)["client_only"]), (200, True))
+        self.assertTrue(store.load()["client_only"])
+        self.assertTrue(json.loads(self.call("GET", "/ui/setup")[1])["client_only"])
+        st, raw = self.call("POST", "/ui/setup/mode", {"mode": "builtin"})            # "also run models on this computer"
+        self.assertEqual((st, json.loads(raw)["client_only"]), (200, False))
+
+    def test_another_kind_of_server_does_not_skip_the_engine_download(self):
+        store.update(lambda s: s["servers"].append({"id": "box", "preset": "ollama", "name": "box", "url": "http://192.168.1.6:11434",
+                                                    "key": "shoggoth-peer-x"}))
+        st, raw = self.call("POST", "/ui/setup/mode", {"mode": "connected"})
+        self.assertEqual((st, json.loads(raw)["client_only"]), (200, False))
+
     def test_api_forwards_only_the_openai_style_paths(self):
         st, raw = self.call("GET", "/api/v1/system-info")
         self.assertEqual(st, 404)

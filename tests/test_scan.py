@@ -14,6 +14,7 @@ sys.path.insert(0, os.path.join(HERE, "..", "shoggoth"))
 import engines  # noqa: E402
 import scan  # noqa: E402
 import servers  # noqa: E402
+import store  # noqa: E402
 
 FIXTURE = os.path.join(HERE, "fixtures", "proc")
 
@@ -386,6 +387,12 @@ class Sources(Env):
         servers.add("other", "http://127.0.0.1:1")
         d = scan.sources(proc=self.proc_for(2), defs=[], fresh=True)
         self.assertEqual([(s["id"], s["state"]) for s in d["sources"]], [("other", "offline")])
+
+    def test_an_offline_paired_shoggoth_keeps_its_name(self):
+        store.update(lambda s: s.__setitem__("servers", [{"id": "desk", "preset": "shoggoth", "name": "desk-pc", "url": "https://127.0.0.1:1",
+                                                         "key": "shoggoth-peer-x", "fp": "ab" * 32}]))
+        d = scan.sources(proc=self.proc_for(2), defs=engines.definitions(), fresh=True)
+        self.assertEqual([(s["id"], s["name"], s["kind"], s["state"]) for s in d["sources"]], [("desk", "desk-pc", "shoggoth", "offline")])
 
     def test_a_scan_is_reused_until_asked_again(self):
         port, stop = serve({"/v1/models": (200, {"data": []}, {})})
