@@ -24,7 +24,7 @@
 
 The goal of Shoggoth is to be an easy on-ramp to running models locally for new users. I built this to help a friend get local AI models running on their own hardware without having to deal with a million different options, command-line configurations and Reddit posts.
 
-The local AI space can be hard to decipher sometimes - llama, lemonade, VLLM, sglang, the millions of *what agent? what harness?* questions . . . a lot of people want to tinker aren't used to the various terminals, programs and jargon that we use in the local AI space. 
+The local AI space can be hard to decipher sometimes - llama.cpp, VLLM, sglang, the millions of *what agent? what harness?* questions . . . a lot of people want to tinker aren't used to the various terminals, programs and jargon that we use in the local AI space. 
 
 Shoggoth makes that task easier. It also bundles in help docs so that you understand how this stuff works over and under the hood. 
 
@@ -43,7 +43,7 @@ Shoggoth is not meant to be a replacement for various backends or front-ends. I 
 | **Diagrams and documents** | Ask for a picture or a README. It appears in the chat. |
 | **Skills** | A skill is a short instruction sheet that makes small models far more dependable. Add more by pasting a GitHub link. |
 | **Models that fit your computer** | Shoggoth tells you which models will run well on your hardware. It downloads them for you. |
-| **Your own server** | Shoggoth runs [Lemonade](https://lemonade-server.ai). Under Advanced you can connect a server you run yourself (Ollama, LM Studio, llama.cpp, Strata, Maya, Unsloth) and use its models in chat. Shoggoth doesn't install or start those. |
+| **Your own server** | Shoggoth runs [llama.cpp](https://github.com/ggml-org/llama.cpp) for you. Under Advanced you can connect a server you run yourself (Ollama, LM Studio, llama.cpp, Strata, Maya, Unsloth) and use its models in chat. Shoggoth doesn't install or start those. |
 | **Use your models in other apps** | Share them with Hermes, or anything that talks to an OpenAI-style server. |
 
 ## Install
@@ -62,7 +62,7 @@ Shoggoth is not meant to be a replacement for various backends or front-ends. I 
 
 **You need:** Linux on x86_64 with glibc 2.38 or newer (Ubuntu 24.04, Debian 13, Fedora 39 or Linux Mint 22 and newer), a few common libraries (OpenSSL 3, zstd, libdrm), your graphics driver if you want the GPU, and internet for the first-run downloads. No FUSE? Run it with `--appimage-extract-and-run`.
 
-Close the browser tab and Shoggoth quits about two seconds later. Already have models, or your own Lemonade? Shoggoth finds them.
+Close the browser tab and Shoggoth quits about two seconds later. Already have models, or run your own server? Shoggoth finds them.
 
 ## Picking a model
 
@@ -76,7 +76,7 @@ Shoggoth suggests one model per size on first run. It keeps a tested list on the
 
 ![Models: the recommended picks, each with its creature, and a button to set up and get it](docs/screenshots/models.png)
 
-Shoggoth runs large models through Lemonade. For models with over a hundred billion parameters, Lemonade and llama.cpp are not yet as good as [Strata](https://github.com/Niko1221/Strata), [Basalt](https://github.com/jesdga95/basalt) and [Maya](https://github.com/mw00/project-maya). That is true as of November 2026. It will change. To run models that size, set one of those up yourself. Then connect it under Advanced, Connect a server.
+Shoggoth runs large models through llama.cpp. For models with over a hundred billion parameters, llama.cpp is not yet as good as [Strata](https://github.com/Niko1221/Strata), [Basalt](https://github.com/jesdga95/basalt) and [Maya](https://github.com/mw00/project-maya). That is true as of November 2026. It will change. To run models that size, set one of those up yourself. Then connect it under Advanced, Connect a server.
 
 ## Models you can see
 
@@ -124,10 +124,10 @@ And because I love it. (Shoggoth used to be called Zest.)
 
 Shoggoth drives two open-source programs, so you don't have to:
 
-- [Lemonade](https://lemonade-server.ai) runs your models.
+- [llama.cpp](https://github.com/ggml-org/llama.cpp) runs your models.
 - [Pi](https://pi.dev) lets a model read files, edit them and run commands.
 
-The AppImage includes Lemonade and Pi. Everything updates from **Advanced > Engines** with one button, checked against published checksums.
+The AppImage includes llama.cpp's processor-only build and Pi. Everything updates from **Advanced > Engines** with one button, checked against published checksums.
 
 ## Your data and privacy
 
@@ -154,8 +154,7 @@ Everything stays on your computer. Chats, jobs, skills and settings live in `~/.
 ## Shoggoth is built on
 
 - **[Pi](https://github.com/earendil-works/pi)** (MIT), bundled unmodified in the AppImage. Its licence is included alongside it.
-- **[Lemonade](https://github.com/lemonade-sdk/lemonade)** (Apache-2.0), bundled unmodified in the AppImage. Its licence is included alongside it.
-- **[llama.cpp](https://github.com/ggml-org/llama.cpp)** (MIT) and the other backends, which Lemonade downloads when you install them.
+- **[llama.cpp](https://github.com/ggml-org/llama.cpp)** (MIT) and the other backends, which Shoggoth downloads when you install them.
 - **[Chakra Petch](https://github.com/m4rc1e/Chakra-Petch), [Doto](https://github.com/oliverlalan/Doto), [Inter](https://rsms.me/inter/) and [JetBrains Mono](https://www.jetbrains.com/lp/mono/)** (SIL Open Font License), embedded in the page. Their licences are in `docs/plans/assets/fonts` and ship in the AppImage.
 - **[Python](https://www.python.org)** (PSF licence), via a relocatable build from [python-build-standalone](https://github.com/astral-sh/python-build-standalone), bundled so the AppImage needs no system Python.
 

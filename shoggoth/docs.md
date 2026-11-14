@@ -27,7 +27,7 @@ flowchart LR
 | --- | --- |
 | **Shoggoth** | The window you are using. It shows the conversation, asks your permission, and manages everything else. |
 | **Pi** | A helper that lets a model do things: read a file, edit it, run a command, follow a skill. It comes bundled inside Shoggoth. |
-| **An engine** | A program that loads a model into your computer's memory and gets answers out of it. Shoggoth picks the right one for each model, starts it, and frees the memory when you switch, so you never have to. Shoggoth runs Lemonade for you. If you run another server yourself, such as Ollama or LM Studio, you can connect it under **Advanced > Engines**. |
+| **An engine** | A program that loads a model into your computer's memory and gets answers out of it. Shoggoth picks the right one for each model, starts it, and frees the memory when you switch, so you never have to. Shoggoth runs llama.cpp for you. If you run another server yourself, such as Ollama or LM Studio, you can connect it under **Advanced > Engines**. |
 | **The model** | The AI. A large file, usually a few gigabytes (a lot more for the Large ones), that you download once and keep. |
 
 ## Your first minutes
@@ -172,8 +172,8 @@ Replies can also contain tables, lists, links, quotes and code blocks, shown nea
 
 Open **Models**. It lists every model on your computer, whichever program runs it. Models are grouped by size. **Small** ones use under 10 GB of graphics memory and are ready in seconds. **Medium** ones use 10 to 24 GB. **Large** ones are for big computers and take a couple of minutes to start.
 
-- **Installed** is what you have. **Recommended for this computer** has the models I have tried and recommend on systems from 10 GB of VRAM to 26 GB of VRAM, and any Large model that will fit yours. The Large picks are Qwen3.8 Flash-Next (IQ3_S, and the smaller IQ2_XS), plus Coder (code only) and Swift 1.5, which are offered but never suggested. You can pick one before Lemonade is installed: Shoggoth sets Lemonade up, then gets the model. Models that aren't ready yet are greyed out under **Coming soon**. **All models** is everything Lemonade offers, tested or not, with a filter for pictures, speech and sound. Each model shows whether it is tuned.
-- **Very large models.** Shoggoth runs large models through Lemonade. Only the ones Lemonade can serve are listed. For models with over a hundred billion parameters, Lemonade and llama.cpp are not yet as good as [Strata](https://github.com/Niko1221/Strata), [Basalt](https://github.com/jesdga95/basalt) and [Maya](https://github.com/mw00/project-maya). That is true as of November 2026. It will change. To run models that size, set one of those up yourself. Then connect it under Advanced, Connect a server.
+- **Installed** is what you have. **Recommended for this computer** has the models I have tried and recommend on systems from 10 GB of VRAM to 26 GB of VRAM, and any Large model that will fit yours. The Large picks are Qwen3.8 Flash-Next (IQ3_S, and the smaller IQ2_XS), plus Coder (code only) and Swift 1.5, which are offered but never suggested. You can pick one before llama.cpp is installed: Shoggoth sets llama.cpp up, then gets the model. Models that aren't ready yet are greyed out under **Coming soon**. **All models** is everything your engines report, tested or not, with a filter for pictures, speech and sound. Each model shows whether it is tuned.
+- **Very large models.** Shoggoth runs large models through llama.cpp. Only the ones llama.cpp can serve are listed. For models with over a hundred billion parameters, llama.cpp is not yet as good as [Strata](https://github.com/Niko1221/Strata), [Basalt](https://github.com/jesdga95/basalt) and [Maya](https://github.com/mw00/project-maya). That is true as of November 2026. It will change. To run models that size, set one of those up yourself. Then connect it under Advanced, Connect a server.
 - **Get it** downloads a model in the background while you carry on. Every download shows together in one "Getting models" strip. A model that needs something extra (the first Large model, for example) sets that up for you as part of the same step.
 - **Add models from other sources** brings in a model from a Hugging Face link, from a folder you choose, or from the usual places other programs keep them (LM Studio, Ollama and so on). Nothing is copied.
 - **Chat with it** starts a chat with a model. **Settings** on a model edits how it runs. Choosing a model in the chat gets it ready, and frees the memory of whatever else was running.
@@ -186,18 +186,18 @@ Open **Models**. It lists every model on your computer, whichever program runs i
 
 ## Connecting a server of your own
 
-Shoggoth runs Lemonade by itself. If you already run another server, you can use its models in Chat and in your other apps.
+Shoggoth runs llama.cpp by itself. If you already run another server, you can use its models in Chat and in your other apps.
 
 - Open **Advanced > Engines** and find **Connect a server**. Pick Ollama, LM Studio, llama.cpp, Strata, Maya, Unsloth, or **Another server** for anything that speaks the OpenAI API.
 - The address fills in with the usual one for that server. Change it if yours is different, and add the API key if it has one. Then press **Probe and connect**. Shoggoth looks at that address and at the usual address of each server in the list. It connects the ones that answer. It skips any that want a key (add those with the form) and any you already connected.
 - Its models appear in the model picker as `<server name>/<model>`.
-- **Shoggoth never starts, stops, updates or installs a connected server.** Start it yourself first. It does not free memory for it either, so if it shares a graphics card with Lemonade, you manage that. **Remove** forgets the address and leaves the server alone.
+- **Shoggoth never starts, stops, updates or installs a connected server.** Start it yourself first. It does not free memory for it either, so if it shares a graphics card with Shoggoth's llama.cpp, you manage that. **Remove** forgets the address and leaves the server alone.
 
 ## Tuning
 
 **Advanced > Tuning** makes a model answer faster on your computer. It measures the model as it is, tries changes one at a time, and keeps only those that clearly help. Answers stay the same: tuning never changes how a model is compressed.
 
-- **Models on Lemonade** are tuned by Shoggoth: batch sizes, flash attention, threads, which backend and which graphics cards. Each is tried by loading the model with it, and a change is kept only if it beats the measuring noise (and at least 3%). **Undo** puts the old settings back.
+- **Models on llama.cpp** are tuned by Shoggoth: batch sizes, flash attention, threads, which backend and which graphics cards. Each is tried by loading the model with it, and a change is kept only if it beats the measuring noise (and at least 3%). **Undo** puts the old settings back.
 - Every model shows one of four states: tuned (with its speed and gain), tuned but the standard settings were already the fastest, out of date, or not tuned. **Test speed** measures a small or medium model without changing anything. Every model card has **Leave some graphics memory free**. Each reply in Chat shows how fast it was written.
 - Tuning needs the graphics cards to itself, so Shoggoth shows the plan first (time, and what it will stop) and waits for your go-ahead. It stops what Shoggoth started. It waits while a chat is answering. It will not start while a large model you started yourself is running. You can cancel at any time and nothing is changed.
 
@@ -210,10 +210,10 @@ Shoggoth runs Lemonade by itself. If you already run another server, you can use
 Everything in **Advanced** is optional.
 
 - **Hardware** is a lab bench. Each machine at the back is one graphics card, with lights for how hard it is working and the name of the model on it. The beaker shows memory used across all your cards. The gauge shows the hottest card. The coil and radio show how hard they compute. Below the bench you choose which cards Shoggoth uses, and in what order.
-- **Engines** has a card for Lemonade, with its version, whether it is running, an update check, and which hardware each kind of model uses (CUDA, Vulkan, ROCm or the processor). Under it, **Connect a server** adds one you run yourself. Each connected server has its own card. You can also add an engine Shoggoth starts for you by putting a folder with a `provider.yaml` file in the engines folder shown at the bottom of the page, then pressing **Reload**. Shoggoth asks once before an engine you added runs a program. The repository's `docs/ENGINES.md` explains how. `providers check <folder>` (run the AppImage with those words) tells you what to fix before you reload.
-- **Engine settings** is every setting Lemonade has, searchable.
+- **Engines** has a card for llama.cpp, with its version, whether it is running, an update check, and which build it uses (CUDA, Vulkan, ROCm or the processor). Under it, **Connect a server** adds one you run yourself. Each connected server has its own card. You can also add an engine Shoggoth starts for you by putting a folder with a `provider.yaml` file in the engines folder shown at the bottom of the page, then pressing **Reload**. Shoggoth asks once before an engine you added runs a program. The repository's `docs/ENGINES.md` explains how. `providers check <folder>` (run the AppImage with those words) tells you what to fix before you reload.
+- **Engine settings** is every setting the engine has, searchable.
 - **Themes** changes how Shoggoth looks. **Light Touch** is the default; **Braun T3** and **Teenage Engineering** are softer and bolder takes on the same idea. The rest borrow colour schemes from popular code editors (Dracula, Nord, Monokai Pro, GitHub Light and more). Nothing moves when you switch. Your choice is remembered on this computer.
-- **Advanced > Engines** is where **Check and update everything** lives. Its **My own server** section is for the rare case where you run Lemonade yourself, for example as a system service: connect Shoggoth to it there instead of using the one Shoggoth starts.
+- **Advanced > Engines** is where **Check and update everything** lives. Its **Connect a server** section is for a server you run yourself, for example Ollama, or a llama.cpp you start as a system service: connect Shoggoth to it there instead of using the one Shoggoth starts.
 
 ## Where things live, and privacy
 
@@ -250,7 +250,7 @@ Shoggoth goes online only to: download models you ask for, check for Shoggoth, e
 ## Terms used
 
 - **Model**: the AI itself, a big file on your computer.
-- **Engine**: a program that runs the model. Shoggoth runs Lemonade. A server you run yourself and connect also counts as an engine. Shoggoth never starts or stops it.
+- **Engine**: a program that runs the model. Shoggoth runs llama.cpp. A server you run yourself and connect also counts as an engine. Shoggoth never starts or stops it.
 - **Small, Medium, Large**: how Shoggoth groups models by what they need. Small fits under 10 GB of graphics memory, Medium 10 to 24 GB, and Large needs more than that.
 - **Models**: the list of every model on your computer, and where you get new ones.
 - **Pi**: the helper that lets a model read files, make edits and run steps.

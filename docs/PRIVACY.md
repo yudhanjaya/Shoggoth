@@ -6,11 +6,11 @@ Shoggoth runs inference locally. Chat content is not sent to any remote service.
 
 | What | Where |
 | --- | --- |
-| Shoggoth's settings, including the built-in Lemonade's API key and the key for other apps (file mode `600`) | `~/.config/shoggoth/settings.json` |
+| Shoggoth's settings, including the keys for other apps and hosted services (file mode `600`) | `~/.config/shoggoth/settings.json` |
 | The secret that lets a browser into Shoggoth's own page (file mode `600`) | `~/.config/shoggoth/ui-token` |
-| Lemonade updates you've downloaded | `~/.local/share/shoggoth/lemonade/<version>/` |
-| The built-in Lemonade's own config and the backends it installs | `~/.local/share/shoggoth/lemonade-data/` |
-| Its log (shown at the bottom of Advanced > Server) | `~/.local/share/shoggoth/lemond.log` |
+| llama.cpp builds you've downloaded | `~/.local/share/shoggoth/llamacpp/<tag>/<backend>/` |
+| llama.cpp's own state: presets, the running router, and its view of your Models folder | `~/.local/share/shoggoth/llamacpp/` and `~/.local/share/shoggoth/views/llamacpp/` |
+| The engine log (shown at the bottom of Advanced > Server) | `~/.local/share/shoggoth/llamacpp/llama-server.log` |
 | Links to models you chose to bring in, and each engine's view of your Models folder | `~/.local/share/shoggoth/` (`imported-models/`, `views/`) |
 | Models you download | the folder you chose (a **Models** folder with a subfolder for each engine), or the Hugging Face cache if you kept that |
 | Skills you added, and which are switched on | `~/.local/share/shoggoth/skills/` |
@@ -32,7 +32,7 @@ Chat content stays on the machine. The single exception is web search.
 - You can switch web search off for good in the chat's **Details** panel.
 - The default provider is DuckDuckGo. It needs no key, but it has no official search service, so it can refuse automated searches. Shoggoth makes one request per search and never retries. If DuckDuckGo refuses, Shoggoth suggests a free [Brave Search](https://brave.com/search/api/) or [Tavily](https://app.tavily.com/) key. You paste the key into the same panel. Shoggoth stores it in its settings file on this computer.
 
-Apart from search, a chat with a folder runs locally. Pi starts offline, with telemetry and update checks off. It talks only to your Lemonade. If you add your own extensions, MCP servers or web tools to Pi, those can reach the network.
+Apart from search, a chat with a folder runs locally. Pi starts offline, with telemetry and update checks off. It talks only to your local engine. If you add your own extensions, MCP servers or web tools to Pi, those can reach the network.
 
 **Sharing on your local network.** When "Share my models with other Shoggoths on this network" is on, Shoggoth sends a small UDP beacon to port 13309 every 2 seconds. The beacon carries this computer's name, a profile id, the Shoggoth version, the gateway port, the certificate fingerprint and the number of models. It carries nothing else: no model names, no chats, no folder names and no keys. Other Shoggoths that heard the beacon and were paired with this one connect over HTTPS only. Removing a pair stops that computer's key at once, so it cannot reach the shared models again.
 
@@ -46,11 +46,11 @@ Hosted services. Five services are built in and each one is contacted only if yo
 
 Keys for these services are stored in Shoggoth's settings file, which is kept at mode 600 so only your user account can read it.
 
-Destinations contacted by Shoggoth and the bundled engines:
+Destinations contacted by Shoggoth and its bundled engine:
 
 - **html.duckduckgo.com, api.search.brave.com or api.tavily.com:** only when you let the model search the web. Only the words of that search are sent.
 - **codeload.github.com:** only when you paste a link under Skills, to download that repository's skills.
 - **registry.npmjs.org:** to look for and download Pi updates. The automatic-check switch covers it.
-- **api.github.com and github.com:** to look for and download Shoggoth and Lemonade updates (you can switch off the automatic check), for Lemonade to download the backends you install. Servers you connect under Advanced > Engines are contacted only at the address you gave.
+- **api.github.com and github.com:** to look for and download Shoggoth and llama.cpp updates (you can switch off the automatic check), and to download the llama.cpp builds you install. Servers you connect under Advanced > Engines are contacted only at the address you gave.
 - **Hugging Face:** your engines download the models you choose from there. Shoggoth reads a repository's public file list when you add one by link. Gated models, which need a login, aren't supported yet.
 - **Benchmark and community sites:** the links in **How do I choose a model?** open in your browser only when you click them. Shoggoth never contacts those sites itself.

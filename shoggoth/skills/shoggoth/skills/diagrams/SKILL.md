@@ -35,8 +35,8 @@ Shoggoth turns a fenced `mermaid` block in your reply into a picture, with Copy 
 flowchart LR
     user["User"] --> app["Shoggoth page"]
     app --> pi["Pi agent"]
-    pi --> lem["Lemonade"]
-    lem --> model[("Model")]
+    pi --> eng["llama.cpp"]
+    eng --> model[("Model")]
     pi -->|asks first| ok{"Allowed?"}
     ok -->|yes| files["Files in the folder"]
     ok -->|no| pi

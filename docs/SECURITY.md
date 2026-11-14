@@ -9,7 +9,7 @@ Shoggoth's UI can change settings, start engines, and run commands inside a fold
 | UI server | `127.0.0.1:13306` | The browser UI and `/ui/*`, `/api/*` | Session cookie, or bearer token |
 | Gateway | `127.0.0.1:13308` | OpenAI-compatible endpoints for other applications | API key, always required |
 | Gateway, LAN side | `0.0.0.0:13308` when sharing is on | The same endpoints for other Shoggoths on the network | HTTPS only, plus that Shoggoth's own pairing key |
-| Built-in Lemonade | Private port | Inference | Random `LEMONADE_API_KEY`, known only to Shoggoth |
+| Built-in llama.cpp router | Private port | Inference | Random API key, known only to Shoggoth |
 
 ## UI authentication
 
@@ -51,6 +51,6 @@ Related controls:
 
 ## Supply chain
 
-- Downloaded components (Lemonade, Pi, and the AppImage build inputs) are verified against pinned or published checksums before use. Pi's npm tarball is verified against the registry's sha512 integrity value.
+- Downloaded components (llama.cpp, Pi, and the AppImage build inputs) are verified against pinned or published checksums before use. Pi's npm tarball is verified against the registry's sha512 integrity value.
 - Skills installed from a link are downloaded as plain files from `codeload.github.com` (40 MB cap, 3,000 files, no path escapes). Nothing from the download is executed at install time. A skill's scripts run only if the model runs them, which requires approval in `ask` mode.
 - Engines added by users must be approved once. Approval is keyed to a fingerprint of the engine's files, so any change prompts again. Engines bundled with Shoggoth are trusted.

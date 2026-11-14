@@ -94,7 +94,7 @@ A thread per job (`_job_loop` in `agent.py`) prompts Pi, waits for `agent_settle
 
 ## Updating Pi
 
-`piup.py` (shown as **The agent helper** under Advanced > Engines) works like the Lemonade update:
+`piup.py` (shown as **The agent helper** under Advanced > Engines) works like the llama.cpp update:
 
 1. Query the npm registry for the latest release.
 2. Download the tarball and the exact `jiti` version that release depends on, and verify both against npm's sha512 integrity values.

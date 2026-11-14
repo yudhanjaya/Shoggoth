@@ -7,7 +7,7 @@ from util import cached, run
 
 # ---------------------------------------------------------------- llama-server arguments
 def lem_split(text):
-    """Split an argument string exactly the way Lemonade does: on spaces, with '...' or "..." grouping and no escapes."""
+    """Split a preset's argument string: on spaces, with '...' or "..." grouping and no escapes."""
     out, cur, quote, started = [], "", None, False
     for c in text or "":
         if quote is None and c in "\"'":
@@ -26,7 +26,7 @@ def lem_split(text):
 
 
 def lem_quote(tok):
-    """Quote one token so Lemonade reads it back unchanged (None if it contains both kinds of quote)."""
+    """Quote one token so it reads back unchanged (None if it contains both kinds of quote)."""
     if tok and not re.search(r"[\s'\"]", tok):
         return tok
     if "'" not in tok:
@@ -36,7 +36,7 @@ def lem_quote(tok):
     return None
 
 
-# Lemonade refuses these because it sets them itself.
+# Shoggoth sets these itself, so a preset must not.
 MANAGED_FLAGS = {
     "-m": "the model path", "--model": "the model path", "--port": "the port",
     "--ctx-size": "the context window", "-c": "the context window",
@@ -77,7 +77,7 @@ def known_flags(bin_path):
 
 
 # ---------------------------------------------------------------- argument schema
-# Flags that are not model settings (or that would break Lemonade's own connection to llama-server).
+# Flags that are not model settings (or that would break Shoggoth's own connection to llama-server).
 _HIDDEN = {"-h", "--help", "--usage", "--version", "--license", "--completion-bash", "--list-devices",
            "--cache-list", "--host", "--port", "--api-key", "--api-key-file", "--path", "--alias", "-a",
            "--tags", "--reuse-port", "--timeout", "-to", "--threads-http"}
@@ -237,7 +237,7 @@ def check_args(text, bin_path):
         seen.add(flag)
         if flag in MANAGED_FLAGS:
             problems.append({"flag": flag, "level": "error",
-                             "message": f"Lemonade sets {MANAGED_FLAGS[flag]} itself and rejects this option."})
+                             "message": f"Shoggoth sets {MANAGED_FLAGS[flag]} itself and rejects this option."})
         elif flags is not None and flag not in flags:
             problems.append({"flag": flag, "level": "warn",
                              "message": FOREIGN_HINTS.get(flag, "This llama-server build doesn't list this option, so loading would probably fail.")})

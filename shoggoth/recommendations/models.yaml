@@ -30,10 +30,10 @@ recommended:
       Q8_0: 9.01
     take: >-
       Competent all-rounder. Terse language, handles tool calls reasonably well, fast - an excellent all-round pick.
-  # Not in Lemonade's list: Shoggoth fetches the bartowski Q4_K_M and adds it as a custom model. It needs Lemonade 2026.41.1 or newer
-  # (llama.cpp b11393 or later), which fixed MiMo's tool-call template detection.
+  # Shoggoth fetches the bartowski Q4_K_M directly. It needs llama.cpp b11393 or newer,
+  # which fixed MiMo's tool-call template detection.
   - id: user.MiMo-V2.6-Distill-Qwen-9B-Q4_K_M
-    also: [MiMo-V2.6-Distill-Qwen-9B-Q4_K_M]      # Lemonade lists a custom model without the `user.` it is added under
+    also: [MiMo-V2.6-Distill-Qwen-9B-Q4_K_M]      # the name 4.x used, without the `user.` it was added under
     title: MiMo-V2.6-Distill-Qwen-9B
     size_gb: 5.84
     tools: true
@@ -143,7 +143,7 @@ coming_soon:
   - title: LFM3
     take: >-
       Incredibly small, all-purpose models, extremely competent in my testing, punching well above their size. Will be included once
-      Lemonade updates its llama.cpp.
+      Shoggoth's llama.cpp supports it.
   - title: GLM 5.3 Flash
     take: >-
       Much better model, but much slower. Comparable to Claude Opus 4.8 (which often did better work than Opus 5) and OpenAI GPT Terra 5.6
