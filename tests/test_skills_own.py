@@ -75,6 +75,17 @@ class Listing(Base):
         skills.toggle("own/tidy-desk", False)
         self.assertFalse(skills.own_list()[0]["enabled"])
 
+    def test_a_folder_nested_deeper_is_not_listed(self):
+        # Everything listed must be editable, and edit and delete act on direct children only.
+        deep = os.path.join(skills.own_skills_dir(), "deep", "nested-one")
+        os.makedirs(deep)
+        with open(os.path.join(deep, "SKILL.md"), "w", encoding="utf8") as f:
+            f.write(GOOD % "nested-one")
+        self.own("tidy-desk")
+        self.assertEqual([s["name"] for s in skills.own_list()], ["tidy-desk"])
+        with self.assertRaises(ValueError):
+            skills.own_save("nested-one", GOOD % "nested-one")
+
 
 class Editing(Base):
     def test_an_edit_rewrites_the_skill_and_keeps_its_source_json(self):

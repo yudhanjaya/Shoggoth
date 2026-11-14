@@ -484,9 +484,20 @@ def _own_folder(name):
 
 
 def own_list():
-    """The "Written by your models" set as the page edits it: each skill's whole SKILL.md (a plain textarea) and its source.json."""
+    """The "Written by your models" set as the page edits it: each skill's whole SKILL.md (a plain textarea) and its source.json.
+
+    One folder per skill directly in own_skills_dir(), which is what save_skill writes and what own_save and own_delete act on, so
+    everything listed here can be edited. A folder nested deeper is left out rather than listed and then refused."""
     out = []
-    for name, path in _skills_in(own_skills_dir()):
+    base = own_skills_dir()
+    try:
+        names = sorted(os.listdir(base))
+    except OSError:
+        names = []
+    for name in names:
+        path = os.path.join(base, name)
+        if not os.path.isfile(os.path.join(path, "SKILL.md")):
+            continue
         try:
             with open(os.path.join(path, "SKILL.md"), encoding="utf8", errors="replace") as f:
                 text = f.read(MAX_OWN_TEXT + 1)
