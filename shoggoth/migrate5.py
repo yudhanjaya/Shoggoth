@@ -475,13 +475,14 @@ def delete_lemonade(data_dir, library_dir):
     its logs. Folders are left in place and model storage is never touched. Returns
     {"deleted": int, "freed_bytes": int, "freed_gb": float, "errors": [str]}."""
     roots = _lemonade_roots(data_dir, library_dir)
+    log = os.path.realpath(os.path.join(data_dir, "lemond.log"))          # the log sits beside the roots, not inside one
     deleted = freed = 0
     errors = []
     for p, size in lemonade_paths(data_dir, library_dir):
         if os.path.islink(p):                                             # a link is not Lemonade's file, and its target isn't either
             continue
         real = os.path.realpath(p)
-        if not any(real.startswith(r + os.sep) for r in roots):           # only what really lives in one of the roots
+        if not (real == log or any(real.startswith(r + os.sep) for r in roots)):  # only what really lives in one of the roots
             continue
         try:
             os.remove(p)

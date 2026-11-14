@@ -306,7 +306,10 @@ class LemonadeOwnFiles(Base):
 
     def test_delete_removes_the_engine_files_and_leaves_every_model(self):
         engine = os.path.join(self.data, "lemonade-data", "lemond-backend.bin")
+        log = os.path.join(self.data, "lemond.log")
         outside = os.path.join(self.tmp, "keep-me.bin")
+        with open(log, "wb") as f:
+            f.write(b"L" * 300)
         with open(outside, "wb") as f:
             f.write(b"K" * 100)
         models = self.model_files()
@@ -316,6 +319,7 @@ class LemonadeOwnFiles(Base):
         self.assertEqual(r["errors"], [])
         self.assertFalse(os.path.exists(engine))
         self.assertFalse(os.path.exists(os.path.join(self.data, "lemonade-data", "user_models.json")))
+        self.assertFalse(os.path.exists(log))
         for q, meta in models.items():
             st = os.stat(q)
             self.assertEqual((st.st_ino, st.st_size), meta, q)
