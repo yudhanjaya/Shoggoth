@@ -8,11 +8,14 @@ from unittest import mock
 
 sys.path.insert(0, os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", "shoggoth"))
 
-import lemtune  # noqa: E402
+import llamacpp  # noqa: E402
+import llamatune  # noqa: E402
 import modelmeta  # noqa: E402
 import tuning  # noqa: E402
 
 KEYS = {"engine", "model", "state", "source", "gain_pct", "decode_tok_s", "baseline_tok_s", "when", "can_undo", "preset", "details", "speed", "headroom_gb"}
+
+
 class Env(unittest.TestCase):
     def setUp(self):
         self.tmp = tempfile.mkdtemp()
@@ -25,45 +28,46 @@ class Env(unittest.TestCase):
         shutil.rmtree(self.tmp, ignore_errors=True)
 
 
-class LemonadeSide(Env):
-    ENV = {"backend": "cuda", "llama": "b11395", "lemonade": "2026.44.1"}
+class LlamaSide(Env):
+    ENV = {"backend": "cuda13", "llama": "b12375"}
 
     def save(self, **kw):
-        res = {"engine": "lemonade", "model": "m", "outcome": "improved", "gain_pct": 8.0, "decode_tok_s": 54.0, "baseline_tok_s": 50.0, "when": "2026-10-30T10:00:00", "applied": {"llamacpp_args": "-fa on"}, "env": dict(self.ENV)}
+        res = {"engine": "llamacpp", "model": "m", "outcome": "improved", "gain_pct": 8.0, "decode_tok_s": 54.0, "baseline_tok_s": 50.0,
+               "when": "2026-10-30T10:00:00", "applied": {"flash-attn": "on"}, "env": dict(self.ENV)}
         res.update(kw)
-        lemtune._save_results({"m": res})
+        llamatune._save_results({"m": res})
 
     def test_nothing_saved_is_not_tuned(self):
         self.assertEqual(tuning.tuning_for("m")["state"], "not_tuned")
 
     def test_a_saved_gain_is_tuned(self):
         self.save()
-        with mock.patch.object(tuning, "lemonade_env", lambda: dict(self.ENV)):
+        with mock.patch.object(tuning, "llamacpp_env", lambda: dict(self.ENV)):
             t = tuning.tuning_for("m")
         self.assertEqual((t["state"], t["gain_pct"], t["can_undo"]), ("tuned", 8.0, True))
 
     def test_defaults_already_best(self):
         self.save(outcome="default_confirmed", gain_pct=0.0, applied=None)
-        with mock.patch.object(tuning, "lemonade_env", lambda: dict(self.ENV)):
+        with mock.patch.object(tuning, "llamacpp_env", lambda: dict(self.ENV)):
             self.assertEqual(tuning.tuning_for("m")["state"], "default_best")
 
     def test_a_new_llama_cpp_build_makes_it_stale(self):
         self.save()
-        with mock.patch.object(tuning, "lemonade_env", lambda: dict(self.ENV, llama="b12000")):
+        with mock.patch.object(tuning, "llamacpp_env", lambda: dict(self.ENV, llama="b13000")):
             t = tuning.tuning_for("m")
         self.assertEqual(t["state"], "stale")
         self.assertIn("llama changed", t["details"]["reasons"][0])
 
     def test_an_old_result_with_no_versions_is_not_called_stale(self):
         self.save(env={})
-        with mock.patch.object(tuning, "lemonade_env", lambda: dict(self.ENV)):
+        with mock.patch.object(tuning, "llamacpp_env", lambda: dict(self.ENV)):
             self.assertEqual(tuning.tuning_for("m")["state"], "tuned")
 
 
 class SameShape(Env):
     def test_a_tuned_and_an_untuned_model_answer_with_the_same_keys(self):
-        with mock.patch.object(tuning, "lemonade_env", lambda: {}):
-            lemtune._save_results({"m": {"outcome": "improved", "gain_pct": 3.0}})
+        with mock.patch.object(tuning, "llamacpp_env", lambda: {}):
+            llamatune._save_results({"m": {"outcome": "improved", "gain_pct": 3.0}})
             keys = [set(tuning.tuning_for(x)) for x in ("m", "unknown")]
         for k in keys:
             self.assertEqual(k, KEYS)
@@ -75,15 +79,16 @@ class SameShape(Env):
 
 
 class Headroom(Env):
-    def test_it_becomes_a_fit_target_in_mib_and_keeps_other_arguments(self):
+    def test_it_becomes_a_fit_target_in_mib_and_keeps_the_models_own_flags(self):
         modelmeta.update("m", headroom_gb=2.5)
-        with mock.patch.object(lemtune, "options_of", lambda m: {"effective": {"llamacpp_args": "--threads 8"}}):
-            args = lemtune.headroom_args("m")
+        llamacpp.write_presets({"m": {"threads": 8, "model": "/x/m.gguf"}}, llamacpp.DEFAULTS)
+        args = llamatune.headroom_args("m")
         self.assertIn("--threads 8", args)
         self.assertIn("--fit-target 2560", args)
+        self.assertNotIn("/x/m.gguf", args)
 
     def test_no_headroom_leaves_the_load_alone(self):
-        self.assertIsNone(lemtune.headroom_args("m"))
+        self.assertIsNone(llamatune.headroom_args("m"))
 
 
 if __name__ == "__main__":

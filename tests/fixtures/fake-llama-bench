@@ -1,0 +1,29 @@
+#!/usr/bin/env python3
+"""A stand-in for llama-bench: prints canned JSON, with speeds that depend on the flags so a tune has something to find.
+FAKE_BENCH_LOG: a file that gets one line per call. FAKE_BENCH_FAIL: exit 1 when this value is among the arguments."""
+import json
+import os
+import sys
+
+a = sys.argv[1:]
+if os.environ.get("FAKE_BENCH_LOG"):
+    with open(os.environ["FAKE_BENCH_LOG"], "a") as f:
+        f.write(" ".join(a) + "\n")
+fail = os.environ.get("FAKE_BENCH_FAIL")
+if fail and fail in a:
+    sys.stderr.write("error: cannot run that\n")
+    sys.exit(1)
+tg, pp = 100.0, 2000.0
+for i, x in enumerate(a):
+    if x == "-fa" and a[i + 1] == "off":
+        tg, pp = tg * 0.8, pp * 0.7
+    if x == "-ub" and a[i + 1] == "1024":
+        pp *= 1.5
+
+
+def row(n_p, n_g, v):
+    return {"model_filename": a[a.index("-m") + 1], "n_prompt": n_p, "n_gen": n_g, "avg_ts": v, "stddev_ts": v * 0.01,
+            "samples_ts": [v * 0.995, v * 1.005, v]}
+
+
+print(json.dumps([row(1024, 0, pp), row(0, 64, tg)], indent=2))
