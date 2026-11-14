@@ -10,6 +10,7 @@ Builds live in <data>/llamacpp/<tag>/<backend>/. The two newest tags are kept. T
 import hashlib
 import http.client
 import json
+import logging
 import os
 import re
 import shutil
@@ -17,6 +18,7 @@ import signal
 import socket
 import subprocess
 import tarfile
+import tempfile
 import threading
 import time
 import urllib.error
@@ -182,9 +184,16 @@ def _glibc():
         return None
 
 
+def _env(build_dir):
+    """The environment llama-server runs in: its own folder first on the library path (the CUDA libraries live there)."""
+    env = dict(os.environ)
+    env["LD_LIBRARY_PATH"] = build_dir + (":" + env["LD_LIBRARY_PATH"] if env.get("LD_LIBRARY_PATH") else "")
+    return env
+
+
 def version_of(exe):
-    """'b12375' from `llama-server --version`, or None when it won't run."""
-    code, out = util.run([exe, "--version"], 15)
+    """'b12375' from `llama-server --version`, or None when it won't run. Run the way start() runs it."""
+    code, out = util.run([exe, "--version"], 15, env=_env(os.path.dirname(os.path.abspath(exe))))
     m = re.search(r"build (\d+)", out)
     return "b" + m.group(1) if m else None
 
@@ -194,7 +203,7 @@ def _safe_extract(tar_path, dest, cap=2 * 1024 ** 3):
     """Unpack into `dest`, dropping the archive's top folder. Regular files, folders, and links that stay inside `dest`."""
     real = os.path.realpath(dest)
     inside = lambda p: p == real or p.startswith(real + os.sep)          # noqa: E731
-    total, links = 0, []
+    total, links, hard = 0, [], []
     with tarfile.open(tar_path, "r:gz") as tf:
         for m in tf.getmembers():
             parts = m.name.split("/")
@@ -220,27 +229,80 @@ def _safe_extract(tar_path, dest, cap=2 * 1024 ** 3):
                 with tf.extractfile(m) as src, open(target, "wb") as out:
                     shutil.copyfileobj(src, out)
                 os.chmod(target, 0o755 if m.mode & 0o111 else 0o644)
+            elif m.islnk():                           # a hard link names another member of the archive
+                src = "/".join(m.linkname.split("/")[1:])
+                if m.linkname.startswith("/") or ".." in m.linkname.split("/") or not src:
+                    raise RuntimeError("The download contains a link that points outside it, so it was rejected.")
+                hard.append((os.path.join(real, src), target))
+            else:
+                raise RuntimeError("The download contains a file of a kind Shoggoth won't unpack (%s), so it was rejected." % m.name)
+    for src, target in hard:                         # after the files, so the one linked to is already there
+        if not inside(os.path.realpath(src)) or os.path.islink(src) or not os.path.isfile(src):
+            raise RuntimeError("The download contains a link that points outside it, so it was rejected.")
+        if os.path.lexists(target):
+            os.remove(target)
+        os.link(src, target)
     for link, target in links:                       # after the files, so a link never stands where a file goes
         if os.path.lexists(target):
             os.remove(target)
         os.symlink(link, target)
 
 
-def _download(url, path, sha256, cancel=None):
+def _download(url, path, sha256, cancel=None, size=0):
+    """Fetch url to `path`. The bytes arrive in a .part file that is kept when the transfer breaks, so the next try
+    carries on from there (Range). The size (when known) and then the sha256 are checked before `path` appears."""
+    part = os.path.join(root(), ".partial", sha256 + ".part")
+    os.makedirs(os.path.dirname(part), exist_ok=True)
+    have = os.path.getsize(part) if os.path.isfile(part) else 0
+    if size and have > size:
+        os.remove(part)
+        have = 0
     h = hashlib.sha256()
-    req = urllib.request.Request(url, headers={"User-Agent": "Shoggoth"})
-    with urllib.request.urlopen(req, timeout=30) as r, open(path, "wb") as out:
-        while True:
-            if cancel is not None and cancel.is_set():
-                raise RuntimeError("Cancelled.")
-            chunk = r.read(1 << 16)
-            if not chunk:
-                break
-            out.write(chunk)
-            h.update(chunk)
-            UPD["bytes"] += len(chunk)
+    if have:
+        with open(part, "rb") as f:
+            for block in iter(lambda: f.read(1 << 20), b""):
+                h.update(block)
+    if not size or have < size:
+        headers = {"User-Agent": "Shoggoth"}
+        if have:
+            headers["Range"] = "bytes=%d-" % have
+        try:
+            r = urllib.request.urlopen(urllib.request.Request(url, headers=headers), timeout=30)
+        except urllib.error.HTTPError as e:
+            e.close()
+            if e.code == 416 and have:               # the part file doesn't fit the file any more
+                os.remove(part)
+            raise
+        with r:
+            mode = "ab"
+            if have:
+                m = re.match(r"bytes (\d+)-", r.headers.get("Content-Range") or "")
+                if r.status == 206 and m and int(m.group(1)) == have:
+                    pass
+                elif r.status == 200:                # the server ignored Range and sends it all: start over
+                    mode, have, h = "wb", 0, hashlib.sha256()
+                else:
+                    raise RuntimeError("The server gave an answer Shoggoth can't resume from. Try again.")
+            UPD["bytes"] += have
+            with open(part, mode) as out:
+                while True:
+                    if cancel is not None and cancel.is_set():
+                        raise RuntimeError("Cancelled.")
+                    chunk = r.read(1 << 16)
+                    if not chunk:
+                        break
+                    out.write(chunk)
+                    h.update(chunk)
+                    UPD["bytes"] += len(chunk)
+    else:
+        UPD["bytes"] += have
+    got = os.path.getsize(part)
+    if size and got != size:
+        raise RuntimeError("The download was cut short. Try again; it will carry on from where it stopped.")
     if h.hexdigest() != sha256:
+        os.remove(part)
         raise RuntimeError("The download didn't match GitHub's checksum, so it was thrown away. Try again.")
+    os.replace(part, path)
 
 
 def install(backend, release=None, cancel=None):
@@ -249,14 +311,13 @@ def install(backend, release=None, cancel=None):
     files = pick_assets(rel, backend)
     tag = rel["tag_name"]
     final = os.path.join(root(), tag, backend)
-    tmp = final + ".part"
+    os.makedirs(root(), exist_ok=True)
+    tmp = tempfile.mkdtemp(prefix=".install-", dir=root())       # its own folder, so two installs never share files
     UPD.update(state="downloading", bytes=0, total=sum(f[2] for f in files), tag=tag, backend=backend, error=None)
     try:
-        shutil.rmtree(tmp, ignore_errors=True)
-        os.makedirs(tmp)
-        for name, url, _size, sha in files:
+        for name, url, size, sha in files:
             tgz = os.path.join(tmp, ".dl-" + name)
-            _download(url, tgz, sha, cancel)
+            _download(url, tgz, sha, cancel, size)
             UPD["state"] = "installing"
             _safe_extract(tgz, tmp)
             os.remove(tgz)
@@ -270,9 +331,11 @@ def install(backend, release=None, cancel=None):
                 raise RuntimeError("This llama.cpp build needs a newer Linux (glibc %d.%d or later; this computer has %d.%d)."
                                    % (NEEDS_GLIBC + g))
             raise RuntimeError("The new llama.cpp won't start on this computer.")
-        shutil.rmtree(final, ignore_errors=True)
-        os.replace(tmp, final)
-        _prune()
+        with _lock:
+            os.makedirs(os.path.dirname(final), exist_ok=True)
+            shutil.rmtree(final, ignore_errors=True)
+            os.replace(tmp, final)
+            _prune()
         util.invalidate()
         UPD["state"] = "done"
         return next(b for b in builds() if b["dir"] == final)
@@ -285,16 +348,21 @@ def install(backend, release=None, cancel=None):
 
 def _prune(keep=2):
     """Keep the newest `keep` tags (and never the one running)."""
-    running = (_state.get("dir") or "")
-    tags = sorted({b["tag"] for b in builds() if not b["bundled"]}, key=_tag_num, reverse=True)
+    live = [_state.get("dir") or ""]
+    info = _load_run()                              # a router an earlier Shoggoth started and this one hasn't adopted yet
+    if info.get("pid") and _start_time(info["pid"]) is not None and _start_time(info["pid"]) == info.get("t"):
+        live.append(info.get("dir") or "")
+    tags = sorted({b["tag"] for b in builds() if not b["bundled"]}, key=_tag_num, reverse=True)      # never the bundled build
     for tag in tags[keep:]:
         d = os.path.join(root(), tag)
-        if not running.startswith(d + os.sep):
+        if not any(r.startswith(d + os.sep) for r in live):
             shutil.rmtree(d, ignore_errors=True)
 
 
 # ---------------------------------------------------------------- the presets file
-_KEY = re.compile(r"^[A-Za-z0-9][A-Za-z0-9_-]*$")
+_KEY = re.compile(r"^[A-Za-z][A-Za-z0-9_-]*$")
+_COMMENT = re.compile(r"(^|\s)[;#]")              # llama.cpp's reader cuts a value at whitespace followed by ; or #
+_RESERVED = ("default",)                          # (and "*": [*] is the defaults section for every model)
 _SECTION = re.compile(r"^[^\[\]\r\n;#]+$")
 
 
@@ -307,6 +375,8 @@ def write_presets(models, defaults=None, path=None):
         s = str(v)
         if "\n" in s or "\r" in s:
             raise ValueError("A preset value can't span lines.")
+        if _COMMENT.search(s):
+            raise ValueError("A preset value can't hold ; or # after a space (llama.cpp would cut it there): %r" % s)
         return s
 
     def block(name, opts):
@@ -322,9 +392,14 @@ def write_presets(models, defaults=None, path=None):
         return lines
 
     out = ["; Written by Shoggoth. Changes here are replaced; change settings in Shoggoth instead.", "version = 1", ""]
+    models = dict(models)
+    star = models.pop("*", None)              # read_presets() hands the defaults section back among the models: it is the
+    defaults = defaults or star               # defaults, never a model, and is written once
     if defaults:
         out += block("*", defaults) + [""]
     for mid in sorted(models):
+        if mid in _RESERVED:
+            raise ValueError("%r is not allowed as a model name." % mid)
         out += block(mid, models[mid]) + [""]
     p = path or presets_path()
     os.makedirs(os.path.dirname(p), exist_ok=True)
@@ -375,12 +450,30 @@ def _start_time(pid):
         return None
 
 
+def _write_private(path, text):
+    """Write a file that only this user can read, from the first byte (never a moment at the default mode)."""
+    os.makedirs(os.path.dirname(path), exist_ok=True)
+    tmp = path + ".tmp"
+    fd = os.open(tmp, os.O_WRONLY | os.O_CREAT | os.O_TRUNC, 0o600)
+    try:
+        os.fchmod(fd, 0o600)                         # a stale temp file may have had another mode
+        with os.fdopen(fd, "w") as f:
+            f.write(text)
+    except BaseException:
+        try:
+            os.remove(tmp)
+        except OSError:
+            pass
+        raise
+    os.replace(tmp, path)
+
+
+def _key_file():
+    return os.path.join(root(), "api-key")
+
+
 def _save_run(info):
-    os.makedirs(root(), exist_ok=True)
-    with open(_run_file() + ".tmp", "w") as f:
-        json.dump(info, f)
-    os.replace(_run_file() + ".tmp", _run_file())
-    os.chmod(_run_file(), 0o600)                     # it holds the server's key
+    _write_private(_run_file(), json.dumps(info))    # it holds the server's key
 
 
 def _load_run():
@@ -416,12 +509,22 @@ def healthy(port=None, key=None):
     return request("GET", "/health", timeout=2, port=port, key=key)[0] == 200
 
 
+def _is_ours(port, key):
+    """True when what answers on the port really wants this key: /health is open to everyone, so ask for a model list
+    (which needs the key) and check it is refused without it and served with it."""
+    return (isinstance(key, str) and bool(key) and healthy(port, key)
+            and request("GET", "/v1/models", timeout=3, port=port, key="")[0] == 401
+            and request("GET", "/v1/models", timeout=3, port=port, key=key)[0] == 200)
+
+
 def _adopt():
     """A router a previous Shoggoth started that is still running and answers to its key is reused."""
     info = _load_run()
-    pid, port = info.get("pid"), info.get("port")
-    if pid and port and _start_time(pid) == info.get("t") and healthy(port, info.get("key")):
-        _state.update(proc=None, pid=pid, port=port, key=info.get("key"), dir=info.get("dir"), error=None)
+    pid, port, t = info.get("pid"), info.get("port"), info.get("t")
+    if (isinstance(pid, int) and isinstance(port, int) and isinstance(t, str) and t and _start_time(pid) == t
+            and _is_ours(port, info.get("key"))):
+        _state.update(proc=None, pid=pid, port=port, key=info.get("key"), dir=info.get("dir"), t=t, error=None)
+        logging.getLogger("shoggoth").info("llama.cpp: reusing the router already running (pid %d, port %d)", pid, port)
         return True
     return False
 
@@ -434,8 +537,9 @@ def running():
 
 
 def command(build, port, key, models_dir, max_loaded=1, extra=None):
-    """The command line that starts the router."""
-    cmd = [build["server"], "--host", "127.0.0.1", "--port", str(port), "--api-key", key,
+    """The command line that starts the router. The key goes in a private file (start() writes it), never on the command
+    line, where any user on the computer could read it."""
+    cmd = [build["server"], "--host", "127.0.0.1", "--port", str(port), "--api-key-file", _key_file(),
            "--models-dir", models_dir, "--models-preset", presets_path(), "--models-max", str(max_loaded),
            "--no-webui", "--metrics", "--slots"]
     return cmd + list(extra or [])
@@ -458,17 +562,17 @@ def start(models_dir, settings=None, ready_timeout=60):
             _state["error"] = "No free port for llama.cpp."
             return False
         key = store.new_key()
+        _write_private(_key_file(), key + "\n")
         os.makedirs(models_dir, exist_ok=True)
         log = open(log_path(), "ab")
-        env = dict(os.environ)
-        env["LD_LIBRARY_PATH"] = b["dir"] + (":" + env["LD_LIBRARY_PATH"] if env.get("LD_LIBRARY_PATH") else "")
+        env = _env(b["dir"])
         env["LLAMA_CACHE"] = os.path.join(root(), "cache")      # its own cache, so models other tools fetched into ~/.cache/llama.cpp stay theirs
         env.setdefault("CUDA_DEVICE_ORDER", "PCI_BUS_ID")          # number NVIDIA cards the way nvidia-smi does
         extra = ["--device", cfg["device"]] if cfg.get("device") else []
         proc = subprocess.Popen(command(b, port, key, models_dir, max_loaded(cfg), extra), stdin=subprocess.DEVNULL,
                                 stdout=log, stderr=subprocess.STDOUT, cwd=b["dir"], env=env, start_new_session=True)
         log.close()
-        _state.update(proc=proc, pid=proc.pid, port=port, key=key, dir=b["dir"], error=None)
+        _state.update(proc=proc, pid=proc.pid, port=port, key=key, dir=b["dir"], t=_start_time(proc.pid), error=None)
         end = time.time() + ready_timeout
         while time.time() < end:
             if proc.poll() is not None:
@@ -490,6 +594,10 @@ def stop(grace=20):
         if not pid:
             return
         t = _start_time(pid)
+        if _state.get("t") and t != _state["t"]:     # the pid now belongs to some other process: leave it alone
+            _state.update(proc=None, pid=None, port=None, key=None, t=None)
+            _forget_run_files()
+            return
         try:
             os.killpg(pid, signal.SIGTERM)
         except OSError:
@@ -504,9 +612,14 @@ def stop(grace=20):
                 os.killpg(pid, signal.SIGKILL)
             except OSError:
                 pass
-        _state.update(proc=None, pid=None, port=None, key=None)
+        _state.update(proc=None, pid=None, port=None, key=None, t=None)
+        _forget_run_files()
+
+
+def _forget_run_files():
+    for p in (_run_file(), _run_file() + ".tmp", _key_file(), _key_file() + ".tmp"):
         try:
-            os.remove(_run_file())
+            os.remove(p)
         except OSError:
             pass
 

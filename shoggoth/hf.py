@@ -3,6 +3,7 @@
 Downloads are done here (Range resume into <file>.part, sha256 checked as the bytes arrive), no other program involved.
 Only public files; no login. Standard library only.
 """
+import collections
 import hashlib
 import json
 import os
@@ -126,10 +127,16 @@ def _open(url, headers=None):
         raise HFError("Couldn't reach Hugging Face. Check your internet connection.")
 
 
+MAX_JSON = 16 * 1024 * 1024      # the most of an API reply Shoggoth will read into memory
+
+
 def _get_json(url):
     with _open(url, {"Accept": "application/json"}) as r:
         try:
-            return json.loads(r.read())
+            raw = r.read(MAX_JSON + 1)
+            if len(raw) > MAX_JSON:
+                raise HFError("Hugging Face sent a reply that is too large to read.", final=True)
+            return json.loads(raw)
         except (OSError, ValueError):
             raise HFError("Hugging Face sent something Shoggoth couldn't read.")
 
@@ -181,14 +188,28 @@ def group_files(tree):
     return groups, mmproj
 
 
+_BRANCH = re.compile(r"^[A-Za-z0-9][\w.\-/]{0,99}$")
+
+
+def default_branch(repo):
+    """The repo's default branch as Hugging Face reports it, or 'main' when it doesn't say (or can't be asked)."""
+    try:
+        info = _get_json("%s/api/models/%s" % (BASE, repo))
+    except HFError:
+        return "main"                      # the file list below will report any real problem
+    b = info.get("default_branch") if isinstance(info, dict) else None
+    return b if isinstance(b, str) and _BRANCH.match(b) and ".." not in b else "main"
+
+
 def files(repo):
-    """GGUF files of a repo: {'repo', 'versions': [one per quant, smallest first], 'mmproj': [vision files]}."""
+    """GGUF files of a repo: {'repo', 'branch', 'versions': [one per quant, smallest first], 'mmproj': [vision files]}."""
     _check_repo(repo)
-    tree = _get_json("%s/api/models/%s/tree/main?recursive=1" % (BASE, repo))
+    branch = default_branch(repo)
+    tree = _get_json("%s/api/models/%s/tree/%s?recursive=1" % (BASE, repo, urllib.parse.quote(branch, safe="")))
     if not isinstance(tree, list):
         raise HFError("Hugging Face sent something Shoggoth couldn't read.")
     groups, mmproj = group_files(tree)
-    return {"repo": repo, "versions": sorted(groups.values(), key=lambda g: g["bytes"]), "mmproj": mmproj}
+    return {"repo": repo, "branch": branch, "versions": sorted(groups.values(), key=lambda g: g["bytes"]), "mmproj": mmproj}
 
 
 def _pick_mmproj(listing, want):
@@ -254,15 +275,19 @@ def _stream(url, part, have, hs, tick, cancel):
                 tick(have)
 
 
-def _fetch_one(repo, entry, dest, tick, cancel):
+def _fetch_one(repo, entry, dest, tick, cancel, branch="main"):
     """Download one file to dest through dest.part. tick(bytes so far in this file)."""
     size, want = entry["size"], entry["sha256"]
-    url = "%s/%s/resolve/main/%s" % (BASE, repo, urllib.parse.quote(entry["name"], safe="/"))
+    if not want:                    # big GGUF files are always stored with a sha256; one without can't be checked, so it isn't fetched
+        raise HFError("Hugging Face gave no checksum for %s, so Shoggoth can't check it and won't download it." % os.path.basename(entry["name"]), final=True)
+    url = "%s/%s/resolve/%s/%s" % (BASE, repo, urllib.parse.quote(branch, safe=""), urllib.parse.quote(entry["name"], safe="/"))
     part = dest + ".part"
     os.makedirs(os.path.dirname(dest), exist_ok=True)
-    if os.path.isfile(dest) and (not size or os.path.getsize(dest) == size):
-        tick(os.path.getsize(dest))                 # already there from an earlier download
-        return
+    if os.path.isfile(dest):
+        if (not size or os.path.getsize(dest) == size) and _hash_of(dest).hexdigest() == want:
+            tick(os.path.getsize(dest))             # already there from an earlier download, and still the right bytes
+            return
+        os.remove(dest)                             # same name, wrong content: fetch it again
     failures = 0
     while True:
         have = os.path.getsize(part) if os.path.isfile(part) else 0
@@ -285,7 +310,7 @@ def _fetch_one(repo, entry, dest, tick, cancel):
             failures += 1
             if failures > RETRIES:
                 raise HFError("The download keeps getting cut off. Try again; it will carry on from where it stopped.")
-    if want and hs[0].hexdigest() != want:
+    if hs[0].hexdigest() != want:
         os.remove(part)
         raise HFError("%s didn't match its checksum, so Shoggoth threw it away. Try again." % os.path.basename(entry["name"]), final=True)
     os.replace(part, dest)
@@ -312,7 +337,7 @@ def download(repo, filename_or_quant, dest_dir, progress=None, cancel=None, mmpr
             if progress:
                 progress(base + n, total)
         dest = os.path.join(dest_dir, *repo.split("/"), *e["name"].split("/"))
-        _fetch_one(repo, e, dest, tick, cancel)
+        _fetch_one(repo, e, dest, tick, cancel, listing.get("branch") or "main")
         finished += e["size"]
         paths.append(dest)
     if progress:
@@ -321,7 +346,8 @@ def download(repo, filename_or_quant, dest_dir, progress=None, cancel=None, mmpr
             "files": paths[:len(ver["files"])], "mmproj": paths[-1] if vision else None}
 
 
-_cache = {}
+CACHE_MAX = 100          # search results kept (least recently used go first)
+_cache = collections.OrderedDict()
 _cache_lock = threading.Lock()
 _now = time.time
 
@@ -335,6 +361,7 @@ def search(q):
     with _cache_lock:
         hit = _cache.get(key)
         if hit and _now() - hit[0] < CACHE_SECONDS:
+            _cache.move_to_end(key)
             return [dict(x) for x in hit[1]]
     data = _get_json(BASE + "/api/models?" + urllib.parse.urlencode({"search": q, "filter": "gguf", "sort": "downloads", "limit": 40}))
     out = []
@@ -347,4 +374,7 @@ def search(q):
     out.sort(key=lambda x: (not x["trusted"], -x["downloads"]))
     with _cache_lock:
         _cache[key] = (_now(), out)
+        _cache.move_to_end(key)
+        while len(_cache) > CACHE_MAX:
+            _cache.popitem(last=False)
     return [dict(x) for x in out]
