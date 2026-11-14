@@ -136,6 +136,7 @@ def save(s):
         os.makedirs(config_dir(), mode=0o700, exist_ok=True)
         tmp = _path() + ".tmp"
         fd = os.open(tmp, os.O_WRONLY | os.O_CREAT | os.O_TRUNC, 0o600)   # it holds an API key
+        os.fchmod(fd, 0o600)                                               # even when an old .tmp was left with looser rights
         with os.fdopen(fd, "w") as f:
             json.dump(s, f, indent=2)
         os.replace(tmp, _path())

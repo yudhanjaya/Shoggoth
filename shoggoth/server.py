@@ -55,6 +55,8 @@ from util import cached, invalidate, run   # noqa: E402
 
 VERSION = "4.3.0"
 _last_ping = {"t": None}
+import lan         # noqa: E402  (LAN sharing and pairing; its /ui/lan/* routes are lan.handle)
+lan.VERSION = VERSION
 
 
 class Tabs:
@@ -258,6 +260,8 @@ class Handler(BaseHTTPRequestHandler):
             return self._let_in()
         if not self.authed():
             return self._refuse(page=p in ("/", "/index.html"))
+        if p.startswith("/ui/lan/"):                              # LAN sharing and pairing (lan.py)
+            return self.send_json(*reversed(lan.handle("GET", p, {})))
         if p in ("/", "/index.html"):
             with open(os.path.join(HERE, "index.html"), "rb") as f:
                 body = f.read()
@@ -388,6 +392,8 @@ class Handler(BaseHTTPRequestHandler):
             return self.send_json({"error": "cross-origin request refused"}, 403)
         if p.startswith("/api/"):
             return self.proxy()
+        if p.startswith("/ui/lan/"):                              # LAN sharing and pairing (lan.py)
+            return self.send_json(*reversed(lan.handle("POST", p, self.read_json())))
         handler = {
             "/ui/device": self.post_device, "/ui/config": self.post_config,
             "/ui/args/parse": self.post_args_parse, "/ui/args/check": self.post_args_check,

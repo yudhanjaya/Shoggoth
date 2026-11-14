@@ -15,11 +15,13 @@ import http.client
 import json
 import re
 import socket
+import ssl
 import threading
 import time
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from urllib.parse import urlparse
 
+import lan
 import lem
 import provbase
 import recs
@@ -408,6 +410,7 @@ def _plan(path, body):
         return dict(out, error="%s isn't running, so there is nothing to send that to." % (out["who"] if provider else "No engine"))
     out["scheme"], out["host"], out["port"], base = _split(ep["base_url"])
     out["key"] = ep.get("key") or ""
+    out["pin"] = ep.get("pin") or ""                                   # another Shoggoth: its certificate's fingerprint (lan.py)
     if gm:                                                         # Google's own address: the model name goes in the path, the version is fixed
         name = ep.get("model") or mid
         out["path"] = "/v1beta/models/%s:%s" % (name, gm.group(2)) + (("?" + query) if query else "")
@@ -486,7 +489,10 @@ def relay(h, method, path, body, rec=None, capture=False, merge_models=False):
             Tap(rec, False).finish(503)
         return h.send_json({"error": {"message": r["error"], "type": "model_unavailable"}}, 503)
     headers = _auth_headers(r["kind"], r["key"], {k.lower(): v for k, v in h.headers.items()})
-    conn = (http.client.HTTPSConnection if r["scheme"] == "https" else http.client.HTTPConnection)(r["host"], r["port"], timeout=900)
+    if r.get("pin") and r["scheme"] == "https":                       # pinned: a different certificate fails before anything is sent
+        conn = provbase.PinnedHTTPSConnection(r["host"], r["port"], pin=r["pin"], timeout=900)
+    else:
+        conn = (http.client.HTTPSConnection if r["scheme"] == "https" else http.client.HTTPConnection)(r["host"], r["port"], timeout=900)
     tap = Tap(rec, capture) if rec else None
     if rec:
         rec["sent"] = True                     # from here the engine is working on it (the router won't stop it to make room)
@@ -550,7 +556,9 @@ def describe(body, path=None):
 
 
 # ---------------------------------------------------------------- the listener
-CONFIG = {"key": "", "capture": False}
+# lan_plain: from the network, also accept plain HTTP with the gateway's API key, as before 5.0 (an app on another device pointed at
+# http://<ip>:13308/v1 keeps working). Paired Shoggoths and pairing itself are only ever served over TLS.
+CONFIG = {"key": "", "capture": False, "lan_plain": True}
 
 
 class GWHandler(BaseHTTPRequestHandler):
@@ -582,9 +590,15 @@ class GWHandler(BaseHTTPRequestHandler):
         self.end_headers()
 
     def key_ok(self):
+        """The gateway's own key, or (over TLS, or from this computer) the key of a paired Shoggoth, whose name is kept in self.peer."""
+        self.peer = None
         sent = self.headers.get("Authorization", "")
         sent = sent[7:].strip() if sent.lower().startswith("bearer ") else (self.headers.get("X-Api-Key") or self.headers.get("X-Goog-Api-Key") or "").strip()
-        return bool(CONFIG["key"]) and hmac.compare_digest(sent.encode(), CONFIG["key"].encode())
+        if CONFIG["key"] and hmac.compare_digest(sent.encode(), CONFIG["key"].encode()):
+            return True
+        if isinstance(self.connection, ssl.SSLSocket) or lan.is_loopback(self.client_address[0]):
+            self.peer = lan.PAIRING.client_for_key(sent, self.client_address[0])
+        return self.peer is not None
 
     def handle_any(self):
         p = norm(self.path)
@@ -594,6 +608,9 @@ class GWHandler(BaseHTTPRequestHandler):
         body = self.rfile.read(n) if n else None
         if p in ("/", "/v1", "/v1/"):
             return self.send_json({"zest_gateway": True, "message": "Point your app's base URL at /v1 and use your Shoggoth key."})
+        if p.startswith("/shoggoth/"):                                  # pairing (lan.py): TLS only, no key yet
+            code, obj = lan.serve_peer(self.command, p, body, self.client_address[0], isinstance(self.connection, ssl.SSLSocket))
+            return self.send_json(obj, code)
         app = app_name(self.headers)
         if not self.key_ok():
             r = REC.start(app, "app", self.command, p, "", False, self.client_address[0])
@@ -603,6 +620,8 @@ class GWHandler(BaseHTTPRequestHandler):
                                              "type": "invalid_api_key"}}, 401, {"WWW-Authenticate": "Bearer"})
         if not ALLOW.match(p):
             return self.send_json({"error": {"message": "This door only serves the OpenAI-style /v1 endpoints for chatting."}}, 404)
+        if self.peer:
+            app = self.peer["name"]
         rec = None
         if INFER.match(p) and self.command == "POST":
             model, stream = describe(body, p)
@@ -611,6 +630,34 @@ class GWHandler(BaseHTTPRequestHandler):
         relay(self, self.command, p + ("?" + q if q else ""), body, rec, CONFIG["capture"], merge_models=True)
 
     do_GET = do_POST = handle_any
+
+
+class _Server(ThreadingHTTPServer):
+    """One port for both sides. With `tls` set (sharing on the network), each connection's first byte says which it is: a TLS handshake
+    is answered with TLS; plain HTTP is served to this computer (and, while CONFIG["lan_plain"], to the network with the API key)."""
+    tls = None
+    daemon_threads = True
+
+    def finish_request(self, request, client_address):
+        if self.tls is not None:
+            try:
+                request.settimeout(10)
+                first = request.recv(1, socket.MSG_PEEK)
+                if first == b"\x16":
+                    request = self.tls.wrap_socket(request, server_side=True)
+                elif not (CONFIG["lan_plain"] or lan.is_loopback(client_address[0])):
+                    return
+                request.settimeout(None)
+            except (OSError, ssl.SSLError):
+                return
+        try:
+            self.RequestHandlerClass(request, client_address, self)
+        finally:
+            if isinstance(request, ssl.SSLSocket):
+                try:
+                    request.close()
+                except OSError:
+                    pass
 
 
 class Gateway:
@@ -623,17 +670,28 @@ class Gateway:
         CONFIG.update(key=g["api_key"], capture=bool(g["capture"]))
         if not g["enabled"]:
             return
-        self.host = "0.0.0.0" if g["lan"] else "127.0.0.1"
+        tls, lan_error = None, ""
+        if g["lan"]:
+            try:
+                tls = lan.server_context()
+            except (lan.LanError, OSError, ssl.SSLError) as e:      # no certificate, no network side: stay on this computer
+                lan_error = "Not shared on the network: %s" % e
+        self.host = "0.0.0.0" if tls else "127.0.0.1"
         try:
-            self.srv = ThreadingHTTPServer((self.host, int(g["port"])), GWHandler)
+            self.srv = _Server((self.host, int(g["port"])), GWHandler)
         except OSError as e:
             self.srv, self.error = None, f"Port {g['port']} is busy ({e.strerror or e})"
             return
-        self.error = ""
-        self.srv.daemon_threads = True
+        self.srv.tls = tls
+        self.error = lan_error
         threading.Thread(target=self.srv.serve_forever, daemon=True).start()
+        if tls:
+            lan.SHARING["on"] = True
+            lan.BEACON.start(self.srv.server_address[1])
 
     def stop(self):
+        lan.SHARING["on"] = False
+        lan.BEACON.stop()
         if self.srv:
             self.srv.shutdown()
             self.srv.server_close()
@@ -672,7 +730,9 @@ def ensure_key(s):
 
 def public_state(s):
     g = s["gateway"]
-    ip = lan_ip() if g["lan"] else None
+    ip = lan_ip() if g["lan"] and lan.SHARING["on"] else None
+    fp = lan.own_fp() if ip else ""
     return {"enabled": g["enabled"], "running": GATEWAY.running, "error": GATEWAY.error, "port": g["port"],
             "lan": g["lan"], "capture": g["capture"], "key": g["api_key"],
-            "url": f"http://127.0.0.1:{g['port']}/v1", "lan_url": f"http://{ip}:{g['port']}/v1" if ip else None}
+            "url": f"http://127.0.0.1:{g['port']}/v1", "lan_url": f"https://{ip}:{g['port']}/v1" if ip else None,
+            "lan_plain_url": f"http://{ip}:{g['port']}/v1" if ip and CONFIG["lan_plain"] else None, "fp": fp, "fp_short": lan.short_fp(fp)}

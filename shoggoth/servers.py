@@ -124,13 +124,13 @@ def remove(sid):
     store.update(put)
 
 
-def probe(url, key=""):
+def probe(url, key="", pin=None):
     """Ask a server what it has. Never raises, never takes longer than a couple of seconds. {reachable, needs_key, models}."""
     try:
         base = normalise(url)
     except ValueError:
         return {"reachable": False, "needs_key": False, "models": []}
-    status, d = provbase.http_json(base + "/v1/models", key, timeout=1.5)
+    status, d = provbase.http_json(base + "/v1/models", key, timeout=1.5, pin=pin)
     models = provbase.jpath(d, "$.data[*].id") if status == 200 else []
     return {"reachable": status != 0, "needs_key": status in (401, 403), "models": [str(m) for m in models]}
 
@@ -217,7 +217,7 @@ class ConnectedServer(provbase.GenericProvider):
         if time.time() - t < 5:
             return v
         e = self._entry()
-        status, d = provbase.http_json(e["url"] + "/v1/models", e.get("key", ""), timeout=1.5)
+        status, d = provbase.http_json(e["url"] + "/v1/models", e.get("key", ""), timeout=1.5, pin=e.get("fp"))
         out = []
         if status == 200:
             for m in (d.get("data") or []):
@@ -242,7 +242,7 @@ class ConnectedServer(provbase.GenericProvider):
         e = self._entry()
         for m in self._models():
             if model_id is None or m["id"] == model_id:
-                return {"base_url": e["url"] + "/v1", "key": e.get("key", ""), "model": m["id"], "ctx": m["ctx"], "owner": "yours"}
+                return {"base_url": e["url"] + "/v1", "key": e.get("key", ""), "model": m["id"], "ctx": m["ctx"], "owner": "yours", "pin": e.get("fp") or ""}
         return None
 
     def ensure(self, model_id, progress, opts=None):
@@ -259,5 +259,5 @@ class ConnectedServer(provbase.GenericProvider):
         return False, "Shoggoth didn't start %s, so it leaves it running." % self.name
 
     def selftest(self):
-        r = probe(self._entry()["url"], self._key())
+        r = probe(self._entry()["url"], self._key(), self._entry().get("fp"))
         return [{"name": "its model list", "ok": r["reachable"] and not r["needs_key"], "detail": "needs a key" if r["needs_key"] else "" if r["reachable"] else "not answering"}]
