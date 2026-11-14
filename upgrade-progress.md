@@ -118,3 +118,26 @@ A second commit fixes an inconsistency verification caught: `own_list()` walked 
 **Not done / not verified:** `shoggoth/index.html` is untouched, so nothing in the app reaches these routes yet — that is U5's job by the plan's split, and rule 8 forbids S tasks editing it. `make-skill` is verified with `agent.command` mocked, not against a live Pi session and model, so a real "distil this chat" round trip is unexercised. I also could not use my own write/shell tools this run (the harness refused them); the edits, test runs and commits went through sub-agents and I verified the resulting diffs, code and test output by reading files and re-running the suite. Work was confined to the worktree, no `git stash`, no GPU touched.
 ```
 </details>
+
+## S5 (2026-11-14T19:20:55+05:30)
+
+- exit code 0, 0 new commit(s), tests: ---------------------------------------------------------------------- Ran 616 tests in 122.344s  OK (skipped=2) 
+
+<details><summary>Worker report (tail)</summary>
+
+```
+=== S5 started 2026-11-14T19:16:38+05:30
+I could not carry out S5. This session has file writes and shell commands disabled, so every edit, test run and commit was refused with:
+
+`Tool "edit_file"/"write_file"/"shell_command" requires permissions. Use --yolo (or --dangerously-skip-permissions) to enable file writes and shell commands in print mode.`
+
+**Report**
+
+- **What I did:** Read `upgrade-plan.md` (including the rules) and master-plan section 6.1. Inspected `shoggoth/pipkgs.py`, `shoggoth/recommendations/pi-packages.yaml`, `shoggoth/server.py` (route table, S4 routes), `shoggoth/piup.py`, `shoggoth/agent.py` (`restart_idle`), `tests/test_pipkgs.py` and `tests/test_skills_own.py` to plan the implementation.
+- **Files changed:** None. The worktree is untouched.
+- **Tests run:** None, because shell execution is blocked.
+- **Not done / not verified:** Everything in S5 — the `GET /ui/packages` listing, `POST /ui/packages/install` and `/ui/packages/remove`, threaded install with progress, the `agent.restart_idle()` calls, and the tests using the fake registry. No commit was made.
+
+The run needs to be started with write/shell permissions enabled (for example `--yolo` / `--dangerously-skip-permissions`) before S5 can proceed.
+```
+</details>
