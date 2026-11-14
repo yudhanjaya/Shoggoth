@@ -1,0 +1,203 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Shoggoth: heavy on the cosmos, light on your machine</title>
+<meta name="description" content="Shoggoth runs AI models on your own Linux computer. One download sets up llama.cpp for your graphics card, or hooks up the engine you already run.">
+<meta name="theme-color" content="#f7d916" media="(prefers-color-scheme: light)">
+<meta name="theme-color" content="#141317" media="(prefers-color-scheme: dark)">
+<link rel="icon" href="img/icon.png" type="image/png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,400;12..96,500;12..96,700;12..96,800&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<a class="skip" href="#main">Skip to content</a>
+
+<header class="top">
+  <div class="wrap bar">
+    <a class="brand" href="#top"><img src="img/icon.png" alt="" width="36" height="36"><span>Shoggoth</span></a>
+    <nav aria-label="Main">
+      <a href="#engines">Models</a>
+      <a href="#does">What it does</a>
+      <a href="#network">Network</a>
+      <a href="#privacy">Privacy</a>
+      <a href="#screens">Screenshots</a>
+    </nav>
+    <a class="btn small" href="https://github.com/yudhanjaya/Shoggoth/releases/latest">Download</a>
+  </div>
+</header>
+
+<main id="main">
+
+<section class="hero" id="top">
+  <div class="wrap hero-grid">
+    <div class="hero-text">
+      <h1>Heavy on the cosmos. Light on your machine.</h1>
+      <p class="lead">Shoggoth runs AI models on your own Linux computer. Chat with them, or let one work in a folder while you watch. One download sets it up.</p>
+      <p class="cta">
+        <a class="btn" href="https://github.com/yudhanjaya/Shoggoth/releases/latest">Download for Linux</a>
+        <span class="ver">Version <span id="ver">5.0</span>. AppImage, x86_64, MIT licence.</span>
+      </p>
+    </div>
+    <figure class="tube-wrap">
+      <div class="tube" role="img" aria-label="A many-eyed green creature made of cubes, standing in a glass lab tube">
+        <div class="cap top-cap"></div>
+        <div class="glass"><img src="img/creature-qwen36.png" alt="" width="520" height="460"></div>
+        <div class="cap bottom-cap"><i></i><b></b></div>
+      </div>
+      <figcaption>Qwen3.6 35B, as Shoggoth draws it. The name picks the shape and colour; the size picks how big.</figcaption>
+    </figure>
+  </div>
+</section>
+
+<section class="sec" id="engines" aria-labelledby="h-engines">
+  <div class="wrap">
+    <h2 id="h-engines">Pick a model, or bring your own engine.</h2>
+    <div class="split">
+      <div class="col-a">
+        <h3>llama.cpp, set up for you</h3>
+        <p>Shoggoth downloads the llama.cpp build that fits your graphics card (CUDA, Vulkan or CPU) and keeps it updated. There is nothing to compile and no flags to learn.</p>
+        <p>The Models page always shows a hand-picked list: unsloth and bartowski quantisations chosen for small, medium and large machines. Each one carries a fit badge, based on a memory estimate that lands within 10% of what llama.cpp really uses. Or search Hugging Face.</p>
+      </div>
+      <div class="col-b">
+        <h3>The engine you already run</h3>
+        <p>Shoggoth looks for more than 20 local engines on any port, including Ollama, vLLM, SGLang, LM Studio, Strata and Maya, and connects to one with a click. If it misses yours, add it by hand and teach Shoggoth to recognise it.</p>
+        <p>Hosted services are there when you want them: OpenRouter, Nous Portal, OpenCode, Command Code and Google Gemini. Each is marked as leaving your computer. Switch between any of them from the chat bar or the Models page.</p>
+      </div>
+    </div>
+  </div>
+  <div class="wrap shot-row">
+    <figure class="shot wide">
+      <img src="img/models.png" alt="The Models page: recommended models, each with its creature and a button to get it" width="3000" height="1750" loading="lazy">
+      <figcaption>Models: recommended picks, each with its creature.</figcaption>
+    </figure>
+    <figure class="shot">
+      <img src="img/engines.png" alt="The Engines page listing the engines Shoggoth has found on this computer" width="3000" height="1750" loading="lazy">
+      <figcaption>Engines found on this computer.</figcaption>
+    </figure>
+  </div>
+</section>
+
+<section class="sec field" id="does" aria-labelledby="h-does">
+  <div class="wrap">
+    <h2 id="h-does">What it does</h2>
+    <dl class="does">
+      <div><dt>Chat</dt><dd>Ask questions, paste a picture, switch models mid-conversation.</dd></div>
+      <div><dt>Work in a folder</dt><dd>Pick a folder. The model reads, searches, edits and runs things there, and asks before it changes anything. Common file types open in chat.</dd></div>
+      <div><dt>Jobs</dt><dd>Describe a bigger task and how to tell it is done, such as a passing test. It runs round after round in the background. You review the changes before they touch your folder.</dd></div>
+      <div><dt>Diagrams and documents</dt><dd>Ask for a picture or a README, and it appears in the chat. Curated packages add documents, spreadsheets and subagents.</dd></div>
+      <div><dt>Skills it writes itself</dt><dd>A skill is a short instruction sheet that makes small models more dependable. The model can write new ones from what it learns, and you approve each.</dd></div>
+      <div><dt>Speech</dt><dd>Talk to it with whisper.cpp. Optionally, have it read answers aloud with Bark.</dd></div>
+    </dl>
+  </div>
+  <div class="wrap ladder-wrap">
+    <figure class="ladder">
+      <img src="img/ladder.png" alt="One model family at three sizes, 9B, 35B and 100B. Each is bigger than the last, with more eyes and more hands" width="2800" height="640" loading="lazy">
+      <figcaption>Every model is a creature. The bigger the model, the bigger the creature, with more eyes and more hands. You can turn them off.</figcaption>
+    </figure>
+  </div>
+</section>
+
+<section class="sec" id="network" aria-labelledby="h-net">
+  <div class="wrap net">
+    <div class="net-text">
+      <h2 id="h-net">One Shoggoth serves. The laptops find it.</h2>
+      <p>Switch on sharing on the machine with the big graphics card. Other Shoggoths on the network see it and ask to pair.</p>
+      <ol>
+        <li>The server shows a six-digit code and the name of the laptop asking.</li>
+        <li>You type the code on the laptop. Nobody copies an API key.</li>
+        <li>The laptop uses the server's models over an encrypted link.</li>
+      </ol>
+      <p>The model runs on the server. Your chats, the agent and your files stay on the laptop. Remove a laptop from the server's list and its access ends.</p>
+    </div>
+    <figure class="shot">
+      <img src="img/server.png" alt="The Server page, showing which apps and machines are asking this computer's models for what" width="3000" height="1750" loading="lazy">
+      <figcaption>The Server page lists who is asking for what.</figcaption>
+    </figure>
+  </div>
+</section>
+
+<section class="sec dark" id="privacy" aria-labelledby="h-priv">
+  <div class="wrap">
+    <h2 id="h-priv">Your chats stay on your computer.</h2>
+    <div class="split">
+      <div class="col-a">
+        <h3>What stays local</h3>
+        <p>Chats, files, skills and settings live in <code>~/.config/shoggoth</code> and <code>~/.local/share/shoggoth</code>. Models run on your hardware. The agent starts with telemetry and update checks turned off. On a home network, other Shoggoths reach yours only after you pair them, and only over an encrypted link.</p>
+      </div>
+      <div class="col-b">
+        <h3>What leaves, and when</h3>
+        <ul>
+          <li><strong>Web search.</strong> Only if you allow it. The model shows the exact words and waits for a yes. You can switch it off for good.</li>
+          <li><strong>Hosted services.</strong> Only if you connect one. It is marked as leaving your computer, and your chat goes to that service.</li>
+          <li><strong>Downloads.</strong> Models from Hugging Face, llama.cpp and Shoggoth updates from GitHub. The automatic update check has a switch.</li>
+        </ul>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section class="sec" id="screens" aria-labelledby="h-screens">
+  <div class="wrap">
+    <h2 id="h-screens">See it</h2>
+    <figure class="shot big">
+      <img src="img/chat.png" alt="Chat: a model has fixed a bug in a folder and shows the one-line change as a diff, with the model in its tube at the top" width="3000" height="1750" loading="lazy">
+      <figcaption>Working in a folder. The model found why two tests failed, fixed it and ran them again.</figcaption>
+    </figure>
+    <div class="trio">
+      <figure class="shot">
+        <img src="img/hardware.png" alt="The Hardware page with graphics cards laid out on a lab bench" width="3000" height="1750" loading="lazy">
+        <figcaption>Hardware: your graphics cards on the bench.</figcaption>
+      </figure>
+      <figure class="shot">
+        <img src="img/skills.png" alt="The Skills page" width="3000" height="1750" loading="lazy">
+        <figcaption>Skills.</figcaption>
+      </figure>
+      <figure class="shot">
+        <img src="img/themes.png" alt="The theme picker showing several colour themes" width="3000" height="1750" loading="lazy">
+        <figcaption>Themes, light and dark.</figcaption>
+      </figure>
+    </div>
+  </div>
+</section>
+
+<section class="sec final" aria-labelledby="h-get">
+  <div class="wrap">
+    <h2 id="h-get">Get Shoggoth.</h2>
+    <p class="lead">Download the AppImage, make it executable, run it. The Getting ready screen does the rest. You need Linux on x86_64 and internet for the first-run downloads.</p>
+    <p class="cta"><a class="btn" href="https://github.com/yudhanjaya/Shoggoth/releases/latest">Download for Linux</a></p>
+  </div>
+</section>
+
+</main>
+
+<footer class="foot">
+  <div class="wrap">
+    <p class="bigname" aria-hidden="true">Shoggoth</p>
+    <nav aria-label="Footer">
+      <a href="https://github.com/yudhanjaya/Shoggoth">GitHub</a>
+      <a href="https://github.com/yudhanjaya/Shoggoth/blob/main/shoggoth/docs.md">Docs</a>
+      <a href="https://github.com/yudhanjaya/Shoggoth/releases">Releases</a>
+      <a href="https://github.com/yudhanjaya/Shoggoth/blob/main/LICENSE">MIT licence</a>
+    </nav>
+    <p class="small">Heavy on the cosmos. Light on your machine.</p>
+  </div>
+</footer>
+
+<script>
+(function () {
+  try {
+    fetch("https://api.github.com/repos/yudhanjaya/Shoggoth/releases/latest", { headers: { Accept: "application/vnd.github+json" } })
+      .then(function (r) { return r.ok ? r.json() : null; })
+      .then(function (j) {
+        if (j && j.tag_name) document.getElementById("ver").textContent = String(j.tag_name).replace(/^v/, "");
+      })
+      .catch(function () {});
+  } catch (e) {}
+})();
+</script>
+</body>
+</html>
