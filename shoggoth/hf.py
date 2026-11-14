@@ -104,11 +104,6 @@ def lookup(text, timeout=12):
             "name": repo.split("/", 1)[1]}
 
 
-def local_name(repo):
-    """The id Lemonade will know a downloaded model by. User models are namespaced 'user.'."""
-    return "user." + re.sub(r"[^A-Za-z0-9._\-]", "-", repo.split("/", 1)[1])
-
-
 # ---- Shoggoth 5: file list, download, search ----
 
 def _open(url, headers=None):

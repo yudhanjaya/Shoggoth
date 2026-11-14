@@ -194,7 +194,7 @@ class Registry:
         return self
 
     def _load_servers(self):
-        """Servers the person connected come after the engines Shoggoth ships, so the default engine stays Lemonade."""
+        """Servers the person connected come after the engines Shoggoth ships, so the default engine stays Shoggoth's llama.cpp."""
         for entry in servers.all():
             sid = entry["id"]
             if not ID_RE.match(sid):

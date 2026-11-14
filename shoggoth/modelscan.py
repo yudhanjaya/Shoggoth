@@ -1,18 +1,14 @@
-"""Where models live: finding ones you already have, and telling Lemonade about them.
+"""Where models live: finding the ones you already have (LM Studio, Ollama, the Hugging Face cache and so on).
 
-Lemonade has two relevant settings. `models_dir` is where it keeps (and downloads) models; "auto" means the
-Hugging Face cache. `extra_models_dir` is a folder it searches for GGUF files to import. To bring in models from
-several places (LM Studio, Ollama and so on) without copying gigabytes, Shoggoth builds one folder of symbolic links
-and points `extra_models_dir` at it.
+Folders the person brings in are read by the library (library.py), which shows llama.cpp the files it can run through its view
+folder of links, so nothing is copied or moved.
 """
 import hashlib
 import json
 import os
 import re
-import shutil
 import time
 
-import lem
 import store
 
 _SKIP = re.compile(r"^(ggml-vocab-)", re.I)
@@ -37,7 +33,7 @@ def _known_folders():
 
 
 def hf_cache_dir():
-    """Where Lemonade's "auto" model folder points: the Hugging Face hub cache."""
+    """The Hugging Face hub cache (where 4.x downloaded models by default)."""
     if os.environ.get("HF_HUB_CACHE"):
         return os.environ["HF_HUB_CACHE"]
     if os.environ.get("HF_HOME"):
@@ -46,6 +42,7 @@ def hf_cache_dir():
 
 
 def farm_dir():
+    """The folder of links 4.x made for Lemonade. Never written now; skipped when scanning so its links aren't counted twice."""
     return os.path.join(store.data_dir(), "imported-models")
 
 
@@ -143,76 +140,6 @@ def source_from_path(path, label=None):
     if not s:
         raise ValueError("No GGUF model files were found in that folder (looked up to six levels deep).")
     return s
-
-
-def _slug(text):
-    return re.sub(r"[^A-Za-z0-9._-]+", "_", text).strip("_")[:80] or "models"
-
-
-def sync_farm(sources, accept=None):
-    """Rebuild the folder of symbolic links for the chosen sources. Returns how many models were linked.
-
-    `accept(path)` may refuse a file (one the engine reading this folder can't run), so it is never shown to it."""
-    farm = farm_dir()
-    shutil.rmtree(farm, ignore_errors=True)           # removes only the links themselves, never their targets
-    if not sources:
-        return 0
-    os.makedirs(farm, exist_ok=True)
-    linked, used = 0, set()
-
-    def group_dir(name):
-        base, n = _slug(name), 1
-        cand = base
-        while cand in used:
-            n += 1
-            cand = f"{base}-{n}"
-        used.add(cand)
-        d = os.path.join(farm, cand)
-        os.makedirs(d, exist_ok=True)
-        return d
-
-    for src in sources:
-        path = os.path.realpath(src["path"])
-        if src["kind"] == "ollama":
-            for m in _ollama_models(path):
-                d = group_dir(f"ollama-{m['name']}")
-                os.symlink(m["blob"], os.path.join(d, _slug(m["name"]) + ".gguf"))
-                linked += 1
-        else:
-            groups = {}
-            for p, _ in _gguf_files(path):
-                groups.setdefault(os.path.dirname(p), []).append(p)
-            for folder, files in groups.items():
-                d = group_dir(f"{src['label']}--{os.path.relpath(folder, path)}")
-                models = [p for p in files if not _is_projector(p)]
-                if accept and models and not any(accept(p) for p in models):
-                    continue                          # nothing in this folder that the engine can run
-                for p in files:                       # projector files travel with their model
-                    if accept and not _is_projector(p) and not accept(p):
-                        continue
-                    os.symlink(p, os.path.join(d, os.path.basename(p)))
-                    linked += 0 if _is_projector(p) else 1
-    return linked
-
-
-def apply_to_lemonade(settings):
-    """Push Shoggoth's model-folder choices into Lemonade. Returns (ok, message).
-
-    Once a library folder is chosen it decides everything (see library.apply_to_lemonade); before that, the older choices below apply."""
-    import engine
-    import library
-    if library.root():
-        if not engine.running():                               # a Lemonade you run yourself is never re-pointed
-            return True, "Your own Lemonade keeps its own folders."
-        return library.apply_to_lemonade()
-    m = settings["models"]
-    storage = "auto" if m.get("storage") != "custom" or not m.get("custom_dir") else m["custom_dir"]
-    ok, msg = lem.set_config({"models_dir": storage})
-    if not ok:
-        return False, msg
-    n = sync_farm(m.get("imports") or [])
-    ok, msg = lem.set_config({"extra_models_dir": farm_dir() if n else ""})
-    return ok, msg
 
 
 def set_storage(settings, kind, path):

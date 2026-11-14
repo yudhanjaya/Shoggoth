@@ -1,10 +1,10 @@
 """The door other apps use, and the log of what comes through it.
 
-Shoggoth's own page is never exposed to other programs: it can change Lemonade's settings and has no login. Instead this
+Shoggoth's own page is never exposed to other programs: it can change the engines' settings and has no login. Instead this
 module opens a second, much smaller listener that serves only the OpenAI-style /v1 endpoints, always asks for the
 key, and listens on this computer only unless the person turns on "other devices on my network".
 
-Both that listener and Shoggoth's own chat go through relay(), which forwards the request to Lemonade unchanged while
+Both that listener and Shoggoth's own chat go through relay(), which forwards the request to the engine that serves the model while
 watching the answer stream past, so the Server tab can show who asked, which model answered, and whether it was
 thinking or already writing.
 """
@@ -20,7 +20,6 @@ import time
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from urllib.parse import urlparse
 
-import lem
 import provbase
 import recs
 import router
@@ -433,10 +432,16 @@ def _route(path, body):
 
 def _models_for_apps(h):
     """GET /v1/models for other apps: the default engine's list plus the models other engines can serve. Returns True when answered."""
-    status, d = lem.request("GET", "/api/v1/models", timeout=15)
+    dflt = router.default_provider()
+    try:
+        ep = dflt.endpoint() if dflt else None
+    except Exception:  # noqa: BLE001 - an engine that can't say where it is has no list to give
+        ep = None
+    if not ep or not ep.get("base_url"):
+        return False
+    status, d = provbase.http_json(ep["base_url"].rstrip("/") + "/models", ep.get("key") or "", timeout=15)
     if status != 200 or not isinstance(d, dict) or not isinstance(d.get("data"), list):
         return False
-    dflt = router.default_provider()
     d["data"] += [{"id": m["id"], "object": "model", "created": 0, "owned_by": m["engine"]} for m in router.chat_models() if m["engine"] != getattr(dflt, "id", "")]
     h.send_json(d)
     return True

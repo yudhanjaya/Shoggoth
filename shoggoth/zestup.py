@@ -1,4 +1,4 @@
-"""Updates Shoggoth itself, and runs "update everything" (Shoggoth, Lemonade and Pi) from one button.
+"""Updates Shoggoth itself, and runs "update everything" (Shoggoth, its llama.cpp and Pi) from one button.
 
 Shoggoth ships as an AppImage, so an update is a new AppImage: download it from the project's latest GitHub release, check it
 against the checksum GitHub publishes, and save it next to the running one (which is never touched). Restarting hands
@@ -14,7 +14,7 @@ import time
 import urllib.error
 import urllib.request
 
-import engine
+import llamacpp
 import piup
 import store
 
@@ -30,12 +30,24 @@ def appimage_path():
     return p if p and os.path.isfile(p) else None
 
 
+_PRE = {"dev": 0, "alpha": 1, "a": 1, "beta": 2, "b": 2, "rc": 3, "pre": 3}
+
+
 def vkey(v):
-    return engine.vkey(v)
+    """A sortable key for a version: 4.1.0-beta.1 < 4.1.0-rc.1 < 4.1.0 < 4.1.1. Missing parts count as 0 (4.1 == 4.1.0)."""
+    v = str(v or "")
+    m = re.search(r"\d+(?:\.\d+)*", v)
+    if not m:
+        return (0,)
+    nums = [int(x) for x in m.group(0).split(".")]
+    nums += [0] * (4 - len(nums))
+    pre = re.match(r"[-.+]?(dev|alpha|beta|rc|pre|a|b)\.?(\d*)", v[m.end():], re.I)
+    tail = (_PRE[pre.group(1).lower()], int(pre.group(2) or 0)) if pre else (9, 0)       # a release outranks its own pre-releases
+    return tuple(nums) + tail
 
 
 def latest_release(version):
-    data = engine._get_json(f"https://api.github.com/repos/{REPO}/releases/latest")
+    data = llamacpp._get_json(f"https://api.github.com/repos/{REPO}/releases/latest")
     tag = str(data.get("tag_name", ""))
     ver = tag.lstrip("v")
     assets = data.get("assets", [])
@@ -153,7 +165,7 @@ def _wait(upd, active):
 def _run_all(version, mode):
     settings = store.load()
     ALL.update(state="working", items={}, error=None)
-    names = ["zest", "lemonade", "pi"]
+    names = ["zest", "llamacpp", "pi"]
     for n in names:
         _item(n, state="checking", text="Looking for updates…")
     jobs = []
@@ -169,24 +181,23 @@ def _run_all(version, mode):
             jobs.append(("zest", lambda: start_update(version), UPD, ("downloading", "verifying")))
     except RuntimeError as e:
         _item("zest", state="error", text=str(e))
-    # Lemonade (only the copy Shoggoth manages)
-    if mode != "builtin" or engine.choose(settings) is None:
-        _item("lemonade", state="skipped", text="You use your own Lemonade; Shoggoth leaves it alone.")
+    # Shoggoth's llama.cpp
+    cur = llamacpp.choose(settings)
+    if mode != "builtin" or cur is None:
+        _item("llamacpp", state="skipped", text="Shoggoth's llama.cpp isn't set up here." if mode == "builtin" else "You use connected servers only.")
     else:
         try:
-            c = engine.check(settings)
-            if not c["update_available"]:
-                _item("lemonade", state="current", text="Lemonade %s is the latest." % (c["current"] or c["latest"]))
+            rel = llamacpp.latest()
+            if not cur.get("bundled") and llamacpp._tag_num(rel["tag_name"]) <= llamacpp._tag_num(cur["tag"]):
+                _item("llamacpp", state="current", text="llama.cpp %s is the latest." % cur["tag"])
             else:
-                def go():
-                    s = store.load()
-                    s["builtin"]["version"] = ""
-                    store.save(s)
-                    return engine.start_update()
-                _item("lemonade", state="working", text="Downloading Lemonade %s…" % c["latest"])
-                jobs.append(("lemonade", go, engine.UPD, ("downloading", "verifying", "installing")))
+                def go(rel=rel, backend=cur["backend"]):
+                    store.update(lambda s: s.setdefault("llamacpp", {}).update(tag=""))
+                    return llamacpp.start_update(backend, rel)
+                _item("llamacpp", state="working", text="Downloading llama.cpp %s…" % rel["tag_name"])
+                jobs.append(("llamacpp", go, llamacpp.UPD, ("downloading", "installing")))
         except RuntimeError as e:
-            _item("lemonade", state="error", text=str(e))
+            _item("llamacpp", state="error", text=str(e))
     # Pi
     try:
         c = piup.check(settings)
@@ -205,8 +216,8 @@ def _run_all(version, mode):
             _item(name, state="error", text=upd.get("error") or "The update failed.")
         else:
             _item(name, state="updated", text={"zest": "Shoggoth %s is downloaded. Restart to start using it.",
-                                              "lemonade": "Lemonade %s is installed. It starts the next time Lemonade restarts.",
-                                              "pi": "Pi %s is installed. Your next message uses it."}[name] % upd.get("version"),
+                                              "llamacpp": "llama.cpp %s is installed. It is used the next time llama.cpp starts.",
+                                              "pi": "Pi %s is installed. Your next message uses it."}[name] % (upd.get("tag") if name == "llamacpp" else upd.get("version")),
                   **({"path": upd.get("path")} if name == "zest" else {}))
     ALL["state"] = "done"
 

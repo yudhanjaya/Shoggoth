@@ -157,7 +157,7 @@ def clean_models(doc, c):
         elif mid:
             ids.add(mid)
             ent = {"id": mid, "also": c.words(m, "also", w), "label": c.text(m, "label", w) or "", "take": c.text(m, "take", w) or "",
-                   "title": c.text(m, "title", w) or "", "provider": c.text(m, "provider", w) or "Lemonade", "size_gb": c.number(m, "size_gb", w),
+                   "title": c.text(m, "title", w) or "", "provider": c.text(m, "provider", w) or "llama.cpp", "size_gb": c.number(m, "size_gb", w),
                    "tools": c.flag(m, "tools", w), "vision": c.flag(m, "vision", w), "reasoning": c.flag(m, "reasoning", w),
                    "quants": clean_quants(m.get("quants"), w + ".quants", c)}
             dl = m.get("download")

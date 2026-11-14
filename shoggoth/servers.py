@@ -1,5 +1,5 @@
 """Servers the person runs themselves and has connected under Advanced > Engines (Ollama, LM Studio, llama.cpp, Strata, Maya, Unsloth, any
-OpenAI-style server). Shoggoth uses them and never starts, stops, updates or signals them. Lemonade is the only engine Shoggoth manages.
+OpenAI-style server). Shoggoth uses them and never starts, stops, updates or signals them. llama.cpp is the only engine Shoggoth manages.
 
 A saved server is {id, preset, name, url, key}. The registry turns each one into a ConnectedServer, an engine that is only an address.
 Standard library only."""
@@ -10,7 +10,7 @@ import engines
 import provbase
 import store
 
-RESERVED = {"lemonade"}
+RESERVED = {"llamacpp"}          # the id of Shoggoth's own engine
 _LOCAL = {"localhost", "::1"}
 
 

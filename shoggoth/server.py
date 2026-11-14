@@ -1,9 +1,8 @@
 #!/usr/bin/env python3
-"""Shoggoth: a console for Lemonade Server.
+"""Shoggoth: runs models on this computer with its own llama.cpp, and connects the servers you already run.
 
-Serves the single-page UI, proxies /api/* to Lemonade (so no CORS setup is needed) and exposes /ui/* helpers:
-GPU telemetry, device and backend configuration, the built-in Lemonade (start, update), where models live, and
-logs. Shoggoth runs either its own bundled Lemonade ("built-in") or talks to one you already run ("existing").
+Serves the single-page UI, the OpenAI-style /api/v1/* door its own chat and Pi use (each model goes to the engine that serves it, see
+gateway.py) and /ui/* helpers: GPU telemetry, Shoggoth's llama.cpp (build, backend, device, start, update), where models live, and logs.
 
 Standard library only. Listens on 127.0.0.1 unless told otherwise.
 """
@@ -28,14 +27,13 @@ sys.path.insert(0, HERE)          # the AppImage runs Python in isolated mode, w
 
 import store       # noqa: E402  first: it maps old ZEST_* variables to their SHOGGOTH_* names
 import agent       # noqa: E402
-import engine      # noqa: E402
 import folders     # noqa: E402
 import gateway     # noqa: E402
 import hardware    # noqa: E402
 import hf          # noqa: E402
-import lem         # noqa: E402
 import library     # noqa: E402
 import llamaargs   # noqa: E402
+import llamacpp    # noqa: E402
 import modelscan   # noqa: E402
 import piup        # noqa: E402
 import provbase    # noqa: E402
@@ -54,6 +52,7 @@ import zestup      # noqa: E402
 from util import cached, invalidate, run   # noqa: E402
 
 VERSION = "4.3.0"
+hf.VERSION = VERSION          # Hugging Face sees User-Agent: Shoggoth/<version>
 _last_ping = {"t": None}
 
 
@@ -89,40 +88,38 @@ class Tabs:
 
 
 TABS = Tabs()
-FORCED = {"addr": None}           # set by --lemonade: use exactly that server and skip the setup screen
 LOOPBACK_ONLY = {"on": True}
 
 
-# ---------------------------------------------------------------- which Lemonade
+# ---------------------------------------------------------------- which engine
 def effective_mode(s):
-    if FORCED["addr"]:
-        return "existing"
-    if s["mode"] in ("builtin", "existing"):
-        return s["mode"]
-    return "builtin" if engine.programs() else "existing"      # a fresh install uses the bundled one if there is one
+    """"builtin": Shoggoth runs its own llama.cpp. "connected": only the servers the person connected (they turned llama.cpp off, or chose
+    so on the first-run screen)."""
+    return "connected" if s.get("mode") in ("connected", "existing") else "builtin"
 
 
-def _existing_target(s):
-    e = s["existing"]
-    return e["host"], int(e["port"]), e.get("api_key") or os.environ.get("LEMONADE_API_KEY", "")
+def _provider():
+    return registry.default().get("llamacpp")
+
+
+def _start_engine():
+    """Start Shoggoth's llama.cpp (no model loaded) so the model list is there. Does nothing when it is off, not set up yet, or running."""
+    p = _provider()
+    if p is None or llamacpp.running() or not llamacpp.choose():
+        return False
+    try:
+        return p.start()
+    except Exception as e:  # noqa: BLE001 - never stop Shoggoth starting over the engine
+        sys.stderr.write("Shoggoth: llama.cpp didn't start: %r\n" % e)
+        return False
 
 
 def apply_mode(s):
-    """Point Shoggoth at the right Lemonade, starting the built-in one in the background when needed."""
-    mode = effective_mode(s)
-    if mode == "builtin":
-        b = s["builtin"]
-        if not b.get("api_key"):
-            b["api_key"] = store.new_key()
-            store.save(s)
-        # Until it is up, aim at its (not yet listening) port, never at some other Lemonade.
-        lem.configure("127.0.0.1", b["port"], b["api_key"])
-        if not engine.running():
-            threading.Thread(target=engine.start, args=(s,), daemon=True).start()
+    """Start Shoggoth's llama.cpp in the background when it is the engine here; stop it when the person chose connected servers only."""
+    if effective_mode(s) == "builtin":
+        threading.Thread(target=_start_engine, daemon=True).start()
     else:
-        if not FORCED["addr"]:
-            engine.stop()
-            lem.configure(*_existing_target(s))
+        llamacpp.stop()
     invalidate()
 
 
@@ -133,38 +130,36 @@ def current_mode():
 # ---------------------------------------------------------------- state for the setup screen
 def setup_state():
     s = store.load()
-    mode = effective_mode(s)
-    h, p, k = _existing_target(s)
-    reachable = lem.healthy()
-    live = {}
-    if reachable:
-        cfg = lem.flat_config()
-        live = {"models_dir": cfg.get("models_dir", ""), "extra_models_dir": cfg.get("extra_models_dir", "")}
-    host, port = lem.target()
     return {
-        "setup_done": bool(s["setup_done"] or FORCED["addr"]),
-        "mode": mode, "mode_saved": s["mode"], "forced": bool(FORCED["addr"]),
-        "engine": engine.summary(s),
-        "existing": {"host": h, "port": p, "reachable": lem.healthy(h, p, k)},
-        "lemonade": {"reachable": reachable, "target": f"{host}:{port}"},
+        "setup_done": bool(s["setup_done"]),
+        "mode": effective_mode(s), "mode_saved": s["mode"],
+        "engine": llamacpp.summary(s),
+        "connected": len(servers.all()),
         "models": {"storage": s["models"]["storage"], "custom_dir": s["models"]["custom_dir"],
-                   "hf_dir": modelscan.hf_cache_dir(), "imports": s["models"]["imports"], "live": live},
-        "arch_supported": engine.summary(s)["arch_supported"],
+                   "hf_dir": modelscan.hf_cache_dir(), "imports": s["models"]["imports"], "view": llamacpp.models_dir()},
         "gpus_found": util.cached("gpus_found", 30, hardware.detect_gpus),
     }
 
 
 def read_logs(n):
-    if current_mode() == "builtin":
-        try:
-            with open(engine.log_path(), errors="replace") as f:
-                return [l.rstrip("\n") for l in f.readlines()[-n:]]
-        except OSError:
-            return ["The built-in Lemonade hasn't written a log yet."]
-    code, out = run(["journalctl", "-u", "lemond", "-n", str(n), "--no-pager", "-o", "cat"], 10)
-    if code != 0 and not out.strip().count("\n"):
-        out = "Couldn't read the lemond service log (%s).\nShoggoth reads it with `journalctl -u lemond`." % out.strip()[:200]
-    return out.splitlines()
+    try:
+        with open(llamacpp.log_path(), errors="replace") as f:
+            return [l.rstrip("\n") for l in f.readlines()[-n:]]
+    except OSError:
+        return ["llama.cpp hasn't written a log yet."]
+
+
+def own_source(sources):
+    """Shoggoth's own llama.cpp, as the first entry of /ui/sources (the same shape as a connected server)."""
+    up = llamacpp.running()
+    ms = llamacpp.models() if up else []
+    b = llamacpp.choose()
+    state = "ready" if up else "off" if current_mode() != "builtin" else "starting" if b else "not_installed"
+    me = {"id": "llamacpp", "kind": "builtin", "name": "llama.cpp", "engine": "llamacpp",
+          "url": "http://127.0.0.1:%d" % llamacpp._state["port"] if up else "", "state": state, "models": len(ms),
+          "loaded": [m["id"] for m in ms if m["status"] == "loaded"], "loads": "router", "leaves_computer": False, "own": True,
+          "version": (b or {}).get("tag", ""), "backend": (b or {}).get("backend", ""), "error": llamacpp._state.get("error")}
+    return dict(sources, sources=[me] + list(sources.get("sources") or []))
 
 
 def get_info():
@@ -221,7 +216,12 @@ class Handler(BaseHTTPRequestHandler):
         return host in ("localhost", "127.0.0.1", "::1")
 
     def authed(self):
-        return uiauth.allowed(self.server.server_address[1], self.headers.get("Cookie"), self.headers.get("Authorization"))
+        auth = self.headers.get("Authorization")
+        if not auth and urlparse(self.path).path.startswith("/api/"):
+            # Pi's Anthropic and Google clients send the key in their own header
+            k = self.headers.get("x-api-key") or self.headers.get("x-goog-api-key")
+            auth = "Bearer " + k if k else None
+        return uiauth.allowed(self.server.server_address[1], self.headers.get("Cookie"), auth)
 
     def _refuse(self, page=False):
         if page:
@@ -280,14 +280,14 @@ class Handler(BaseHTTPRequestHandler):
         elif p == "/ui/backends":
             self.send_json({"recipes": cached("backends", 4, hardware.backends)})
         elif p == "/ui/config":
-            self.send_json({"config": lem.get("/internal/config"), "defaults": lem.get("/internal/config/defaults")})
+            self.send_json({"config": (store.load().get("llamacpp") or {}), "engine": llamacpp.summary()})
         elif p == "/ui/args/schema":
             schema = llamaargs.args_schema(self._info().get("llama_bin"))
             self.send_json({"entries": schema or [], "verified": bool(schema)})
         elif p == "/ui/setup":
             self.send_json(setup_state())
         elif p == "/ui/engine/update":
-            self.send_json(dict(engine.UPD))
+            self.send_json(dict(llamacpp.UPD))
         elif p == "/ui/models/scan":
             self.send_json({"sources": modelscan.scan()})
         elif p == "/ui/models/source":
@@ -330,7 +330,7 @@ class Handler(BaseHTTPRequestHandler):
         elif p == "/ui/servers":
             self.send_json({"presets": servers.presets(), "servers": servers.public()})
         elif p == "/ui/sources":
-            self.send_json(scan.sources(own_ports=(self.server.server_address[1],)))
+            self.send_json(own_source(scan.sources(own_ports=self._own_ports())))
         elif p == "/ui/tuning":
             self.send_json({"targets": tuning.targets(), "job": tuning.status()})
         elif p == "/ui/tuning/job":
@@ -426,26 +426,47 @@ class Handler(BaseHTTPRequestHandler):
 
     do_DELETE = do_POST
 
-    # ---- settings the UI edits in Lemonade
+    # ---- Shoggoth's llama.cpp: device, backend, build, how many models stay loaded
+    @staticmethod
+    def _set_llamacpp(**kw):
+        store.update(lambda st: st.setdefault("llamacpp", {}).update(kw))
+        invalidate()
+
+    @staticmethod
+    def _restart_engine():
+        """Restart the router with the new settings (in the background; models load again on their next use)."""
+        if current_mode() == "builtin" and llamacpp.running():
+            threading.Thread(target=llamacpp.restart, daemon=True).start()
+            time.sleep(0.3)
+            return True
+        return False
+
     def post_device(self, body):
         dev = body.get("device", "")
         if not isinstance(dev, str) or not re.fullmatch(r"([a-z]+\d+(,[a-z]+\d+)*)?", dev):
             return self.send_json({"error": "device must look like cuda1 or cuda0,cuda1 (empty = automatic)"}, 400)
-        ok, msg = lem.set_config({"llamacpp": {"device": dev}})
-        invalidate("info")
-        if not ok and "nknown" in msg:
-            msg = ("This Lemonade doesn't have the llamacpp.device setting yet, so devices can't be chosen from here. "
-                   "The built-in Lemonade has it.")
-        self.send_json({"ok": ok, "error": msg, "output": msg}, 200 if ok else 400)
+        self._set_llamacpp(device=dev.upper())
+        self.send_json({"ok": True, "restarted": self._restart_engine()})
 
     def post_config(self, body):
-        if not body:
-            return self.send_json({"error": "expected a JSON object"}, 400)
-        status, payload = lem.request("POST", "/internal/set", body, timeout=15)
-        invalidate()
-        if status == 200:
-            return self.send_json({"ok": True, "updated": payload.get("updated")})
-        self.send_json({"ok": False, "error": lem.error_text(payload, "Lemonade rejected the change")}, 400 if status else 502)
+        """Change Shoggoth's llama.cpp settings: max_loaded (keep up to N models loaded), enabled."""
+        kw = {}
+        if "max_loaded" in body:
+            try:
+                kw["max_loaded"] = max(1, min(8, int(body["max_loaded"])))
+            except (TypeError, ValueError):
+                raise ValueError("Keep up to how many models loaded? Give a number from 1 to 8.")
+        if "enabled" in body:
+            kw["enabled"] = bool(body["enabled"])
+        if not kw:
+            raise ValueError("Nothing to change.")
+        self._set_llamacpp(**kw)
+        if kw.get("enabled") is False:
+            llamacpp.stop()
+            registry.reload()
+            return self.send_json({"ok": True, "config": store.load()["llamacpp"]})
+        registry.reload()
+        self.send_json({"ok": True, "restarted": self._restart_engine(), "config": store.load()["llamacpp"]})
 
     def post_args_parse(self, body):
         self.send_json(llamaargs.parse_args(str(body.get("args", "")), self._info().get("llama_bin")))
@@ -453,62 +474,32 @@ class Handler(BaseHTTPRequestHandler):
     def post_args_check(self, body):
         self.send_json(llamaargs.check_args(str(body.get("args", "")), self._info().get("llama_bin")))
 
-    def _recipe(self, body):
-        return next((r for r in cached("backends", 4, hardware.backends) if r["recipe"] == body.get("recipe")), None)
-
     def post_backend(self, body):
-        rec, backend = self._recipe(body), body.get("backend")
-        if not rec:
-            return self.send_json({"error": "unknown recipe"}, 400)
-        if not rec["selectable"]:
-            return self.send_json({"error": "this engine doesn't support choosing a backend"}, 400)
-        if backend != "auto" and not any(x["name"] == backend for x in rec["backends"]):
-            return self.send_json({"error": "unknown backend"}, 400)
-        ok, msg = lem.set_config({rec["recipe"].replace("-", ""): {"backend": backend}})
-        invalidate()
-        self.send_json({"ok": ok, "error": msg}, 200 if ok else 400)
+        """Use another installed build: backend (cpu, vulkan, cuda12, cuda13, rocm, or auto for the newest build here)."""
+        backend = str(body.get("backend", ""))
+        if backend == "auto":
+            backend = ""
+        elif not any(b["backend"] == backend for b in llamacpp.builds()):
+            return self.send_json({"error": "That build isn't installed. Download it first."}, 400)
+        self._set_llamacpp(backend=backend, tag="")
+        self.send_json({"ok": True, "restarted": self._restart_engine(), "engine": llamacpp.summary()})
 
     def post_backend_install(self, body):
-        rec, backend = self._recipe(body), body.get("backend")
-        if not rec:
-            return self.send_json({"error": "unknown recipe"}, 400)
-        b = next((x for x in rec["backends"] if x["name"] == backend), None)
-        if not b or b["state"] not in ("installable", "update_required"):
-            return self.send_json({"error": "that backend can't be installed"}, 400)
-        ok, msg = lem.install_backend(rec["recipe"], backend)
-        invalidate()
-        switched = None
-        if ok and rec["selectable"] and rec["current"] == "auto":
-            # "auto" prefers the engine's default backend. If that one isn't installed, point Lemonade at the one
-            # that was just installed so loading a model actually works.
-            fresh = next((r for r in hardware.backends() if r["recipe"] == rec["recipe"]), None)
-            if fresh and not any(b["name"] == fresh["default"] and b["state"] == "installed" for b in fresh["backends"]):
-                if lem.set_config({rec["recipe"].replace("-", ""): {"backend": backend}})[0]:
-                    switched = backend
-                    invalidate()
-        self.send_json({"ok": ok, "error": msg, "switched": switched}, 200 if ok else 500)
+        """Download the newest build for a backend (in the background; progress at GET /ui/engine/update)."""
+        backend = str(body.get("backend") or "") or llamacpp.recommended()
+        if backend not in llamacpp.ASSETS:
+            return self.send_json({"error": "Shoggoth doesn't know that build."}, 400)
+        started = llamacpp.start_update(backend)
+        self.send_json({"ok": True, "started": started, "update": dict(llamacpp.UPD)})
 
-    # ---- setup: which Lemonade, and the built-in engine
+    # ---- setup: which engine
     def post_mode(self, body):
         mode = body.get("mode")
-        s = store.load()
-        if mode == "builtin":
-            if not engine.programs():
-                raise ValueError("This copy of Shoggoth has no built-in Lemonade yet. Download it first.")
-        elif mode == "existing":
-            host = str(body.get("host") or s["existing"]["host"])
-            port = int(body.get("port") or s["existing"]["port"])
-            if not re.fullmatch(r"[A-Za-z0-9.\-]+|\[[0-9a-fA-F:]+\]", host) or not 0 < port < 65536:
-                raise ValueError("That address doesn't look right.")
-            s["existing"].update(host=host, port=port)
-            if "api_key" in body:
-                s["existing"]["api_key"] = str(body["api_key"])
-        else:
+        if mode not in ("builtin", "connected"):
             raise ValueError("Unknown choice.")
+        s = store.load()
         s["mode"] = mode
         store.save(s)
-        if mode == "existing":
-            lem.configure(*_existing_target(s))
         apply_mode(s)
         self.send_json(setup_state())
 
@@ -520,41 +511,43 @@ class Handler(BaseHTTPRequestHandler):
 
     def post_engine_check(self, body):
         try:
-            self.send_json({"ok": True, **engine.check(store.load())})
+            rel = llamacpp.latest()
         except RuntimeError as e:
-            self.send_json({"ok": False, "error": str(e)}, 502)
+            return self.send_json({"ok": False, "error": str(e)}, 502)
+        b = llamacpp.choose()
+        newer = not b or b.get("bundled") or llamacpp._tag_num(rel["tag_name"]) > llamacpp._tag_num(b["tag"])
+        self.send_json({"ok": True, "latest": rel["tag_name"], "current": (b or {}).get("tag", ""), "update_available": bool(newer)})
 
     def post_engine_update(self, body):
-        s = store.load()
-        s["builtin"]["version"] = ""          # asking for an update means "use the newest"
-        store.save(s)
-        started = engine.start_update()
-        self.send_json({"started": started, **engine.UPD})
+        self._set_llamacpp(tag="")              # asking for an update means "use the newest"
+        started = llamacpp.start_update(str(body.get("backend") or "") or None)
+        self.send_json({"started": started, **llamacpp.UPD})
 
     def post_engine_use(self, body):
-        version = str(body.get("version", ""))
-        s = store.load()
-        if version not in ("", "bundled") and not any(p["version"] == version for p in engine.programs()):
+        """Go back to (or forward to) another installed build: {tag, backend}."""
+        tag, backend = str(body.get("version") or body.get("tag") or ""), str(body.get("backend") or "")
+        have = llamacpp.builds()
+        if tag and not any(b["tag"] == tag and (not backend or b["backend"] == backend) for b in have):
             raise ValueError("That version isn't installed.")
-        s["builtin"]["version"] = version
-        store.save(s)
+        backend = backend or next((b["backend"] for b in have if b["tag"] == tag), "")
+        self._set_llamacpp(tag=tag, backend=backend)
         self.post_engine_restart({})
 
     def post_engine_restart(self, body):
         s = store.load()
         if effective_mode(s) == "builtin":
-            threading.Thread(target=engine.restart, args=(s,), daemon=True).start()
+            threading.Thread(target=lambda: (llamacpp.stop(), _start_engine()), daemon=True).start()
             time.sleep(0.3)
-        self.send_json({"ok": True, **{"engine": engine.summary(s)}})
+        self.send_json({"ok": True, "engine": llamacpp.summary(s)})
 
     # ---- where models live
     def post_storage(self, body):
         s = store.load()
         modelscan.set_storage(s, body.get("kind"), body.get("path"))
-        ok, msg = modelscan.apply_to_lemonade(s) if lem.healthy() else (False, "Lemonade isn't running yet; it will be applied when it starts.")
         store.save(s)
+        ok, msg = library.reload_engine()
         invalidate()
-        self.send_json({"ok": ok or not lem.healthy(), "message": msg, "models": setup_state()["models"]})
+        self.send_json({"ok": ok, "message": msg, "models": setup_state()["models"]})
 
     def post_imports(self, body):
         s = store.load()
@@ -573,34 +566,27 @@ class Handler(BaseHTTPRequestHandler):
             if item["id"] not in seen:
                 seen.add(item["id"])
                 chosen.append(item)
-        before = lem.get("/v1/models?show_all=true").get("data", [])
+        before = len(llamacpp.models())
         s["models"]["imports"] = chosen
-        if library.root():
-            store.save(s)
-            linked = len(chosen)
-            ok, msg = library.apply_to_lemonade() if (engine.running() and lem.healthy()) else (True, "")     # the library's view shows Lemonade what it can run
-        else:
-            linked = modelscan.sync_farm(chosen, accept=library.lemonade_accepts)       # Lemonade is only shown files it can run
-            ok, msg = (lem.set_config({"extra_models_dir": modelscan.farm_dir() if linked else ""})
-                       if lem.healthy() else (True, ""))
-            store.save(s)
-        time.sleep(1.5)                       # let Lemonade rescan
-        after = lem.get("/v1/models?show_all=true").get("data", [])
-        invalidate()
+        store.save(s)
         library._pk["v"] = None
-        self.send_json({"ok": ok, "error": msg, "linked": linked, "listed_before": len(before), "listed_after": len(after),
+        ok, msg = library.reload_engine()                  # the view shows llama.cpp what it can run; the router reads it again
+        invalidate()
+        self.send_json({"ok": ok, "error": msg, "linked": len(chosen), "listed_before": before, "listed_after": len(llamacpp.models()),
                         "models": setup_state()["models"]})
 
-    # ---- everything under /api goes to Lemonade untouched
+    # ---- the OpenAI-style door under /api (Shoggoth's own chat and Pi): each model goes to the engine that serves it
     def proxy(self):
         n = int(self.headers.get("Content-Length") or 0)
         body = self.rfile.read(n) if n else None
         path = gateway.norm(self.path)
+        if not gateway.ALLOW.match(path):
+            return self.send_json({"error": {"message": "Shoggoth doesn't forward %s." % path, "type": "not_found"}}, 404)
         rec = None
         if self.command == "POST" and gateway.INFER.match(path):      # Shoggoth's own chat shows up on the Server page too
-            model, stream = gateway.describe(body)
+            model, stream = gateway.describe(body, path)
             rec = gateway.REC.start("Shoggoth", "zest", self.command, path, model, stream, "local")
-        gateway.relay(self, self.command, self.path, body, rec, store.load()["gateway"]["capture"] if rec else False)
+        gateway.relay(self, self.command, self.path, body, rec, store.load()["gateway"]["capture"] if rec else False, merge_models=True)
 
     # ---- the Server page
     def get_server(self, ids, qids=()):
@@ -696,7 +682,7 @@ class Handler(BaseHTTPRequestHandler):
         model = str(body.get("model", "")).strip()
         ctx = None
         if body.get("ctx"):
-            ctx = agent.set_chat_ctx(int(body["ctx"]))
+            ctx = agent.set_chat_ctx(body["ctx"] if body["ctx"] == "auto" else int(body["ctx"]))
         ok, msg, got = agent.load_model(model, ctx, bool(body.get("force")))
         invalidate("info")
         self.send_json({"ok": ok, "error": msg, "ctx": got}, 200 if ok else 502)
@@ -708,7 +694,8 @@ class Handler(BaseHTTPRequestHandler):
 
     def post_model_ctx(self, body):
         """Only remember the context size, for when the model is loaded next."""
-        self.send_json({"ok": True, "ctx": agent.set_chat_ctx(int(body.get("ctx") or agent.DEFAULT_CTX))})
+        v = body.get("ctx") or "auto"
+        self.send_json({"ok": True, "ctx": agent.set_chat_ctx(v if v == "auto" else int(v))})
 
     def post_pi_check(self, body):
         try:
@@ -740,8 +727,7 @@ class Handler(BaseHTTPRequestHandler):
 
     def post_library_root(self, body):
         library.set_root(body.get("path", ""))
-        if engine.running() and lem.healthy():                    # only a Lemonade Shoggoth runs itself is ever re-pointed
-            threading.Thread(target=lambda: modelscan.apply_to_lemonade(store.load()), daemon=True).start()
+        threading.Thread(target=library.reload_engine, daemon=True).start()        # the router reads the new library through its view
         self.send_json(self.library_summary())
 
     @staticmethod
@@ -794,7 +780,11 @@ class Handler(BaseHTTPRequestHandler):
 
     def post_sources_scan(self, body):
         """Look at what is listening on this computer again (the Look again button) and return the same shape as GET /ui/sources."""
-        self.send_json(scan.sources(own_ports=(self.server.server_address[1],), fresh=True))
+        self.send_json(own_source(scan.sources(own_ports=self._own_ports(), fresh=True)))
+
+    def _own_ports(self):
+        """This Shoggoth's port and its llama.cpp's (the router's and each loaded model's), never offered as a server to connect."""
+        return tuple({self.server.server_address[1]} | llamacpp.own_ports())
 
     def post_servers(self, body):
         """Probe and connect, or remove, a server the person runs themselves. Shoggoth only ever talks to these; it never starts or stops them."""
@@ -813,7 +803,7 @@ class Handler(BaseHTTPRequestHandler):
     @staticmethod
     def _tune_args(body):
         engine, target = str(body.get("engine", "")), str(body.get("target", ""))
-        if engine != "lemonade" or not target:
+        if engine != "llamacpp" or not target:
             raise ValueError("Choose something to tune.")
         return engine, target, {k: body.get(k) for k in ("mode", "use", "goal", "kind")}
 
@@ -1046,11 +1036,9 @@ def main():
     if args[:1] == ["engines"]:
         import engines
         sys.exit(engines.main(args[1:]))
-    ap = argparse.ArgumentParser(description="Shoggoth: a console for Lemonade Server")
+    ap = argparse.ArgumentParser(description="Shoggoth: runs models on this computer with llama.cpp")
     ap.add_argument("--host", default=os.environ.get("SHOGGOTH_HOST", "127.0.0.1"), help="address to listen on (default 127.0.0.1)")
     ap.add_argument("--port", type=int, default=int(os.environ.get("SHOGGOTH_PORT", "13306")), help="port to listen on (default 13306)")
-    ap.add_argument("--lemonade", default=None, metavar="HOST:PORT",
-                    help="use this Lemonade Server and skip the setup screen (default: the choice saved in Shoggoth's settings)")
     ap.add_argument("--no-browser", action="store_true", help="don't open a browser tab")
     ap.add_argument("--app", action="store_true", help="desktop mode: quit automatically a few minutes after the browser tab is closed")
     ap.add_argument("--version", action="version", version="Shoggoth " + VERSION)
@@ -1090,14 +1078,17 @@ def main():
     piup.on_installed.append(agent.restart_idle)
     threading.Thread(target=agent.reaper, daemon=True).start()
     threading.Thread(target=router.watch, daemon=True).start()
+    try:
+        import migrate5
+        migrate5.run(store.data_dir(), library.root())       # a 4.x profile's Lemonade models, once (it can run again safely)
+    except Exception as e:  # noqa: BLE001 - never stop Shoggoth starting over old settings
+        sys.stderr.write("Shoggoth: couldn't carry the 4.x models over: %r\n" % e)
     s = store.load()
-    if a.lemonade:
-        h, _, p = a.lemonade.rpartition(":")
-        FORCED["addr"] = (h or "127.0.0.1", int(p or 13305))
-        lem.configure(FORCED["addr"][0], FORCED["addr"][1], os.environ.get("LEMONADE_API_KEY", ""))
-    else:
-        apply_mode(s)
-    print(f"Shoggoth {VERSION} on {url}  ->  Lemonade {effective_mode(s)} ({'%s:%s' % lem.target()})", flush=True)
+    apply_mode(s)
+    b = llamacpp.choose(s)
+    eng = ("llama.cpp %s (%s)" % (b["tag"], llamacpp.NAMES[b["backend"]]) if b else "llama.cpp, not set up yet") \
+        if effective_mode(s) == "builtin" else "connected servers only"
+    print(f"Shoggoth {VERSION} on {url}  ->  {eng}", flush=True)
 
     uiauth.token()                       # make the secret now, so a second launch can read it
     gateway.ensure_key(s)
@@ -1105,7 +1096,7 @@ def main():
     if gateway.GATEWAY.error:
         print("Other apps can't connect yet: " + gateway.GATEWAY.error, flush=True)
 
-    signal.signal(signal.SIGTERM, lambda *_: (_ for _ in ()).throw(SystemExit(0)))   # so the built-in Lemonade is stopped too
+    signal.signal(signal.SIGTERM, lambda *_: (_ for _ in ()).throw(SystemExit(0)))   # so Shoggoth's llama.cpp is stopped too
     if a.app:
         threading.Thread(target=watchdog, args=(srv, int(os.environ.get("SHOGGOTH_APP_GRACE", "180"))), daemon=True).start()
     if not a.no_browser:
@@ -1118,8 +1109,8 @@ def main():
         agent.stop_all()
         gateway.GATEWAY.stop()
         router.stop_started()     # what Shoggoth started goes with it; nothing keeps holding memory with no one left to stop it
-        srv.server_close()        # free the port first; stopping Lemonade can take a few seconds
-        engine.stop()
+        srv.server_close()        # free the port first; stopping llama.cpp can take a few seconds
+        llamacpp.stop()
 
 
 if __name__ == "__main__":
