@@ -1,0 +1,5 @@
+{
+  "user.MiMo-V2-Flash-Q4_K_M": {"ctx_size": 65536, "llamacpp_args": "--no-mmap -ngl 99 --threads=6 --port 9 --tool-call-parser x", "llamacpp_backend": "vulkan"},
+  "Qwen3.6-35B-A3B-MTP-GGUF": {"ctx_size": -1, "llamacpp_args": "-ctk q8_0"},
+  "Gone-Model": {"ctx_size": 4096}
+}
