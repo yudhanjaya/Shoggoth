@@ -7,6 +7,8 @@ import stat
 import sys
 import tarfile
 import tempfile
+import threading
+import time
 import unittest
 import wave
 from unittest import mock
@@ -208,6 +210,99 @@ class Install(unittest.TestCase):
                 rel["assets"][0]["digest"] = "sha256:" + "0" * 64
                 with self.assertRaisesRegex(RuntimeError, "checksum"):
                     speech.install_cpu(rel)
+
+
+class Setup(unittest.TestCase):
+    """POST /ui/speech/setup installs the processor build and its model in the background."""
+
+    def setUp(self):
+        speech.UPD.update(state="idle", bytes=0, total=0, tag=None, what=None, error=None)
+
+    def tearDown(self):
+        speech.UPD.update(state="idle", bytes=0, total=0, tag=None, what=None, error=None)
+
+    @staticmethod
+    def _wait(done, seconds=5):
+        deadline = time.time() + seconds
+        while time.time() < deadline and not done():
+            time.sleep(0.01)
+
+    def test_installs_the_processor_build_then_its_model(self):
+        calls = []
+        build = {"tag": "b1", "backend": "cpu", "dir": "/w/b1/cpu", "server": "/w/b1/cpu/whisper-server"}
+
+        def install(release=None, cancel=None):
+            calls.append("build")
+            return build
+
+        def ensure(name, cancel=None):
+            calls.append(name)
+            speech.UPD.update(state="done")
+            return "/w/models/" + name
+
+        with mock.patch.object(speech, "install_cpu", install), mock.patch.object(speech, "ensure_model", ensure), \
+                mock.patch.object(speech, "_settings", return_value={}):
+            self.assertTrue(speech.start_setup())
+            self._wait(lambda: len(calls) == 2 and speech.UPD["state"] == "done")
+        self.assertEqual(calls, ["build", "ggml-base.en.bin"])
+        self.assertEqual(speech.UPD["state"], "done")
+
+    def test_does_not_start_twice(self):
+        gate = threading.Event()
+        calls = []
+
+        def install(release=None, cancel=None):
+            calls.append("build")
+            gate.wait(5)
+            return {"tag": "b1", "backend": "cpu", "dir": "/w", "server": "/w/whisper-server"}
+
+        def ensure(name, cancel=None):
+            calls.append("model")
+            speech.UPD.update(state="done")
+            return name
+
+        with mock.patch.object(speech, "install_cpu", install), mock.patch.object(speech, "ensure_model", ensure), \
+                mock.patch.object(speech, "_settings", return_value={}):
+            self.assertTrue(speech.start_setup())
+            self.assertFalse(speech.start_setup())
+            gate.set()
+            self._wait(lambda: len(calls) == 2)
+        self.assertEqual(calls, ["build", "model"])
+
+    def test_a_failure_is_reported_in_the_progress(self):
+        with mock.patch.object(speech, "install_cpu", side_effect=RuntimeError("GitHub is down")), \
+                mock.patch.object(speech, "_settings", return_value={}):
+            self.assertTrue(speech.start_setup())
+            self._wait(lambda: speech.UPD["state"] == "error")
+        self.assertEqual(speech.UPD["state"], "error")
+        self.assertIn("GitHub is down", speech.UPD["error"])
+
+    def test_the_route_starts_it(self):
+        import server
+
+        seen = {}
+
+        class H:
+            def send_json(self, obj, code=200):
+                seen.update(obj=obj, code=code)
+
+        with mock.patch.object(speech, "start_setup", return_value=True), \
+                mock.patch.object(speech, "status", return_value={"download": {"state": "downloading"}}):
+            server.Handler.post_speech_setup(H(), {})
+        self.assertEqual(seen["code"], 200)
+        self.assertEqual((seen["obj"]["ok"], seen["obj"]["started"]), (True, True))
+
+
+class StatusText(unittest.TestCase):
+    def test_the_status_says_where_it_runs(self):
+        with mock.patch.object(speech, "find_server", return_value={"server": "/w/whisper-server", "backend": "cpu", "source": "shoggoth"}), \
+                mock.patch.object(speech, "_settings", return_value={}):
+            self.assertEqual(speech.status()["runs_on"], "Runs on the processor")
+        with mock.patch.object(speech, "find_server", return_value={"server": "/w/whisper-server", "backend": "cuda13", "source": "shoggoth"}), \
+                mock.patch.object(speech, "_settings", return_value={}):
+            self.assertEqual(speech.status()["runs_on"], "Runs on the graphics card")
+        with mock.patch.object(speech, "find_server", return_value=None):
+            self.assertIsNone(speech.status()["runs_on"])
 
 
 if __name__ == "__main__":

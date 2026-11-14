@@ -406,6 +406,7 @@ class Handler(BaseHTTPRequestHandler):
             status, obj = speech.ui_transcribe(self.rfile.read(n) if n else b"", self.headers.get("Content-Type", ""))
             return self.send_json(obj, status)
         handler = {
+            "/ui/speech/setup": self.post_speech_setup,
             "/ui/device": self.post_device, "/ui/config": self.post_config,
             "/ui/args/parse": self.post_args_parse, "/ui/args/check": self.post_args_check,
             "/ui/backend": self.post_backend, "/ui/backend/install": self.post_backend_install,
@@ -558,6 +559,11 @@ class Handler(BaseHTTPRequestHandler):
             threading.Thread(target=lambda: (llamacpp.stop(), _start_engine()), daemon=True).start()
             time.sleep(0.3)
         self.send_json({"ok": True, "engine": llamacpp.summary(s)})
+
+    # ---- speech to text
+    def post_speech_setup(self, body):
+        """Install whisper.cpp's processor build and its model (in the background; progress at GET /ui/speech/status)."""
+        self.send_json({"ok": True, "started": speech.start_setup(), "speech": speech.status()})
 
     # ---- where models live
     def post_storage(self, body):

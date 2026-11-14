@@ -237,6 +237,25 @@ def ensure_model(filename, cancel=None):
     return dest
 
 
+def start_setup(model=None):
+    """Install whisper.cpp's processor build and the model it uses, in the background: progress is in UPD, which
+    status() returns as "download". False when a download is already running."""
+    with _lock:
+        if UPD["state"] in ("downloading", "installing"):
+            return False
+        UPD.update(state="downloading", bytes=0, total=0, tag=None, what="speech engine", error=None)
+
+    def run():
+        try:
+            build = install_cpu()
+            ensure_model(model or choose_model(build["backend"]))
+        except Exception as e:  # noqa: BLE001 - install_cpu() and ensure_model() put the reason in UPD when they can
+            UPD.update(state="error", error=UPD.get("error") or str(e) or e.__class__.__name__)
+
+    threading.Thread(target=run, daemon=True).start()
+    return True
+
+
 # ---------------------------------------------------------------- running whisper-server
 def _free_port():
     with socket.socket() as s:
@@ -341,9 +360,12 @@ def _idle_watch():
 
 def status():
     found = find_server()
+    runs_on = None
+    if found:
+        runs_on = "Runs on the graphics card" if found["backend"] in GPU_BACKENDS else "Runs on the processor"
     return {"installed": bool(found), "server": found and found["server"], "backend": found and found["backend"],
             "model": choose_model(found["backend"]) if found else None, "running": running(), "port": _state["port"] if running() else None,
-            "download": dict(UPD)}
+            "runs_on": runs_on, "download": dict(UPD)}
 
 
 # ---------------------------------------------------------------- audio
