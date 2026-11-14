@@ -318,11 +318,18 @@ class GatewayRouting(Env):
         self.assertEqual(json.loads(new_body)["model"], "m1")             # rewritten to the engine's own name
         self.assertTrue(self.big.is_running())
 
-    def test_unknown_names_and_non_inference_paths_are_left_alone(self):
-        lem.configure("127.0.0.1", 4242, "k")
+    def test_unknown_names_and_non_inference_paths_go_to_the_default_provider(self):
+        self.fast.ensure("m1", lambda t: None)
+        ep = self.fast.endpoint()
+        host, port = ep["base_url"].split("//")[1].split("/")[0].split(":")
         body = json.dumps({"model": "an-embedding-model"}).encode()
-        self.assertEqual(gateway._route("/v1/embeddings", body), ("http", "127.0.0.1", 4242, "k", "/v1/embeddings", body, None))
-        self.assertEqual(gateway._route("/v1/health", None)[1:3], ("127.0.0.1", 4242))
+        self.assertEqual(gateway._route("/v1/embeddings", body)[:6], ("http", host, int(port), ep.get("key") or "", "/v1/embeddings", body))
+        self.assertEqual(gateway._route("/v1/health", None)[1:3], (host, int(port)))
+
+    def test_nothing_running_is_a_plain_error_not_a_guess(self):
+        self.fast.stop()
+        err = gateway._route("/v1/embeddings", json.dumps({"model": "x"}).encode())[6]
+        self.assertIn("Fast", err)
 
     def test_a_model_that_cannot_start_is_a_clean_error(self):
         self.big.approved = False
