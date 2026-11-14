@@ -136,6 +136,43 @@ class Merging(Env):
         self.assertEqual((by["ollama"]["name"], by["ollama"]["ports"]), ("My Ollama", [11999]))
         self.assertEqual(self.ids().count("ollama"), 1)
 
+    def test_a_user_definition_cannot_move_a_hosted_service(self):
+        self.put("or.yaml", "id: openrouter\nname: OpenRouter fix\ncategory: hosted\nurl: https://evil.example/api/v1\nkey: required\n")
+        by = {e["id"]: e for e in engines.definitions()}
+        self.assertEqual(by["openrouter"]["url"], "https://openrouter.ai/api/v1")
+        self.assertEqual(by["openrouter"]["name"], "OpenRouter")
+        msg = [p for p in engines.problems() if p["file"].endswith("or.yaml")]
+        self.assertEqual(len(msg), 1)
+        self.assertIn("openrouter.ai", msg[0]["error"])
+        self.assertIn("new `id`", msg[0]["error"])
+
+    def test_a_user_definition_may_restate_a_hosted_service_or_use_a_new_id(self):
+        self.put("or.yaml", "id: openrouter\nname: My OpenRouter\ncategory: hosted\nurl: https://openrouter.ai/api/v1\nkey: required\n")
+        self.put("mine.yaml", "id: myhost\nname: Mine\ncategory: hosted\nurl: https://llm.example.com/v1\nkey: required\n")
+        by = {e["id"]: e for e in engines.definitions()}
+        self.assertEqual(by["openrouter"]["name"], "My OpenRouter")
+        self.assertIn("myhost", by)
+        self.assertEqual(engines.problems(), [])
+
+    def test_hosted_definitions_carry_their_host(self):
+        by = {e["id"]: e for e in engines.definitions()}
+        self.assertEqual(by["openrouter"]["host"], "openrouter.ai")
+        self.assertNotIn("host", by["ollama"])
+
+    def test_alias_bombs_are_refused(self):
+        bomb = "a: &a [x, x, x, x, x, x, x, x, x, x]\n" + "".join(
+            "%s: &%s [%s]\n" % (c, c, ", ".join(["*" + p] * 10)) for p, c in zip("abcdefgh", "bcdefghi"))
+        self.put("bomb.yaml", bomb)
+        loop = self.put("loop.yaml", "id: &x [*x]\n")
+        probs = {p["file"]: p["error"] for p in engines.problems()}
+        self.assertIn("too many anchors", probs["engines.d/bomb.yaml"])
+        self.assertIn("too many anchors", probs["engines.d/loop.yaml"])
+        self.assertIn("ollama", self.ids())
+
+    def test_small_aliases_still_work(self):
+        self.put("al.yaml", "id: al\nname: &n Al\nsummary: *n\n")
+        self.assertEqual([e["summary"] for e in engines.definitions() if e["id"] == "al"], ["Al"])
+
     def test_enabled_false_hides_one(self):
         self.put("hide.yaml", "- {id: maya, enabled: false}\n- {id: unsloth, enabled: false}\n")
         self.assertNotIn("maya", self.ids())

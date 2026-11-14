@@ -10,6 +10,7 @@ It only reads and sends GETs. It never starts or stops anything, never looks at 
 opening the Models page, Look again), never on a timer. The /proc folder can be passed in, so tests use a fake one. Standard library only.
 """
 import concurrent.futures
+import http.client
 import ipaddress
 import json
 import os
@@ -21,6 +22,8 @@ import urllib.parse
 import urllib.request
 
 import engines
+import hf
+import llamacpp
 import provbase
 import servers
 import store
@@ -103,7 +106,8 @@ def listening(proc=PROC):
     own = owners(proc, {r[2] for r in rows})
     by_port = {}
     for ip, port, inode in rows:
-        host = "127.0.0.1" if ip.is_unspecified or (ip.version == 4 and ip.is_loopback) else "[::1]" if ip.is_loopback else \
+        # `::` may be IPv6-only, so probe it at ::1 (a dual-stack socket answers there too); only 0.0.0.0 maps to 127.0.0.1.
+        host = "127.0.0.1" if (ip.version == 4 and (ip.is_unspecified or ip.is_loopback)) else "[::1]" if (ip.is_unspecified or ip.is_loopback) else \
             "[%s]" % ip if ip.version == 6 else str(ip)
         pid, comm, cmd = own.get(inode, (0, "", ""))
         cur = by_port.get(port)
@@ -114,11 +118,21 @@ def listening(proc=PROC):
 
 
 # ---------------------------------------------------------------- asking a port
+class _NoRedirect(urllib.request.HTTPRedirectHandler):
+    def redirect_request(self, *a, **kw):
+        return None                                  # a 3xx is just an answer; a local service can't send Shoggoth elsewhere
+
+
+_opener = urllib.request.build_opener(urllib.request.ProxyHandler({}), _NoRedirect)
+
+
 def _get(base, path, key="", timeout=TIMEOUT):
     """(status, lower-case headers, parsed JSON or None) for one GET. Status 0 when nothing HTTP answers."""
-    h = {"Authorization": "Bearer " + key} if key else {}
+    h = {"User-Agent": "Shoggoth/" + hf.VERSION}
+    if key:
+        h["Authorization"] = "Bearer " + key
     try:
-        with urllib.request.urlopen(urllib.request.Request(base + path, headers=h), timeout=timeout) as r:
+        with _opener.open(urllib.request.Request(base + path, headers=h), timeout=timeout) as r:
             status, head, raw = r.status, r.headers, r.read(1_000_000)
     except urllib.error.HTTPError as e:
         try:
@@ -126,7 +140,7 @@ def _get(base, path, key="", timeout=TIMEOUT):
         except OSError:
             raw = b""
         status, head = e.code, e.headers
-    except (OSError, ValueError):
+    except (OSError, ValueError, http.client.HTTPException):      # not HTTP at all
         return 0, {}, None
     try:
         d = json.loads(raw) if raw else None
@@ -337,23 +351,31 @@ def _own(extra):
         p = (s.get(k) or {}).get("port")
         if isinstance(p, int):
             ports.add(p)
+    try:
+        if llamacpp.running():                       # Shoggoth's own llama.cpp router
+            ports.add(llamacpp._state["port"])
+    except Exception:  # noqa: BLE001 - never let this stop a scan
+        pass
     return ports
 
 
 def latest(own_ports=(), fresh=False, **kw):
     """(found, when) from the last scan, scanning again when asked or when it is older than FRESH seconds."""
     with _lock:
-        if fresh or time.time() - _last["at"] > FRESH:
-            _last["found"], _last["at"] = scan(own_ports=_own(own_ports), **kw), time.time()
+        if not fresh and time.time() - _last["at"] <= FRESH:
+            return _last["found"], _last["at"]
+    found = scan(own_ports=_own(own_ports), **kw)          # the slow part runs outside the lock
+    with _lock:
+        _last["found"], _last["at"] = found, time.time()
         return _last["found"], _last["at"]
 
 
 def _state(entry, defs):
-    r = servers.probe(entry["url"], entry.get("key", ""))
+    r = servers.probe(entry["url"], entry.get("key", ""), pin=entry.get("fp"))
     d = next((x for x in defs if x["id"] == entry.get("preset")), None) or {}
     host = (urllib.parse.urlsplit(entry["url"]).hostname or "").lower()
     cloud = d.get("category") == "hosted"
-    return {"id": entry["id"], "kind": "cloud" if cloud else "engine", "name": entry.get("name") or entry["id"], "engine": entry.get("preset", ""),
+    return {"id": entry["id"], "kind": "cloud" if cloud else "shoggoth" if entry.get("preset") == "shoggoth" else "engine", "name": entry.get("name") or entry["id"], "engine": entry.get("preset", ""),
             "url": entry["url"], "state": "needs_key" if r["needs_key"] else "ready" if r["reachable"] else "offline", "models": len(r["models"]),
             "loads": d.get("loads", "fixed"), "leaves_computer": cloud or host not in ("127.0.0.1", "localhost", "::1")}
 
@@ -364,7 +386,13 @@ def sources(own_ports=(), fresh=False, include_other=False, **kw):
     Each source is {id, kind, name, engine, url, state, models, loads, leaves_computer}; each found server is a scan() entry."""
     found, when = latest(own_ports, fresh, **kw)
     defs = engines.definitions()
-    have = servers.all()
+    have = []
+    for h in servers.all():
+        try:
+            servers.normalise(h["url"])
+        except ValueError:
+            continue                                  # a malformed stored address is skipped, not fatal
+        have.append(h)
     with concurrent.futures.ThreadPoolExecutor(max_workers=WORKERS) as pool:
         srcs = list(pool.map(lambda e: _state(e, defs), have))
     canon = {servers._canon(servers.normalise(h["url"])) for h in have}
