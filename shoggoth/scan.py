@@ -120,7 +120,11 @@ def _get(base, path, key="", timeout=TIMEOUT):
         with urllib.request.urlopen(urllib.request.Request(base + path, headers=h), timeout=timeout) as r:
             status, head, raw = r.status, r.headers, r.read(1_000_000)
     except urllib.error.HTTPError as e:
-        status, head, raw = e.code, e.headers, b""
+        try:
+            raw = e.read(64_000)                     # an error's body says whether it's an API asking for a key
+        except OSError:
+            raw = b""
+        status, head = e.code, e.headers
     except (OSError, ValueError):
         return 0, {}, None
     try:
@@ -269,7 +273,8 @@ def _explain(r):
 def _look(s, defs, timeout):
     """Everything one port has to say, or None when it isn't an inference server."""
     base = "http://%s:%d" % (s["host"], s["port"])
-    status, d = provbase.http_json(base + "/v1/models", timeout=timeout)
+    status, _, d = _get(base, "/v1/models", timeout=timeout)
+    d = d if isinstance(d, dict) else {}
     if status == 0:
         return None                                            # not HTTP, or not answering
     who = identify(defs, s["port"], s["process"], s["cmd"], lambda p: _get(base, p, timeout=timeout))
