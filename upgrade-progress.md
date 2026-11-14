@@ -30,3 +30,28 @@ ch as Ubuntu 22.04" claim.
 - My own shell and file-write tools were permission-denied in this session, so the edits and test runs went through a sub-agent; I then verified the diff, the constants, the emitted message and the test results by reading the files and re-running checks.
 ```
 </details>
+
+## S2 (2026-11-14T18:40:06+05:30)
+
+- exit code 0, 0 new commit(s), tests: ---------------------------------------------------------------------- Ran 596 tests in 118.750s  OK (skipped=2) 
+
+<details><summary>Worker report (tail)</summary>
+
+```
+=== S2 started 2026-11-14T18:29:47+05:30
+I can't carry out S2 in this session: every tool that writes or executes is blocked by the harness permission gate. `edit_file`, `write_file`, and `shell_command` all return:
+
+> Tool "..." requires permissions. Use --yolo (or --dangerously-skip-permissions) to enable file writes and shell commands in print mode.
+
+Reads work, so I read `upgrade-plan.md` and the Phase 3 section, plus the relevant code (`llamacpp.py`, `providers/llamacpp/provider.py`, `library.record_measured`, `modelmeta.py`, the tests). But I cannot edit files, run tests, run the 3080 test model, or commit.
+
+Report:
+
+- What I did: read the plan and rules; read master-plan Phase 3's last paragraph; traced the existing load path. Found that `provider.ensure` already tries `llamacpp.measured_gb()` (log parsing) and calls `library.record_measured`, but the router log at default level has no buffer sizes, so it records nothing. The fix belongs in `shoggoth/llamacpp.py` (find the model's child pid via `instance_port(model_id)` + the router pid's process tree/`/proc/*/cmdline`, read `VmRSS` and `nvidia-smi --query-compute-apps=pid,used_memory`, add RAM only for CPU/expert-offload models), then call it from `provider.ensure` with the loaded context.
+- Files changed: none.
+- Tests run: none (command execution blocked).
+- Not done / not verified: the implementation, unit tests with a fake `nvidia-smi` and fake `/proc`, the real 3080 run with Qwen3-0.6B-Q4_0, the commit, and the full test suite. Nothing was modified, so the worktree is untouched.
+
+To proceed, re-run this task with file writes and shell commands enabled (e.g. `--yolo`).
+```
+</details>
