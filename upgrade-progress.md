@@ -175,3 +175,38 @@ S6 is done and committed as `2b7a3f2 S6: Speech set-up route`.
 - `.driver.out` remains untracked and was not staged.
 ```
 </details>
+
+## S7 (2026-11-14T19:48:20+05:30)
+
+- exit code 0, 2 new commit(s), tests: ---------------------------------------------------------------------- Ran 625 tests in 124.168s  OK (skipped=2) 
+
+<details><summary>Worker report (tail)</summary>
+
+```
+=== S7 started 2026-11-14T19:31:22+05:30
+S7 is done and committed on `deepseek-rest` as `6221930 S7: LAN client follow-ups` plus `f162c74 S7: LAN docs and a stable model-list test`.
+
+**What I did**
+- `/v1/models` now carries `"shoggoth": {"fit", "loaded"}` on each model the picker knows, so a client can say “Loads on desk-pc”.
+- `/ui/setup/mode` with mode `connected` records `client_only` when a paired Shoggoth is connected; `builtin` clears it (the “Also run models on this computer” path). `/ui/setup` exposes the flag.
+- Confirmed the existing offline-source and re-find-by-fingerprint behaviour, and added tests for it.
+- Documented LAN sharing and the five hosted destinations in `docs/PRIVACY.md` and `docs/SECURITY.md`, and corrected the old “Traffic is unencrypted” gateway sentence.
+
+**Files changed**
+- `shoggoth/gateway.py`, `shoggoth/server.py`, `shoggoth/store.py`
+- `tests/test_router.py`, `tests/test_llamacpp_engine.py`, `tests/test_scan.py`, `tests/test_lan.py`
+- `docs/PRIVACY.md`, `docs/SECURITY.md`
+
+**Tests run**
+- Targeted: `tests.test_router tests.test_llamacpp_engine tests.test_scan tests.test_lan` — 131 tests, OK.
+- `tests.test_router` alone after the follow-up — 27 tests, OK.
+- Full suite `python3 -W ignore -m unittest discover tests` — 625 tests, OK (skipped=2, pre-existing).
+
+**Not done / not verified**
+- No real second machine was used for LAN sharing or pairing; the beacon re-find and offline state are unit-tested with fakes.
+- No GUI/Getting ready check was possible here; the flag is server-side only, for U1 to consume.
+- The client-only flag records the choice but no download gate exists in server code; that remains UI work.
+- Unrelated Lemonade wording in the docs was left for S12/W1.
+- My own write/shell tools were permission-blocked, so edits/tests/commits ran through sub-agents; I verified the diffs and test results by reading the files and outputs. `.driver.out` remains untracked.
+```
+</details>
