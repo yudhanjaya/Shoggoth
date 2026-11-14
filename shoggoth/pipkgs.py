@@ -302,3 +302,27 @@ def settings_entries(enabled=None):
     Pi loads a path as a local package, as is, without copying or installing it. `enabled` is a collection of package names
     (default: every installed one). Pi's docs also allow {"source": path, "extensions": [...], ...} to filter what loads."""
     return [p["dir"] for p in installed() if enabled is None or p["name"] in enabled]
+
+
+def active():
+    """The installed packages that load into Pi: installed completely, and still turned on in the pinned list. A package whose entry
+    was switched off (or dropped) in a later release stops loading even though its files are still on disk."""
+    on = {e["name"] for e in curated() if e["enabled"]}
+    return [p for p in installed() if p["name"] in on]
+
+
+def skill_dirs(pkg_dir):
+    """The folders inside an unpacked package that hold its skills: package.json's pi.skills paths, else skills/. Never outside the package."""
+    try:
+        with open(os.path.join(pkg_dir, "package.json")) as f:
+            declared = ((json.load(f).get("pi") or {}).get("skills"))
+    except (OSError, ValueError, AttributeError):
+        declared = None
+    paths = [x for x in declared if isinstance(x, str)] if isinstance(declared, list) else ["skills"]
+    base = os.path.realpath(pkg_dir)
+    out = []
+    for rel in paths:
+        d = os.path.realpath(os.path.join(base, rel))
+        if d.startswith(base + os.sep) and os.path.isdir(d) and d not in out:
+            out.append(d)
+    return out

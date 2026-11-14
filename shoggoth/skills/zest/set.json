@@ -1,12 +1,16 @@
 {
  "name": "Shoggoth basics",
- "blurb": "Skills written for Shoggoth: diagrams that appear as pictures in the chat, clear Markdown for documents, turning a bigger request into a background job, and writing a skill for you to keep.",
+ "blurb": "Skills written for Shoggoth: diagrams that appear as pictures in the chat, clear Markdown for documents, turning a bigger request into a background job, small and safe code changes, and writing a skill for you to keep.",
  "source": "",
  "license": "MIT",
  "author": "Shoggoth",
  "inline": [
   "diagrams",
   "markdown-writing",
-  "start-a-job"
+  "start-a-job",
+  "unslop"
+ ],
+ "off": [
+  "unslop"
  ]
 }
