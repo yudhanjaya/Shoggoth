@@ -364,3 +364,38 @@ Reworded shipped text and code strings that still claimed Shoggoth bundles or ru
 - `upgrade-progress.md` and `.driver.out` were not touched; nothing pushed, no `git stash`, no GPU used.
 ```
 </details>
+
+## U1 (2026-11-14T21:49:23+05:30)
+
+- exit code 0, 4 new commit(s), tests: ---------------------------------------------------------------------- Ran 666 tests in 127.488s  OK (skipped=2) 
+
+<details><summary>Worker report (tail)</summary>
+
+```
+et".
+- Advanced > Engines has one llama.cpp card: `GET/POST /ui/config` (max loaded 1–8, enabled), `POST /ui/device`, the backend chooser (`POST /ui/backend`), check/update/use/restart with the "models load again" wording, installed-build "Go back", and "Delete Lemonade's own files (N GB)" with a dependency warning and an un-undoable confirmation.
+- Updated logs wording, hardware engine details, tuning/update item names (`zest`, `llamacpp`, `pi`), headroom/`tnTag` keys, `ids.llamacpp`, download ids without `user.`, `friendlyProblem` (llama.cpp messages), and the Ollama import hint.
+- Server: added `GET /ui/engine/lemonade`, `POST /ui/engine/lemonade/delete`, `migrate5.lemonade_paths/delete_lemonade/leftovers`, and fixed deletion so the counted `lemond.log` is actually removed.
+- Tests: new `tests/ui/setup.test.mjs`, updated `problems.test.mjs` and the `api.json` fixture, plus Python tests for the delete path, route, and the five backends.
+
+## Files changed
+`shoggoth/index.html`, `shoggoth/migrate5.py`, `shoggoth/server.py`, `tests/test_migrate5.py`, `tests/test_llamacpp_engine.py`, `tests/ui/api.json`, `tests/ui/problems.test.mjs`, `tests/ui/setup.test.mjs`.
+
+Commits (all `U1:`, all with the DeepSeek trailer): `71843e3`, `bf8b010`, `6f9681d`, `034a239`.
+
+## Tests run
+- `python3 -W ignore -m unittest discover tests` → 666 tests, OK (skipped=2), twice.
+- `tests.test_migrate5 tests.test_llamacpp_engine` → 67 tests, OK.
+- `node tests/ui/setup.test.mjs` → OK; `node tests/ui/problems.test.mjs` → OK.
+- `node --check` on all four extracted inline scripts → OK; `git diff --check` clean.
+- `tests/ui/api.json` parses.
+
+## Not done / not verified
+- `tests/ui/smoke.js` was not run: `tests/ui/node_modules` (jsdom) is absent. No live browser/app or GPU run.
+- U1 bullet 6's display "llama.cpp (on this computer)" is not shown anywhere yet because the page has no sources strip — that is U3's page. The server's `/ui/sources` first entry already has the required shape.
+- U1 bullet 11's `/ui/models/imports` has no page caller yet; the server already returns `listed_before`/`listed_after`.
+- The "`--lemonade` forced mode" does not exist anywhere in this worktree, so there was nothing to remove.
+- Pre-existing and outside U1: the page's download calls still target `/api/v1/pull` and `/api/v1/downloads/control`, which the current gateway does not expose. I did not change that (master plan 1.4 territory).
+- `.driver.out` remains untracked; nothing pushed or stashed.
+```
+</details>
