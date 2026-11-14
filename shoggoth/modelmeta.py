@@ -1,6 +1,6 @@
 """Shoggoth's own notes about a model, kept per model id: a measured speed, and how much graphics memory to leave free for the system.
 
-Tuning flags are not kept here. Those stay where the engine keeps them (Lemonade's saved options with the result in
+Tuning flags are not kept here. Those stay where the engine keeps them (llama.cpp's presets.ini, with the result in
 tuning.json), so nothing is stored twice and the engine remains the source of truth.
 """
 import json
@@ -52,14 +52,14 @@ def update(model, **fields):
         return rec
 
 
-DEFAULT_HEADROOM_GB = {"lemonade": 0.0}          # none unless the person asks for some: graphics memory to leave free for the desktop
+DEFAULT_HEADROOM_GB = {"llamacpp": 0.0}          # none unless the person asks for some: graphics memory to leave free for the desktop
 
 
 def headroom_gb(model):
     """The graphics memory to leave free for the system on load: what the person set for the model (0 is "none"), else the engine's default."""
     v = get(model).get("headroom_gb")
     if v is None:
-        return DEFAULT_HEADROOM_GB["lemonade"]
+        return DEFAULT_HEADROOM_GB["llamacpp"]
     try:
         return max(0.0, float(v))
     except (TypeError, ValueError):
@@ -68,7 +68,7 @@ def headroom_gb(model):
 
 def headroom_info(model):
     """For the page: {gb, default, explicit}."""
-    d = DEFAULT_HEADROOM_GB["lemonade"]
+    d = DEFAULT_HEADROOM_GB["llamacpp"]
     return {"gb": headroom_gb(model), "default": d, "explicit": get(model).get("headroom_gb") is not None}
 
 

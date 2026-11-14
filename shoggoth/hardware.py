@@ -1,10 +1,11 @@
-"""What hardware and llama.cpp backends Lemonade can see, and how llama.cpp numbers the devices."""
+"""What hardware this computer has, which llama.cpp builds Shoggoth has for it, and how llama.cpp numbers the devices.
+Device lists come from the llama.cpp binary itself (`llama-server --list-devices`)."""
 import os
 import re
 import shutil
 
-import engine
-import lem
+import llamacpp
+import store
 from util import cached, run
 
 # ---------------------------------------------------------------- GPUs
@@ -76,14 +77,6 @@ def detect_gpus():
     """Graphics cards in this computer, found without llama.cpp, so the welcome steps can say what is here before
     any backend is installed. Names only: live usage still comes from nvidia-smi."""
     tool = {"NVIDIA": [g["name"] for g in nvidia_gpus()], "AMD": [], "Intel": []}
-    try:
-        devices = lem.system_info().get("devices", {})
-    except Exception:  # noqa: BLE001
-        devices = {}
-    for key, vendor in (("nvidia_gpu", "NVIDIA"), ("amd_gpu", "AMD"), ("intel_gpu", "Intel")):
-        names = [d["name"] for d in devices.get(key) or [] if isinstance(d, dict) and d.get("name") and d.get("available", True)]
-        if len(names) > len(tool[vendor]):
-            tool[vendor] = names
     pci = {"NVIDIA": [], "AMD": [], "Intel": []}
     base = "/sys/class/drm"
     try:
@@ -191,7 +184,7 @@ def parse_fdinfo(text):
 
 def drm_clients(by_slot, proc="/proc"):
     """Which of our processes hold VRAM on which AMD card. Only processes we are allowed to inspect appear (the
-    built-in Lemonade runs as the same user as Shoggoth; a system service's does not)."""
+    llama.cpp Shoggoth runs is the same user as Shoggoth; a system service's is not)."""
     def scan():
         out = []
         try:
@@ -288,10 +281,13 @@ def bind_devices(devs, gpus):
 
 
 def list_devices(bin_path):
-    """Ask llama.cpp how it numbers devices; this differs from nvidia-smi."""
+    """Ask llama.cpp how it numbers devices. NVIDIA cards are numbered in PCI order (as nvidia-smi does), the same order Shoggoth's
+    llama.cpp runs with."""
     if not bin_path or not os.path.isfile(bin_path):
         return None
-    code, out = run([bin_path, "--list-devices"], 30)
+    env = dict(os.environ)
+    env.setdefault("CUDA_DEVICE_ORDER", "PCI_BUS_ID")
+    code, out = run([bin_path, "--list-devices"], 30, env=env)
     devs = []
     for m in re.finditer(r"^\s*([A-Za-z]+\d+):\s*(.+?)\s*\((\d+) MiB", out, re.M):
         devs.append({"id": m.group(1).lower(), "name": m.group(2), "mib": int(m.group(3))})
@@ -306,78 +302,42 @@ def llama_version(bin_path):
     return m.group(1).strip() if m else None
 
 
-def find_llama_bin(cfg, backend, mode):
-    """A llama-server binary Shoggoth is allowed to run, so it can ask it about devices and options."""
-    path = cfg.get(f"llamacpp.{backend}_bin", "")
-    if path and path != "builtin" and os.path.isfile(path):
-        return path
-    if mode == "builtin":     # Lemonade keeps backends it installs under its data folder
-        own = os.path.join(engine.data_dir(), "bin", "llamacpp", backend, "llama-server")
-        if os.path.isfile(own):
-            return own
-    if cfg.get("llamacpp.prefer_system") in (True, "true"):
-        w = shutil.which("llama-server")
-        if w:
-            return w
-    return None
-
-
 def info(mode, version):
-    cfg = lem.flat_config()
-    recipe = lem.system_info().get("recipes", {}).get("llamacpp", {})
-    current = cfg.get("llamacpp.backend", "auto") or "auto"
-    resolved = recipe.get("default_backend") if current == "auto" else current
-    bin_path = find_llama_bin(cfg, resolved, mode) if resolved else None
-    devs = cached(f"devs:{bin_path}", 600, lambda: list_devices(bin_path))
-    assumed = False
-    gpus = all_gpus()
-    if devs is None:
-        # No binary we can ask (for example a backend that isn't installed yet). For CUDA, fall back to PCI
-        # order and say so; other backends need a manual value.
-        if mode == "builtin":
-            devs = []           # the built-in Lemonade has no llama.cpp yet; a guess could point at the wrong card
-        else:
-            devs = [{"id": f"cuda{g['nv_index']}", "name": g["name"], "mib": int((g["mem_total_mb"] or 0))}
-                    for g in gpus if g["vendor"] == "NVIDIA"] if resolved == "cuda" else []
-            assumed = bool(devs)
-    bind_devices(devs, gpus)   # live telemetry for each llama.cpp device
-    host, port = lem.target()
+    """The devices of the llama.cpp build Shoggoth runs, each tied to the card whose live numbers describe it, and the device chosen."""
+    s = store.load()
+    cfg = s.get("llamacpp") or {}
+    b = llamacpp.choose(s)
+    bin_path = (b or {}).get("server")
+    devs = cached(f"devs:{bin_path}", 600, lambda: list_devices(bin_path)) or []
+    devs = [dict(d) for d in devs]
+    bind_devices(devs, all_gpus())   # live telemetry for each llama.cpp device
     return {
-        "device": cfg.get("llamacpp.device", ""),
-        "device_supported": "llamacpp.device" in cfg,
-        "backend": {"current": current, "resolved": resolved},
+        "device": cfg.get("device", ""),
+        "device_supported": bool(b),
+        "backend": {"current": cfg.get("backend") or "auto", "resolved": (b or {}).get("backend", "")},
         "llama_bin": bin_path,
         "llama_version": cached(f"ver:{bin_path}", 600, lambda: llama_version(bin_path)),
-        "llama_args": cfg.get("llamacpp.args", ""),
+        "llama_tag": (b or {}).get("tag", ""),
         "devices": devs,
-        "devices_assumed": assumed,
-        "needs_backend": mode == "builtin" and bin_path is None,
-        "lemonade": f"{host}:{port}",
+        "devices_assumed": False,
+        "needs_backend": b is None,
         "mode": mode,
         "zest": version,
     }
 
 
 def backends():
-    cfg = lem.flat_config()
-    out = []
-    for key, r in lem.system_info().get("recipes", {}).items():
-        bs = [{"name": n, "state": b.get("state"), "message": b.get("message"),
-               "version": b.get("version"), "release_url": b.get("release_url"),
-               "file": b.get("download_filename")}
-              for n, b in r.get("backends", {}).items() if b.get("state") != "unsupported"]
-        if not bs:
-            continue
-        prefix = key.replace("-", "")
-        out.append({
-            "recipe": key, "name": r.get("display_name", key), "modality": r.get("modality", ""),
-            "experimental": bool(r.get("experimental")), "order": r.get("order", 99),
-            "selectable": bool(r.get("selectable_backend")) and f"{prefix}.backend" in cfg,
-            "default": r.get("default_backend"), "current": cfg.get(f"{prefix}.backend") or "auto",
-            "backends": bs,
-        })
-    out.sort(key=lambda r: r["order"])
-    return out
+    """The llama.cpp builds, in the shape the Engines page and tuning read: [{recipe, name, selectable, default, current, backends:
+    [{name, state, version, message}]}]. A build is installed (with its tag as the version) or can be downloaded."""
+    s = store.load()
+    cfg = s.get("llamacpp") or {}
+    have = {}
+    for b in llamacpp.builds():
+        have.setdefault(b["backend"], b)
+    bs = [{"name": k, "state": "installed" if k in have else "installable", "message": llamacpp.NAMES[k],
+           "version": have[k]["tag"] if k in have else None, "release_url": None, "file": None} for k in llamacpp.ASSETS]
+    return [{"recipe": "llamacpp", "name": "llama.cpp", "modality": "llm", "experimental": False, "order": 0, "selectable": True,
+             "default": cached("llamacpp-rec", 300, llamacpp.recommended), "current": cfg.get("backend") or "auto", "backends": bs}]
 
 
 # ---------------------------------------------------------------- how big this computer is

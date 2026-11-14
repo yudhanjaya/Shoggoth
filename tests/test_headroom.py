@@ -36,7 +36,7 @@ class Reserve(unittest.TestCase):
 
     def test_the_page_gets_the_defaults_and_what_was_set(self):
         modelmeta.update("m", headroom_gb=2)
-        self.assertEqual(modelmeta.headroom_table(), {"default": {"lemonade": 0.0}, "set": {"m": 2}})
+        self.assertEqual(modelmeta.headroom_table(), {"default": {"llamacpp": 0.0}, "set": {"m": 2}})
 
 
 if __name__ == "__main__":

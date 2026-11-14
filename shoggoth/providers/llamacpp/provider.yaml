@@ -1,4 +1,4 @@
-# llama.cpp, set up and run by Shoggoth: the engine for models on this computer from 5.0 on.
+# llama.cpp, set up and run by Shoggoth: the engine for models on this computer.
 # Shoggoth downloads the official build for your graphics card and runs llama-server in router mode (llamacpp.py).
 id: llamacpp
 name: llama.cpp
@@ -13,7 +13,7 @@ detect:
 run:
   mode: managed
   # provider.py starts it through llamacpp.start (router mode, its own port, key and presets); this line is what that comes to
-  start: ["{bin}", --host, "127.0.0.1", --port, "{port}", --models-dir, "{data}"]
+  start: ["{bin}", --host, "127.0.0.1", --port, "{port}", --models-dir, "{data}/views/llamacpp"]
   ready: {path: /health, timeout: 60}
   stop_grace_secs: 20
 
@@ -23,7 +23,7 @@ endpoint:
 
 models:
   formats: [gguf]
-  data_dir: "{library}/llamacpp"
+  view: true                     # the router reads <data>/views/llamacpp: links to every library file routed to it
 
 memory:
   group: gpu
@@ -34,3 +34,4 @@ memory:
 capabilities:
   context: per-load
   multi_model: true
+  tuning: {builtin: llama-bench}

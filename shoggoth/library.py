@@ -2,7 +2,7 @@
 
 Shoggoth reads each model file's own header (gguf.py), asks every provider whether it can run the file and how much room it needs,
 sorts the model into a tier (Small, Medium, Large) and picks the provider that serves it. Where files live is one folder the
-person chooses (the Models folder); each engine keeps what it downloads in its own subfolder (lemonade/), and Shoggoth keeps small per-engine "views" (folders of
+person chooses (the Models folder); downloads go in its llamacpp/ subfolder (lemonade/ holds what Lemonade fetched in 4.x), and Shoggoth keeps small per-engine "views" (folders of
 links) so an engine is only ever shown files it can run. Nothing is copied or moved. Standard library only.
 """
 import json
@@ -21,7 +21,7 @@ import store
 TIERS = ("small", "medium", "large")
 TIER_LABEL = {"small": "Small", "medium": "Medium", "large": "Large"}
 SMALL_GB, MEDIUM_GB = 10, 24             # graphics memory a model needs: under 10 is Small, up to 24 Medium, beyond that Large
-SUBDIRS = ("lemonade",)                  # one folder per engine under the person's Models folder; nothing else lives there
+SUBDIRS = ("llamacpp", "lemonade")      # read under the person's Models folder; only the first is made (lemonade/ is what 4.x downloaded)
 _index = {"loaded": False, "d": {}}
 
 
@@ -81,8 +81,7 @@ def set_root(path):
     if path == "/":
         raise ValueError("Choose a folder for your models, not the whole disk.")
     try:
-        for sub in SUBDIRS:
-            os.makedirs(os.path.join(path, sub), exist_ok=True)
+        os.makedirs(os.path.join(path, SUBDIRS[0]), exist_ok=True)
         probe = os.path.join(path, ".zest-write-test")
         with open(probe, "w") as f:
             f.write("ok")
@@ -278,9 +277,46 @@ def catalog(reg=None, machine=None, refresh=False):
 
 
 # ---------------------------------------------------------------- per-engine views
+VIEW_MANIFEST = ".shoggoth-links.json"
+
+
+def _view_made(view):
+    try:
+        with open(os.path.join(view, VIEW_MANIFEST)) as f:
+            d = json.load(f)
+        return d if isinstance(d, dict) else {}
+    except (OSError, ValueError):
+        return {}
+
+
+def _view_drop(path):
+    """Remove one thing sync_views made: a link, or a folder of links (never a real file)."""
+    if os.path.islink(path):
+        os.remove(path)
+    elif os.path.isdir(path):
+        for n in os.listdir(path):
+            if os.path.islink(os.path.join(path, n)):
+                os.remove(os.path.join(path, n))
+        try:
+            os.rmdir(path)
+        except OSError:
+            pass
+
+
+def _view_has(path, want):
+    if isinstance(want, str):
+        return os.path.islink(path) and os.readlink(path) == want
+    return os.path.isdir(path) and not os.path.islink(path) and all(
+        os.path.islink(os.path.join(path, n)) and os.readlink(os.path.join(path, n)) == t for n, t in want.items()) and \
+        sorted(n for n in os.listdir(path)) == sorted(want)
+
+
 def sync_views(entries=None, reg=None):
     """Keep <Shoggoth data folder>/views/<engine>/ holding links to exactly the files that engine should be shown: those routed to it that it doesn't
-    already keep itself. Only links are ever created or removed here, never real files. Returns {engine: view folder}."""
+    already keep itself. A single file is linked as <stem>.gguf; a split model or one with a vision projector gets a folder <stem>/ of links
+    (that is how llama.cpp's router reads them). Only what this function made (listed in the folder's .shoggoth-links.json) is ever changed or
+    removed, so links other parts of Shoggoth put there (migrate5's) stay, and a file one of them already shows is not shown twice. Only links
+    are ever created or removed, never real files. Returns {engine: view folder}."""
     reg = reg or registry.default()
     entries = entries if entries is not None else catalog(reg)
     out = {}
@@ -289,32 +325,46 @@ def sync_views(entries=None, reg=None):
             continue
         view = os.path.join(views_base(), p.id)
         os.makedirs(view, exist_ok=True)
+        made = _view_made(view)
         own = [os.path.realpath(path) for path, _ in p.model_folders()]
         want = {}
         for e in entries:
-            if e.get("provider") != p.id or not e.get("complete", True):
+            if e.get("provider") != p.id or not e.get("complete", True) or not e.get("files"):
                 continue
             if any(os.path.realpath(f).startswith(o + os.sep) for f in e["files"] for o in own):
                 continue                                       # the engine keeps this one itself
-            for f in e["files"] + ([e["mmproj"]] if e.get("mmproj") else []):
-                want[os.path.basename(f)] = os.path.realpath(f)
+            if len(e["files"]) == 1 and not e.get("mmproj"):
+                want[e["stem"] + ".gguf"] = os.path.realpath(e["files"][0])
+            else:
+                want[e["stem"]] = {os.path.basename(f): os.path.realpath(f) for f in e["files"] + ([e["mmproj"]] if e.get("mmproj") else [])}
+        shown = set()                                          # files a link Shoggoth didn't make here already shows
         for name in os.listdir(view):
-            link = os.path.join(view, name)
-            if os.path.islink(link) and (name not in want or os.readlink(link) != want[name]):
-                os.remove(link)
+            if name in made or name.startswith("."):
+                continue
+            path = os.path.join(view, name)
+            for f in ([os.path.join(path, n) for n in os.listdir(path)] if os.path.isdir(path) else [path]):
+                shown.add(os.path.realpath(f))
+        for name in list(made):
+            if name not in want or not _view_has(os.path.join(view, name), want[name]):
+                _view_drop(os.path.join(view, name))
+                made.pop(name, None)
         for name, target in want.items():
-            link = os.path.join(view, name)
-            if not os.path.lexists(link):
-                os.symlink(target, link)
+            path = os.path.join(view, name)
+            targets = [target] if isinstance(target, str) else list(target.values())
+            if name in made or os.path.lexists(path) or any(t in shown for t in targets):
+                continue                                       # already there, or something else of that name is
+            if isinstance(target, str):
+                os.symlink(target, path)
+            else:
+                os.makedirs(path)
+                for n, t in target.items():
+                    os.symlink(t, os.path.join(path, n))
+            made[name] = True
+        with open(os.path.join(view, VIEW_MANIFEST + ".tmp"), "w") as f:
+            json.dump(made, f)
+        os.replace(os.path.join(view, VIEW_MANIFEST + ".tmp"), os.path.join(view, VIEW_MANIFEST))
         out[p.id] = view
     return out
-
-
-def lemonade_config():
-    """The folder settings Lemonade should have so it reads the library: its own downloads under lemonade/, everything else it can run
-    through the view. {} until a root is chosen. Applying this is only ever done to a Lemonade Shoggoth runs itself."""
-    r = root()
-    return {"models_dir": os.path.join(r, "lemonade"), "extra_models_dir": os.path.join(views_base(), "lemonade")} if r else {}
 
 
 def _nearest_existing(path):
@@ -328,31 +378,21 @@ def models_disk():
     """Where the next download goes and how much room is there: {where, free_gb, missing}. `missing` is true when a library folder was chosen
     but can't be found now (a disk that isn't connected)."""
     r = root()
-    if r:
-        where = r
-    else:
-        import lem
-        md = lem.flat_config().get("models_dir") if lem.healthy() else None
-        where = md if md and md != "auto" else modelscan.hf_cache_dir()
+    where = r or modelscan.hf_cache_dir()
     here = _nearest_existing(where)
     return {"where": where, "free_gb": round(shutil.disk_usage(here).free / 1e9, 1), "missing": bool(r) and not os.path.isdir(r)}
 
 
-def apply_to_lemonade():
-    """Point a Lemonade Shoggoth runs itself at the library: downloads go to <root>/lemonade, and every other file it can run is shown to it
-    through its view of links. Returns (ok, message). Does nothing (ok) until a library folder is chosen."""
-    if not root():
-        return True, ""
-    if not os.path.isdir(root()):
-        return False, "The models folder %s can't be found (is its disk connected?), so Lemonade was left as it was." % root()
-    import lem
-    cfg = lemonade_config()
-    ok, msg = lem.set_config({"models_dir": cfg["models_dir"]})        # first, so what it kept before (the Hugging Face cache) is no longer "its own"
-    if not ok:
-        return ok, msg
+def reload_engine():
+    """After the library changed: refresh the view and have the llama.cpp router read its folder again. Returns (ok, message)."""
+    if root() and not os.path.isdir(root()):
+        return False, "The models folder %s can't be found (is its disk connected?)." % root()
     registry.reload()
     sync_views()
-    return lem.set_config({"extra_models_dir": cfg["extra_models_dir"]})     # and again, so it looks in the view now that the links exist
+    import llamacpp
+    if llamacpp.running() and not llamacpp.reload():
+        return False, "llama.cpp didn't read its models folder again. Restart Shoggoth to see the new models."
+    return True, ""
 
 
 def summary():
@@ -569,12 +609,3 @@ def models_on_cards(gpus):
             cur["mem_mb"] += p.get("mem_mb") or 0
         g["models"] = sorted(seen.values(), key=lambda x: -x["mem_mb"])
     return gpus
-
-
-def lemonade_accepts(path):
-    """Can Lemonade run this file? Used so an imported folder never shows it a model it would list but fail to load."""
-    h = gguf.read_header(path)
-    prov = registry.default().get("lemonade")
-    if not h or not prov:
-        return True
-    return prov.can_run({"format": "gguf", "architecture": h.get("architecture", "")})[0]

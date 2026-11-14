@@ -4,7 +4,8 @@ Shoggoth downloads llama.cpp's official Linux builds from its GitHub releases (o
 checks each file against the checksum GitHub publishes, and runs `llama-server` in router mode: one process that loads
 and unloads models on request. Per-model settings live in a presets file Shoggoth writes.
 
-Builds live in <data>/llamacpp/<tag>/<backend>/. The two newest tags are kept.
+Builds live in <data>/llamacpp/<tag>/<backend>/. The two newest tags are kept. The AppImage also carries a processor-only build
+(usr/llamacpp/<tag>/cpu), so Shoggoth works offline on first run; it is used only until a downloaded build is there.
 """
 import hashlib
 import json
@@ -24,7 +25,8 @@ import store
 import util
 
 REPO = "ggml-org/llama.cpp"
-NEEDS_GLIBC = (2, 34)                 # what the official ubuntu builds link against (checked on b12375)
+NEEDS_GLIBC = (2, 38)                 # what the official ubuntu builds link against (libggml-base needs GLIBC_2.38 on b12375)
+HERE = os.path.dirname(os.path.abspath(__file__))
 PORTS = range(13340, 13360)
 _lock = threading.RLock()
 _state = {"proc": None, "pid": None, "port": None, "key": None, "error": None}
@@ -58,6 +60,19 @@ def log_path():
 
 def _run_file():
     return os.path.join(root(), "run.json")
+
+
+def models_dir():
+    """The folder the router reads models from: the library's view for llama.cpp (links only; see library.sync_views and migrate5)."""
+    return os.path.join(store.data_dir(), "views", "llamacpp")
+
+
+def bundled_root():
+    """Where a build that came with Shoggoth lives: SHOGGOTH_LLAMACPP_DIR, or usr/llamacpp inside the AppImage."""
+    for c in (os.environ.get("SHOGGOTH_LLAMACPP_DIR"), os.path.join(HERE, "..", "..", "llamacpp")):
+        if c and os.path.isdir(c):
+            return os.path.realpath(c)
+    return None
 
 
 # ---------------------------------------------------------------- picking a release and a build
@@ -129,20 +144,20 @@ def latest():
 
 # ---------------------------------------------------------------- installed builds
 def builds():
-    """Every installed build: [{tag, backend, dir, server}], newest first."""
+    """Every installed build: [{tag, backend, dir, server, bundled}], newest first; a downloaded build before a bundled one of the same tag."""
     out = []
-    r = root()
-    if not os.path.isdir(r):
-        return out
-    for tag in os.listdir(r):
-        if _tag_num(tag) is None:
+    for r, bundled in ((root(), False), (bundled_root(), True)):
+        if not r or not os.path.isdir(r):
             continue
-        for backend in os.listdir(os.path.join(r, tag)):
-            d = os.path.join(r, tag, backend)
-            exe = os.path.join(d, "llama-server")
-            if backend in ASSETS and os.path.isfile(exe):
-                out.append({"tag": tag, "backend": backend, "dir": d, "server": exe})
-    return sorted(out, key=lambda b: _tag_num(b["tag"]), reverse=True)
+        for tag in os.listdir(r):
+            if _tag_num(tag) is None or not os.path.isdir(os.path.join(r, tag)):
+                continue
+            for backend in os.listdir(os.path.join(r, tag)):
+                d = os.path.join(r, tag, backend)
+                exe = os.path.join(d, "llama-server")
+                if backend in ASSETS and os.path.isfile(exe):
+                    out.append({"tag": tag, "backend": backend, "dir": d, "server": exe, "bundled": bundled})
+    return sorted(out, key=lambda b: (_tag_num(b["tag"]), not b["bundled"]), reverse=True)
 
 
 def choose(settings=None):
@@ -154,7 +169,8 @@ def choose(settings=None):
         if (b["tag"], b["backend"]) == pin:
             return b
     want = cfg.get("backend")
-    return next((b for b in have if b["backend"] == want), None) or (have[0] if have else None)
+    return (next((b for b in have if b["backend"] == want), None) or next((b for b in have if not b["bundled"]), None)
+            or (have[0] if have else None))       # a build Shoggoth downloaded (for this computer's graphics card) before the bundled one
 
 
 def _glibc():
@@ -269,7 +285,7 @@ def install(backend, release=None, cancel=None):
 def _prune(keep=2):
     """Keep the newest `keep` tags (and never the one running)."""
     running = (_state.get("dir") or "")
-    tags = sorted({b["tag"] for b in builds()}, key=_tag_num, reverse=True)
+    tags = sorted({b["tag"] for b in builds() if not b["bundled"]}, key=_tag_num, reverse=True)
     for tag in tags[keep:]:
         d = os.path.join(root(), tag)
         if not running.startswith(d + os.sep):
@@ -446,7 +462,9 @@ def start(models_dir, settings=None, ready_timeout=60):
         env = dict(os.environ)
         env["LD_LIBRARY_PATH"] = b["dir"] + (":" + env["LD_LIBRARY_PATH"] if env.get("LD_LIBRARY_PATH") else "")
         env["LLAMA_CACHE"] = os.path.join(root(), "cache")      # its own cache, so models other tools fetched into ~/.cache/llama.cpp stay theirs
-        proc = subprocess.Popen(command(b, port, key, models_dir, int(cfg.get("max_loaded") or 1)), stdin=subprocess.DEVNULL,
+        env.setdefault("CUDA_DEVICE_ORDER", "PCI_BUS_ID")          # number NVIDIA cards the way nvidia-smi does
+        extra = ["--device", cfg["device"]] if cfg.get("device") else []
+        proc = subprocess.Popen(command(b, port, key, models_dir, max_loaded(cfg), extra), stdin=subprocess.DEVNULL,
                                 stdout=log, stderr=subprocess.STDOUT, cwd=b["dir"], env=env, start_new_session=True)
         log.close()
         _state.update(proc=proc, pid=proc.pid, port=port, key=key, dir=b["dir"], error=None)
@@ -566,3 +584,84 @@ def endpoint():
     if not running():
         return None
     return {"base_url": "http://127.0.0.1:%d/v1" % _state["port"], "key": _state["key"]}
+
+
+# ---------------------------------------------------------------- what the rest of Shoggoth asks
+def max_loaded(cfg=None):
+    """The "keep up to N models loaded" setting (default 1, at most 8)."""
+    cfg = cfg if cfg is not None else (store.load().get("llamacpp") or {})
+    try:
+        return max(1, min(8, int(cfg.get("max_loaded") or 1)))
+    except (TypeError, ValueError):
+        return 1
+
+
+def own_ports():
+    """Ports Shoggoth's llama.cpp listens on: the router's and each loaded model's (the router starts one process per model), so a scan
+    of this computer never offers them as somebody else's server."""
+    if not running():
+        return set()
+    out = {_state["port"]}
+    for m in models():
+        a = m.get("args") or []
+        for i, x in enumerate(a[:-1]):
+            if x == "--port" and str(a[i + 1]).isdigit() and int(a[i + 1]):
+                out.add(int(a[i + 1]))
+    return out
+
+
+def loaded_ids():
+    """The models in memory right now."""
+    return [m["id"] for m in models() if m["status"] == "loaded"] if running() else []
+
+
+def restart(settings=None):
+    """Stop the router and start it again (a new build, backend or device). Models load again on their next use."""
+    stop()
+    return start(models_dir(), settings)
+
+
+def start_update(backend=None, release=None):
+    """Download a build in the background (the newest, for `backend` or the one in use). False when one is already downloading."""
+    if UPD["state"] in ("downloading", "installing"):
+        return False
+    s = store.load()
+    cur = choose(s)
+    want = backend or (s.get("llamacpp") or {}).get("backend") or (cur or {}).get("backend") or recommended()
+    UPD.update(state="downloading", bytes=0, total=0, tag=None, backend=want, error=None)
+
+    def run():
+        try:
+            b = install(want, release)
+            store.update(lambda st: st.setdefault("llamacpp", {}).update(backend=b["backend"], tag=""))
+        except Exception as e:  # noqa: BLE001 - install() already put the reason in UPD
+            UPD.update(state="error", error=UPD.get("error") or str(e) or e.__class__.__name__)
+    threading.Thread(target=run, daemon=True).start()
+    return True
+
+
+def recommended():
+    """The build for this computer's graphics card."""
+    amd = False
+    try:
+        import hardware
+        amd = any(g.get("vendor") == "AMD" for g in hardware.detect_gpus())
+    except Exception:  # noqa: BLE001
+        pass
+    return pick_backend(nvidia_driver(), amd)
+
+
+def summary(settings=None):
+    """What the page shows about Shoggoth's llama.cpp: {installed, running, port, tag, backend, backend_name, bundled, pinned, builds,
+    backends, recommended, max_loaded, device, error, update, log}."""
+    s = settings or store.load()
+    cfg = s.get("llamacpp") or {}
+    b = choose(s)
+    up = running()
+    return {"installed": bool(b), "running": up, "port": _state["port"] if up else None,
+            "tag": (b or {}).get("tag", ""), "backend": (b or {}).get("backend", ""), "backend_name": NAMES.get((b or {}).get("backend"), ""),
+            "bundled": bool((b or {}).get("bundled")), "pinned": cfg.get("tag") or "",
+            "builds": [{"tag": x["tag"], "backend": x["backend"], "name": NAMES[x["backend"]], "bundled": x["bundled"]} for x in builds()],
+            "backends": [{"id": k, "name": NAMES[k]} for k in ASSETS], "recommended": util.cached("llamacpp-rec", 300, recommended),
+            "max_loaded": max_loaded(cfg), "device": cfg.get("device", ""), "error": _state.get("error"),
+            "update": dict(UPD), "log": log_path()}
