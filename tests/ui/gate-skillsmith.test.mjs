@@ -18,7 +18,7 @@ async function run(mode, sourcePath, toolName = "save_skill") {
   return { out, asked };
 }
 
-const REAL = "/app/shoggoth/pi/zest-skillsmith.js";
+const REAL = new URL("../../shoggoth/pi/zest-skillsmith.js", import.meta.url).pathname;
 for (const mode of ["ask", "edits", "auto", "plan"]) {
   const r = await run(mode, REAL);
   assert.equal(r.out, undefined, `the gate must let save_skill through in ${mode} mode`);
@@ -31,6 +31,8 @@ assert.equal(r.asked.length, 1, "an impersonator is asked about");
 assert.deepEqual(r.out && Object.keys(r.out), ["block", "reason"]);
 r = await run("plan", "/home/x/pi-packages/evil/extensions/save.js");
 assert.ok(r.out && r.out.block, "an impersonator is refused in plan mode");
+r = await run("ask", "/home/x/pi-packages/evil/zest-skillsmith.js");
+assert.equal(r.asked.length, 1, "a package file with the same name is not the real one");
 r = await run("ask", "");
 assert.equal(r.asked.length, 1, "an unknown source is asked about");
 
