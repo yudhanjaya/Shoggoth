@@ -141,3 +141,37 @@ I could not carry out S5. This session has file writes and shell commands disabl
 The run needs to be started with write/shell permissions enabled (for example `--yolo` / `--dangerously-skip-permissions`) before S5 can proceed.
 ```
 </details>
+
+## S6 (2026-11-14T19:31:22+05:30)
+
+- exit code 0, 1 new commit(s), tests: ---------------------------------------------------------------------- Ran 621 tests in 121.879s  OK (skipped=2) 
+
+<details><summary>Worker report (tail)</summary>
+
+```
+=== S6 started 2026-11-14T19:20:55+05:30
+S6 is done and committed as `2b7a3f2 S6: Speech set-up route`.
+
+**What I did**
+- Added `speech.start_setup()`: runs `install_cpu()` then `ensure_model()`, in a daemon thread, guarded so a second call returns `False` while a download is running. Progress lands in `speech.UPD`, which the existing `GET /ui/speech/status` already returns as `download`.
+- Extended `speech.status()` with `runs_on`: "Runs on the processor" for a CPU build, "Runs on the graphics card" for a GPU build, `None` when nothing is installed.
+- Added `POST /ui/speech/setup`, returning `{ok, started, speech}` immediately.
+- Added tests for the install order, the run-once guard, error reporting, the route, and the status wording.
+
+**Files changed**
+- `shoggoth/speech.py` (+23/-1)
+- `shoggoth/server.py` (+6)
+- `tests/test_speech.py` (+95)
+
+**Tests run**
+- `python3 -W ignore -m unittest tests.test_speech -v`: 22 tests, OK.
+- `python3 -W ignore -m unittest discover tests`: 621 tests, OK (skipped=2, both jsdom-gated UI tests due to missing `tests/ui/node_modules`).
+- Re-ran the full suite independently: same result. No leftover test processes.
+
+**Not done / not verified**
+- No real GitHub download or real whisper run was performed; `install_cpu`/`ensure_model` were faked in tests. Only the CPU path exists, as specified.
+- The new route was tested by calling the handler directly, not over a live HTTP server. No UI work (that is U7).
+- `status()` still reports a manually configured GPU `whisper-server` as "Runs on the graphics card" but there is no GPU build download path yet; `start_setup` always installs the CPU build.
+- `.driver.out` remains untracked and was not staged.
+```
+</details>
