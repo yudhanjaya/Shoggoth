@@ -74,7 +74,9 @@ def _lemonade_models_dirs(data_dir, library_dir):
     md = cfg.get("models_dir")
     if md and md != "auto":
         out.append((os.path.expanduser(str(md)), False))
-    else:
+    elif os.path.isdir(os.path.join(data_dir, "lemonade-data")):
+        # The shared Hugging Face cache counts only for a profile where Lemonade really ran: on a fresh 5.0 profile it holds
+        # whatever other apps downloaded (speech models, other tools' files), none of it Lemonade's.
         import modelscan
         out.append((modelscan.hf_cache_dir(), True))
     if library_dir:
@@ -135,9 +137,14 @@ def discover(data_dir, library_dir):
                     q = hf.quant_of(name) or os.path.splitext(name)[0]
                     m = models.setdefault((repo, q), {"files": [], "root": root, "shared": shared})
                     m["files"].append(path)
+    # In the shared cache, keep only repos Lemonade knew about (its model lists name them), so other apps' downloads stay out.
+    # When no list names anything (a list file is missing), fall back to every GGUF there, as 4.x Lemonade would have listed them.
+    known = {cp.split(":", 1)[0].lower() for cp in _catalog_entries(data_dir).values()}
     out = []
     for (repo, q), m in sorted(models.items()):
         if q == "__mmproj__":
+            continue
+        if m["shared"] and known and repo.lower() not in known:
             continue
         proj = models.get((repo, "__mmproj__"), {}).get("files", [])
         quant = q if hf.quant_of(os.path.basename(m["files"][0])) else None

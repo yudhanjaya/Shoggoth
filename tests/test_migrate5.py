@@ -67,6 +67,22 @@ class Base(unittest.TestCase):
         return os.path.join(self.data, "views", "llamacpp", *p)
 
 
+class SharedCache(Base):
+    def test_fresh_profile_links_nothing_from_the_shared_cache(self):
+        shutil.rmtree(os.path.join(self.data, "lemonade-data"))          # a profile where Lemonade never ran
+        shutil.rmtree(os.path.join(self.lib, "lemonade"))
+        hub_model(self.hub, "nvidia/parakeet-GGUF", {"parakeet-Q8_0.gguf": 100})
+        self.run_it()
+        self.assertFalse(os.path.exists(self.view("MiMo-V2-Flash-Q4_K_M.gguf")))
+        self.assertFalse(os.path.exists(self.view("parakeet-Q8_0.gguf")))
+
+    def test_shared_cache_keeps_only_repos_lemonade_knew(self):
+        hub_model(self.hub, "nvidia/parakeet-GGUF", {"parakeet-Q8_0.gguf": 100})   # another app's download
+        self.run_it()
+        self.assertTrue(os.path.isfile(self.view("MiMo-V2-Flash-Q4_K_M.gguf")))     # named in user_models.json
+        self.assertFalse(os.path.exists(self.view("parakeet-Q8_0.gguf")))
+
+
 class Linking(Base):
     def test_models_linked_with_new_ids(self):
         self.run_it()
