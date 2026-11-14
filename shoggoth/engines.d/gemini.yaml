@@ -5,7 +5,8 @@ category: hosted
 summary: Google's Gemini models, through its OpenAI-style endpoint.
 url: https://generativelanguage.googleapis.com/v1beta/openai/
 formats:
-  - {api: openai-completions}
+  # Pi's openai-completions drops the thought signature Gemini puts on each tool call, so Gemini models use Google's own format.
+  - {api: google-generative-ai}
 key: required
 key_url: https://aistudio.google.com/apikey
 docs: https://ai.google.dev

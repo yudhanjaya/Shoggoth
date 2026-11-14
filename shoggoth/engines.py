@@ -353,6 +353,45 @@ def by_id(eid):
     return next((e for e in definitions() if e["id"] == eid), None)
 
 
+DEFAULT_API = "openai-completions"
+
+
+def api_for(engine, model):
+    """The API format a hosted service wants for one model: the first `formats` rule whose `match` fits the model name (a rule with no
+    `match` fits everything), else OpenAI chat completions. `engine` is a definition id or a definition."""
+    d = by_id(engine) if isinstance(engine, str) else engine
+    for rule in (d or {}).get("formats") or []:
+        pat = rule.get("match")
+        if pat is None or re.search(pat, str(model or ""), re.I):
+            return rule["api"]
+    return DEFAULT_API
+
+
+def pi_base_url(api, url):
+    """The base address Pi's client for `api` wants, given a service's OpenAI-style address (".../v1"). Pi's Anthropic client adds /v1/messages
+    itself, the Responses client adds /responses, and Google's adds /models/<name>:streamGenerateContent after the version."""
+    u = str(url or "").rstrip("/")
+    if api == "anthropic-messages":
+        return u[:-3] if u.endswith("/v1") else u
+    if api == "google-generative-ai":
+        i = u.find("/v1beta")
+        if i >= 0:
+            return u[:i + 7]
+        return (u[:-3] if u.endswith("/v1") else u) + "/v1beta"
+    return u
+
+
+def gemini_chat_models(listing):
+    """Names of the models in a Gemini `GET /v1beta/models` reply that can chat (`supportedGenerationMethods` has generateContent), without
+    the `models/` prefix. Embedding, image-only and other models stay out of the picker."""
+    out = []
+    for m in (listing.get("models") if isinstance(listing, dict) else None) or []:
+        if isinstance(m, dict) and "generateContent" in (m.get("supportedGenerationMethods") or []) and m.get("name"):
+            n = str(m["name"])
+            out.append(n[7:] if n.startswith("models/") else n)
+    return out
+
+
 def problems():
     """[{file, line?, error}] for every definition that was left out, bundled or yours."""
     return [dict(p) for p in get()["problems"]]
