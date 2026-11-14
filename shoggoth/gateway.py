@@ -627,6 +627,17 @@ class GWHandler(BaseHTTPRequestHandler):
             return self.send_json({"error": {"message": "This door only serves the OpenAI-style /v1 endpoints for chatting."}}, 404)
         if self.peer:
             app = self.peer["name"]
+        if p == "/v1/audio/transcriptions" and self.command == "POST":    # speech to text runs in Shoggoth's own whisper.cpp (speech.py)
+            import speech
+            rec = REC.start(app, "app", self.command, p, "whisper", False, self.client_address[0])
+            code, ctype, payload = speech.openai_transcriptions(body or b"", self.headers)
+            Tap(rec, False).finish(code)
+            self.send_response(code)
+            self.send_header("Content-Type", ctype)
+            self.send_header("Content-Length", str(len(payload)))
+            self.end_headers()
+            self.wfile.write(payload)
+            return
         rec = None
         if INFER.match(p) and self.command == "POST":
             model, stream = describe(body, p)

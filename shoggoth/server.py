@@ -54,6 +54,7 @@ from util import cached, invalidate, run   # noqa: E402
 VERSION = "4.3.0"
 hf.VERSION = VERSION          # Hugging Face sees User-Agent: Shoggoth/<version>
 _last_ping = {"t": None}
+import speech      # noqa: E402  (speech to text with whisper.cpp)
 import lan         # noqa: E402  (LAN sharing and pairing; its /ui/lan/* routes are lan.handle)
 lan.VERSION = VERSION
 
@@ -279,6 +280,8 @@ class Handler(BaseHTTPRequestHandler):
             self.send_vendor("mermaid.min.js")
         elif p == "/ui/gpu":
             self.send_json({"gpus": library.models_on_cards(hardware.all_gpus()), "t": time.time()})
+        elif p == "/ui/speech/status":
+            self.send_json(speech.status())
         elif p == "/ui/info":
             self.send_json(self._info())
         elif p == "/ui/backends":
@@ -394,6 +397,12 @@ class Handler(BaseHTTPRequestHandler):
             return self.proxy()
         if p.startswith("/ui/lan/"):                              # LAN sharing and pairing (lan.py)
             return self.send_json(*reversed(lan.handle("POST", p, self.read_json())))
+        if p == "/ui/speech/transcribe":                          # the mic button: the body is the audio itself (speech.py)
+            n = int(self.headers.get("Content-Length") or 0)
+            if n > 64_000_000:
+                return self.send_json({"error": "That recording is too long."}, 413)
+            status, obj = speech.ui_transcribe(self.rfile.read(n) if n else b"", self.headers.get("Content-Type", ""))
+            return self.send_json(obj, status)
         handler = {
             "/ui/device": self.post_device, "/ui/config": self.post_config,
             "/ui/args/parse": self.post_args_parse, "/ui/args/check": self.post_args_check,

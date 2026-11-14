@@ -212,3 +212,30 @@ class Install(unittest.TestCase):
 
 if __name__ == "__main__":
     unittest.main()
+
+
+class GatewayRoute(unittest.TestCase):
+    """POST /v1/audio/transcriptions on the gateway goes to speech.py, not to a chat engine."""
+
+    def test_transcriptions_answered_by_speech(self):
+        import threading
+        import urllib.request
+        import gateway
+        saved = dict(gateway.CONFIG)
+        self.addCleanup(lambda: (gateway.CONFIG.clear(), gateway.CONFIG.update(saved)))
+        gateway.CONFIG.update(key="k-test", capture=False)
+        srv = gateway._Server(("127.0.0.1", 0), gateway.GWHandler)
+        self.addCleanup(srv.server_close)
+        self.addCleanup(srv.shutdown)
+        threading.Thread(target=srv.serve_forever, daemon=True).start()
+        seen = {}
+
+        def fake(body, headers):
+            seen["body"] = body
+            return 200, "application/json", b'{"text": "hello"}'
+        with mock.patch.object(speech, "openai_transcriptions", fake):
+            req = urllib.request.Request("http://127.0.0.1:%d/v1/audio/transcriptions" % srv.server_address[1], data=b"AUDIO",
+                                         headers={"Authorization": "Bearer k-test", "Content-Type": "multipart/form-data; boundary=x"})
+            with urllib.request.urlopen(req, timeout=5) as r:
+                self.assertEqual(json.loads(r.read()), {"text": "hello"})
+        self.assertEqual(seen["body"], b"AUDIO")
