@@ -12,6 +12,7 @@ import tempfile
 import threading
 import time
 import unittest
+import urllib.error
 import urllib.request
 
 sys.path.insert(0, os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", "shoggoth"))
@@ -320,6 +321,17 @@ class LoopbackTLS(Env):
     def test_loopback_stays_plain_http(self):
         with urllib.request.urlopen("http://127.0.0.1:%d/v1" % self.port, timeout=5) as r:
             self.assertTrue(json.loads(r.read())["zest_gateway"])
+
+    def test_network_plain_http_is_refused_with_a_reason(self):
+        from unittest import mock
+        with mock.patch.object(lan, "is_loopback", return_value=False):          # as if from another device
+            with self.assertRaises(urllib.error.HTTPError) as e:
+                urllib.request.urlopen("http://127.0.0.1:%d/v1/models" % self.port, timeout=5)
+            self.assertEqual(e.exception.code, 400)
+            self.assertIn("https://", json.loads(e.exception.read())["error"]["message"])
+            # and the encrypted side still answers
+            status, d = provbase.http_json(self.base + "/v1", pin=self.fp)
+            self.assertEqual(status, 200)
 
     def test_pairing_is_refused_without_tls(self):
         req = urllib.request.Request("http://127.0.0.1:%d/shoggoth/pair" % self.port, method="POST",

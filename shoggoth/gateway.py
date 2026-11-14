@@ -561,9 +561,12 @@ def describe(body, path=None):
 
 
 # ---------------------------------------------------------------- the listener
-# lan_plain: from the network, also accept plain HTTP with the gateway's API key, as before 5.0 (an app on another device pointed at
-# http://<ip>:13308/v1 keeps working). Paired Shoggoths and pairing itself are only ever served over TLS.
-CONFIG = {"key": "", "capture": False, "lan_plain": True}
+# From the network the gateway speaks HTTPS only (5.0 dropped plain HTTP there). Plain HTTP is still served to this computer.
+CONFIG = {"key": "", "capture": False}
+# What a plain-HTTP request from another device gets instead of a dropped connection, so the person sees what to change.
+PLAIN_REFUSED = (b"HTTP/1.1 400 Bad Request\r\nContent-Type: application/json\r\nConnection: close\r\nContent-Length: %d\r\n\r\n%s")
+PLAIN_REFUSED_BODY = (b'{"error": {"message": "Shoggoth only accepts encrypted connections from the network. Change the address in your app '
+                      b'from http:// to https:// and trust the certificate Shoggoth shows on its Server page."}}')
 
 
 class GWHandler(BaseHTTPRequestHandler):
@@ -650,7 +653,7 @@ class GWHandler(BaseHTTPRequestHandler):
 
 class _Server(ThreadingHTTPServer):
     """One port for both sides. With `tls` set (sharing on the network), each connection's first byte says which it is: a TLS handshake
-    is answered with TLS; plain HTTP is served to this computer (and, while CONFIG["lan_plain"], to the network with the API key)."""
+    is answered with TLS; plain HTTP is served to this computer only; from the network it gets a short reply saying to use https://."""
     tls = None
     daemon_threads = True
 
@@ -661,7 +664,11 @@ class _Server(ThreadingHTTPServer):
                 first = request.recv(1, socket.MSG_PEEK)
                 if first == b"\x16":
                     request = self.tls.wrap_socket(request, server_side=True)
-                elif not (CONFIG["lan_plain"] or lan.is_loopback(client_address[0])):
+                elif not lan.is_loopback(client_address[0]):
+                    try:
+                        request.sendall(PLAIN_REFUSED % (len(PLAIN_REFUSED_BODY), PLAIN_REFUSED_BODY))
+                    except OSError:
+                        pass
                     return
                 request.settimeout(None)
             except (OSError, ssl.SSLError):
@@ -751,4 +758,4 @@ def public_state(s):
     return {"enabled": g["enabled"], "running": GATEWAY.running, "error": GATEWAY.error, "port": g["port"],
             "lan": g["lan"], "capture": g["capture"], "key": g["api_key"],
             "url": f"http://127.0.0.1:{g['port']}/v1", "lan_url": f"https://{ip}:{g['port']}/v1" if ip else None,
-            "lan_plain_url": f"http://{ip}:{g['port']}/v1" if ip and CONFIG["lan_plain"] else None, "fp": fp, "fp_short": lan.short_fp(fp)}
+            "fp": fp, "fp_short": lan.short_fp(fp)}
