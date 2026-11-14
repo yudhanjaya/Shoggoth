@@ -11,10 +11,6 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - run: ./packaging/build-appimage.sh
-      - name: Copy for Zest installs
-        # Zest 3.x updates itself only from an asset named Zest-<version>-x86_64.AppImage
-        run: |
-          for f in dist/Shoggoth-*-x86_64.AppImage; do cp "$f" "dist/Zest-${f#dist/Shoggoth-}"; done
       - uses: actions/upload-artifact@v4
         with:
           name: Shoggoth-AppImage
@@ -26,6 +22,6 @@ jobs:
         run: |
           # Don't replace assets that were already attached by hand.
           existing="$(gh release view "${GITHUB_REF_NAME}" --json assets -q '.assets[].name' || true)"
-          for f in dist/*; do
+          for f in dist/*-x86_64.AppImage dist/*-x86_64.AppImage.zsync dist/*-x86_64.AppImage.sha256; do
             echo "$existing" | grep -qx "$(basename "$f")" || gh release upload "${GITHUB_REF_NAME}" "$f"
           done

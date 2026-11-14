@@ -101,6 +101,10 @@ rm -rf "$GLTMP"
 [ -e "$GL/ld-linux-x86-64.so.2" ] && [ -e "$GL/libc.so.6" ] || { echo "glibc is missing from the image" >&2; exit 1; }
 cp packaging/AppRun packaging/shoggoth.desktop packaging/shoggoth.png "$APPDIR/"
 cp packaging/shoggoth.png "$APPDIR/.DirIcon"
+# Desktop entry and AppStream metadata where desktop catalogs look for them (the copy at the root is what appimagetool needs).
+mkdir -p "$APPDIR/usr/share/applications" "$APPDIR/usr/share/metainfo"
+cp packaging/shoggoth.desktop "$APPDIR/usr/share/applications/"
+cp packaging/io.github.yudhanjaya.Shoggoth.appdata.xml "$APPDIR/usr/share/metainfo/"
 
 # Smoke test the bundled interpreter before packaging. (lemond itself needs glibc 2.38+, so it is run through the
 # bundled glibc, which is also what an older system does.)
@@ -110,7 +114,8 @@ cp packaging/shoggoth.png "$APPDIR/.DirIcon"
 [ -x "$APPDIR/usr/lemonade/lemond" ] && [ -d "$APPDIR/usr/lemonade/resources" ] || { echo "Lemonade is missing from the image" >&2; exit 1; }
 
 FILE="$OUT/Shoggoth-$VERSION-x86_64.AppImage"
-ARCH=x86_64 "$CACHE/appimagetool" --appimage-extract-and-run --comp zstd "$APPDIR" "$FILE"
+ARCH=x86_64 "$CACHE/appimagetool" --appimage-extract-and-run --comp zstd \
+  -u "gh-releases-zsync|yudhanjaya|Shoggoth|latest|Shoggoth-*x86_64.AppImage.zsync" "$APPDIR" "$FILE"
 chmod +x "$FILE"
 ( cd "$OUT" && sha256sum "$(basename "$FILE")" > "$(basename "$FILE").sha256" )
 echo "Built $FILE"

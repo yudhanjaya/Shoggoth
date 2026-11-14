@@ -1,10 +1,10 @@
 [Desktop Entry]
 Type=Application
 Name=Shoggoth
-GenericName=Lemonade Console
-Comment=A friendly console for Lemonade Server: chat, models, GPUs and backends
+GenericName=Local AI
+Comment=Run AI models on your own computer
 Exec=shoggoth
 Icon=shoggoth
 Terminal=false
 Categories=Utility;Development;
-Keywords=llm;lemonade;llama;gpu;ai;
+Keywords=llm;llama;local;ai;gpu;chat;
