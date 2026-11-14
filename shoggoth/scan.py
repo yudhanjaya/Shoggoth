@@ -195,6 +195,62 @@ def _ctx_of(m):
     return 0
 
 
+SPEECH_WORDS = {"whisper", "parakeet", "kokoro", "tts", "asr", "stt", "piper", "bark", "xtts", "canary", "moonshine", "voxtral", "sensevoice",
+                "transcribe", "transcription", "speech", "wav2vec", "vits"}
+EMBED_WORDS = {"bge", "e5", "embed", "embedding", "embeddings", "minilm", "gte", "rerank", "reranker", "colbert"}
+CHAT_CAPS = {"chat", "completion", "completions", "chat_completion", "chat-completion", "text", "text-generation", "generate", "tools", "vision"}
+
+
+def _words(*vals):
+    return {w for v in vals if isinstance(v, str) for w in re.split(r"[^a-z0-9]+", v.lower()) if w}
+
+
+def _kind_of_words(ws):
+    if ws & SPEECH_WORDS:
+        return "speech"
+    if ws & EMBED_WORDS:
+        return "embeddings"
+    return ""
+
+
+def model_kind(m):
+    """chat | speech | embeddings | other for one /v1/models item. Conservative: unless the evidence says otherwise it is chat."""
+    arch = m.get("architecture") if isinstance(m.get("architecture"), dict) else {}
+    out = arch.get("output_modalities", m.get("output_modalities"))
+    if isinstance(out, list) and out:
+        o = {str(x).lower() for x in out}
+        if "text" not in o:
+            return "speech" if o & {"audio", "speech"} else "embeddings" if o & {"embedding", "embeddings"} else "other"
+    caps = m.get("capabilities")
+    if isinstance(caps, dict):
+        caps = [k for k, v in caps.items() if v]
+    if isinstance(caps, list) and caps:
+        c = {str(x).lower() for x in caps}
+        if c & CHAT_CAPS:
+            return "chat"
+        return _kind_of_words(_words(*c)) or "other"
+    for k in ("type", "task", "object"):
+        v = m.get(k)
+        if isinstance(v, str):
+            w = _words(v)
+            if k == "object" and w <= {"model"}:
+                continue
+            if _kind_of_words(w):
+                return _kind_of_words(w)
+    return _kind_of_words(_words(str(m.get("id", "")), m.get("owned_by"))) or "chat"
+
+
+def classify(items):
+    """(chat_models, role) for a list of model items. With nothing listed the server stays "chat": it may just have nothing loaded."""
+    if not items:
+        return 0, "chat"
+    kinds = [model_kind(m) for m in items]
+    n = kinds.count("chat")
+    if n:
+        return n, "chat"
+    return 0, "speech" if "speech" in kinds else "embeddings" if "embeddings" in kinds else "other"
+
+
 def _explain(r):
     if r["how"] == "category":
         names = [c["name"] for c in r["candidates"]]
@@ -225,14 +281,15 @@ def _look(s, defs, timeout):
         got = [x for x in provbase.jpath(cd, dd["context"]["json"]) if isinstance(x, int) and not isinstance(x, bool) and x > 0] if st == 200 and cd is not None else []
         ctx = got[0] if got else 0
     models = [{"id": str(m["id"]), "ctx": _ctx_of(m) or ctx} for m in items]
-    r = dict(s, url=base, preset=who["engine"] or "other", needs_key=status in (401, 403), models=models, context=ctx, **who)
+    chat, role = classify(items)
+    r = dict(s, url=base, chat_models=chat, role=role, preset=who["engine"] or "other", needs_key=status in (401, 403), models=models, context=ctx, **who)
     r["explain"] = _explain(r)
     return r
 
 
 def scan(proc=PROC, defs=None, own_ports=(), timeout=TIMEOUT):
     """The inference servers listening here, not counting Shoggoth's own: [{port, host, url, pid, process, cmd, engine, name, category, how,
-    candidates, preset, needs_key, models: [{id, ctx}], context, explain}], by port."""
+    candidates, preset, needs_key, models: [{id, ctx}], chat_models, role, context, explain}], by port."""
     defs = engines.definitions() if defs is None else defs
     mine = set(own_ports)
     socks = [s for s in listening(proc) if s["port"] not in mine and s["pid"] != os.getpid()]
@@ -279,8 +336,9 @@ def _state(entry, defs):
             "loads": d.get("loads", "fixed"), "leaves_computer": cloud or host not in ("127.0.0.1", "localhost", "::1")}
 
 
-def sources(own_ports=(), fresh=False, **kw):
+def sources(own_ports=(), fresh=False, include_other=False, **kw):
     """The /ui/sources reply: {sources: [...connected...], found: [...answering but not connected...], scanned_at}.
+    Servers whose models are all speech/embeddings/other (role != chat) are left out of `found` unless include_other.
     Each source is {id, kind, name, engine, url, state, models, loads, leaves_computer}; each found server is a scan() entry."""
     found, when = latest(own_ports, fresh, **kw)
     defs = engines.definitions()
@@ -288,5 +346,5 @@ def sources(own_ports=(), fresh=False, **kw):
     with concurrent.futures.ThreadPoolExecutor(max_workers=WORKERS) as pool:
         srcs = list(pool.map(lambda e: _state(e, defs), have))
     canon = {servers._canon(servers.normalise(h["url"])) for h in have}
-    return {"sources": srcs, "found": [f for f in found if servers._canon(f["url"]) not in canon], "scanned_at": when,
+    return {"sources": srcs, "found": [f for f in found if servers._canon(f["url"]) not in canon and (include_other or f.get("role", "chat") == "chat")], "scanned_at": when,
             "problems": engines.problems()}
