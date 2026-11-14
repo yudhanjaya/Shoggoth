@@ -11,8 +11,9 @@ version: 1
 # Models > "Recommended for this computer". A card shows when it fits this computer, whether or not the engine is installed yet: `title`,
 # `size_gb`, `tools`, `vision` and `reasoning` are what the card says until the engine can list the model itself, and `size_gb` sorts it
 # into Small (under 10 GB), Medium (10 to 24 GB) or Large. `id` is the engine's name for the model (`also`: the same model under another
-# name). `download` is for a model the engine does not list: where to fetch it (a Hugging Face `checkpoint`, and optionally `mmproj` for
-# pictures). `quants` maps a few quantisations, by the name in the repo, to their size in GB, so a card can offer a smaller one.
+# name). `download` says where to fetch the model (a Hugging Face `checkpoint`, and optionally `mmproj` for pictures); every entry
+# needs one. A checkpoint from an uploader Shoggoth doesn't know is reported, so add `trusted: true` once you have checked it.
+# `quants` maps a few quantisations, by the name in the repo, to their size in GB, so a card can offer a smaller one.
 # `label` is an optional chip on the card (it also shows in the chat's model picker), `take` the text. The cards keep this order.
 # Text is the owner's own words; do not paraphrase it. No speed figures: they can't be predicted for other people's computers.
 recommended:

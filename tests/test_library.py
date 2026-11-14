@@ -292,6 +292,13 @@ class Catalog(Env):
         library._index.update(loaded=False, d={})
         self.assertIn("A", self.by_stem())                                          # read back from the saved index
 
+    def test_a_recommended_model_takes_its_title_from_models_yaml(self):
+        write_gguf(os.path.join(self.lib, "lemonade", "a", "Gemma-4-12B-it-MTP-GGUF.gguf"), name="something-else")
+        write_gguf(os.path.join(self.lib, "lemonade", "b", "Other-Q4.gguf"))
+        c = self.by_stem()
+        self.assertEqual(c["Gemma-4-12B-it-MTP-GGUF"]["title"], "Gemma-4-12B-it (MTP)")      # models.yaml wins
+        self.assertEqual(c["Other-Q4"]["title"], "Test Model")                              # else the GGUF's own general.name
+
 
 class Views(Env):
     def setUp(self):

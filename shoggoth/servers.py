@@ -122,10 +122,35 @@ def migrate_strata():
     return len(added)
 
 
+def _forget_caches():
+    """After the server list changes, let every cached model list go so a removed server's models disappear at once."""
+    try:
+        import registry
+        registry.reload()
+    except Exception:  # noqa: BLE001
+        pass
+    try:
+        import router
+        router.invalidate()
+    except Exception:  # noqa: BLE001
+        pass
+    try:
+        import library
+        library._pk["v"] = None
+    except Exception:  # noqa: BLE001
+        pass
+    try:
+        import agent
+        agent.sync_models()
+    except Exception:  # noqa: BLE001
+        pass
+
+
 def remove(sid):
     def put(s):
         s["servers"] = [h for h in (s.get("servers") or []) if not (isinstance(h, dict) and h.get("id") == sid)]
     store.update(put)
+    _forget_caches()
 
 
 GEMINI_HOST = "generativelanguage.googleapis.com"

@@ -17,6 +17,7 @@ import hardware
 import modelmeta
 import modelscan
 import provbase
+import recs
 import registry
 import store
 
@@ -179,7 +180,7 @@ def _entries_in(folder, label, owner):
             continue
         out.append({"stem": stem, "files": [p for p, _ in shards], "size_bytes": sum(s for _, s in shards), "complete": len(shards) == g["n"],
                     "format": "gguf", "architecture": h.get("architecture", ""), "quant": h.get("quant", ""), "context": h.get("context", 0),
-                    "size_label": h.get("size_label", ""), "title": _pretty(stem, h), "vision": bool(near), "mmproj": near[0] if near else "",
+                    "size_label": h.get("size_label", ""), "title": recs.title_for(stem) or _pretty(stem, h), "vision": bool(near), "mmproj": near[0] if near else "",
                     "mtp": "mtp" in stem.lower(), "experts": h.get("experts", 0), "expert_share": round(exps / tensors, 3) if tensors else 0.0, "folder": d, "source": label, "owner": owner,
                     "attn": dict(h.get("attn") or {}, arch=h.get("architecture", ""))})
     return out
@@ -275,7 +276,8 @@ def catalog(reg=None, machine=None, refresh=False):
         ids = dict(e["ids"]) if e.get("listed_by") else {p.id: p.model_id(e) for p in runnable}
         e = dict(e, ids=ids, **pick_context(dict(e, ids=ids), machine, chosen, ids.get(chosen.id) if chosen.id == "llamacpp" else None))      # the window it will be loaded with, and what that costs
         fit, why = chosen.fit(e, machine)
-        out.append(dict(e, id=key, tier=tier, provider=chosen.id, need_gb=chosen.need_gb(e), fit=fit, why=why,
+        names = [e.get("title"), e.get("stem"), e.get("id")] + list((ids or {}).values())
+        out.append(dict(e, id=key, title=recs.title_for(*names) or e.get("title") or e.get("stem") or "", tier=tier, provider=chosen.id, need_gb=chosen.need_gb(e), fit=fit, why=why,
                         providers={k: {"ok": ok, "reason": r} for k, (ok, r) in cap.items()}, ids=ids,
                         ref=chosen.ref(ids[chosen.id]) if ids.get(chosen.id) else "", engine_name=chosen.name))
     order = {t: i for i, t in enumerate(TIERS)}
@@ -670,7 +672,7 @@ def picker(max_age=8):
         e = by.get((m["engine"], m["pi_model"])) or {}
         p = reg.get(m["engine"])
         start = 0 if m["live"] else (p.memory().get("start_estimate_s") or 0)
-        out.append({"id": m["id"], "title": e.get("title") or m["pi_model"], "tier": e.get("tier") or "", "tier_label": TIER_LABEL.get(e.get("tier"), "Other"),
+        out.append({"id": m["id"], "title": recs.title_for(m["id"], m["pi_model"]) or e.get("title") or m.get("title") or m["pi_model"], "tier": e.get("tier") or "", "tier_label": TIER_LABEL.get(e.get("tier"), "Other"),
                     "fit": e.get("fit") or "fits", "why": e.get("why") or "", "size_gb": round(e.get("size_bytes", 0) / 1e9, 1), "need_gb": e.get("need_gb"),
                     "live": bool(m["live"]), "start_s": start, "start": _start_hint(start), "engine": m["engine"], "engine_name": p.name if p else m["engine"],
                     "vision": bool(m.get("vision")), "tools": bool(m.get("tools")), "reasoning": bool(m.get("reasoning")), "ctx": m.get("ctx") or 0,

@@ -9,6 +9,7 @@ import threading
 import time
 
 import provbase
+import recs
 import registry
 
 _lock = threading.RLock()          # one activation at a time (held for as long as an engine takes to start)
@@ -60,6 +61,7 @@ def chat_models():
         for m in ms:
             e = dict(m)
             e.update(engine=p.id, pi_model=m["id"], id=p.ref(m["id"]))
+            e.setdefault("title", recs.title_for(e["id"], m["id"]) or m["id"])
             e.setdefault("pi_provider", p.id)
             e.setdefault("live", False)
             out.append(e)

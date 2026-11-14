@@ -18,6 +18,7 @@ HERE = os.path.dirname(os.path.abspath(__file__))
 sys.path.insert(0, os.path.join(HERE, "_vendor"))
 import yaml  # noqa: E402
 
+import hf  # noqa: E402
 import store  # noqa: E402
 
 BUNDLED = os.path.join(HERE, "recommendations")
@@ -150,15 +151,18 @@ def clean_models(doc, c):
     ids = set()
     for i, m in c.items(doc, "recommended", ""):
         w = "recommended[%d]" % i
-        c.keys(m, w, ["id", "also", "label", "take", "title", "provider", "size_gb", "tools", "vision", "reasoning", "download", "quants"])
+        c.keys(m, w, ["id", "also", "label", "take", "title", "provider", "size_gb", "tools", "vision", "reasoning", "download", "quants", "trusted"])
         mid = c.text(m, "id", w, need=True)
+        if m.get("download") is None:
+            c.bad(w, "needs `download` (where to fetch the model: a checkpoint).")
+        trusted = c.flag(m, "trusted", w)
         if mid in ids:
             c.bad(w, "%s is listed twice." % mid)
         elif mid:
             ids.add(mid)
             ent = {"id": mid, "also": c.words(m, "also", w), "label": c.text(m, "label", w) or "", "take": c.text(m, "take", w) or "",
                    "title": c.text(m, "title", w) or "", "provider": c.text(m, "provider", w) or "llama.cpp", "size_gb": c.number(m, "size_gb", w),
-                   "tools": c.flag(m, "tools", w), "vision": c.flag(m, "vision", w), "reasoning": c.flag(m, "reasoning", w),
+                   "tools": c.flag(m, "tools", w), "vision": c.flag(m, "vision", w), "reasoning": c.flag(m, "reasoning", w), "trusted": trusted,
                    "quants": clean_quants(m.get("quants"), w + ".quants", c)}
             dl = m.get("download")
             if dl is not None:
@@ -170,6 +174,11 @@ def clean_models(doc, c):
                     ck = c.text(dl, "checkpoint", dw, need=True)
                     if ck:
                         ent["download"] = {"checkpoint": ck, "mmproj": c.text(dl, "mmproj", dw) or "", "recipe": c.text(dl, "recipe", dw) or "llamacpp"}
+                        repo = ck.split(":", 1)[0]
+                        owner = (repo.split("/", 1)[0] if "/" in repo else repo).lower()
+                        if owner not in hf.ALLOWED_UPLOADERS and not trusted:
+                            c.bad(dw, "the checkpoint comes from `%s`, which isn't one of the uploaders Shoggoth trusts (%s). "
+                                       "Set `trusted: true` once you have checked it." % (owner or repo, ", ".join(hf.ALLOWED_UPLOADERS)))
             out["recommended"].append(ent)
     for i, e in c.items(doc, "coming_soon", ""):
         w = "coming_soon[%d]" % i
@@ -379,6 +388,21 @@ def get(name):
 
 def models():
     return get("models")["data"]
+
+
+def title_for(*names):
+    """The title models.yaml gives a model it recommends, matched by its id or another name (`also`), else ""."""
+    wanted = set()
+    for n in names:
+        n = str(n or "").strip()
+        if n:
+            wanted.add(n)
+            if "/" in n:
+                wanted.add(n.rsplit("/", 1)[-1])
+    for m in models()["recommended"]:
+        if wanted & ({m["id"]} | set(m["also"])):
+            return m["title"] or m["id"]
+    return ""
 
 
 def tools():

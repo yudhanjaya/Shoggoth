@@ -114,6 +114,7 @@ class Resolving(Env):
         ms = router.chat_models()
         m = next(m for m in ms if m["engine"] == "fast")
         self.assertEqual((m["id"], m["pi_model"], m["pi_provider"], m["live"], m["ctx"]), ("fast/m1", "m1", "fast", True, 4096))
+        self.assertEqual(m["title"], "m1")
 
 
 class Progress(Env):
@@ -417,6 +418,8 @@ class GatewayRouting(Env):
         item = next(m for m in sent["obj"]["data"] if m["id"] == "big/m1")
         picked = next(m for m in library.picker(max_age=0)["models"] if m["id"] == "big/m1")
         self.assertEqual(item["shoggoth"], {"fit": picked["fit"], "loaded": picked["live"]})
+        self.assertEqual(item["title"], picked["title"])
+        self.assertEqual(next(m for m in sent["obj"]["data"] if m["id"] == "Default-Model")["title"], "Default-Model")
 
 
 if __name__ == "__main__":

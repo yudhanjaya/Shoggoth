@@ -25,6 +25,7 @@ import engines
 import hf
 import llamacpp
 import provbase
+import recs
 import servers
 import store
 
@@ -314,7 +315,7 @@ def _look(s, defs, timeout):
         st, _, cd = _get(base, dd["context"]["path"], timeout=timeout)
         got = [x for x in provbase.jpath(cd, dd["context"]["json"]) if isinstance(x, int) and not isinstance(x, bool) and x > 0] if st == 200 and cd is not None else []
         ctx = got[0] if got else 0
-    models = [{"id": str(m["id"]), "ctx": _ctx_of(m) or ctx} for m in items]
+    models = [{"id": str(m["id"]), "title": recs.title_for(str(m["id"])) or str(m["id"]), "ctx": _ctx_of(m) or ctx} for m in items]
     chat, role = classify(items)
     if not items and who["how"] not in ("process", "signature") and (status == 200 or not d):
         role = "other"          # unnamed with nothing to offer, or a bare 401 with no body (OpenAI-style servers explain themselves): not a card

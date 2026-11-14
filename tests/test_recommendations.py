@@ -161,6 +161,31 @@ class Yours(Env):
             self.assertEqual(recs.main(["check", os.path.join(recs.BUNDLED, "models.yaml")]), 0)
         self.assertIn("`lable` isn't a setting Shoggoth reads (did you mean `label`?)", out.getvalue())
 
+    def test_every_entry_says_where_to_fetch_it(self):
+        self.mine("models", "recommended:\n  - {id: No-Download}\n"
+                            "  - {id: Fine, download: {checkpoint: 'unsloth/x-GGUF:x-Q4_K_M.gguf'}}\n")
+        problems = "\n".join(recs.summary()["problems"])
+        self.assertIn("recommended[0]: needs `download`", problems)
+        self.assertNotIn("recommended[1]", problems)
+
+    def test_an_unknown_uploader_is_a_warning_unless_trusted(self):
+        self.mine("models", "recommended:\n"
+                            "  - {id: A, download: {checkpoint: 'someone/Custom-GGUF:Q4_K_M.gguf'}}\n"
+                            "  - {id: B, trusted: true, download: {checkpoint: 'someone/Custom-GGUF:Q4_K_M.gguf'}}\n")
+        s = recs.summary()
+        problems = "\n".join(s["problems"])
+        self.assertIn("recommended[0].download", problems)
+        self.assertIn("someone", problems)
+        self.assertIn("trusted: true", problems)
+        self.assertNotIn("recommended[1]", problems)
+        self.assertTrue(s["models"]["recommended"][1]["trusted"])
+
+    def test_a_recommended_title_is_found_by_its_id_and_other_names(self):
+        self.assertEqual(recs.title_for("Gemma-4-12B-it-MTP-GGUF"), "Gemma-4-12B-it (MTP)")
+        self.assertEqual(recs.title_for("llamacpp/Gemma-4-12B-it-MTP-GGUF"), "Gemma-4-12B-it (MTP)")
+        self.assertEqual(recs.title_for("MiMo-V2.6-Distill-Qwen-9B-Q4_K_M"), "MiMo-V2.6-Distill-Qwen-9B")
+        self.assertEqual(recs.title_for("not-a-pick"), "")
+
 
 class Flavour(Env):
     def test_the_lines_are_there_and_name_only_the_model(self):

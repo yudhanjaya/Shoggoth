@@ -308,9 +308,8 @@ def model_api(m):
     return engines.api_for(entry.get("preset") or "", m.get("pi_model") or m.get("id"))
 
 
-def write_config(models, default, ctx=0):
-    d = agent_dir()
-    os.makedirs(d, exist_ok=True)
+def _provider_map(models, default, ctx=0):
+    """The `providers` part of Pi's models.json: one provider per engine (or connected server), each with its models."""
     providers, groups = {}, {}
     for m in models:
         groups.setdefault(m["pi_provider"], []).append(m)
@@ -335,6 +334,13 @@ def write_config(models, default, ctx=0):
                            "models": entries}
         if any(e["api"] == "anthropic-messages" for e in entries):
             providers[name]["authHeader"] = True                 # services that front Claude may want the key as a Bearer token as well as x-api-key
+    return providers
+
+
+def write_config(models, default, ctx=0):
+    d = agent_dir()
+    os.makedirs(d, exist_ok=True)
+    providers = _provider_map(models, default, ctx)
     _write(os.path.join(d, "models.json"), {"providers": providers})
     chosen = router.info(default) or {}
     settings = {"defaultProvider": chosen.get("pi_provider", "llamacpp"), "defaultProjectTrust": "never", "quietStartup": True,
@@ -346,6 +352,22 @@ def write_config(models, default, ctx=0):
     if pi_packages():
         settings["packages"] = pi_packages()
     _write(os.path.join(d, "settings.json"), settings)
+
+
+def sync_models():
+    """Rewrite Pi's models.json from the engines' current lists, keeping the chosen default. A removed source's models go at once."""
+    path = os.path.join(agent_dir(), "models.json")
+    if not os.path.isfile(path):
+        return
+    default = ""
+    try:
+        with open(os.path.join(agent_dir(), "settings.json")) as f:
+            default = str((json.load(f) or {}).get("defaultModel") or "")
+    except (OSError, ValueError):
+        pass
+    models = chat_models()
+    chosen = next((m["id"] for m in models if str(m.get("pi_model") or m["id"]) == default), default)
+    _write(path, {"providers": _provider_map(models, chosen, 0)})
 
 
 def pi_packages():

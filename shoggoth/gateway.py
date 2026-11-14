@@ -434,22 +434,26 @@ def _route(path, body):
 
 
 def _shoggoth_marks():
-    """{model id: {"fit", "loaded"}} from the engine picker, so an app can see whether a model fits this computer and is loaded now."""
+    """{model id: {"fit", "loaded", "title"}} from the engine picker, so an app can see whether a model fits this computer and is loaded now."""
     try:
         import library
-        return {m["id"]: {"fit": m["fit"], "loaded": m["live"]} for m in library.picker(30)["models"]}
+        return {m["id"]: {"fit": m["fit"], "loaded": m["live"], "title": m.get("title") or m["id"]} for m in library.picker(30)["models"]}
     except Exception:  # noqa: BLE001 - a model list without these notes is still a useful answer
         return {}
 
 
 def _mark_models(items, marks):
-    """Add Shoggoth's own note to each model another app is told about, where the picker knows that model."""
+    """Name each model another app is told about, and add Shoggoth's own note to the ones the picker knows."""
     for m in items:
         if not isinstance(m, dict):
             continue
         mid = m.get("id")
-        if isinstance(mid, str) and mid in marks:
-            m["shoggoth"] = dict(marks[mid])
+        if not isinstance(mid, str):
+            continue
+        known = marks.get(mid) or {}
+        m.setdefault("title", known.get("title") or mid)
+        if known:
+            m["shoggoth"] = {"fit": known["fit"], "loaded": known["loaded"]}
     return items
 
 
