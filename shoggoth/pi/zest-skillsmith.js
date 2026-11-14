@@ -1,5 +1,5 @@
 // Lets the model propose a new skill with save_skill. Nothing is saved without the person's yes: the tool ALWAYS asks, in every
-// mode (including "auto" and read-only "plan"), through the same select dialog the approval gate uses, showing the whole SKILL.md.
+// mode (including "auto" and read-only "plan"), through the same select dialog the approval gate uses, showing the whole SKILL.md and the full content of every extra file.
 //
 // Environment (set by Shoggoth): SHOGGOTH_OWN_SKILLS is the folder the person's own skills live in, SHOGGOTH_TASK_ID the chat,
 // SHOGGOTH_MODEL the model name. Without SHOGGOTH_OWN_SKILLS the tool is not offered.
@@ -11,6 +11,8 @@ const SAVE = "Save", SAVE_ON = "Save and turn on", REPLACE = "Replace", REPLACE_
 export const LIMITS = { name: 40, description: 300, body: 8 * 1024, files: 5, file: 16 * 1024 };
 const bytes = (s) => Buffer.byteLength(s, "utf8");
 const SLUG = /^[a-z0-9]+(-[a-z0-9]+)*$/;
+// C0/C1 controls (except \n and \t) and Unicode bidi controls would make the approval card read differently from what is saved.
+const BAD_CHARS = /[\u0000-\u0008\u000B-\u001F\u007F-\u009F\u200E\u200F\u202A-\u202E\u2066-\u2069]/;
 const FILE_PATH = /^[A-Za-z0-9][A-Za-z0-9._-]*(\/[A-Za-z0-9][A-Za-z0-9._-]*){0,3}$/;
 
 // Checks what the model sent. Returns {error} or {name, description, body, files: [{path, content}]}. Exported so it can be tested.
@@ -21,11 +23,12 @@ export function validate(input) {
   const description = typeof p.description === "string" ? p.description.replace(/\s+/g, " ").trim() : "";
   if (!description) return { error: "description is required: one or two sentences saying when to use the skill." };
   if (description.length > LIMITS.description) return { error: `description is ${description.length} characters; the limit is ${LIMITS.description}. Shorten it.` };
+  if (BAD_CHARS.test(description)) return { error: "description must be plain text (no control or direction-changing characters)." };
   const body = typeof p.body === "string" ? p.body.replace(/\r\n/g, "\n").trim() : "";
   if (!body) return { error: "body is required: the steps of the skill." };
   if (bytes(body) > LIMITS.body) return { error: `body is ${bytes(body)} bytes; the limit is ${LIMITS.body}. Make it shorter.` };
   if (/^---\s*\n/.test(body)) return { error: "body must not start with its own --- header; name and description are added for you." };
-  if (body.includes("\0")) return { error: "body must be plain text." };
+  if (BAD_CHARS.test(body)) return { error: "body must be plain text (no control or direction-changing characters)." };
   const files = [];
   if (p.files != null) {
     if (!Array.isArray(p.files)) return { error: "files must be a list of {path, content}." };
@@ -40,7 +43,7 @@ export function validate(input) {
       }
       if (rel === "SKILL.md" || rel === "source.json") return { error: `${rel} is written for you; use another file name.` };
       if (seen.has(rel)) return { error: `file "${rel}" is listed twice.` };
-      if (content.includes("\0")) return { error: `file "${rel}" must be plain text.` };
+      if (BAD_CHARS.test(content)) return { error: `file "${rel}" must be plain text (no control or direction-changing characters).` };
       if (bytes(content) > LIMITS.file) return { error: `file "${rel}" is ${bytes(content)} bytes; the limit is ${LIMITS.file}.` };
       seen.add(rel);
       files.push({ path: rel, content });
@@ -68,8 +71,17 @@ function write(dir, s, source) {
       fs.writeFileSync(target, f.content, { mode: 0o644 });
     }
     fs.writeFileSync(path.join(tmp, "source.json"), JSON.stringify(source, null, 2) + "\n", { mode: 0o644 });
-    fs.rmSync(dir, { recursive: true, force: true });
-    fs.renameSync(tmp, dir);
+    const old = `${dir}.old-${process.pid}`;
+    fs.rmSync(old, { recursive: true, force: true });
+    const had = fs.existsSync(dir);
+    if (had) fs.renameSync(dir, old);                            // keep the old skill until the new one is in place
+    try {
+      fs.renameSync(tmp, dir);
+    } catch (e) {
+      if (had) fs.renameSync(old, dir);                          // put the old one back
+      throw e;
+    }
+    if (had) fs.rmSync(old, { recursive: true, force: true });
   } catch (e) {
     fs.rmSync(tmp, { recursive: true, force: true });
     throw e;
@@ -110,7 +122,7 @@ export default function (pi) {
       const dir = path.join(own, s.name);
       const exists = fs.existsSync(dir);
       const card = JSON.stringify({
-        tool: "save_skill", what: s.name, preview: skillText(s), files: s.files.map((f) => ({ path: f.path, bytes: bytes(f.content) })),
+        tool: "save_skill", what: s.name, preview: skillText(s), files: s.files.map((f) => ({ path: f.path, bytes: bytes(f.content), content: f.content })),
         exists, outside: false, folder: process.cwd(), key: null, risks: [],
       });
       const options = exists ? [REPLACE, REPLACE_ON, NO] : [SAVE, SAVE_ON, NO];

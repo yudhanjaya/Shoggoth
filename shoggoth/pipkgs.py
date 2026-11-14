@@ -54,7 +54,8 @@ def curated():
         name, ver, integ = str(e.get("name") or ""), str(e.get("version") or ""), str(e.get("integrity") or "")
         if not NAME_RE.match(name) or (ver and not VERSION_RE.match(ver)) or (integ and not integ.startswith("sha512-")):
             continue
-        out.append({"name": name, "version": ver, "integrity": integ, "enabled": e.get("enabled") is True, "notes": str(e.get("notes") or "")})
+        # An enabled entry must be pinned by a sha512 as well as a version; without one it stays "not tested yet".
+        out.append({"name": name, "version": ver, "integrity": integ, "enabled": e.get("enabled") is True and integ.startswith("sha512-"), "notes": str(e.get("notes") or "")})
     return out
 
 
@@ -201,7 +202,8 @@ class _Job:
         if expect and integ != expect:
             raise RuntimeError("npm's checksum for %s@%s differs from the one Shoggoth was given, so it was not installed." % (name, version))
         tar = urllib.parse.urlparse(meta["dist"]["tarball"])
-        if tar.scheme not in ("http", "https") or tar.netloc != urllib.parse.urlparse(piup.REGISTRY).netloc:
+        reg = urllib.parse.urlparse(piup.REGISTRY)
+        if tar.scheme not in ("http", "https") or tar.scheme != reg.scheme or tar.netloc != reg.netloc:
             raise RuntimeError("%s is hosted outside the npm registry, so it was not installed." % name)
         path = os.path.join(self.tmp, "%d.tgz" % self.count)
         piup._download(meta["dist"]["tarball"], path, integ, max_bytes=MAX_TARBALL)
@@ -262,6 +264,8 @@ def install(name, entries=None):
         raise RuntimeError("%s isn't on Shoggoth's list of packages, so it can't be installed." % name)
     if not entry.get("enabled"):
         raise RuntimeError("%s hasn't been tested with Shoggoth yet, so it can't be installed." % name)
+    if not str(entry.get("integrity") or "").startswith("sha512-"):
+        raise RuntimeError("%s hasn't been tested with Shoggoth yet (no checksum is pinned), so it can't be installed." % name)
     ver = entry.get("version") or ""
     if not VERSION_RE.match(ver):
         raise RuntimeError("%s has no pinned version yet, so it can't be installed." % name)
@@ -272,7 +276,7 @@ def install(name, entries=None):
         try:
             job = _Job(work)
             dest = os.path.join(work, "pkg")
-            meta = job.fetch(name, ver, dest, expect=entry.get("integrity") or None)
+            meta = job.fetch(name, ver, dest, expect=entry["integrity"])
             job.deps(meta, dest, dest)
             with open(os.path.join(dest, MARK), "w") as f:
                 json.dump({"name": name, "version": ver, "integrity": meta["dist"]["integrity"], "packages": job.count}, f)

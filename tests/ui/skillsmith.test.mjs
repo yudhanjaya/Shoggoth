@@ -37,6 +37,12 @@ bad({ files: [{ path: "a.md", content: "x" }, { path: "a.md", content: "y" }] },
 bad({ files: Array.from({ length: 6 }, (_, i) => ({ path: `f${i}.md`, content: "x" })) }, /At most 5/);
 bad({ files: [{ path: "big.md", content: "x".repeat(16 * 1024 + 1) }] }, /limit/);
 bad({ files: [{ path: "a.md" }] }, /content/);
+for (const c of ["\u0001", "\u0085", "\u007f", "\r", "\u202e", "\u2066", "\u200f"]) {
+  bad({ body: `a${c}b` }, /plain text/);
+  if (c !== "\r") bad({ description: `a${c}b` }, /plain text/);   // whitespace in a description is folded to a space
+  bad({ files: [{ path: "a.md", content: `a${c}b` }] }, /plain text/);
+}
+assert.equal(validate({ ...ok, body: "a\tb\nc" }).error, undefined);
 assert.equal(validate({ ...ok, files: [{ path: "templates/report.md", content: "x".repeat(16 * 1024) }] }).error, undefined);
 assert.match(skillText(validate(ok)), /^---\nname: release-notes\ndescription: "Use when writing release notes."\n---\n\n1\. Do it\.\n$/);
 
@@ -58,6 +64,7 @@ assert.deepEqual(r.asked[0].options, ["Save", "Save and turn on", "Don't save"])
 assert.equal(r.asked[0].card.tool, "save_skill");
 assert.match(r.asked[0].card.preview, /^---\nname: release-notes\n/);
 assert.match(r.asked[0].card.preview, /1\. Do it\./);
+assert.deepEqual(r.asked[0].card.files, [{ path: "t/x.md", bytes: 5, content: "hello" }]);   // the card shows file contents
 assert.equal(r.res.details.saved, false);
 assert.equal(fs.existsSync(path.join(own, "release-notes")), false);
 
@@ -101,6 +108,16 @@ assert.equal(r.res.details.replaced, true);
 assert.match(fs.readFileSync(path.join(dir, "SKILL.md"), "utf8"), /New way/);
 assert.equal(fs.existsSync(path.join(dir, "t")), false);          // the old files went with the old skill
 assert.equal(JSON.parse(fs.readFileSync(path.join(dir, "source.json"), "utf8")).turn_on, true);
+
+// a failed replace keeps the old skill: make the final rename fail
+{
+  const realRename = fs.renameSync;
+  fs.renameSync = (a, b) => { if (String(b) === dir) { fs.renameSync = realRename; if (String(a).includes(".tmp-")) throw new Error("disk full"); } return realRename(a, b); };
+  await assert.rejects(run({ ...ok, body: "1. Third way." }, "Replace"), /Couldn't save/);
+  fs.renameSync = realRename;
+  assert.match(fs.readFileSync(path.join(dir, "SKILL.md"), "utf8"), /New way/);
+  assert.deepEqual(fs.readdirSync(own), ["release-notes"]);
+}
 
 // without the folder variable the tool is not offered
 delete process.env.SHOGGOTH_OWN_SKILLS;
