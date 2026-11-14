@@ -82,12 +82,30 @@ class Provider(provbase.GenericProvider):
         return [{"id": m["id"], "ctx": m["ctx"], "port": llamacpp._state["port"], "owner": "zest", "status": m["status"]}
                 for m in llamacpp.models()]
 
+    @staticmethod
+    def _is_chat(m):
+        """Is this router entry a language model to talk to? Speech, embedding and other files in the folder are not (read from the
+        file's own header; a file that can't be read counts as chat, so nothing is hidden by mistake)."""
+        a = m.get("args") or []
+        path = next((a[i + 1] for i, x in enumerate(a[:-1]) if x in ("--model", "-m")), "")
+        if not path:
+            return True
+        try:
+            import gguf
+            import library
+            h = library._header(path)
+            if not h:
+                return True
+            return gguf.role_of(h.get("architecture", ""), m["id"], os.path.dirname(path)) in ("chat", "unknown")
+        except Exception:  # noqa: BLE001
+            return True
+
     def chat_models(self):
-        """Every model the router can load, the loaded ones marked live."""
+        """Every chat model the router can load, the loaded ones marked live."""
         if not llamacpp.running():
             return []
         return [{"id": m["id"], "tools": True, "reasoning": False, "vision": "image" in (m.get("inputs") or []), "ctx": m["ctx"] or 0,
-                 "live": m["status"] == "loaded"} for m in llamacpp.models() if not m["id"].lower().startswith("mmproj")]
+                 "live": m["status"] == "loaded"} for m in llamacpp.models() if not m["id"].lower().startswith("mmproj") and self._is_chat(m)]
 
     def loaded(self, model_id):
         m = next((m for m in llamacpp.models() if m["id"] == model_id), None) if llamacpp.running() else None
