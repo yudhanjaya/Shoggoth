@@ -18,6 +18,7 @@ import store
 
 HERE = os.path.dirname(os.path.abspath(__file__))
 BUNDLED = os.path.join(HERE, "skills")
+LEGACY_SET_IDS = {"zest": "shoggoth"}   # the bundled set's name before 5.0; state.json keys keep working
 MAX_DOWNLOAD = 40 * 1024 * 1024
 MAX_FILES = 3000
 MAX_SKILL_BYTES = 6 * 1024 * 1024
@@ -33,6 +34,15 @@ def _state_path():
     return os.path.join(root(), "state.json")
 
 
+def _renamed_set(key):
+    """A skill key from a state.json written before the bundled set was renamed (`zest/x` now means `shoggoth/x`)."""
+    if isinstance(key, str):
+        sid, sep, name = key.partition("/")
+        if sid in LEGACY_SET_IDS:
+            return LEGACY_SET_IDS[sid] + (sep + name if sep else "")
+    return key
+
+
 def _state():
     try:
         with open(_state_path()) as f:
@@ -42,6 +52,8 @@ def _state():
     s.setdefault("disabled", [])
     s.setdefault("enabled", [])             # skills a set ships switched off ("off" in its set.json) that the person turned on
     s.setdefault("sets", {})
+    for field in ("disabled", "enabled"):
+        s[field] = [_renamed_set(k) for k in s[field]]
     return s
 
 

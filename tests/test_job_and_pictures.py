@@ -16,7 +16,7 @@ class JobTool(unittest.TestCase):
         self.assertTrue(os.path.isfile(agent.JOB_EXT))
 
     def test_the_skill_is_there_and_handed_to_plain_chats(self):
-        path = os.path.join(os.path.dirname(agent.__file__), "skills", "zest", "skills", "start-a-job", "SKILL.md")
+        path = os.path.join(os.path.dirname(agent.__file__), "skills", "shoggoth", "skills", "start-a-job", "SKILL.md")
         text = open(path, encoding="utf8").read()
         self.assertRegex(text, r"(?m)^name: start-a-job$")
         self.assertIn("propose_job", text)

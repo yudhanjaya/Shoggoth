@@ -15,7 +15,7 @@ class Skillsmith(unittest.TestCase):
         self.assertEqual(r.returncode, 0, r.stdout + r.stderr)
 
     def test_the_bundled_skill_is_small_and_listed(self):
-        d = os.path.join(HERE, "..", "shoggoth", "skills", "zest", "skills", "writing-skills", "SKILL.md")
+        d = os.path.join(HERE, "..", "shoggoth", "skills", "shoggoth", "skills", "writing-skills", "SKILL.md")
         with open(d, encoding="utf8") as f:
             text = f.read()
         self.assertLess(len(text.encode()), 3 * 1024)
