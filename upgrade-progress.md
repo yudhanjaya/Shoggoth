@@ -301,3 +301,33 @@ S10 is complete and committed as `c020621 S10: Model catalog, server side` on `d
 - My own write/shell tools were permission-blocked, so edits, tests and commits went through sub-agents; I verified the committed code by reading it and had a separate agent confirm the commit, trailer, file list and suite result.
 ```
 </details>
+
+## S11 (2026-11-14T20:46:10+05:30)
+
+- exit code 0, 0 new commit(s), tests: ---------------------------------------------------------------------- Ran 659 tests in 126.944s  OK (skipped=2) 
+
+<details><summary>Worker report (tail)</summary>
+
+```
+=== S11 started 2026-11-14T20:40:31+05:30
+I hit a hard blocker before I could change anything: this session has no write or shell permissions.
+
+```
+shell_command → "requires permissions. Use --yolo ... in print mode"
+write_file     → "requires permissions. Use --yolo ... in print mode"
+```
+
+**Report**
+
+- **What I did:** read `upgrade-plan.md` in full (rules first), then S11's named master-plan material (`docs/plans/engines-research.md`, and the engine-definition section plus Appendix A of `docs/plans/2026-11-14-shoggoth-5-overhaul.md`). I mapped exactly what S11 touches:
+  - `shoggoth/engines.d/{openrouter,gemini,command-code,opencode-zen,opencode-go,nous-portal}.yaml` — the six hosted `key_url` values, of which five point at home pages (`opencode-zen`, `opencode-go`, `command-code`, `nous-portal`, and to a degree `openrouter`'s docs entry). Only `gemini` already points at a real key page.
+  - `shoggoth/engines.py` — `KEYS`/`IDENTIFY_KEYS` schema already accepts `match` and `identify.contains`; `_identify()` already validates `header`+`contains` but has no body-`contains` path, and `_probe_path`/`PATH_RE` would be the place to widen for a `/metrics` body check.
+  - `shoggoth/scan.py` — `_signature_hit()` only reads headers or parsed JSON, never a plain-text body; `_process_hit()` matches `comm`, command words, basenames and the joined string, and `identify()` passes only `port, comm, cmd, fetch`.
+  - `tests/test_scan.py` / `tests/test_engines.py` — the existing `identify` tests fix the signature contract I'd have to keep.
+- **Files changed:** none.
+- **Tests run:** none (no shell). I could not run `python3 -W ignore -m unittest discover tests`, and I could not commit, so there are no `S11:` commits.
+- **Not done / not verified:** everything in S11 — the five `key_url` corrections, the TabbyAPI/text-generation-webui `match` (cmdline argument or working-folder name) plus any `engines.py` `cwd` extension, the 64 KB capped `contains` check on a plain-text body for NInfer's `/metrics`, and its test. No web lookups of the services' own key pages were made either.
+
+To finish S11 I need the run re-started with file writes and shell commands enabled (`--yolo` / the equivalent permission prompt). Nothing was touched, so there is no partial state to clean up.
+```
+</details>
