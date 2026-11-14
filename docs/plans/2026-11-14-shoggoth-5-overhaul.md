@@ -385,13 +385,15 @@ Pi packages are npm packages declaring extensions, skills, prompts, themes. They
 - Skills page gets a "Tools" section: each curated package with on/off, what it adds, and "Runs code on your computer" stated plainly.
 - **Test each package from #52 before adding it**, and record the result in `recommendations/tools.yaml`:
 
-| Package | Purpose | What to check |
+Reviewed from published source on 14 Nov 2026 (`docs/plans/pi-packages-review.md`). None of these run install scripts.
+
+| Package | Verdict | Why |
 | --- | --- | --- |
-| `bun-docx` | Read/write Word files | The name says Bun. If it needs the Bun runtime, either bundle Bun (≈90 MB) or find a Node alternative. Decide after testing. |
-| `@sttronn/pi-sheets` | Spreadsheets | Works under the bundled Node 22. |
-| `@tintinweb/pi-subagents` | Subagents | Child Pi processes must inherit `SHOGGOTH_ALLOW`, the mode, and `zest-gate.js`, or they bypass the approval gate. Show children as tool cards in the parent chat. |
-| `billion-context` | Long context handling | May fight Shoggoth's own compaction and `maxTokens` (one quarter of context, capped at 32k). Test with a 32k-context small model. |
-| `@dietrichgebert/ponytail` | Code best practices (MIT) | It adds `/ponytail-review` and `/ponytail-audit`. Expose them as buttons in a folder chat. Check its skill size: small models need it under about 8 KB, so maybe enable it only for models ≥ 20B. |
+| `@dietrichgebert/ponytail` 5.3.3 | **Bundle, with conditions** | Six skills (1.7–5.3 KB), commands, a system-prompt hook; no processes, no network. Offer it for larger models; ship a short Shoggoth `good-code` skill for small ones (see `skills-review.md`). |
+| `@sttronn/pi-sheets` 0.1.2 | **Bundle, with conditions** | One skill (22.7 KB, too long for small models) that runs Python with `openpyxl`; needs a venv and PyPI on first use. Only for larger models, and the venv setup has to be visible to the person. |
+| `bun-docx` 0.29.0 | **Don't bundle the npm package** | It needs Bun, or downloads an unverified ~100 MB binary at run time. Word support goes through a pinned binary instead, or waits. |
+| `@tintinweb/pi-subagents` 0.25.0 | **Don't bundle in 5.0** | Child sessions run inside the same process with their own loader, so Shoggoth's `-e` approval gate isn't applied to them, and they turn skill discovery back on. That would let a subagent edit and run commands without asking. |
+| `billion-context` 0.1.213 | **Don't bundle** | Adds its own proxy and ungated subagents, cancels Pi's compaction, and updates itself at run time, which defeats pinning. Its licence adds an attribution term on top of MIT. |
 
 ### 6.2 Common file types **[#52] [new]**
 
