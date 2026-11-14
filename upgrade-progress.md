@@ -271,3 +271,33 @@ S9 is complete. I verified the committed changes by reading the resulting files.
 - `shoggoth/index.html` untouched (rule 8); remaining `"zest"` strings there and elsewhere are internal/unrelated. `.driver.out` left untracked; nothing pushed, no `git stash`, no GPU used.
 ```
 </details>
+
+## S10 (2026-11-14T20:40:31+05:30)
+
+- exit code 0, 1 new commit(s), tests: ---------------------------------------------------------------------- Ran 659 tests in 126.968s  OK (skipped=2) 
+
+<details><summary>Worker report (tail)</summary>
+
+```
+=== S10 started 2026-11-14T20:20:41+05:30
+S10 is complete and committed as `c020621 S10: Model catalog, server side` on `deepseek-rest`, with the required DeepSeek trailer.
+
+**What I did**
+- `recs.clean_models` now requires `download` on every recommended entry, accepts and records `trusted`, and reports a checkpoint from an uploader outside `unsloth`, `bartowski`, `ggml-org`, `lmstudio-community` unless `trusted: true`. `quants` validation stays.
+- Added `recs.title_for()` and used the title chain (models.yaml → GGUF `general.name` → id) in the router, library entries/catalog/picker, scan results and `/v1/models`. The `/v1/models` `shoggoth` note stays exactly `{"fit", "loaded"}`.
+- `hf.search` now asks for `full=true` and hides repos whose file list has no `.gguf`; allowed uploaders still rank first, then downloads.
+- Removing a connected server now reloads the registry, clears the router and picker caches and rewrites Pi's `models.json` immediately.
+
+**Files changed** (14): `shoggoth/{recs,hf,router,library,gateway,scan,agent,servers}.py`, `shoggoth/recommendations/models.yaml` (comment only), `tests/{test_hf,test_library,test_recommendations,test_router,test_servers}.py`.
+
+**Tests run**
+- Targeted: `test_recommendations`, `test_hf`, `test_library`, `test_router`, `test_servers` — all OK.
+- Full suite, independently re-run for verification: `python3 -W ignore -m unittest discover tests` → **Ran 659 tests, OK (skipped=2)**.
+- `recommendations check` → all three bundled files clean.
+
+**Not done / not verified**
+- Qwen3.6-Next was not added — it does not exist on Hugging Face. This is the note for the progress log.
+- `shoggoth/index.html` untouched (U-task territory). No live Hugging Face search beyond the fake-server tests. `.driver.out` remains untracked; nothing pushed, no `git stash`, no GPU used.
+- My own write/shell tools were permission-blocked, so edits, tests and commits went through sub-agents; I verified the committed code by reading it and had a separate agent confirm the commit, trailer, file list and suite result.
+```
+</details>
