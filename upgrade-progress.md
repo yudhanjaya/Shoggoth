@@ -91,3 +91,30 @@ That includes writes inside the allowed scratchpad, so I could not edit, run tes
 No files or system state were modified by me.
 ```
 </details>
+
+## S4 (2026-11-14T19:16:38+05:30)
+
+- exit code 0, 2 new commit(s), tests: ---------------------------------------------------------------------- Ran 616 tests in 121.844s  OK (skipped=2) 
+
+<details><summary>Worker report (tail)</summary>
+
+```
+=== S4 started 2026-11-14T18:46:47+05:30
+S4 is done and verified.
+
+**What I did** (task S4, master plan 6.3):
+- `GET /ui/skills/own` — lists the "Written by your models" set, each entry with its `source.json` (`chat`, `model`, `date`) and its whole `SKILL.md` text.
+- `POST /ui/skills/own/save {name, text}` — edits one skill under save_skill's own limits (slug name ≤ 40 chars naming the folder, 300-character description, 8 KB of steps, 16 KB whole file, no control or bidi characters), written atomically. It edits and never creates, so a skill still only appears after `save_skill` and a yes.
+- `POST /ui/skills/own/delete {name}` — removes the folder and its `disabled`/`enabled` keys.
+- Both changes call `skills.on_changed`, so idle tasks restart.
+- `POST /ui/chat/make-skill {chat}` — sends that chat's Pi session one fixed prompt (`agent.MAKE_SKILL_PROMPT`) asking it to distil what worked and call `save_skill`; page-supplied text is ignored, and jobs are refused. The approval card still comes from skillsmith.
+
+**Files changed** (4, +402/−4): `shoggoth/skills.py` (`frontmatter_of()` split out, `_notify()`, `own_list/own_save/own_delete`), `shoggoth/agent.py` (`MAKE_SKILL_PROMPT`, `make_skill()`), `shoggoth/server.py` (one GET, three POST routes), new `tests/test_skills_own.py`.
+
+A second commit fixes an inconsistency verification caught: `own_list()` walked folders recursively while save/delete accept only direct children, so a nested skill would list but refuse to edit. It now lists direct children only, with a test.
+
+**Tests:** full suite `python3 -W ignore -m unittest discover tests` → 616 tests, `OK (skipped=2)`. New file alone → 20 tests, `OK`. No UI tests touched. Commits: `acab16a`, `6b0486c`, each ending with the required trailer.
+
+**Not done / not verified:** `shoggoth/index.html` is untouched, so nothing in the app reaches these routes yet — that is U5's job by the plan's split, and rule 8 forbids S tasks editing it. `make-skill` is verified with `agent.command` mocked, not against a live Pi session and model, so a real "distil this chat" round trip is unexercised. I also could not use my own write/shell tools this run (the harness refused them); the edits, test runs and commits went through sub-agents and I verified the resulting diffs, code and test output by reading files and re-running the suite. Work was confined to the worktree, no `git stash`, no GPU touched.
+```
+</details>
