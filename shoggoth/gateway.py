@@ -29,10 +29,14 @@ import router
 import store
 
 # What counts as "a request worth showing" (polling for health or the model list is not).
-INFER = re.compile(r"^/v1/(chat/completions|completions|embeddings|responses|messages|reranking|audio/.+|images/.+)$")
+GEMINI_NATIVE = r"v1beta/models/[^?:]+:(?:stream)?[gG]enerateContent"       # Google's own format; the model is in the path
+INFER = re.compile(r"^/(v1/(chat/completions|completions|embeddings|responses|messages|reranking|audio/.+|images/.+)|%s)$" % GEMINI_NATIVE)
 # What the gateway will forward at all. Pulling, deleting, installing and changing settings are never reachable.
-ALLOW = re.compile(r"^/v1/(models(/.+)?|health|load|unload|chat/completions|completions|embeddings|responses|messages|"
-                   r"reranking|audio/.+|images/.+)$")
+ALLOW = re.compile(r"^/(v1/(models(/.+)?|health|load|unload|chat/completions|completions|embeddings|responses|messages|"
+                   r"reranking|audio/.+|images/.+)|%s)$" % GEMINI_NATIVE)
+GEMINI_PATH = re.compile(r"^/v1beta/models/([^?:]+):((?:stream)?[gG]enerateContent)$")
+GOOGLE_HOSTS = ("googleapis.com",)                                   # a 429 from these is Gemini's free limit
+GEMINI_LIMIT = "Gemini's free limit is used up for now"
 MAX_KEEP = 300
 MAX_TEXT = 6000
 
@@ -253,6 +257,13 @@ class Tap:
         if isinstance(u, dict):
             self.rec["tokens_in"] = u.get("prompt_tokens", self.rec["tokens_in"])
             self.rec["tokens_out"] = u.get("completion_tokens", self.rec["tokens_out"])
+        t = o.get("type")
+        if isinstance(t, str):
+            self._typed(t, o)
+        if isinstance(o.get("candidates"), list):
+            self._gemini(o)
+        if o.get("object") == "response" or o.get("type") == "message":
+            self._whole(o)                                     # a finished (not streamed) Responses or Anthropic reply
         for ch in o.get("choices") or []:
             d = ch.get("delta") if isinstance(ch.get("delta"), dict) else ch.get("message")
             if isinstance(d, dict):
@@ -263,6 +274,72 @@ class Tap:
                     self._content(d["content"])
             elif isinstance(ch.get("text"), str) and ch["text"]:
                 self._content(ch["text"])
+
+    def _typed(self, t, o):
+        """Events with a `type`: Anthropic Messages (content_block_delta, message_start, message_delta) and OpenAI Responses (response.*)."""
+        d = o.get("delta")
+        if t == "content_block_delta" and isinstance(d, dict):
+            if d.get("type") == "thinking_delta" and d.get("thinking"):
+                self._think(d["thinking"])
+            elif d.get("type") == "text_delta" and d.get("text"):
+                self._content(d["text"])
+        elif t == "content_block_start" and isinstance(o.get("content_block"), dict) and o["content_block"].get("type") in ("thinking", "redacted_thinking"):
+            if self.rec["state"] == "waiting":
+                self.rec["state"], self.rec["t_think"] = "thinking", time.time()
+        elif t == "message_start" and isinstance(o.get("message"), dict):
+            self._usage(o["message"].get("usage"))
+        elif t == "message_delta":
+            self._usage(o.get("usage"))
+        elif t in ("response.reasoning_text.delta", "response.reasoning_summary_text.delta") and isinstance(d, str) and d:
+            self._think(d)
+        elif t == "response.output_text.delta" and isinstance(d, str) and d:
+            self._content(d)
+        elif t in ("response.completed", "response.incomplete") and isinstance(o.get("response"), dict):
+            self._usage(o["response"].get("usage"))
+
+    def _usage(self, u):
+        """Token counts as Anthropic (input_tokens, output_tokens) and Responses (input_tokens, output_tokens) name them."""
+        if isinstance(u, dict):
+            if isinstance(u.get("input_tokens"), int):
+                self.rec["tokens_in"] = u["input_tokens"]
+            if isinstance(u.get("output_tokens"), int):
+                self.rec["tokens_out"] = u["output_tokens"]
+
+    def _gemini(self, o):
+        """A Gemini chunk: parts with `thought: true` are thinking, any other text is the answer."""
+        for c in o["candidates"]:
+            parts = ((c or {}).get("content") or {}).get("parts") if isinstance(c, dict) else None
+            for part in parts or []:
+                if isinstance(part, dict) and isinstance(part.get("text"), str) and part["text"]:
+                    (self._think if part.get("thought") else self._content)(part["text"])
+        u = o.get("usageMetadata")
+        if isinstance(u, dict):
+            if isinstance(u.get("promptTokenCount"), int):
+                self.rec["tokens_in"] = u["promptTokenCount"]
+            if isinstance(u.get("candidatesTokenCount"), int):
+                self.rec["tokens_out"] = u["candidatesTokenCount"] + (u.get("thoughtsTokenCount") or 0)
+
+    def _whole(self, o):
+        """The same, from a reply that was not streamed."""
+        self._usage(o.get("usage"))
+        if o.get("type") == "message":
+            for b in o.get("content") or []:
+                if isinstance(b, dict) and b.get("type") == "thinking" and b.get("thinking"):
+                    self._think(b["thinking"])
+                elif isinstance(b, dict) and b.get("type") == "text" and b.get("text"):
+                    self._content(b["text"])
+            return
+        for item in o.get("output") or []:
+            if not isinstance(item, dict):
+                continue
+            if item.get("type") == "reasoning":
+                for part in (item.get("content") or []) + (item.get("summary") or []):
+                    if isinstance(part, dict) and part.get("text"):
+                        self._think(part["text"])
+            elif item.get("type") == "message":
+                for part in item.get("content") or []:
+                    if isinstance(part, dict) and part.get("type") == "output_text" and part.get("text"):
+                        self._content(part["text"])
 
     def feed(self, chunk):
         self.buf += chunk
@@ -303,34 +380,58 @@ class Tap:
 
 
 # ---------------------------------------------------------------- forwarding
-def _route(path, body):
-    """Where a request should go: (scheme, host, port, key, path, body, error). Requests for a model another engine serves are sent there
-    (starting it, and freeing what would fight it, first); everything else goes to the default engine as it always did."""
-    host, port = lem.target()
-    key = lem.key()
-    model, _ = describe(body)
-    if not model or not INFER.match(norm(path)):
-        return "http", host, port, key, path, body, None
-    provider, mid = router.resolve(model)
-    if provider is None or not router.known(model):
-        return "http", host, port, key, path, body, None              # not a chat model Shoggoth knows: the default engine decides
-    try:
-        ep = router.route(model)
-    except provbase.ProviderError as e:
-        return "http", host, port, key, path, body, str(e)
-    if provider is router.default_provider() or not ep.get("base_url"):
-        return "http", host, port, key, path, body, None
-    u = urlparse(ep["base_url"])
-    p = norm(path)
-    out_path = u.path.rstrip("/") + p[len("/v1"):] + (("?" + urlparse(path).query) if urlparse(path).query else "")
-    try:
-        o = json.loads(body)
-        o["model"] = ep.get("model") or mid                           # the engine knows the model by its own name
-        body = json.dumps(o).encode()
-    except (ValueError, TypeError):
-        pass
+def _split(url):
+    u = urlparse(url)
     scheme = "https" if u.scheme == "https" else "http"
-    return scheme, u.hostname, u.port or (443 if scheme == "https" else 80), ep.get("key") or "", out_path, body, None
+    return scheme, u.hostname, u.port or (443 if scheme == "https" else 80), u.path.rstrip("/")
+
+
+def _plan(path, body):
+    """Where a request should go: {scheme, host, port, key, path, body, error, who, kind}. Every model goes to the provider that serves it, found
+    through the registry (starting it, and freeing what would fight it, first); a request with no model Shoggoth knows goes to the default
+    provider. `who` is the name to use in an error; `kind` is the wire format: chat, messages, responses or gemini."""
+    p, query = norm(path), urlparse(path).query
+    gm = GEMINI_PATH.match(p)
+    kind = "gemini" if gm else "messages" if p == "/v1/messages" else "responses" if p.startswith("/v1/responses") else "chat"
+    model = describe(body, path)[0]
+    out = {"key": "", "path": path, "body": body, "error": None, "who": "The model's engine", "kind": kind}
+    provider, mid, known = None, model, False
+    if model and INFER.match(p):
+        provider, mid = router.resolve(model)
+        known = provider is not None and router.known(model)
+    if not known:
+        provider, mid = router.default_provider(), model            # not a chat model Shoggoth knows: the default provider decides
+    out["who"] = getattr(provider, "name", "") or out["who"]
+    try:
+        ep = router.route(model) if known else (provider.endpoint() if provider else None)
+    except provbase.ProviderError as e:
+        return dict(out, error=str(e))
+    if not ep or not ep.get("base_url"):
+        return dict(out, error="%s isn't running, so there is nothing to send that to." % (out["who"] if provider else "No engine"))
+    out["scheme"], out["host"], out["port"], base = _split(ep["base_url"])
+    out["key"] = ep.get("key") or ""
+    out["pin"] = ep.get("pin") or ""                                   # another Shoggoth: its certificate's fingerprint (lan.py)
+    if gm:                                                         # Google's own address: the model name goes in the path, the version is fixed
+        name = ep.get("model") or mid
+        out["path"] = "/v1beta/models/%s:%s" % (name, gm.group(2)) + (("?" + query) if query else "")
+        return out
+    out["path"] = base + p[len("/v1"):] + (("?" + query) if query else "")
+    if known:
+        try:
+            o = json.loads(body)
+            o["model"] = ep.get("model") or mid                    # the engine knows the model by its own name
+            out["body"] = json.dumps(o).encode()
+        except (ValueError, TypeError):
+            pass
+    return out
+
+
+def _route(path, body):
+    """(scheme, host, port, key, path, body, error) for a request: see _plan."""
+    r = _plan(path, body)
+    if r["error"]:
+        return "http", "", 0, "", path, body, r["error"]
+    return r["scheme"], r["host"], r["port"], r["key"], r["path"], r["body"], None
 
 
 def _models_for_apps(h):
@@ -344,32 +445,72 @@ def _models_for_apps(h):
     return True
 
 
+def _auth_headers(kind, key, inbound):
+    """Headers for the upstream request. The caller's own key (for Shoggoth's door) is never passed on; the provider's key is added in the
+    form its format uses. Anthropic's version and beta headers are passed on as the caller sent them."""
+    h = {k: v for k, v in inbound.items() if k in ("content-type", "accept")}
+    if kind == "gemini":
+        if key:
+            h["x-goog-api-key"] = key
+        return h
+    if kind == "messages":
+        h["anthropic-version"] = inbound.get("anthropic-version") or "2023-06-01"
+        if inbound.get("anthropic-beta"):
+            h["anthropic-beta"] = inbound["anthropic-beta"]
+        if key:
+            h["x-api-key"] = key
+    if key:
+        h["Authorization"] = "Bearer " + key
+    return h
+
+
+def _error_text(raw):
+    """The message inside an error body, in any of the shapes the formats use, or ''."""
+    try:
+        o = json.loads(raw)
+    except ValueError:
+        return ""
+    if isinstance(o, list) and o:
+        o = o[0]
+    e = o.get("error") if isinstance(o, dict) else None
+    return str((e.get("message") if isinstance(e, dict) else e) or "")[:500]
+
+
 def relay(h, method, path, body, rec=None, capture=False, merge_models=False):
-    """Send the request to whichever engine serves the model and stream the answer back through handler `h`."""
+    """Send the request to whichever provider serves the model and stream the answer back through handler `h`."""
     if merge_models and method == "GET" and re.match(r"^/v1/models/?$", norm(path)) and _models_for_apps(h):
         return
-    scheme, host, port, key, path, body, error = _route(path, body)
-    if error:
+    r = _plan(path, body)
+    if rec and not rec["model"] and r["kind"] == "gemini":          # the model is in a Gemini path, not in the body
+        rec["model"], rec["stream"] = describe(body, path)
+    if r["error"]:
         if rec:
-            rec["error"] = error
+            rec["error"] = r["error"]
             Tap(rec, False).finish(503)
-        return h.send_json({"error": {"message": error, "type": "model_unavailable"}}, 503)
-    headers = {k: v for k, v in h.headers.items() if k.lower() in ("content-type", "accept")}
-    if key:
-        headers["Authorization"] = "Bearer " + key
-    conn = (http.client.HTTPSConnection if scheme == "https" else http.client.HTTPConnection)(host, port, timeout=900)
+        return h.send_json({"error": {"message": r["error"], "type": "model_unavailable"}}, 503)
+    headers = _auth_headers(r["kind"], r["key"], {k.lower(): v for k, v in h.headers.items()})
+    if r.get("pin") and r["scheme"] == "https":                       # pinned: a different certificate fails before anything is sent
+        conn = provbase.PinnedHTTPSConnection(r["host"], r["port"], pin=r["pin"], timeout=900)
+    else:
+        conn = (http.client.HTTPSConnection if r["scheme"] == "https" else http.client.HTTPConnection)(r["host"], r["port"], timeout=900)
     tap = Tap(rec, capture) if rec else None
     if rec:
         rec["sent"] = True                     # from here the engine is working on it (the router won't stop it to make room)
     try:
-        conn.request(method, path, body=body, headers=headers)
+        conn.request(method, r["path"], body=r["body"], headers=headers)
         resp = conn.getresponse()
     except (OSError, http.client.HTTPException) as e:
-        who = "Lemonade" if (host, port) == lem.target() else "The model's engine"
         if rec:
-            rec["error"] = "%s is unreachable" % who
+            rec["error"] = "%s is unreachable" % r["who"]
             tap.finish(502)
-        return h.send_json({"error": {"message": f"{who} is unreachable: {e}"}}, 502)
+        return h.send_json({"error": {"message": f"{r['who']} is unreachable: {e}"}}, 502)
+    if resp.status == 429 and r["host"].endswith(GOOGLE_HOSTS):
+        resp.read()
+        conn.close()
+        if rec:
+            rec["error"] = GEMINI_LIMIT
+            tap.finish(429)
+        return h.send_json({"error": {"code": 429, "status": "RESOURCE_EXHAUSTED", "type": "rate_limit_exceeded", "message": GEMINI_LIMIT}}, 429)
     h.send_response(resp.status)
     for name in ("Content-Type", "Cache-Control"):
         if resp.getheader(name):
@@ -378,6 +519,7 @@ def relay(h, method, path, body, rec=None, capture=False, merge_models=False):
     if hasattr(h, "cors"):
         h.cors()
     h.end_headers()          # HTTP/1.0: the body ends when we close, so streaming just works
+    raw = b""
     try:
         while True:
             chunk = resp.read1(8192)
@@ -385,6 +527,8 @@ def relay(h, method, path, body, rec=None, capture=False, merge_models=False):
                 break
             h.wfile.write(chunk)
             h.wfile.flush()
+            if resp.status >= 400 and len(raw) < 20000:
+                raw += chunk
             if tap:
                 tap.feed(chunk)
     except (BrokenPipeError, ConnectionResetError):
@@ -394,10 +538,16 @@ def relay(h, method, path, body, rec=None, capture=False, merge_models=False):
         conn.close()
         if tap:
             tap.finish(resp.status)
+            if resp.status >= 400 and not rec["error"]:
+                rec["error"] = _error_text(raw) or "%s answered with an error (%d)" % (r["who"], resp.status)
 
 
-def describe(body):
-    """(model, stream) from a JSON request body."""
+def describe(body, path=None):
+    """(model, stream) from a JSON request body, or from the path for Google's own format (where the model is in the address)."""
+    m = GEMINI_PATH.match(norm(path)) if path else None
+    if m:
+        name = m.group(1)
+        return (name[7:] if name.startswith("models/") else name), "stream" in m.group(2).lower()
     try:
         o = json.loads(body or b"{}")
         return str(o.get("model") or ""), bool(o.get("stream"))
@@ -431,7 +581,7 @@ class GWHandler(BaseHTTPRequestHandler):
     def cors(self):
         # A web page can only call this if it also knows the key, so open CORS is safe and lets browser-based UIs work.
         self.send_header("Access-Control-Allow-Origin", "*")
-        self.send_header("Access-Control-Allow-Headers", "Authorization, Content-Type, X-Api-Key, X-Title, X-Shoggoth-App, X-Zest-App")
+        self.send_header("Access-Control-Allow-Headers", "Authorization, Content-Type, X-Api-Key, X-Goog-Api-Key, Anthropic-Version, Anthropic-Beta, X-Title, X-Shoggoth-App, X-Zest-App")
         self.send_header("Access-Control-Allow-Methods", "GET, POST, OPTIONS")
 
     def do_OPTIONS(self):
@@ -443,7 +593,7 @@ class GWHandler(BaseHTTPRequestHandler):
         """The gateway's own key, or (over TLS, or from this computer) the key of a paired Shoggoth, whose name is kept in self.peer."""
         self.peer = None
         sent = self.headers.get("Authorization", "")
-        sent = sent[7:].strip() if sent.lower().startswith("bearer ") else (self.headers.get("X-Api-Key") or "").strip()
+        sent = sent[7:].strip() if sent.lower().startswith("bearer ") else (self.headers.get("X-Api-Key") or self.headers.get("X-Goog-Api-Key") or "").strip()
         if CONFIG["key"] and hmac.compare_digest(sent.encode(), CONFIG["key"].encode()):
             return True
         if isinstance(self.connection, ssl.SSLSocket) or lan.is_loopback(self.client_address[0]):
@@ -464,7 +614,7 @@ class GWHandler(BaseHTTPRequestHandler):
         app = app_name(self.headers)
         if not self.key_ok():
             r = REC.start(app, "app", self.command, p, "", False, self.client_address[0])
-            r["error"] = "Wrong key" if (self.headers.get("Authorization") or self.headers.get("x-api-key")) else "No key sent"
+            r["error"] = "Wrong key" if (self.headers.get("Authorization") or self.headers.get("x-api-key") or self.headers.get("x-goog-api-key")) else "No key sent"
             Tap(r, False).finish(401)
             return self.send_json({"error": {"message": "Missing or wrong API key. Copy it from Shoggoth's Server page.",
                                              "type": "invalid_api_key"}}, 401, {"WWW-Authenticate": "Bearer"})
@@ -474,7 +624,7 @@ class GWHandler(BaseHTTPRequestHandler):
             app = self.peer["name"]
         rec = None
         if INFER.match(p) and self.command == "POST":
-            model, stream = describe(body)
+            model, stream = describe(body, p)
             rec = REC.start(app, "app", self.command, p, model, stream, self.client_address[0])
         q = urlparse(self.path).query
         relay(self, self.command, p + ("?" + q if q else ""), body, rec, CONFIG["capture"], merge_models=True)

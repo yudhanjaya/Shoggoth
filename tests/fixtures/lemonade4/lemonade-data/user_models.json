@@ -1,0 +1,4 @@
+{
+  "MiMo-V2-Flash-Q4_K_M": {"checkpoint": "unsloth/MiMo-V2-Flash-GGUF:Q4_K_M", "recipe": "llamacpp"},
+  "Gone-Model": {"checkpoint": "nobody/Gone-GGUF:Q4_K_M", "recipe": "llamacpp"}
+}
