@@ -1,0 +1,16 @@
+# A definition is data: it names an engine and says how to recognise it. It can start, install or run nothing, and engines.py refuses any key outside its schema.
+id: polystrata
+name: PolyStrata
+category: specialized
+summary: Runs many large models on home hardware and switches between them from one place.
+url: http://127.0.0.1:8080
+ports: [8080]
+match: [polystrata.py, polystrata]
+identify:
+  - {path: /api/models/current}
+formats:
+  - {api: openai-completions}
+loads: router
+key: optional
+docs: https://github.com/VecSzn/PolyStrata
+hint: "Use the address PolyStrata prints when it starts. Use its API key if you set one."

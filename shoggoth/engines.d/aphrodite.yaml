@@ -1,0 +1,14 @@
+# A definition is data: it names an engine and says how to recognise it. It can start, install or run nothing, and engines.py refuses any key outside its schema.
+id: aphrodite
+name: Aphrodite Engine
+category: local
+summary: A vLLM-based server for running one model. The project is now called Sonar; the command is still aphrodite.
+url: http://127.0.0.1:2242
+ports: [2242]
+match: [aphrodite]
+formats:
+  - {api: openai-completions}
+loads: fixed
+key: optional
+docs: https://github.com/lfopensource/aphrodite-engine
+hint: "Its usual address is port 2242. Set --api-keys if you want a key."

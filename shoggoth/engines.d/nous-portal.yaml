@@ -1,0 +1,12 @@
+# A definition is data: it names an engine and says how to recognise it. It can start, install or run nothing, and engines.py refuses any key outside its schema.
+id: nous-portal
+name: Nous Portal
+category: hosted
+summary: Hosted Hermes models from Nous Research, behind one key.
+url: https://inference-api.nousresearch.com/v1
+formats:
+  - {api: openai-completions}
+key: required
+key_url: https://portal.nousresearch.com
+docs: https://portal.nousresearch.com
+hint: "Paste the key from your Nous Portal dashboard. It needs a subscription."

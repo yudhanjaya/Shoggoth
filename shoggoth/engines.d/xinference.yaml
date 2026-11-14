@@ -1,0 +1,13 @@
+# A definition is data: it names an engine and says how to recognise it. It can start, install or run nothing, and engines.py refuses any key outside its schema.
+id: xinference
+name: Xinference
+category: local
+summary: A server that starts and stops models on request, with a web page to manage them.
+url: http://127.0.0.1:9997
+ports: [9997]
+match: [xinference-local, xinference]
+formats:
+  - {api: openai-completions}
+loads: router
+docs: https://github.com/xorbitsai/inference
+hint: "Its usual address is port 9997. Start it with xinference-local."

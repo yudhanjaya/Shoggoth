@@ -1,0 +1,17 @@
+# A definition is data: it names an engine and says how to recognise it. It can start, install or run nothing, and engines.py refuses any key outside its schema.
+id: localai
+name: LocalAI
+category: local
+summary: A server that runs text, image and audio models behind the OpenAI API.
+url: http://127.0.0.1:8080
+ports: [8080]
+match: [local-ai, localai]
+identify:
+  - {path: /.well-known/localai.json, json: "$.version"}
+formats:
+  - {api: openai-completions}
+context: {path: /v1/models/capabilities, json: "$.data[0].context_size"}
+loads: ollama
+key: optional
+docs: https://github.com/mudler/LocalAI
+hint: "Its usual address is port 8080. Models load the first time they are used."

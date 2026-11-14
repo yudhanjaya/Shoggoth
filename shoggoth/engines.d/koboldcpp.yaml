@@ -1,0 +1,17 @@
+# A definition is data: it names an engine and says how to recognise it. It can start, install or run nothing, and engines.py refuses any key outside its schema.
+id: koboldcpp
+name: KoboldCpp
+category: local
+summary: A single-file app for running local models, with a web page for chat and writing.
+url: http://127.0.0.1:5001
+ports: [5001]
+match: [koboldcpp, koboldcpp-linux-x64, koboldcpp.py]
+identify:
+  - {path: /api/extra/version, json: "$.result", equals: KoboldCpp}
+formats:
+  - {api: openai-completions}
+context: {path: /api/extra/true_max_context_length, json: "$"}
+loads: fixed
+key: none
+docs: https://github.com/LostRuins/koboldcpp
+hint: "Its usual address is port 5001."

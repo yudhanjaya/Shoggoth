@@ -1,0 +1,16 @@
+# A definition is data: it names an engine and says how to recognise it. It can start, install or run nothing, and engines.py refuses any key outside its schema.
+id: basalt
+name: Basalt
+category: specialized
+summary: A server for home hardware that shares one port across several models and loads each on request.
+url: http://127.0.0.1:8080
+ports: [8080]
+match: [basalt]
+identify:
+  - {path: /api/logs}
+formats:
+  - {api: openai-completions}
+loads: router
+key: optional
+docs: https://github.com/jesdga95/basalt
+hint: "Its usual address is port 8080. Use the address Basalt prints when it starts."

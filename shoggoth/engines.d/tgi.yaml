@@ -1,0 +1,15 @@
+# A definition is data: it names an engine and says how to recognise it. It can start, install or run nothing, and engines.py refuses any key outside its schema.
+id: tgi
+name: Text Generation Inference
+category: local
+summary: Hugging Face's server for running one model, with an OpenAI-style API.
+url: http://127.0.0.1:8080
+ports: [8080]
+match: [text-generation-launcher, text-generation-router]
+formats:
+  - {api: openai-completions}
+context: {path: /info, json: "$.max_total_tokens"}
+loads: fixed
+key: optional
+docs: https://github.com/huggingface/text-generation-inference
+hint: "With Docker's -p 8080:80, the usual address is port 8080."

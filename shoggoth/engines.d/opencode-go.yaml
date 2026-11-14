@@ -1,0 +1,12 @@
+# A definition is data: it names an engine and says how to recognise it. It can start, install or run nothing, and engines.py refuses any key outside its schema.
+id: opencode-go
+name: OpenCode Go
+category: hosted
+summary: OpenCode's Go plan, for open models only, such as GLM, Kimi and Qwen.
+url: https://opencode.ai/zen/go/v1
+formats:
+  - {api: openai-completions}
+key: required
+key_url: https://opencode.ai
+docs: https://opencode.ai
+hint: "Paste the key for your OpenCode Go plan. This plan covers open models only."

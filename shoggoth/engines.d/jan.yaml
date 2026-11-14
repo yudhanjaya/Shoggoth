@@ -1,0 +1,13 @@
+# A definition is data: it names an engine and says how to recognise it. It can start, install or run nothing, and engines.py refuses any key outside its schema.
+id: jan
+name: Jan
+category: local
+summary: A desktop app that runs models on your computer and serves them on a local address.
+url: http://127.0.0.1:1337
+ports: [1337]
+match: [jan]
+formats:
+  - {api: openai-completions}
+loads: ollama
+docs: https://github.com/janhq/jan
+hint: "Turn on Jan's local API server first. Its usual port is 1337."

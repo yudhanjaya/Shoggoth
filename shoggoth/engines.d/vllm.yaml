@@ -1,0 +1,15 @@
+# A definition is data: it names an engine and says how to recognise it. It can start, install or run nothing, and engines.py refuses any key outside its schema.
+id: vllm
+name: vLLM
+category: local
+summary: A GPU server for running one model, built to answer many requests at the same time.
+url: http://127.0.0.1:8000
+ports: [8000]
+match: [vllm, vllm.entrypoints]
+formats:
+  - {api: openai-completions}
+context: {path: /v1/models, json: "$.data[0].max_model_len"}
+loads: fixed
+key: optional
+docs: https://github.com/vllm-project/vllm
+hint: "Start it with vllm serve and a model name. Its usual address is port 8000."

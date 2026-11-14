@@ -1,0 +1,14 @@
+# A definition is data: it names an engine and says how to recognise it. It can start, install or run nothing, and engines.py refuses any key outside its schema.
+id: tabbyapi
+name: TabbyAPI
+category: local
+summary: A server for ExLlamaV2 and ExLlamaV3 models on GPUs. It needs a key from its first start.
+url: http://127.0.0.1:5000
+ports: [5000]
+match: [tabbyAPI]
+formats:
+  - {api: openai-completions}
+loads: router
+key: required
+docs: https://github.com/theroyallab/tabbyAPI
+hint: "Paste the key from api_tokens.yml, which TabbyAPI creates on its first start."

@@ -1,0 +1,15 @@
+# A definition is data: it names an engine and says how to recognise it. It can start, install or run nothing, and engines.py refuses any key outside its schema.
+id: ramalama
+name: RamaLama
+category: local
+summary: A tool that runs models in containers with llama.cpp and serves them on a local port.
+url: http://127.0.0.1:8080
+ports: [8080]
+match: [ramalama]
+formats:
+  - {api: openai-completions}
+context: {path: /props, json: "$.default_generation_settings.n_ctx"}
+loads: fixed
+key: none
+docs: https://github.com/containers/ramalama
+hint: "ramalama serve tries port 8080 first, then a free port from 8081 to 8090. Use the one it prints."

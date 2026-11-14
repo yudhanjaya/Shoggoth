@@ -3,11 +3,10 @@ id: unsloth
 name: Unsloth
 category: local
 summary: Unsloth's local server.
-url: http://127.0.0.1:8888
-ports: [8888]
 match: [unsloth]
 formats:
   - {api: openai-completions}
 loads: fixed
 key: optional
-hint: Use the address Unsloth prints when it starts. This default is a guess; check it.
+docs: https://github.com/unslothai/unsloth
+hint: "Use the address Unsloth prints when it starts."

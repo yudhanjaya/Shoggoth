@@ -1,0 +1,12 @@
+# A definition is data: it names an engine and says how to recognise it. It can start, install or run nothing, and engines.py refuses any key outside its schema.
+id: textgen
+name: text-generation-webui
+category: local
+summary: A web UI for running local models, with an API that other apps can use.
+match: [text-generation-webui, textgen]
+formats:
+  - {api: openai-completions}
+loads: router
+key: optional
+docs: https://github.com/oobabooga/textgen
+hint: "Start it with --api, then use the API address its log shows."
