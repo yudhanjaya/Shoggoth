@@ -27,6 +27,7 @@ sys.path.insert(0, HERE)          # the AppImage runs Python in isolated mode, w
 
 import store       # noqa: E402  first: it maps old ZEST_* variables to their SHOGGOTH_* names
 import agent       # noqa: E402
+import filetypes   # noqa: E402
 import folders     # noqa: E402
 import gateway     # noqa: E402
 import hardware    # noqa: E402
@@ -404,6 +405,8 @@ class Handler(BaseHTTPRequestHandler):
             return self.proxy()
         if p.startswith("/ui/lan/"):                              # LAN sharing and pairing (lan.py)
             return self.send_json(*reversed(lan.handle("POST", p, self.read_json())))
+        if p == "/ui/attach":                                     # a file from the composer: the body is the file (filetypes.py)
+            return self.post_attach()
         if p == "/ui/speech/transcribe":                          # the mic button: the body is the audio itself (speech.py)
             n = int(self.headers.get("Content-Length") or 0)
             if n > 64_000_000:
@@ -573,6 +576,21 @@ class Handler(BaseHTTPRequestHandler):
     def post_speech_setup(self, body):
         """Install whisper.cpp's processor build and its model (in the background; progress at GET /ui/speech/status)."""
         self.send_json({"ok": True, "started": speech.start_setup(), "speech": speech.status()})
+
+    # ---- files attached in a chat
+    def post_attach(self):
+        """Save the file the composer sent (?chat=<id>&name=<file>; the body is the file) and say which handler will read it."""
+        q = parse_qs(urlparse(self.path).query)
+        n = int(self.headers.get("Content-Length") or 0)
+        if n > filetypes.MAX_BYTES:
+            return self.send_json({"error": "That file is too big. Attach one up to %d MB."
+                                   % (filetypes.MAX_BYTES // (1024 * 1024))}, 413)
+        try:
+            data = self.rfile.read(n) if n else b""
+            self.send_json(filetypes.save_for_chat(agent.get_task((q.get("chat") or [""])[0]),
+                                                   (q.get("name") or [""])[0], data))
+        except ValueError as e:
+            self.send_json({"error": str(e)}, 400)
 
     # ---- where models live
     def post_storage(self, body):
