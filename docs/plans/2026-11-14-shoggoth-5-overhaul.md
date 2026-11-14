@@ -609,6 +609,8 @@ PRs 1, 2, 6, 7a and 8 don't depend on the engine swap and can be done in paralle
 
 ## Appendix A. Local inference engines on Linux
 
+> **Superseded by `docs/plans/engines-research.md`** (14 Nov 2026), which has sourced values for all 25 engines. Corrections that matter most: llama-server's compiled default port is now **9931** (8080 is only the Docker image and examples); TabbyAPI requires a key by default; LM Studio's current API is `/api/v1/models`; mistral.rs runs as `mistralrs`; Aphrodite is being renamed Sonar. PolyStrata, NInfer and Basalt also document 8080, so eleven engines share that port. The table below is kept for history.
+
 The engines Shoggoth should recognise, roughly by how many people run them. Default ports marked **verify** come from memory or a single source; check each against the engine's docs before writing its preset.
 
 | Engine | Default port | Process name(s) for `match` | Signature for `identify` | Loads models? |
