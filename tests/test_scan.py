@@ -281,5 +281,46 @@ class Sources(Env):
         self.assertEqual(len(scan.sources(proc=root, defs=[], fresh=True)["found"]), 0)
 
 
+class Roles(Env):
+    def found(self, models, comm="", cmd="", defs=None, **kw):
+        port, stop = serve({"/v1/models": (200, {"data": models}, {})})
+        try:
+            return port, scan.sources(proc=self.proc_for(port, comm, cmd), defs=[] if defs is None else defs, fresh=True, **kw)["found"]
+        finally:
+            stop()
+
+    def test_a_tts_only_server_is_left_out_unless_asked_for(self):
+        tts = [{"id": "kokoro-82m", "object": "model"}, {"id": "voice-1", "architecture": {"output_modalities": ["audio"]}}]
+        self.assertEqual(self.found(tts)[1], [])
+        self.scan_again()
+        port, got = self.found(tts, include_other=True)
+        self.assertEqual([(f["port"], f["role"], f["chat_models"]) for f in got], [(port, "speech", 0)])
+
+    def scan_again(self):
+        scan._last.update(at=0.0, found=[])
+
+    def test_embedding_and_speech_to_text_roles(self):
+        self.assertEqual(scan.classify([{"id": "bge-m3"}, {"id": "nomic-embed-text"}]), (0, "embeddings"))
+        self.assertEqual(scan.classify([{"id": "parakeet-tdt-0.6b"}]), (0, "speech"))
+        self.assertEqual(scan.classify([{"id": "x", "capabilities": ["transcription"]}]), (0, "speech"))
+        self.assertEqual(scan.classify([{"id": "x", "capabilities": {"embedding": True, "chat": False}}]), (0, "embeddings"))
+        self.assertEqual(scan.classify([{"id": "x", "architecture": {"output_modalities": ["embedding"]}}]), (0, "embeddings"))
+        self.assertEqual(scan.classify([{"id": "whisper-chat", "capabilities": ["chat"]}]), (1, "chat"))       # explicit evidence wins
+
+    def test_a_mixed_list_counts_only_the_chat_models(self):
+        port, got = self.found([{"id": "qwen3-8b"}, {"id": "whisper-large-v3"}, {"id": "bge-small-en"}, {"id": "llama-3.1-8b"}])
+        self.assertEqual([(f["role"], f["chat_models"], len(f["models"])) for f in got], [("chat", 2, 4)])
+
+    def test_a_named_server_with_no_models_stays(self):
+        d = defn(id="llamacpp", name="llama.cpp", match=["llama-server"])
+        port, got = self.found([], comm="llama-server", cmd="llama-server --port 1", defs=[d])
+        self.assertEqual([(f["engine"], f["role"], f["chat_models"]) for f in got], [("llamacpp", "chat", 0)])
+
+    def test_unknown_model_names_count_as_chat(self):
+        self.assertEqual(scan.classify([{"id": "zorblax-9"}, {"id": "mystery", "object": "model", "owned_by": "someone"}]), (2, "chat"))
+        port, got = self.found([{"id": "zorblax-9"}])
+        self.assertEqual([(f["role"], f["chat_models"]) for f in got], [("chat", 1)])
+
+
 if __name__ == "__main__":
     unittest.main()
