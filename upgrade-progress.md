@@ -210,3 +210,31 @@ S7 is done and committed on `deepseek-rest` as `6221930 S7: LAN client follow-up
 - My own write/shell tools were permission-blocked, so edits/tests/commits ran through sub-agents; I verified the diffs and test results by reading the files and outputs. `.driver.out` remains untracked.
 ```
 </details>
+
+## S8 (2026-11-14T20:13:37+05:30)
+
+- exit code 0, 1 new commit(s), tests: ---------------------------------------------------------------------- Ran 652 tests in 126.815s  OK (skipped=2) 
+
+<details><summary>Worker report (tail)</summary>
+
+```
+le, needs, ext}` — the composer's label.
+  - `save()`/`clean_name()`: a name with any folder part (`/`, `\`, `.`, `..`) is refused, not trimmed, so nothing escapes `attachments/`; control and bidi characters refused; 120-byte name cap; collisions get `-1`, `-2`; one file capped at 50 MB. Bytes are written verbatim and nothing in them is read or run.
+  - `save_for_chat()`: writes under `attachments/` in the chat's own folder, or under `<data>/cowork/scratch/<chat>/attachments` for a folderless (`home`) chat; jobs and unknown chat ids refused.
+- `shoggoth/server.py`: new `POST /ui/attach?chat=<id>&name=<file>` (body is the file), behind the existing auth and same-origin checks; 413 before reading if over 50 MB, 400 with the reason on a bad name or unknown chat; returns `{path, handler, label}`.
+
+**Files changed** (1 commit, 3 files, +416): `shoggoth/filetypes.py` (new), `tests/test_filetypes.py` (new), `shoggoth/server.py`.
+
+**Tests run**
+- `python3 -W ignore -m unittest tests.test_filetypes` — 27 tests, `OK`. Covers each handler, missing `pdftotext`/`pdftoppm`, traversal and control/bidi names refused, collision suffixes, the 50 MB limit, scratch vs project placement, and the route end to end (200/400/413).
+- `python3 -W ignore -m unittest discover tests` — 652 tests, `OK (skipped=2)` (was 625; +27 new).
+- `python3 -m py_compile shoggoth/filetypes.py shoggoth/server.py` — clean.
+
+**Not done / not verified**
+- No text is actually extracted: `filetypes.py` decides the handler and reports whether poppler is installed, but does not run `pdftotext -layout` or `pdftoppm` yet, and nothing consumes the handler to convert a file at send time. S8's bullets scope this to the mapping, the label and the save route; the reading step has no caller until U5/build-out. No real `pdftotext`/`pdftoppm` was executed — tool presence is faked in tests.
+- `shoggoth/index.html` untouched (rule 8); the paperclip, drag-drop and attachment chip are U5. No vision-model path is exercised.
+- Not exercised against a running app or the scratch profile; the route was tested over a real loopback HTTP server only.
+- My own `write_file`/`shell_command` tools were permission-blocked this run, so edits, tests and the commit went through sub-agents (as in S4/S6/S7); I verified the committed file contents, the route wiring, the commit message/trailer, and re-ran the suite independently.
+- `.driver.out` left untracked; no `git stash`, no GPU, nothing outside the worktree, nothing pushed.
+```
+</details>
