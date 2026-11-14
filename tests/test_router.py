@@ -394,6 +394,7 @@ class GatewayRouting(Env):
     def test_models_list_for_apps_adds_the_other_engines(self):
         self.big.ensure("m1", lambda t: None)
         router._idx["v"] = None
+        library._pk["v"] = None
         sent = {}
 
         class H:
