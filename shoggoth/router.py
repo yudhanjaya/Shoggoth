@@ -77,12 +77,26 @@ def _index():
     return _idx["v"]
 
 
+def canon(ref):
+    """A name as Shoggoth lists it now: a 4.x name (user.X, a Lemonade catalog name) maps through model-aliases.json (migrate5),
+    so an old chat keeps its model. Names Shoggoth already lists, or that have no alias, come back unchanged."""
+    ref = str(ref or "")
+    if not ref or ref in _index():
+        return ref
+    try:
+        import migrate5
+        import store
+        return migrate5.resolve(ref, store.data_dir())
+    except Exception:
+        return ref
+
+
 def resolve(ref):
     """(provider, the provider's own name for the model) for a name a chat or an app used.
 
     Known names go where they were found; `<provider>/<name>` goes to that provider; anything else (an embedding or speech model, a name
     Shoggoth hasn't listed) goes to the default provider unchanged."""
-    ref = str(ref or "")
+    ref = canon(ref)
     hit = _index().get(ref)
     if hit and get(hit[0]):
         return get(hit[0]), hit[1]
@@ -94,13 +108,14 @@ def resolve(ref):
 
 def known(ref):
     """Is this a model Shoggoth lists (from the cached index)? Names it doesn't list, like embedding or speech models, pass through untouched."""
-    ref = str(ref or "")
+    ref = canon(ref)
     return ref in _index() or any(p is not default_provider() and ref.startswith(p.id + "/") for p in providers())
 
 
 def info(ref):
     """The chat-list entry for a name, or None."""
-    return next((m for m in chat_models() if m["id"] == str(ref)), None)
+    ref = canon(ref)
+    return next((m for m in chat_models() if m["id"] == ref), None)
 
 
 def loaded(ref):

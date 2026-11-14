@@ -770,7 +770,7 @@ class Session:
                 args += ["--append-system-prompt", note]
         if t.get("model"):
             chosen = router.info(t["model"]) or {}
-            args += ["--provider", chosen.get("pi_provider", "llamacpp"), "--model", chosen.get("pi_model", t["model"])]
+            args += ["--provider", chosen.get("pi_provider", "llamacpp"), "--model", chosen.get("pi_model", router.canon(t["model"]))]
         extra = [f for f in t.get("folders", [])]
         _sync_packages()
         # A background job has nobody to ask, so it cannot propose skills (without SHOGGOTH_OWN_SKILLS the tool is not offered).
