@@ -257,6 +257,117 @@ class Scanning(Env):
             stop()
 
 
+class Hardening(Env):
+    def test_an_unspecified_ipv6_row_is_probed_at_loopback_v6(self):
+        root = tempfile.mkdtemp(dir=self.tmp)
+        os.makedirs(os.path.join(root, "net"))
+        with open(os.path.join(root, "net", "tcp6"), "w") as f:
+            f.write("  sl  local_address rem_address   st\n   0: 00000000000000000000000000000000:1F90 00000000000000000000000000000000:0000 0A 0:0 00:0 0 1000 0 5151 1 0 100 0 0 10 0\n")
+        self.assertEqual([r["host"] for r in scan.listening(root)], ["[::1]"])
+
+    def test_redirects_are_not_followed_and_the_user_agent_says_shoggoth(self):
+        seen = []
+        target, stop_t = serve({"/x": (200, {"data": []}, {})})
+        seen_ua = []
+
+        class H(BaseHTTPRequestHandler):
+            def do_GET(self):
+                seen_ua.append(self.headers.get("User-Agent"))
+                self.send_response(302)
+                self.send_header("Location", "http://127.0.0.1:%d/x" % target)
+                self.send_header("Content-Length", "0")
+                self.end_headers()
+
+            def log_message(self, *a):
+                pass
+        srv = ThreadingHTTPServer(("127.0.0.1", 0), H)
+        threading.Thread(target=srv.serve_forever, daemon=True).start()
+        try:
+            st, _, _ = scan._get("http://127.0.0.1:%d" % srv.server_address[1], "/v1/models")
+            self.assertEqual(st, 302)
+            self.assertTrue(seen_ua[0].startswith("Shoggoth/"))
+        finally:
+            srv.shutdown(), srv.server_close(), stop_t()
+
+    def test_a_port_that_does_not_speak_http_gets_no_signature_probes(self):
+        import socket
+        srv = socket.socket()
+        srv.bind(("127.0.0.1", 0))
+        srv.listen(5)
+        srv.settimeout(3)
+        n = []
+
+        def accept():
+            try:
+                while True:
+                    c, _ = srv.accept()
+                    n.append(1)
+                    c.recv(4096)
+                    c.sendall(b"SSH-2.0-nope\r\n")
+                    c.close()
+            except OSError:
+                pass
+        threading.Thread(target=accept, daemon=True).start()
+        d = defn(id="sig", identify=[{"path": "/props"}, {"path": "/api/tags"}])
+        try:
+            self.assertEqual(scan.scan(proc=self.proc_for(srv.getsockname()[1]), defs=[d]), [])
+            self.assertEqual(len(n), 1)                                  # /v1/models only
+        finally:
+            srv.close()
+
+    def test_the_scan_does_not_hold_the_lock(self):
+        gate, started = threading.Event(), threading.Event()
+        orig = scan.scan
+
+        def slow(**kw):
+            started.set()
+            gate.wait(3)
+            return []
+        scan.scan = slow
+        try:
+            t = threading.Thread(target=scan.latest, kwargs={"fresh": True})
+            t.start()
+            started.wait(3)
+            self.assertTrue(scan._lock.acquire(timeout=1))               # free while the scan runs
+            scan._lock.release()
+            gate.set()
+            t.join(3)
+        finally:
+            scan.scan = orig
+
+    def test_the_llamacpp_router_port_is_excluded(self):
+        import llamacpp
+        old = (llamacpp.running, dict(llamacpp._state))
+        llamacpp.running = lambda: True
+        llamacpp._state["port"] = 13345
+        try:
+            self.assertIn(13345, scan._own(()))
+        finally:
+            llamacpp.running, state = old
+            llamacpp._state.clear()
+            llamacpp._state.update(state)
+
+    def test_a_malformed_stored_url_is_skipped(self):
+        servers.add("other", "http://127.0.0.1:1")
+        import store
+        st = store.load()
+        st.setdefault("servers", []).append({"id": "bad", "url": "localhost:11434"})
+        store.save(st)
+        d = scan.sources(proc=self.proc_for(2), defs=[], fresh=True)
+        self.assertEqual([s["id"] for s in d["sources"]], ["other"])
+
+    def test_probe_gets_the_pin_and_shoggoth_entries_have_their_own_kind(self):
+        got = {}
+        orig = servers.probe
+        servers.probe = lambda url, key="", pin=None: (got.update(pin=pin), {"reachable": True, "needs_key": False, "models": []})[1]
+        try:
+            r = scan._state({"id": "s", "url": "https://192.168.1.5:1234", "preset": "shoggoth", "fp": "ab:cd"}, [])
+        finally:
+            servers.probe = orig
+        self.assertEqual(got["pin"], "ab:cd")
+        self.assertEqual((r["kind"], r["state"]), ("shoggoth", "ready"))
+
+
 class Sources(Env):
     def test_connected_and_found_are_kept_apart(self):
         a, sa = serve({"/v1/models": (200, {"data": [{"id": "m1"}]}, {})})
