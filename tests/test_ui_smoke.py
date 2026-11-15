@@ -38,8 +38,8 @@ class Gate(unittest.TestCase):
         self.assertEqual(r.returncode, 0, r.stdout + r.stderr)
 
     @unittest.skipUnless(shutil.which("node") and os.path.isdir(os.path.join(UI, "node_modules", "jsdom")), "node and jsdom are needed")
-    def test_the_tube_on_wide_screens(self):
-        r = subprocess.run(["node", os.path.join(UI, "tube.test.mjs")], capture_output=True, text=True, timeout=120)
+    def test_the_beaker_and_the_header_controls(self):
+        r = subprocess.run(["node", os.path.join(UI, "beaker.test.mjs")], capture_output=True, text=True, timeout=120)
         self.assertEqual(r.returncode, 0, r.stdout + r.stderr)
 
 
