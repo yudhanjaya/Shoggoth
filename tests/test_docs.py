@@ -9,7 +9,8 @@ import unittest
 
 ROOT = os.path.join(os.path.dirname(os.path.abspath(__file__)), "..")
 DOCS = ["README.md", "docs/ARCHITECTURE.md", "docs/AGENT-RUNTIME.md", "docs/ENGINES.md",
-        "docs/PRIVACY.md", "docs/SECURITY.md", "docs/DEVELOPMENT.md", "docs/README.md", "shoggoth/docs.md"]
+        "docs/PRIVACY.md", "docs/SECURITY.md", "docs/DEVELOPMENT.md", "docs/README.md",
+        "docs/RELEASE-5.0.md", "shoggoth/docs.md"]
 LINK = re.compile(r"\[[^\]]*\]\(([^)]+)\)")
 BANNED = ("seamless", "effortless", "powerful")
 
@@ -41,6 +42,13 @@ class Docs(unittest.TestCase):
         for phrase in ("Pictures and files", "Speech", "Written by your models", "Tools",
                        "Paid models", "Other computers", "Coming from 4.x", "Attach a file"):
             self.assertIn(phrase, text, "the user guide should mention %r" % phrase)
+
+    def test_release_notes_cover_the_release(self):
+        text = read("docs/RELEASE-5.0.md")
+        for phrase in ("What's new", "What's removed", "Moving from 4.x", "Known gaps",
+                       "llama.cpp", "Lemonade", "Ubuntu 22.04", "glibc 2.38", "HTTPS",
+                       "model-aliases.json", "Piper", "Written by your models"):
+            self.assertIn(phrase, text, "RELEASE-5.0.md should mention %r" % phrase)
 
     def test_agent_runtime_covers_packages_skills_and_attachments(self):
         text = read("docs/AGENT-RUNTIME.md")
