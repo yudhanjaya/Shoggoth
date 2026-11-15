@@ -429,3 +429,31 @@ pose `children`), read its graphics memory from `nvidia-smi --query-compute-apps
 - `.driver.out` remains untracked; nothing pushed, no `git stash`, no GPU work on the 4080.
 ```
 </details>
+
+## S3 (2026-11-15T06:59:32+05:30)
+
+- exit code 0, 1 new commit(s), tests: ---------------------------------------------------------------------- Ran 681 tests in 116.858s  OK (skipped=2) 
+
+<details><summary>Worker report (tail)</summary>
+
+```
+=== S3 started 2026-11-15T06:47:07+05:30
+Done.
+
+**What I did.** Task S3: old `tuning.json` records from the 4.x Lemonade tuner are no longer treated as preset keys. I checked the real historical shape rather than trusting the earlier note in `upgrade-progress.md` — `applied` on those entries is a dict of Lemonade's own option names (`llamacpp_args` string, `llamacpp_backend`, `llamacpp_device`) under `engine: "lemonade"`, not `llamacpp_args` as a bare string. `rollback()` would have iterated that dict and written nonexistent option names into `presets.ini`. I took the plan's second option: mark them, don't convert.
+
+- `llamatune.written_by_lemonade()` recognises them (engine `lemonade`, a non-dict `applied`, or Lemonade option names inside it).
+- `rollback()` refuses before touching presets, returning the "Made by Lemonade… can't undo it here" message. Also guards a non-dict record.
+- `tuning.tuning_for()` sets `can_undo` false and puts that sentence first in `details.reasons` (the page shows only the first), so the Undo button is gone and the reason is visible.
+
+**Files changed** (1 commit `4136857`, 4 files, +74/−3): `shoggoth/llamatune.py`, `shoggoth/tuning.py`, `tests/test_llamatune.py`, `tests/test_tuning_for.py`.
+
+**Tests.** `tests.test_llamatune tests.test_tuning_for` → 29 tests, OK. Full suite `python3 -W ignore -m unittest discover tests` → 681 tests, `OK (skipped=2)`. `py_compile` clean. No UI tests touched; `index.html` untouched per rule 8.
+
+**Not done / not verified.**
+- I did not convert legacy records to preset keys, and did not strip them from `tuning.json` — they stay as read-only history.
+- 4.x records are keyed by old Lemonade model ids, so in practice `tuning_for()` won't find them until an alias lookup happens; the guard matters because `rollback()` is reachable with any id in the request body. I didn't change the keying.
+- The Tuning page's rendering was not exercised in a browser; the reason string is delivered through the existing `tuned.reasons` field it already displays.
+- `.driver.out` remains untracked. No GPU used, nothing pushed, no `git stash`.
+```
+</details>
