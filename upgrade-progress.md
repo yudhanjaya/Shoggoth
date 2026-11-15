@@ -457,3 +457,36 @@ Done.
 - `.driver.out` remains untracked. No GPU used, nothing pushed, no `git stash`.
 ```
 </details>
+
+## S5 (2026-11-15T07:07:54+05:30)
+
+- exit code 0, 1 new commit(s), tests: ---------------------------------------------------------------------- Ran 693 tests in 125.367s  OK (skipped=2) 
+
+<details><summary>Worker report (tail)</summary>
+
+```
+=== S5 started 2026-11-15T06:59:32+05:30
+S5 done and committed as `f5695a9`.
+
+**What I did**
+- Added `GET /ui/packages`: each entry from `recommendations/pi-packages.yaml` with `installed`, `installed_version`, `enabled`, `runs_code` ("Runs code on your computer"), the review note, plus an `install` progress object.
+- Added `POST /ui/packages/install {name}`: validates the name against the pinned list, then installs in a background thread reporting `state/name/done/total/error` through `pipkgs.UPD`. Refusals (not on the list, disabled, no checksum, no version) return 400 at once.
+- Added `POST /ui/packages/remove {name}`: deletes installed files immediately.
+- Both call `agent.restart_idle()` after an actual change (via an `on_done` callback for the async install, directly for remove).
+- `pipkgs.install()` now reports progress; `check()` was factored out for the synchronous validation.
+
+**Files changed**
+- `shoggoth/pipkgs.py`
+- `shoggoth/server.py`
+- `tests/test_packages.py` (new, reuses the fake npm registry from `tests/test_pipkgs.py`)
+
+**Tests**
+- `python3 -W ignore -m unittest tests.test_packages` — 12 pass.
+- `python3 -W ignore -m unittest discover tests` — 693 pass, 2 skipped.
+- No UI files touched, so no `tests/ui/*.test.mjs` run.
+
+**Not done / not verified**
+- No real package was installed: every shipped entry has `enabled: false` (none tested with Shoggoth), so the route and listing are exercised only against the fake registry. Testing the five real packages is still the master-plan item for #52.
+- `index.html` not changed (S-task rule), so U5 still needs to build the Tools UI against these routes.
+```
+</details>
