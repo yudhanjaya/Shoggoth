@@ -525,3 +525,41 @@ Done with S11. Committed as `09a3710`.
 - `docs/ENGINES.md` doesn't exist yet (W1), so the new `cwd` key is documented only in code/docstrings for now.
 ```
 </details>
+
+## U2 (2026-11-15T07:34:47+05:30)
+
+- exit code 0, 1 new commit(s), tests: ---------------------------------------------------------------------- Ran 705 tests in 200.642s  OK 
+
+<details><summary>Worker report (tail)</summary>
+
+```
+=== U2 started 2026-11-15T07:15:54+05:30
+U2 is done and committed as `059fe0a`.
+
+**What I did**
+- Removed the page's `fitInfo()` estimator. The server now computes fit for recommended models: `library.recommend_fits()` uses the catalog figures for a model on disk, a size-based estimate (`size_gb × 1.1`) for one not downloaded, and adds no fit when no hardware is known. `/ui/recommendations` returns `fit`, `why`, `need_gb`, `ctx`, `ctx_why`.
+- Recommended cards always render, each with a server-backed badge: "Runs well", "Tight", "Runs partly on the processor", or "Too big for this computer, needs about N GB". Installed cards, Options and the first-run screen now use the server's figures too.
+- Removed the "still looking at your computer" gate. Changing tab clears `LIB.q`; a search with no recommended hits says "No recommended model matches “X”." with a "Search Hugging Face instead" button.
+- Model names use the chain title → GGUF name → `friendly(id)` (new `modelName()`), including the chat model bar and first-run cards.
+- Fixed a stale assertion in `tests/ui/models.test.cjs` left by U1 (Lemonade wording in the Large-models note).
+
+**Files changed**
+- `shoggoth/library.py` — `recommend_fits()`
+- `shoggoth/server.py` — enrich `/ui/recommendations`
+- `shoggoth/index.html` — fit badges, ctx line, search/tab fix, naming, removed `fitInfo()` and the gate
+- `tests/test_library.py` — 4 new `RecommendedCards` tests
+- `tests/ui/models.test.cjs` — rewritten recommended/badge/search tests, name-chain test
+
+**Tests run**
+- `node tests/ui/models.test.cjs` — 14 pass.
+- `python3 -W ignore -m unittest discover tests` — 705 tests, OK (twice).
+- `tests.test_library tests.test_recommendations` — 58 pass; `py_compile` and `git diff --check` clean.
+
+**Not done / not verified**
+- The U2 heading also names stale models (2.4), but that was completed server-side by S10; no additional UI change was needed, so I did not touch the picker cache.
+- `ctx`/`ctx_why` only appear where the model's GGUF shape is known (a file on disk); a not-downloaded recommended model has no context figure yet, so its card shows the fit badge without a context line.
+- No live app/browser or GPU run; the UI was exercised in jsdom only.
+- Installed `tests/ui/node_modules` (jsdom) locally to run the UI tests; it is untracked/gitignored.
+- `.driver.out` remains untracked and was not committed.
+```
+</details>
