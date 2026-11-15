@@ -12,7 +12,7 @@ AIT_SHA="ed4ce84f0d9caff66f50bcca6ff6f35aae54ce8135408b3fa33abfc3cb384eb0"   # a
 
 # llama.cpp's official processor-only build (MIT), so Shoggoth runs models offline on first run. Shoggoth downloads the build for the
 # graphics card itself (llamacpp.py). The checksum is the `digest` GitHub publishes for the asset. The ubuntu builds need glibc 2.38
-# (Ubuntu 24.04 or newer). To bundle a newer one, change these two lines.
+# (Ubuntu 24.04, Debian 13, Fedora 39 or Linux Mint 22 and newer). To bundle a newer one, change these two lines.
 LLAMA_TAG="b12375"
 LLAMA_URL="https://github.com/ggml-org/llama.cpp/releases/download/${LLAMA_TAG}/llama-${LLAMA_TAG}-bin-ubuntu-x64.tar.gz"
 LLAMA_SHA="89fdf5a4066170fa408a5ebe1510b50bd8a5bab750e49ae531bb1d4cdbae65e3"

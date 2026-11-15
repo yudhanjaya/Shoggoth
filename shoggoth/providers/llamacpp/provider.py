@@ -159,6 +159,8 @@ class Provider(provbase.GenericProvider):
             raise provbase.ProviderError(msg)
         try:
             gb = llamacpp.measured_gb(model_id)      # what the load really took, from the load log
+            if not gb:
+                gb = llamacpp.measured_process_gb(model_id)   # ... or what the model's own process holds
             if gb:
                 import library
                 library.record_measured(model_id, gb, self.loaded(model_id)[1] or None)

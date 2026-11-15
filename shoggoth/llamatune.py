@@ -50,6 +50,24 @@ def _save_results(d):
     os.replace(tmp, _path())
 
 
+# Tuning records left by the 4.x Lemonade tuner. Its `applied` holds Lemonade's own option names (a `llamacpp_args` string and
+# the backend/device it used), not the llama-server preset keys a 5.x record holds, so it can't be undone through presets.ini.
+LEMONADE_KEYS = ("llamacpp_args", "llamacpp_backend", "llamacpp_device")
+LEMONADE_UNDO = "Made by Lemonade, before the move to llama.cpp. Shoggoth can't undo it here: tune the model again to replace it."
+
+
+def written_by_lemonade(res):
+    """True for a tuning.json entry the 4.x Lemonade tuner wrote, so nothing here treats its options as preset keys."""
+    if not isinstance(res, dict):
+        return False
+    if str(res.get("engine") or "").lower() == "lemonade":
+        return True
+    applied = res.get("applied")
+    if applied and not isinstance(applied, dict):
+        return True                      # not the {preset key: value} shape a 5.x record holds
+    return isinstance(applied, dict) and any(k in applied for k in LEMONADE_KEYS)
+
+
 # ---------------------------------------------------------------- editing llama-server arguments
 def set_flag(tokens, names, value):
     """Remove every spelling of a flag from the token list (with its value), then add `names[0] value` unless value is None."""
@@ -397,8 +415,10 @@ def rollback(model):
     """Put the model's flags back as they were before the tune. Returns (ok, message)."""
     r = results()
     res = r.get(model)
-    if not res or not res.get("applied"):
+    if not res or not isinstance(res, dict) or not res.get("applied"):
         return False, "There is no tuning to undo for that model."
+    if written_by_lemonade(res):
+        return False, LEMONADE_UNDO
     before = res.get("saved_before") or {}
     try:
         _apply_to_presets(model, {k: before.get(k) for k in res["applied"]})

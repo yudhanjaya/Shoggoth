@@ -27,6 +27,9 @@ sys.path.insert(0, HERE)          # the AppImage runs Python in isolated mode, w
 
 import store       # noqa: E402  first: it maps old ZEST_* variables to their SHOGGOTH_* names
 import agent       # noqa: E402
+import custom      # noqa: E402
+import downloads   # noqa: E402
+import filetypes   # noqa: E402
 import folders     # noqa: E402
 import gateway     # noqa: E402
 import hardware    # noqa: E402
@@ -34,8 +37,10 @@ import hf          # noqa: E402
 import library     # noqa: E402
 import llamaargs   # noqa: E402
 import llamacpp    # noqa: E402
+import migrate5    # noqa: E402
 import modelscan   # noqa: E402
 import piup        # noqa: E402
+import pipkgs      # noqa: E402
 import provbase    # noqa: E402
 import recs        # noqa: E402
 import scan        # noqa: E402
@@ -55,6 +60,7 @@ VERSION = "4.3.0"
 hf.VERSION = VERSION          # Hugging Face sees User-Agent: Shoggoth/<version>
 _last_ping = {"t": None}
 import speech      # noqa: E402  (speech to text with whisper.cpp)
+import tts         # noqa: E402  (read aloud with Piper)
 import lan         # noqa: E402  (LAN sharing and pairing; its /ui/lan/* routes are lan.handle)
 lan.VERSION = VERSION
 
@@ -131,11 +137,16 @@ def current_mode():
 
 
 # ---------------------------------------------------------------- state for the setup screen
+def paired_shoggoth():
+    """True when another Shoggoth is connected and paired (its certificate pinned): its models can be used without llama.cpp here."""
+    return any(h.get("preset") == "shoggoth" and h.get("fp") for h in servers.all())
+
+
 def setup_state():
     s = store.load()
     return {
         "setup_done": bool(s["setup_done"]),
-        "mode": effective_mode(s), "mode_saved": s["mode"],
+        "mode": effective_mode(s), "mode_saved": s["mode"], "client_only": bool(s.get("client_only")),
         "engine": llamacpp.summary(s),
         "connected": len(servers.all()),
         "models": {"storage": s["models"]["storage"], "custom_dir": s["models"]["custom_dir"],
@@ -158,15 +169,58 @@ def own_source(sources):
     ms = llamacpp.models() if up else []
     b = llamacpp.choose()
     state = "ready" if up else "off" if current_mode() != "builtin" else "starting" if b else "not_installed"
-    me = {"id": "llamacpp", "kind": "builtin", "name": "llama.cpp", "engine": "llamacpp",
+    loaded = [m["id"] for m in ms if m["status"] == "loaded"]
+    items = [{"id": m["id"], "source": "llamacpp", "model": m["id"], "title": recs.title_for(m["id"]) or m["id"], "ctx": m["ctx"] or 0,
+              "state": "loaded" if m["status"] == "loaded" else "available"} for m in ms if not str(m["id"]).lower().startswith("mmproj")]
+    me = {"id": "llamacpp", "kind": "builtin", "name": "llama.cpp", "engine": "llamacpp", "label": "llama.cpp (on this computer)",
           "url": "http://127.0.0.1:%d" % llamacpp._state["port"] if up else "", "state": state, "models": len(ms),
-          "loaded": [m["id"] for m in ms if m["status"] == "loaded"], "loads": "router", "leaves_computer": False, "own": True,
-          "version": (b or {}).get("tag", ""), "backend": (b or {}).get("backend", ""), "error": llamacpp._state.get("error")}
+          "loaded": loaded, "items": items, "loads": "router", "leaves_computer": False, "own": True,
+          "version": (b or {}).get("tag", ""), "backend": (b or {}).get("backend", ""),
+          "error": llamacpp._state.get("error"), "installed": bool(b), "bundled": bool((b or {}).get("bundled")),
+          "recommended": llamacpp.recommended(), "hint": ""}
     return dict(sources, sources=[me] + list(sources.get("sources") or []))
 
 
 def get_info():
     return hardware.info(current_mode(), VERSION)
+
+
+SOURCE_ORDER = {"builtin": 0, "engine": 1, "shoggoth": 2, "cloud": 3}
+
+
+def _source_groups(src):
+    """The chat bar's groups, in the plan's order: this computer, then each connected engine, then other Shoggoths, then servers online.
+    A source that is offline keeps its place and its models, greyed (`state: "offline"`), so a chat's model never silently vanishes."""
+    out = []
+    for s in src.get("sources") or []:
+        sid = s.get("id")
+        rows = [m["id"] for m in (s.get("items") or []) if m.get("state") != "offline"] if s.get("state") != "offline" else []
+        out.append({"id": sid, "kind": s.get("kind", ""), "name": s.get("label") or s.get("name") or sid, "state": s.get("state", ""),
+                    "models": rows, "leaves_computer": bool(s.get("leaves_computer")), "loads": s.get("loads", ""), "url": s.get("url", "")})
+    out.sort(key=lambda g: (SOURCE_ORDER.get(g["kind"], 9), g["name"].lower()))
+    return out
+
+
+def picker_state(max_age=8):
+    """/ui/picker: the models, with the groups the chat bar draws and what the scan found that isn't connected yet."""
+    d = library.picker(max_age)
+    try:
+        src = own_source(scan.sources(own_ports=_own_ports_now()))
+    except Exception:  # noqa: BLE001 - the scan is a convenience; the model list still works without it
+        src = {"sources": [], "found": []}
+    names = {g["id"]: g["name"] for g in _source_groups(src)}
+    for m in d.get("models") or []:                       # the plan's names: a source's own name, not an engine id
+        m["source_name"] = names.get(m.get("source"), m.get("source_name") or m.get("engine_name") or "")
+    d["groups"] = _source_groups(src)
+    d["found"] = [{"port": f.get("port"), "name": f.get("name"), "engine": f.get("engine"), "url": f.get("url"),
+                   "needs_key": bool(f.get("needs_key")), "models": len(f.get("models") or [])}
+                  for f in src.get("found") or []][:12]
+    return d
+
+
+def _own_ports_now():
+    """This Shoggoth's port and its llama.cpp's, for a picker refresh outside a request."""
+    return tuple(llamacpp.own_ports())
 
 
 # ---------------------------------------------------------------- http
@@ -282,6 +336,8 @@ class Handler(BaseHTTPRequestHandler):
             self.send_json({"gpus": library.models_on_cards(hardware.all_gpus()), "t": time.time()})
         elif p == "/ui/speech/status":
             self.send_json(speech.status())
+        elif p == "/ui/speech/read":
+            self.send_json(tts.status())
         elif p == "/ui/info":
             self.send_json(self._info())
         elif p == "/ui/backends":
@@ -295,6 +351,8 @@ class Handler(BaseHTTPRequestHandler):
             self.send_json(setup_state())
         elif p == "/ui/engine/update":
             self.send_json(dict(llamacpp.UPD))
+        elif p == "/ui/engine/lemonade":
+            self.send_json(migrate5.leftovers(store.data_dir(), library.root()))
         elif p == "/ui/models/scan":
             self.send_json({"sources": modelscan.scan()})
         elif p == "/ui/models/source":
@@ -322,8 +380,16 @@ class Handler(BaseHTTPRequestHandler):
             self.send_json(agent.state())
         elif p == "/ui/pi":
             self.send_json(piup.summary())
+        elif p == "/ui/packages":
+            self.send_json(pipkgs.summary())
         elif p == "/ui/picker":
-            self.send_json(library.picker(0 if parse_qs(u.query).get("fresh") else 8))
+            self.send_json(picker_state(0 if parse_qs(u.query).get("fresh") else 8))
+        elif p == "/ui/models/list":                             # the page's model list: on this computer, and recommended (downloads.py)
+            self.send_json({"data": downloads.listing()})
+        elif p == "/ui/models/downloads":
+            self.send_json(downloads.jobs())
+        elif p == "/ui/models/options":
+            self.send_json(downloads.options(parse_qs(u.query).get("id", [""])[0]))
         elif p == "/ui/library":
             self.send_json(self.library_summary())
         elif p == "/ui/disk":
@@ -335,7 +401,9 @@ class Handler(BaseHTTPRequestHandler):
         elif p == "/ui/providers":
             self.send_json(registry.default().summary())
         elif p == "/ui/servers":
-            self.send_json({"presets": servers.presets(), "servers": servers.public()})
+            import engines
+            self.send_json({"presets": servers.presets(), "servers": servers.public(), "definitions_folder": engines.user_dir(),
+                            "models_file": os.path.join(recs.user_dir(), "models.yaml")})
         elif p == "/ui/sources":
             self.send_json(own_source(scan.sources(own_ports=self._own_ports())))
         elif p == "/ui/tuning":
@@ -343,11 +411,15 @@ class Handler(BaseHTTPRequestHandler):
         elif p == "/ui/tuning/job":
             self.send_json(tuning.status())
         elif p == "/ui/recommendations":
-            self.send_json(recs.summary())
+            d = recs.summary()
+            d["models"]["recommended"] = library.recommend_fits(d["models"]["recommended"])
+            self.send_json(d)
         elif p == "/ui/update":
             self.send_json(zestup.status())
         elif p == "/ui/skills":
             self.send_json({"sets": skills.scan()})
+        elif p == "/ui/skills/own":
+            self.send_json({"skills": skills.own_list()})
         elif p == "/ui/search":
             self.get_search(parse_qs(u.query))
         elif p == "/ui/model/headroom":
@@ -397,20 +469,47 @@ class Handler(BaseHTTPRequestHandler):
             return self.proxy()
         if p.startswith("/ui/lan/"):                              # LAN sharing and pairing (lan.py)
             return self.send_json(*reversed(lan.handle("POST", p, self.read_json())))
+        if p in ("/ui/models/pull", "/ui/models/downloads/control", "/ui/models/delete", "/ui/models/options"):
+            body = self.read_json()
+            try:
+                if p == "/ui/models/pull":
+                    return self.send_json(downloads.pull(body))
+                if p == "/ui/models/downloads/control":
+                    return self.send_json(downloads.control(body))
+                if p == "/ui/models/delete":
+                    return self.send_json(downloads.delete(str(body.get("model_name", ""))))
+                return self.send_json(downloads.set_options(str(body.pop("id", "")), body))
+            except ValueError as e:
+                return self.send_json({"error": str(e)}, 400)
+        if p == "/ui/attach":                                     # a file from the composer: the body is the file (filetypes.py)
+            return self.post_attach()
         if p == "/ui/speech/transcribe":                          # the mic button: the body is the audio itself (speech.py)
             n = int(self.headers.get("Content-Length") or 0)
             if n > 64_000_000:
                 return self.send_json({"error": "That recording is too long."}, 413)
             status, obj = speech.ui_transcribe(self.rfile.read(n) if n else b"", self.headers.get("Content-Type", ""))
             return self.send_json(obj, status)
+        if p == "/ui/speech/speak":                               # Read aloud: the body is the answer to read, the reply a WAV (tts.py)
+            body = self.read_json()
+            status, ctype, payload = tts.ui_speak(body)
+            self.send_response(status)
+            self.send_header("Content-Type", ctype)
+            self.send_header("Content-Length", str(len(payload)))
+            self.send_header("Cache-Control", "no-store")
+            self.end_headers()
+            return self.wfile.write(payload)
         handler = {
+            "/ui/speech/setup": self.post_speech_setup,
+            "/ui/speech/read/setup": self.post_speech_read_setup, "/ui/speech/read/config": self.post_speech_read_config,
             "/ui/device": self.post_device, "/ui/config": self.post_config,
             "/ui/args/parse": self.post_args_parse, "/ui/args/check": self.post_args_check,
             "/ui/backend": self.post_backend, "/ui/backend/install": self.post_backend_install,
             "/ui/setup/mode": self.post_mode, "/ui/setup/done": self.post_done,
             "/ui/engine/check": self.post_engine_check, "/ui/engine/update": self.post_engine_update,
             "/ui/engine/use": self.post_engine_use, "/ui/engine/restart": self.post_engine_restart,
+            "/ui/engine/lemonade/delete": self.post_lemonade_delete,
             "/ui/sources/scan": self.post_sources_scan,
+            "/ui/custom/probe": self.post_custom_probe, "/ui/custom/save": self.post_custom_save,
             "/ui/gateway": self.post_gateway, "/ui/cowork/new": self.post_cowork_new,
             "/ui/cowork/cmd": self.post_cowork_cmd, "/ui/cowork/answer": self.post_cowork_answer,
             "/ui/cowork/mode": self.post_cowork_mode, "/ui/cowork/delete": self.post_cowork_delete,
@@ -420,8 +519,11 @@ class Handler(BaseHTTPRequestHandler):
             "/ui/cowork/job/apply": self.post_job_apply, "/ui/cowork/job/discard": self.post_job_discard,
             "/ui/cowork/folders": self.post_cowork_folders, "/ui/cowork/seen": self.post_cowork_seen,
             "/ui/cowork/allow/remove": self.post_allow_remove, "/ui/cowork/folder": self.post_cowork_folder, "/ui/skills/install": self.post_skills_install, "/ui/pi/check": self.post_pi_check,
-            "/ui/pi/update": self.post_pi_update, "/ui/library/root": self.post_library_root, "/ui/library/folder": self.post_library_folder, "/ui/providers/approve": self.post_provider_approve, "/ui/providers/check": self.post_provider_check, "/ui/providers/update": self.post_provider_update, "/ui/providers/stop": self.post_provider_stop, "/ui/providers/reload": self.post_provider_reload, "/ui/servers": self.post_servers, "/ui/tuning/plan": self.post_tuning_plan, "/ui/model/meta": self.post_model_meta, "/ui/tuning/run": self.post_tuning_run, "/ui/tuning/cancel": self.post_tuning_cancel, "/ui/tuning/action": self.post_tuning_action, "/ui/update/all": self.post_update_all, "/ui/update/restart": self.post_update_restart, "/ui/pi/use": self.post_pi_use,
+            "/ui/pi/update": self.post_pi_update, "/ui/packages/install": self.post_package_install,
+            "/ui/packages/remove": self.post_package_remove, "/ui/library/root": self.post_library_root, "/ui/library/folder": self.post_library_folder, "/ui/providers/approve": self.post_provider_approve, "/ui/providers/check": self.post_provider_check, "/ui/providers/update": self.post_provider_update, "/ui/providers/stop": self.post_provider_stop, "/ui/providers/reload": self.post_provider_reload, "/ui/servers": self.post_servers, "/ui/tuning/plan": self.post_tuning_plan, "/ui/model/meta": self.post_model_meta, "/ui/tuning/run": self.post_tuning_run, "/ui/tuning/cancel": self.post_tuning_cancel, "/ui/tuning/action": self.post_tuning_action, "/ui/update/all": self.post_update_all, "/ui/update/restart": self.post_update_restart, "/ui/pi/use": self.post_pi_use,
             "/ui/skills/remove": self.post_skills_remove, "/ui/skills/toggle": self.post_skills_toggle,
+            "/ui/skills/own/save": self.post_own_save, "/ui/skills/own/delete": self.post_own_delete,
+            "/ui/chat/make-skill": self.post_make_skill,
             "/ui/models/storage": self.post_storage, "/ui/models/imports": self.post_imports,
         }.get(p)
         if not handler:
@@ -514,6 +616,10 @@ class Handler(BaseHTTPRequestHandler):
             raise ValueError("Unknown choice.")
         s = store.load()
         s["mode"] = mode
+        if mode == "connected" and paired_shoggoth():
+            s["client_only"] = True        # another Shoggoth on the network serves the models: nothing to download here yet
+        elif mode == "builtin":
+            s["client_only"] = False       # "also run models on this computer"
         store.save(s)
         apply_mode(s)
         self.send_json(setup_state())
@@ -554,6 +660,56 @@ class Handler(BaseHTTPRequestHandler):
             threading.Thread(target=lambda: (llamacpp.stop(), _start_engine()), daemon=True).start()
             time.sleep(0.3)
         self.send_json({"ok": True, "engine": llamacpp.summary(s)})
+
+    def post_lemonade_delete(self, body):
+        """Delete only the files migrate5 counted as Lemonade's own (never model files), then report what is left."""
+        freed = migrate5.delete_lemonade(store.data_dir(), library.root())
+        self.send_json(dict(ok=True, **freed, **migrate5.leftovers(store.data_dir(), library.root())))
+
+    # ---- speech to text
+    def post_speech_setup(self, body):
+        """Install whisper.cpp's processor build and its model (in the background; progress at GET /ui/speech/status)."""
+        self.send_json({"ok": True, "started": speech.start_setup(), "speech": speech.status()})
+
+    # ---- read aloud (tts.py)
+    def post_speech_read_setup(self, body):
+        """Download Piper and the chosen voice (in the background; progress at GET /ui/speech/read)."""
+        self.send_json({"ok": True, "started": tts.start_setup(str(body.get("voice") or "") or None), "read": tts.status()})
+
+    def post_speech_read_config(self, body):
+        """Turn Read aloud on or off, and pick the voice. Turning it off stops the engine and keeps what was downloaded."""
+        kw = {}
+        if "enabled" in body:
+            kw["enabled"] = bool(body["enabled"])
+        if "voice" in body:
+            voice = str(body["voice"] or "")
+            if voice not in tts.VOICES:
+                return self.send_json({"error": "Shoggoth doesn't have a voice called %s." % (voice or "that")}, 400)
+            kw["voice"] = voice
+        if not kw:
+            raise ValueError("Nothing to change.")
+        store.update(lambda st: st.setdefault("tts", {}).update(kw))
+        invalidate()
+        if kw.get("enabled") is False:
+            tts.stop()
+        elif kw.get("voice"):
+            tts.stop()                                     # the voice changed, so the running engine is the wrong one
+        self.send_json({"ok": True, "read": tts.status()})
+
+    # ---- files attached in a chat
+    def post_attach(self):
+        """Save the file the composer sent (?chat=<id>&name=<file>; the body is the file) and say which handler will read it."""
+        q = parse_qs(urlparse(self.path).query)
+        n = int(self.headers.get("Content-Length") or 0)
+        if n > filetypes.MAX_BYTES:
+            return self.send_json({"error": "That file is too big. Attach one up to %d MB."
+                                   % (filetypes.MAX_BYTES // (1024 * 1024))}, 413)
+        try:
+            data = self.rfile.read(n) if n else b""
+            self.send_json(filetypes.save_for_chat(agent.get_task((q.get("chat") or [""])[0]),
+                                                   (q.get("name") or [""])[0], data))
+        except ValueError as e:
+            self.send_json({"error": str(e)}, 400)
 
     # ---- where models live
     def post_storage(self, body):
@@ -708,9 +864,16 @@ class Handler(BaseHTTPRequestHandler):
         self.send_json({"ok": ok, "error": msg}, 200 if ok else 409)
 
     def post_model_ctx(self, body):
-        """Only remember the context size, for when the model is loaded next."""
+        """Only remember the context size for when the model is loaded next. "auto" lets each model take the most that fits."""
         v = body.get("ctx") or "auto"
-        self.send_json({"ok": True, "ctx": agent.set_chat_ctx(v if v == "auto" else int(v))})
+        if v not in ("auto", "") and not isinstance(v, bool):
+            try:
+                v = max(2048, int(v))
+            except (TypeError, ValueError):
+                raise ValueError("A context size is a number of tokens, like 32768, or auto.")
+        else:
+            v = "auto"
+        self.send_json({"ok": True, "ctx": agent.set_chat_ctx(v)})
 
     def post_pi_check(self, body):
         try:
@@ -720,6 +883,25 @@ class Handler(BaseHTTPRequestHandler):
 
     def post_pi_update(self, body):
         self.send_json({"started": piup.start_update(), "update": dict(piup.UPD)})
+
+    # ---- Pi packages: only the pinned list in recommendations/pi-packages.yaml can be installed
+    def post_package_install(self, body):
+        """Install one pinned package in the background; progress comes with GET /ui/packages. Only a list entry can be installed."""
+        name = str(body.get("name") or "").strip()
+        try:
+            started = pipkgs.start_install(name, on_done=agent.restart_idle)
+        except RuntimeError as e:
+            return self.send_json({"ok": False, "error": str(e)}, 400)
+        self.send_json({"ok": True, "started": started, "packages": pipkgs.summary()})
+
+    def post_package_remove(self, body):
+        name = str(body.get("name") or "").strip()
+        if not pipkgs.NAME_RE.match(name):
+            return self.send_json({"ok": False, "error": "That isn't a package name."}, 400)
+        gone = pipkgs.remove(name)
+        if gone:
+            agent.restart_idle()          # idle chats restart, so the package's skills go with them
+        self.send_json({"ok": True, "removed": gone, "packages": pipkgs.summary()})
 
     @staticmethod
     def library_summary():
@@ -796,6 +978,23 @@ class Handler(BaseHTTPRequestHandler):
     def post_sources_scan(self, body):
         """Look at what is listening on this computer again (the Look again button) and return the same shape as GET /ui/sources."""
         self.send_json(own_source(scan.sources(own_ports=self._own_ports(), fresh=True)))
+
+    def post_custom_probe(self, body):
+        """The Hook up something else form's Test button: one chat request and one tool request, in plain words."""
+        self.send_json(custom.probe(str(body.get("url", "")), str(body.get("key", "") or ""), str(body.get("api") or "openai-completions"),
+                                     str(body.get("model", "") or "")))
+
+    def post_custom_save(self, body):
+        """Connect a server set up by hand, and (with `remember`) teach Shoggoth to recognise it next time."""
+        r = custom.save(str(body.get("url", "")), str(body.get("key", "") or ""), str(body.get("api") or "openai-completions"),
+                        str(body.get("name") or ""), str(body.get("model") or ""), body.get("models"),
+                        body.get("ctx") or 0, body.get("local"), bool(body.get("remember")),
+                        body.get("match"), body.get("identify"))
+        if r["ok"]:
+            registry.reload()
+            router.invalidate()
+            scan.forget()
+        self.send_json(dict(r, servers=servers.public()), 200 if r["ok"] else 400)
 
     def _own_ports(self):
         """This Shoggoth's port and its llama.cpp's (the router's and each loaded model's), never offered as a server to connect."""
@@ -877,6 +1076,17 @@ class Handler(BaseHTTPRequestHandler):
             skills.toggle(str(body.get("key", "")), bool(body.get("enabled")))
         agent.restart_idle()
         self.send_json({"ok": True, "sets": skills.scan()})
+
+    def post_own_save(self, body):
+        r = skills.own_save(body.get("name"), body.get("text"))
+        self.send_json(dict(r, ok=True, skills=skills.own_list()))
+
+    def post_own_delete(self, body):
+        r = skills.own_delete(body.get("name"))
+        self.send_json(dict(r, ok=True, skills=skills.own_list()))
+
+    def post_make_skill(self, body):
+        self.send_json(agent.make_skill(str(body.get("chat", ""))))
 
     def post_cowork_folder(self, body):
         agent.set_folder(str(body.get("id", "")), body.get("cwd", ""))

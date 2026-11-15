@@ -433,6 +433,30 @@ def _route(path, body):
     return r["scheme"], r["host"], r["port"], r["key"], r["path"], r["body"], None
 
 
+def _shoggoth_marks():
+    """{model id: {"fit", "loaded", "title"}} from the engine picker, so an app can see whether a model fits this computer and is loaded now."""
+    try:
+        import library
+        return {m["id"]: {"fit": m["fit"], "loaded": m["live"], "title": m.get("title") or m["id"]} for m in library.picker(30)["models"]}
+    except Exception:  # noqa: BLE001 - a model list without these notes is still a useful answer
+        return {}
+
+
+def _mark_models(items, marks):
+    """Name each model another app is told about, and add Shoggoth's own note to the ones the picker knows."""
+    for m in items:
+        if not isinstance(m, dict):
+            continue
+        mid = m.get("id")
+        if not isinstance(mid, str):
+            continue
+        known = marks.get(mid) or {}
+        m.setdefault("title", known.get("title") or mid)
+        if known:
+            m["shoggoth"] = {"fit": known["fit"], "loaded": known["loaded"]}
+    return items
+
+
 def _models_for_apps(h):
     """GET /v1/models for other apps: the default engine's list plus the models other engines can serve. Returns True when answered."""
     dflt = router.default_provider()
@@ -446,6 +470,7 @@ def _models_for_apps(h):
     if status != 200 or not isinstance(d, dict) or not isinstance(d.get("data"), list):
         return False
     d["data"] += [{"id": m["id"], "object": "model", "created": 0, "owned_by": m["engine"]} for m in router.chat_models() if m["engine"] != getattr(dflt, "id", "")]
+    _mark_models(d["data"], _shoggoth_marks())
     h.send_json(d)
     return True
 
@@ -634,6 +659,17 @@ class GWHandler(BaseHTTPRequestHandler):
             import speech
             rec = REC.start(app, "app", self.command, p, "whisper", False, self.client_address[0])
             code, ctype, payload = speech.openai_transcriptions(body or b"", self.headers)
+            Tap(rec, False).finish(code)
+            self.send_response(code)
+            self.send_header("Content-Type", ctype)
+            self.send_header("Content-Length", str(len(payload)))
+            self.end_headers()
+            self.wfile.write(payload)
+            return
+        if p == "/v1/audio/speech" and self.command == "POST":            # read aloud runs in Piper (tts.py)
+            import tts
+            rec = REC.start(app, "app", self.command, p, "piper", False, self.client_address[0])
+            code, ctype, payload = tts.openai_speech(body or b"", self.headers)
             Tap(rec, False).finish(code)
             self.send_response(code)
             self.send_header("Content-Type", ctype)

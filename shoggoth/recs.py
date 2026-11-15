@@ -18,6 +18,7 @@ HERE = os.path.dirname(os.path.abspath(__file__))
 sys.path.insert(0, os.path.join(HERE, "_vendor"))
 import yaml  # noqa: E402
 
+import hf  # noqa: E402
 import store  # noqa: E402
 
 BUNDLED = os.path.join(HERE, "recommendations")
@@ -139,26 +140,29 @@ def clean_quants(q, where, c):
 
 
 def clean_models(doc, c):
-    """The usable part of a parsed models.yaml: {recommended, first_run, coming_soon}."""
-    out = {"recommended": [], "first_run": [], "coming_soon": []}
+    """The usable part of a parsed models.yaml: {recommended, first_run}."""
+    out = {"recommended": [], "first_run": []}
     if not isinstance(doc, dict):
         c.bad("", "the file must be groups of settings (key: value), not %s." % type(doc).__name__)
         return out
-    c.keys(doc, "", ["version", "recommended", "first_run", "coming_soon"])
+    c.keys(doc, "", ["version", "replace", "recommended", "first_run"])
     if doc.get("version", 1) != 1:
         c.bad("version", "Shoggoth reads version 1.")
     ids = set()
     for i, m in c.items(doc, "recommended", ""):
         w = "recommended[%d]" % i
-        c.keys(m, w, ["id", "also", "label", "take", "title", "provider", "size_gb", "tools", "vision", "reasoning", "download", "quants"])
+        c.keys(m, w, ["id", "also", "label", "take", "title", "provider", "size_gb", "tools", "vision", "reasoning", "download", "quants", "trusted"])
         mid = c.text(m, "id", w, need=True)
+        if m.get("download") is None:
+            c.bad(w, "needs `download` (where to fetch the model: a checkpoint).")
+        trusted = c.flag(m, "trusted", w)
         if mid in ids:
             c.bad(w, "%s is listed twice." % mid)
         elif mid:
             ids.add(mid)
             ent = {"id": mid, "also": c.words(m, "also", w), "label": c.text(m, "label", w) or "", "take": c.text(m, "take", w) or "",
                    "title": c.text(m, "title", w) or "", "provider": c.text(m, "provider", w) or "llama.cpp", "size_gb": c.number(m, "size_gb", w),
-                   "tools": c.flag(m, "tools", w), "vision": c.flag(m, "vision", w), "reasoning": c.flag(m, "reasoning", w),
+                   "tools": c.flag(m, "tools", w), "vision": c.flag(m, "vision", w), "reasoning": c.flag(m, "reasoning", w), "trusted": trusted,
                    "quants": clean_quants(m.get("quants"), w + ".quants", c)}
             dl = m.get("download")
             if dl is not None:
@@ -170,13 +174,12 @@ def clean_models(doc, c):
                     ck = c.text(dl, "checkpoint", dw, need=True)
                     if ck:
                         ent["download"] = {"checkpoint": ck, "mmproj": c.text(dl, "mmproj", dw) or "", "recipe": c.text(dl, "recipe", dw) or "llamacpp"}
+                        repo = ck.split(":", 1)[0]
+                        owner = (repo.split("/", 1)[0] if "/" in repo else repo).lower()
+                        if owner not in hf.ALLOWED_UPLOADERS and not trusted:
+                            c.bad(dw, "the checkpoint comes from `%s`, which isn't one of the uploaders Shoggoth trusts (%s). "
+                                       "Set `trusted: true` once you have checked it." % (owner or repo, ", ".join(hf.ALLOWED_UPLOADERS)))
             out["recommended"].append(ent)
-    for i, e in c.items(doc, "coming_soon", ""):
-        w = "coming_soon[%d]" % i
-        c.keys(e, w, ["title", "take"])
-        title = c.text(e, "title", w, need=True)
-        if title:
-            out["coming_soon"].append({"title": title, "take": c.text(e, "take", w) or ""})
     for i, f in c.items(doc, "first_run", ""):
         w = "first_run[%d]" % i
         c.keys(f, w, ["size", "models", "blurb", "start", "recommended"])
@@ -361,6 +364,23 @@ def load(name, fname=None):
     return {"data": CLEAN[name](doc, c), "problems": c.problems, "file": fname}
 
 
+def _merge_models(mine, fname):
+    """Your models.yaml adds to Shoggoth's own: your entries first, one with the same id (or `also`) replaces Shoggoth's, and
+    `first_run` replaces Shoggoth's when your file has one. `replace: true` uses your file alone."""
+    doc, _ = _read(fname)
+    doc = doc if isinstance(doc, dict) else {}
+    if doc.get("replace") is True:
+        return mine
+    base = load("models", os.path.join(BUNDLED, "models.yaml"))
+    if base["problems"]:
+        mine["problems"] = mine["problems"] + base["problems"]
+    d, b = mine["data"], base["data"]
+    taken = {n for m in d["recommended"] for n in [m["id"]] + list(m["also"])}
+    out = {"recommended": d["recommended"] + [m for m in b["recommended"] if not ({m["id"]} | set(m["also"])) & taken],
+           "first_run": d["first_run"] if "first_run" in doc else b["first_run"]}
+    return dict(mine, data=out)
+
+
 def get(name):
     """load(name), kept until the file changes."""
     fname = path(name)
@@ -373,12 +393,29 @@ def get(name):
         if hit and hit[0] == sig:
             return hit[1]
         v = load(name, fname)
+        if name == "models" and fname.startswith(user_dir()) and not any("using its own" in p for p in v["problems"]):
+            v = _merge_models(v, fname)
         _cache[name] = (sig, v)
         return v
 
 
 def models():
     return get("models")["data"]
+
+
+def title_for(*names):
+    """The title models.yaml gives a model it recommends, matched by its id or another name (`also`), else ""."""
+    wanted = set()
+    for n in names:
+        n = str(n or "").strip()
+        if n:
+            wanted.add(n)
+            if "/" in n:
+                wanted.add(n.rsplit("/", 1)[-1])
+    for m in models()["recommended"]:
+        if wanted & ({m["id"]} | set(m["also"])):
+            return m["title"] or m["id"]
+    return ""
 
 
 def tools():
@@ -411,7 +448,7 @@ def main(argv):
     if argv[0] == "where":
         for n in FILES:
             print("%s: %s%s" % (n, path(n), "  (yours)" if path(n).startswith(user_dir()) else ""))
-        print("Put a file in %s to use it instead of the bundled one." % user_dir())
+        print("Put a file in %s to use it instead of the bundled one. Your models.yaml adds to Shoggoth's list (`replace: true` uses yours alone)." % user_dir())
         return 0
     targets = argv[1:] or [path(n) for n in FILES]
     bad = 0
@@ -423,7 +460,7 @@ def main(argv):
             continue
         r = load(name, os.path.abspath(f))
         d = r["data"]
-        counts = ("%d recommended, %d coming soon, %d first-run sizes" % (len(d["recommended"]), len(d["coming_soon"]), len(d["first_run"])) if name == "models"
+        counts = ("%d recommended, %d first-run sizes" % (len(d["recommended"]), len(d["first_run"])) if name == "models"
                   else "%d tools, %d places" % (len(d["tools"]), len(d["places"])) if name == "tools"
                   else "%d lines in %d sets" % (sum(map(len, d["lines"].values())), len(d["lines"])))
         print("%s %s: %s" % ("✗" if r["problems"] else "✓", f, counts))

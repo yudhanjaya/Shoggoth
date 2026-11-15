@@ -25,6 +25,7 @@ import engines
 import hf
 import llamacpp
 import provbase
+import recs
 import servers
 import store
 
@@ -32,10 +33,12 @@ PROC = "/proc"
 TIMEOUT = 1.5
 WORKERS = 8
 FRESH = 20                                  # seconds a scan is reused when the page opens the picker again
+TEXT_LIMIT = 64 * 1024                     # bytes of a plain-text reply a signature may look through
 LABELS = {"specialized": "Specialized inference engine", "local": "Local inference engine", "hosted": "Hosted service",
           "shared": "Inference engine"}
 _lock = threading.Lock()
 _last = {"at": 0.0, "found": []}
+_known = {}                                  # connected source id -> {ids, state, at}: what it served and how it answered, last time it was asked
 
 
 # ---------------------------------------------------------------- what is listening
@@ -70,7 +73,7 @@ def _read(path):
 
 
 def owners(proc, inodes):
-    """{inode: (pid, process name, first two words of the command)} for the sockets in `inodes` that belong to a process we may read."""
+    """{inode: (pid, process name, first two words of the command, working folder)} for the sockets in `inodes` that belong to a process we may read."""
     want, out = {"socket:[%d]" % i: i for i in inodes}, {}
     try:
         pids = [p for p in os.listdir(proc) if p.isdigit()]
@@ -93,13 +96,17 @@ def owners(proc, inodes):
             continue
         comm = _read(os.path.join(proc, pid, "comm")).decode("utf8", "replace").strip()
         words = [w for w in _read(os.path.join(proc, pid, "cmdline")).decode("utf8", "replace").split("\0") if w][:2]
+        try:
+            cwd = os.readlink(os.path.join(proc, pid, "cwd"))
+        except OSError:
+            cwd = ""
         for i in mine:
-            out[i] = (int(pid), comm, " ".join(words))
+            out[i] = (int(pid), comm, " ".join(words), cwd)
     return out
 
 
 def listening(proc=PROC):
-    """Every port in LISTEN state, once: [{port, host, pid, process, cmd}] with `host` the address to probe. pid is 0 when unreadable."""
+    """Every port in LISTEN state, once: [{port, host, pid, process, cmd, cwd}] with `host` the address to probe. pid is 0 when unreadable."""
     rows = []
     for name in ("tcp", "tcp6"):
         rows += parse_tcp(_read(os.path.join(proc, "net", name)).decode("utf8", "replace"))
@@ -109,11 +116,12 @@ def listening(proc=PROC):
         # `::` may be IPv6-only, so probe it at ::1 (a dual-stack socket answers there too); only 0.0.0.0 maps to 127.0.0.1.
         host = "127.0.0.1" if (ip.version == 4 and (ip.is_unspecified or ip.is_loopback)) else "[::1]" if (ip.is_unspecified or ip.is_loopback) else \
             "[%s]" % ip if ip.version == 6 else str(ip)
-        pid, comm, cmd = own.get(inode, (0, "", ""))
+        pid, comm, cmd, cwd = own.get(inode, (0, "", "", ""))
         cur = by_port.get(port)
         if cur is None or (not cur["pid"] and pid) or (host == "127.0.0.1" and cur["host"] != "127.0.0.1"):
             by_port[port] = {"port": port, "host": host, "pid": pid or (cur or {}).get("pid", 0),
-                             "process": comm or (cur or {}).get("process", ""), "cmd": cmd or (cur or {}).get("cmd", "")}
+                             "process": comm or (cur or {}).get("process", ""), "cmd": cmd or (cur or {}).get("cmd", ""),
+                             "cwd": cwd or (cur or {}).get("cwd", "")}
     return [by_port[p] for p in sorted(by_port)]
 
 
@@ -127,7 +135,7 @@ _opener = urllib.request.build_opener(urllib.request.ProxyHandler({}), _NoRedire
 
 
 def _get(base, path, key="", timeout=TIMEOUT):
-    """(status, lower-case headers, parsed JSON or None) for one GET. Status 0 when nothing HTTP answers."""
+    """(status, lower-case headers, parsed JSON or None, the first 64 KB as text) for one GET. Status 0 when nothing HTTP answers."""
     h = {"User-Agent": "Shoggoth/" + hf.VERSION}
     if key:
         h["Authorization"] = "Bearer " + key
@@ -141,16 +149,17 @@ def _get(base, path, key="", timeout=TIMEOUT):
             raw = b""
         status, head = e.code, e.headers
     except (OSError, ValueError, http.client.HTTPException):      # not HTTP at all
-        return 0, {}, None
+        return 0, {}, None, ""
     try:
         d = json.loads(raw) if raw else None
     except ValueError:
         d = None
-    return status, {k.lower(): v for k, v in head.items()}, d
+    return status, {k.lower(): v for k, v in head.items()}, d, raw[:TEXT_LIMIT].decode("utf8", "replace")
 
 
-def _process_hit(d, comm, cmd):
-    """True when a definition's `match` names this process: its name, or a word of its command (a path counts by its last part)."""
+def _process_hit(d, comm, cmd, cwd=""):
+    """True when a definition names this process: its `match` list holds its name or a word of its command (a path counts by its last
+    part), or its `cwd` list holds part of the folder the command runs in. `cwd` is for engines that only say `python main.py`."""
     words = [comm] + cmd.split()
     toks = {w.lower() for w in words if w} | {os.path.basename(w).lower() for w in words if w}
     joined = (comm + " " + cmd).lower()
@@ -158,11 +167,14 @@ def _process_hit(d, comm, cmd):
         m = m.lower()
         if m in toks or ((" " in m or "." in m) and m in joined):
             return True
+    if cwd:
+        parts = [p.lower() for p in re.split(r"[\\/]+", cwd) if p]
+        return any(m.lower() in p for m in d.get("cwd") or [] for p in parts)
     return False
 
 
 def _signature_hit(sig, fetch):
-    status, head, d = fetch(sig["path"])
+    status, head, d, text = fetch(sig["path"])
     if status != 200:
         return False
     if "header" in sig:
@@ -175,16 +187,18 @@ def _signature_hit(sig, fetch):
         if "contains" in sig:
             return any(sig["contains"] in str(x) for x in got)
         return bool(got)
+    if "contains" in sig:
+        return sig["contains"].lower() in (text or "").lower()
     return True
 
 
-def identify(defs, port, comm, cmd, fetch):
-    """What is on this port. `fetch(path)` -> (status, headers, json). Returns {engine, name, category, how, candidates} where how is
-    process | signature | port | category | generic, and candidates is [{id, name}] (more than one only when how is category)."""
+def identify(defs, port, comm, cmd, fetch, cwd=""):
+    """What is on this port. `fetch(path)` -> (status, headers, json, text). Returns {engine, name, category, how, candidates} where how
+    is process | signature | port | category | generic, and candidates is [{id, name}] (more than one only when how is category)."""
     def named(d, how):
         return {"engine": d["id"], "name": d["name"], "category": d["category"], "how": how, "candidates": [{"id": d["id"], "name": d["name"]}]}
     for d in defs:
-        if d["match"] and _process_hit(d, comm, cmd):
+        if (d["match"] or d.get("cwd")) and _process_hit(d, comm, cmd, cwd):
             return named(d, "process")
     cache = {}
 
@@ -299,11 +313,11 @@ def _explain(r):
 def _look(s, defs, timeout):
     """Everything one port has to say, or None when it isn't an inference server."""
     base = "http://%s:%d" % (s["host"], s["port"])
-    status, _, d = _get(base, "/v1/models", timeout=timeout)
+    status, _, d, _t = _get(base, "/v1/models", timeout=timeout)
     d = d if isinstance(d, dict) else {}
     if status == 0:
         return None                                            # not HTTP, or not answering
-    who = identify(defs, s["port"], s["process"], s["cmd"], lambda p: _get(base, p, timeout=timeout))
+    who = identify(defs, s["port"], s["process"], s["cmd"], lambda p: _get(base, p, timeout=timeout), s.get("cwd", ""))
     items = [m for m in (d.get("data") if isinstance(d, dict) else None) or [] if isinstance(m, dict) and m.get("id")]
     speaks = status in (401, 403) or (status == 200 and isinstance(d, dict) and isinstance(d.get("data"), list))
     if not speaks and who["how"] not in ("process", "signature"):
@@ -311,10 +325,10 @@ def _look(s, defs, timeout):
     ctx = 0
     dd = next((x for x in defs if x["id"] == who["engine"]), None)
     if dd and dd["context"]:
-        st, _, cd = _get(base, dd["context"]["path"], timeout=timeout)
+        st, _, cd, _t = _get(base, dd["context"]["path"], timeout=timeout)
         got = [x for x in provbase.jpath(cd, dd["context"]["json"]) if isinstance(x, int) and not isinstance(x, bool) and x > 0] if st == 200 and cd is not None else []
         ctx = got[0] if got else 0
-    models = [{"id": str(m["id"]), "ctx": _ctx_of(m) or ctx} for m in items]
+    models = [{"id": str(m["id"]), "title": recs.title_for(str(m["id"])) or str(m["id"]), "ctx": _ctx_of(m) or ctx} for m in items]
     chat, role = classify(items)
     if not items and who["how"] not in ("process", "signature") and (status == 200 or not d):
         role = "other"          # unnamed with nothing to offer, or a bare 401 with no body (OpenAI-style servers explain themselves): not a card
@@ -370,20 +384,50 @@ def latest(own_ports=(), fresh=False, **kw):
         return _last["found"], _last["at"]
 
 
-def _state(entry, defs):
-    r = servers.probe(entry["url"], entry.get("key", ""), pin=entry.get("fp"))
+def _items(ids, source_id, own, loaded, fallback_ctx=0, state="available"):
+    """The rows a source's models make in the picker and the strip: [{id, source, model, title, ctx, state}]. `own` models keep the id
+    chats already use (no source prefix); another source's are `<source>/<model>`."""
+    out, seen = [], set()
+    for mid in ids:
+        mid = str(mid)
+        if not mid or mid in seen:
+            continue
+        seen.add(mid)
+        full = mid if own else "%s/%s" % (source_id, mid)
+        out.append({"id": full, "source": source_id, "model": mid, "title": recs.title_for(full, mid) or mid,
+                    "ctx": int(fallback_ctx or 0), "state": "loaded" if mid in loaded else state})
+    return out
+
+
+def _state(entry, defs, ctx_by_model=None):
+    api = entry.get("api", "")
+    r = servers.probe(entry["url"], entry.get("key", ""), pin=entry.get("fp"), api=api) if api else \
+        servers.probe(entry["url"], entry.get("key", ""), pin=entry.get("fp"))
     d = next((x for x in defs if x["id"] == entry.get("preset")), None) or {}
     host = (urllib.parse.urlsplit(entry["url"]).hostname or "").lower()
     cloud = d.get("category") == "hosted"
-    return {"id": entry["id"], "kind": "cloud" if cloud else "shoggoth" if entry.get("preset") == "shoggoth" else "engine", "name": entry.get("name") or entry["id"], "engine": entry.get("preset", ""),
-            "url": entry["url"], "state": "needs_key" if r["needs_key"] else "ready" if r["reachable"] else "offline", "models": len(r["models"]),
-            "loads": d.get("loads", "fixed"), "leaves_computer": cloud or host not in ("127.0.0.1", "localhost", "::1")}
+    state = "needs_key" if r["needs_key"] else "ready" if r["reachable"] else "offline"
+    ids = list(r["models"]) if state != "offline" else list((_known.get(entry["id"]) or {}).get("ids") or [])
+    with _lock:
+        _known[entry["id"]] = {"ids": ids, "state": state, "at": time.time()}
+    fallback = int(entry.get("ctx") or 0)
+    items = _items(ids, entry["id"], False, (), fallback, "offline" if state == "offline" else "available")
+    for it in items:
+        it["ctx"] = (ctx_by_model or {}).get(it["model"]) or fallback
+    return {"id": entry["id"], "kind": "cloud" if cloud else "shoggoth" if entry.get("preset") == "shoggoth" else "engine",
+            "name": entry.get("name") or entry["id"], "engine": entry.get("preset", ""), "preset": entry.get("preset", ""),
+            "url": entry["url"], "state": state, "models": len(ids), "items": items,
+            "loads": d.get("loads", "fixed"), "leaves_computer": cloud or (entry.get("local") is False) or
+            (entry.get("local") is None and host not in ("127.0.0.1", "localhost", "::1")),
+            "own": False, "pinned": bool(entry.get("fp")), "has_key": bool(entry.get("key")),
+            "key_hint": str(entry.get("key") or "")[-4:] if len(str(entry.get("key") or "")) > 8 else "",
+            "hint": d.get("hint", ""), "api": api, "ctx": fallback, "model_count": len(ids)}
 
 
 def sources(own_ports=(), fresh=False, include_other=False, **kw):
     """The /ui/sources reply: {sources: [...connected...], found: [...answering but not connected...], scanned_at}.
     Servers whose models are all speech/embeddings/other (role != chat) are left out of `found` unless include_other.
-    Each source is {id, kind, name, engine, url, state, models, loads, leaves_computer}; each found server is a scan() entry."""
+    Each source is {id, kind, name, engine, url, state, models, items, loads, leaves_computer}; each found server is a scan() entry."""
     found, when = latest(own_ports, fresh, **kw)
     defs = engines.definitions()
     have = []
@@ -395,6 +439,32 @@ def sources(own_ports=(), fresh=False, include_other=False, **kw):
         have.append(h)
     with concurrent.futures.ThreadPoolExecutor(max_workers=WORKERS) as pool:
         srcs = list(pool.map(lambda e: _state(e, defs), have))
+    for s, entry in zip(srcs, have):
+        if entry.get("local") is not None:
+            s["leaves_computer"] = not bool(entry["local"])
     canon = {servers._canon(servers.normalise(h["url"])) for h in have}
     return {"sources": srcs, "found": [f for f in found if servers._canon(f["url"]) not in canon and (include_other or f.get("role", "chat") == "chat")], "scanned_at": when,
             "problems": engines.problems()}
+
+
+def connected_state(sid):
+    """ready, needs_key or offline for one connected source id, without a full scan. Empty for an id Shoggoth doesn't have."""
+    entry = servers.get(sid)
+    if not entry:
+        return ""
+    r = servers.probe(entry["url"], entry.get("key", ""), pin=entry.get("fp"), api=entry.get("api", "")) if entry.get("api") else \
+        servers.probe(entry["url"], entry.get("key", ""), pin=entry.get("fp"))
+    return "needs_key" if r["needs_key"] else "ready" if r["reachable"] else "offline"
+
+
+def last_known(sid):
+    """{ids, state}: the model ids a connected source served when it was last asked, and how it answered."""
+    with _lock:
+        k = dict(_known.get(sid) or {})
+    return {"ids": list(k.get("ids") or []), "state": k.get("state", ""), "at": k.get("at", 0)}
+
+
+def forget():
+    """Let the next look at this computer scan again (after a definition is added or a source connected or removed)."""
+    with _lock:
+        _last["at"] = 0.0

@@ -2,7 +2,9 @@
 #
 # Check your edits with:   python3 shoggoth/server.py recommendations check
 # Shoggoth reads the file again when it changes: refresh the page to see the new cards.
-# A copy at ~/.local/share/shoggoth/recommendations/models.yaml is used instead of this one.
+# A models.yaml of yours at ~/.local/share/shoggoth/recommendations/models.yaml adds to this list: your entries come first, and one
+# with the same id replaces the one here. Its `first_run`, if it has one, replaces this one. Put `replace: true` at
+# the top of yours to use it alone. No new copy of Shoggoth is needed: the page reads the file again when it changes.
 #
 # Text may use `code` and [links](https://example.com). A link to #skills, #models, #server... opens that page in Shoggoth.
 
@@ -11,12 +13,29 @@ version: 1
 # Models > "Recommended for this computer". A card shows when it fits this computer, whether or not the engine is installed yet: `title`,
 # `size_gb`, `tools`, `vision` and `reasoning` are what the card says until the engine can list the model itself, and `size_gb` sorts it
 # into Small (under 10 GB), Medium (10 to 24 GB) or Large. `id` is the engine's name for the model (`also`: the same model under another
-# name). `download` is for a model the engine does not list: where to fetch it (a Hugging Face `checkpoint`, and optionally `mmproj` for
-# pictures). `quants` maps a few quantisations, by the name in the repo, to their size in GB, so a card can offer a smaller one.
+# name). `download` says where to fetch the model (a Hugging Face `checkpoint`, and optionally `mmproj` for pictures); every entry
+# needs one. A checkpoint from an uploader Shoggoth doesn't know is reported, so add `trusted: true` once you have checked it.
+# `quants` maps a few quantisations, by the name in the repo, to their size in GB, so a card can offer a smaller one.
 # `label` is an optional chip on the card (it also shows in the chat's model picker), `take` the text. The cards keep this order.
 # Text is the owner's own words; do not paraphrase it. No speed figures: they can't be predicted for other people's computers.
 recommended:
   # Small: runs on almost any computer, starts in seconds.
+  # ggml-org's own conversion. It needs llama.cpp b11941 or newer (LFM3-Omni support, llama.cpp PR 31257).
+  # The mmproj holds the picture and sound encoders.
+  - id: LFM3-Omni-2B
+    title: LFM3-Omni-2B
+    size_gb: 2.36
+    tools: true
+    vision: true
+    download:
+      checkpoint: ggml-org/LFM3-Omni-2B-GGUF:LFM3-Omni-2B-Q8_0.gguf
+      mmproj: ggml-org/LFM3-Omni-2B-GGUF:mmproj-LFM3-Omni-2B-Q8_0.gguf
+    quants:
+      Q4_K_M: 1.1
+      Q8_0: 1.85
+    take: >-
+      An extraordinarily tiny model for what it can do. Can handle images and text, often as competent as models twice its parameter
+      count. It can understand quite a few languages, and is extremely fast due to its size.
   - id: LFM2.5-8B-A1B
     title: LFM2.5-8B-A1B
     size_gb: 5.2
@@ -29,10 +48,10 @@ recommended:
       Q8_0: 9.01
     take: >-
       Competent all-rounder. Terse language, handles tool calls reasonably well, fast - an excellent all-round pick.
-  # Not in Lemonade's list: Shoggoth fetches the bartowski Q4_K_M and adds it as a custom model. It needs Lemonade 2026.41.1 or newer
-  # (llama.cpp b11393 or later), which fixed MiMo's tool-call template detection.
+  # Shoggoth fetches the bartowski Q4_K_M directly. It needs llama.cpp b11393 or newer,
+  # which fixed MiMo's tool-call template detection.
   - id: user.MiMo-V2.6-Distill-Qwen-9B-Q4_K_M
-    also: [MiMo-V2.6-Distill-Qwen-9B-Q4_K_M]      # Lemonade lists a custom model without the `user.` it is added under
+    also: [MiMo-V2.6-Distill-Qwen-9B-Q4_K_M]      # the name 4.x used, without the `user.` it was added under
     title: MiMo-V2.6-Distill-Qwen-9B
     size_gb: 5.84
     tools: true
@@ -135,24 +154,13 @@ recommended:
       Q8_0: 29.05
     take: >-
       Excellent at coding for its size, but utterly neurotic and slow. Empires have risen and fallen in the time it takes to respond.
-      Use if you're very patient.
-
-# Models that are not ready yet show greyed out with a COMING SOON! label.
-coming_soon:
-  - title: LFM3
-    take: >-
-      Incredibly small, all-purpose models, extremely competent in my testing, punching well above their size. Will be included once
-      Lemonade updates its llama.cpp.
-  - title: GLM 5.3 Flash
-    take: >-
-      Much better model, but much slower. Comparable to Claude Opus 4.8 (which often did better work than Opus 5) and OpenAI GPT Terra 5.6
-      on many tasks. Will be added once I integrate Project Maya.
+      Use if you're very patient or have good hardware, like an RTX 5090 or above.
 
 # The first-run screen: "Choose your first model", one card per size. Each size shows the first model in `models` that this
 # computer can run. `recommended: true` marks the one Shoggoth suggests.
 first_run:
   - size: small
-    models: [LFM2.5-8B-A1B]
+    models: [LFM3-Omni-2B, LFM2.5-8B-A1B]
     blurb: Answers fast and keeps it short. Runs on almost any computer.
     start: Ready in seconds
   - size: medium

@@ -17,6 +17,7 @@ import hardware
 import modelmeta
 import modelscan
 import provbase
+import recs
 import registry
 import store
 
@@ -179,7 +180,7 @@ def _entries_in(folder, label, owner):
             continue
         out.append({"stem": stem, "files": [p for p, _ in shards], "size_bytes": sum(s for _, s in shards), "complete": len(shards) == g["n"],
                     "format": "gguf", "architecture": h.get("architecture", ""), "quant": h.get("quant", ""), "context": h.get("context", 0),
-                    "size_label": h.get("size_label", ""), "title": _pretty(stem, h), "vision": bool(near), "mmproj": near[0] if near else "",
+                    "size_label": h.get("size_label", ""), "title": recs.title_for(stem) or _pretty(stem, h), "vision": bool(near), "mmproj": near[0] if near else "",
                     "mtp": "mtp" in stem.lower(), "experts": h.get("experts", 0), "expert_share": round(exps / tensors, 3) if tensors else 0.0, "folder": d, "source": label, "owner": owner,
                     "attn": dict(h.get("attn") or {}, arch=h.get("architecture", ""))})
     return out
@@ -207,6 +208,7 @@ def sources(reg=None):
     if r:
         for sub in SUBDIRS:
             add(os.path.join(r, sub), "Shoggoth library", None)
+    add(os.path.join(store.data_dir(), "models"), "Shoggoth library", None)   # where downloads go before there is a Models folder
     m = store.load().get("models") or {}
     for imp in m.get("imports") or []:
         if imp.get("kind") == "folder":
@@ -275,7 +277,8 @@ def catalog(reg=None, machine=None, refresh=False):
         ids = dict(e["ids"]) if e.get("listed_by") else {p.id: p.model_id(e) for p in runnable}
         e = dict(e, ids=ids, **pick_context(dict(e, ids=ids), machine, chosen, ids.get(chosen.id) if chosen.id == "llamacpp" else None))      # the window it will be loaded with, and what that costs
         fit, why = chosen.fit(e, machine)
-        out.append(dict(e, id=key, tier=tier, provider=chosen.id, need_gb=chosen.need_gb(e), fit=fit, why=why,
+        names = [e.get("title"), e.get("stem"), e.get("id")] + list((ids or {}).values())
+        out.append(dict(e, id=key, title=recs.title_for(*names) or e.get("title") or e.get("stem") or "", tier=tier, provider=chosen.id, need_gb=chosen.need_gb(e), fit=fit, why=why,
                         providers={k: {"ok": ok, "reason": r} for k, (ok, r) in cap.items()}, ids=ids,
                         ref=chosen.ref(ids[chosen.id]) if ids.get(chosen.id) else "", engine_name=chosen.name))
     order = {t: i for i, t in enumerate(TIERS)}
@@ -524,7 +527,7 @@ def models_disk():
     """Where the next download goes and how much room is there: {where, free_gb, missing}. `missing` is true when a library folder was chosen
     but can't be found now (a disk that isn't connected)."""
     r = root()
-    where = r or modelscan.hf_cache_dir()
+    where = r or os.path.join(store.data_dir(), "models")       # the disk downloads.dest_dir() is on
     here = _nearest_existing(where)
     return {"where": where, "free_gb": round(shutil.disk_usage(here).free / 1e9, 1), "missing": bool(r) and not os.path.isdir(r)}
 
@@ -539,6 +542,40 @@ def reload_engine():
     if llamacpp.running() and not llamacpp.reload():
         return False, "llama.cpp didn't read its models folder again. Restart Shoggoth to see the new models."
     return True, ""
+
+
+def recommend_fits(entries, reg=None, machine=None, cat=None):
+    """Fill in what the server knows about each recommended model: fit, why, need_gb, ctx, ctx_why.
+
+    A model that is in the library uses the catalog's own figures: its file's shape and the context it will load with. One that
+    isn't downloaded yet is priced from the size models.yaml gives. With nothing known about this computer, no fit is added, so the
+    page shows the card without a badge rather than guessing."""
+    reg = reg or registry.default()
+    machine = machine or hardware.machine()
+    if not (machine.get("best_gpu_gb") or machine.get("vram_gb") or machine.get("ram_gb")):
+        return [dict(e) for e in entries]
+    by_name = {}
+    for e in (catalog(reg, machine) if cat is None else cat):
+        for name in [e.get("id"), e.get("stem"), e.get("title"), e.get("ref")] + list((e.get("ids") or {}).values()):
+            if name:
+                by_name.setdefault(str(name), e)
+    out = []
+    for it in entries:
+        it = dict(it)
+        e = next((by_name[str(n)] for n in [it.get("id")] + list(it.get("also") or []) if str(n) in by_name), None)
+        if e and e.get("provider"):                    # an engine here can run the file that is on disk
+            for k in ("fit", "why", "need_gb", "ctx", "ctx_why"):
+                if e.get(k) is not None:
+                    it[k] = e[k]
+        else:
+            chosen = reg.get("llamacpp") or next(iter(reg.all()), None)
+            size = float(it.get("size_gb") or 0)
+            if chosen and size:
+                fake = {"size_bytes": size * 1e9, "stem": it.get("id", ""), "title": it.get("title", ""), "context": 0}
+                fit, why = chosen.fit(fake, machine)
+                it.update(need_gb=chosen.need_gb(fake), fit=fit, why=why)
+        out.append(it)
+    return out
 
 
 def summary():
@@ -652,8 +689,9 @@ def _cache_type(e):
 def picker(max_age=8):
     """The models a person can pick for a chat, from every engine, with what helps them choose:
 
-    [{id, title, tier, tier_label, fit, why, size_gb, need_gb, live, start_s, start, engine, engine_name, vision, tools, reasoning, ctx, ctx_fixed,
-    quant, params, lineage, form, tone}]: the last five draw the model's creature.
+    [{id, title, tier, tier_label, fit, why, size_gb, need_gb, live, start_s, start, engine, engine_name, source, source_name, vision, tools,
+    reasoning, ctx, ctx_fixed, quant, params, lineage, form, tone}]: the last five draw the model's creature.
+    `source` is the id of what serves it (llama.cpp, a connected server, a hosted service), `source_name` its plain name.
     Engine names are carried for a discreet line; the interface never leads with them."""
     import router
     if max_age and _pk["v"] is not None and time.time() - _pk["t"] < max_age:
@@ -670,9 +708,10 @@ def picker(max_age=8):
         e = by.get((m["engine"], m["pi_model"])) or {}
         p = reg.get(m["engine"])
         start = 0 if m["live"] else (p.memory().get("start_estimate_s") or 0)
-        out.append({"id": m["id"], "title": e.get("title") or m["pi_model"], "tier": e.get("tier") or "", "tier_label": TIER_LABEL.get(e.get("tier"), "Other"),
+        out.append({"id": m["id"], "title": recs.title_for(m["id"], m["pi_model"]) or e.get("title") or m.get("title") or m["pi_model"], "tier": e.get("tier") or "", "tier_label": TIER_LABEL.get(e.get("tier"), "Other"),
                     "fit": e.get("fit") or "fits", "why": e.get("why") or "", "size_gb": round(e.get("size_bytes", 0) / 1e9, 1), "need_gb": e.get("need_gb"),
                     "live": bool(m["live"]), "start_s": start, "start": _start_hint(start), "engine": m["engine"], "engine_name": p.name if p else m["engine"],
+                    "source": m["engine"], "source_name": p.name if p else m["engine"],
                     "vision": bool(m.get("vision")), "tools": bool(m.get("tools")), "reasoning": bool(m.get("reasoning")), "ctx": m.get("ctx") or 0,
                     "ctx_fixed": router.fixed_ctx(m["id"])})
         q = quant_of(e, m["pi_model"])

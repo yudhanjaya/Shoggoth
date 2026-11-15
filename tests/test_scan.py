@@ -14,6 +14,7 @@ sys.path.insert(0, os.path.join(HERE, "..", "shoggoth"))
 import engines  # noqa: E402
 import scan  # noqa: E402
 import servers  # noqa: E402
+import store  # noqa: E402
 
 FIXTURE = os.path.join(HERE, "fixtures", "proc")
 
@@ -56,7 +57,7 @@ class Env(unittest.TestCase):
             os.environ.pop(k, None) if v is None else os.environ.__setitem__(k, v)
         shutil.rmtree(self.tmp, ignore_errors=True)
 
-    def proc_for(self, port, comm="", cmd="", pid=777):
+    def proc_for(self, port, comm="", cmd="", pid=777, cwd=""):
         """A fake /proc where one process (or none, when comm is empty) listens on `port` on loopback."""
         root = tempfile.mkdtemp(dir=self.tmp)
         os.makedirs(os.path.join(root, "net"))
@@ -70,6 +71,8 @@ class Env(unittest.TestCase):
                 f.write(comm + "\n")
             with open(os.path.join(root, str(pid), "cmdline"), "wb") as f:
                 f.write(cmd.replace(" ", "\0").encode() + b"\0")
+            if cwd:
+                os.symlink(cwd, os.path.join(root, str(pid), "cwd"))
         return root
 
 
@@ -85,7 +88,7 @@ class ReadingProc(unittest.TestCase):
 
     def test_inodes_map_to_processes(self):
         got = scan.owners(FIXTURE, {11111, 22222, 44444})
-        self.assertEqual(got[11111], (4242, "strata", "/home/u/.local/bin/strata serve"))
+        self.assertEqual(got[11111], (4242, "strata", "/home/u/.local/bin/strata serve", ""))
         self.assertEqual(got[22222][:2], (4343, "llama-server"))
         self.assertNotIn(44444, got)                                               # nobody we can read owns it
 
@@ -112,19 +115,19 @@ class Identifying(unittest.TestCase):
 
     @staticmethod
     def answers(**paths):
-        return lambda p: paths.get(p.lstrip("/"), (404, {}, None))
+        return lambda p: paths.get(p.lstrip("/"), (404, {}, None, ""))
 
     def test_process_name_beats_a_signature(self):
-        everything = lambda p: (200, {}, {"default_generation_settings": {}})      # the reply says llama.cpp, the process says Strata
+        everything = lambda p: (200, {}, {"default_generation_settings": {}}, "")      # the reply says llama.cpp, the process says Strata
         r = scan.identify(self.DEFS, 8080, "strata", "/x/strata serve", everything)
         self.assertEqual((r["engine"], r["how"]), ("strata", "process"))
 
     def test_a_signature_beats_the_fallback(self):
-        r = scan.identify(self.DEFS, 8080, "", "", self.answers(props=(200, {}, {"default_generation_settings": {"n_ctx": 1}})))
+        r = scan.identify(self.DEFS, 8080, "", "", self.answers(props=(200, {}, {"default_generation_settings": {"n_ctx": 1}}, "")))
         self.assertEqual((r["engine"], r["how"]), ("llama-server", "signature"))
 
     def test_a_signature_names_an_engine_on_any_port(self):
-        r = scan.identify(self.DEFS, 31337, "docker-proxy", "", self.answers(version=(200, {}, {"version": "1"})))
+        r = scan.identify(self.DEFS, 31337, "docker-proxy", "", self.answers(version=(200, {}, {"version": "1"}, "")))
         self.assertEqual((r["engine"], r["how"]), ("vllm", "signature"))
 
     def test_two_engines_told_apart_by_process_name(self):
@@ -136,6 +139,13 @@ class Identifying(unittest.TestCase):
         defs = [defn(id="sglang", name="SGLang", match=["sglang.launch_server"])]
         r = scan.identify(defs, 30000, "python3", "python3 -m sglang.launch_server", self.answers())
         self.assertEqual(r["engine"], "sglang")
+
+    def test_the_working_folder_counts_when_the_command_is_only_python(self):
+        defs = [defn(id="tabbyapi", name="TabbyAPI", cwd=["tabbyAPI"])]
+        r = scan.identify(defs, 5000, "python3", "python3 main.py", self.answers(), cwd="/home/u/TabbyAPI")
+        self.assertEqual((r["engine"], r["how"]), ("tabbyapi", "process"))
+        r = scan.identify(defs, 5000, "python3", "python3 main.py", self.answers(), cwd="/home/u/other-project")
+        self.assertEqual(r["engine"], None)
 
     def test_unidentifiable_8080_is_the_specialized_category(self):
         r = scan.identify(self.DEFS, 8080, "", "", self.answers())                  # llama.cpp's signature failed, so it's ruled out
@@ -154,8 +164,15 @@ class Identifying(unittest.TestCase):
 
     def test_a_header_signature(self):
         defs = [defn(id="h", name="H", identify=[{"path": "/", "header": "Server", "contains": "hserve"}])]
-        r = scan.identify(defs, 9, "", "", lambda p: (200, {"server": "HServe/1.0"}, None))
+        r = scan.identify(defs, 9, "", "", lambda p: (200, {"server": "HServe/1.0"}, None, ""))
         self.assertEqual(r["engine"], "h")
+
+    def test_a_plain_text_signature_reads_the_body(self):
+        defs = [defn(id="ninfer", name="NInfer", identify=[{"path": "/metrics", "contains": "ninfer_model_info"}])]
+        r = scan.identify(defs, 8080, "", "", lambda p: (200, {}, None, "# HELP ninfer_model_info tokens\nninfer_model_info 1\n"))
+        self.assertEqual((r["engine"], r["how"]), ("ninfer", "signature"))
+        r = scan.identify(defs, 8080, "", "", lambda p: (200, {}, None, "# some other server's metrics\n"))
+        self.assertEqual(r["engine"], None)
 
     def test_an_unknown_8080_is_one_shared_bucket_with_specialized_engines_first(self):
         """llamafile, RamaLama and TGI are local engines on 8080 with no signature, so they share it with Strata and Maya."""
@@ -201,6 +218,15 @@ class Scanning(Env):
         finally:
             sa(), sb()
         self.assertEqual({f["port"]: f["engine"] for f in found}, {pa: "strata", pb: "llama-server"})
+
+    def test_the_working_folder_names_a_python_server(self):
+        port, stop = serve({"/v1/models": (200, {"data": [{"id": "m"}]}, {})})
+        try:
+            defs = [defn(id="textgen", name="text-generation-webui", cwd=["text-generation-webui"])]
+            found = scan.scan(proc=self.proc_for(port, "python3", "python3 server.py", cwd="/srv/text-generation-webui"), defs=defs)
+        finally:
+            stop()
+        self.assertEqual([(f["engine"], f["how"]) for f in found], [("textgen", "process")])
 
     def test_an_unidentifiable_server_is_the_specialized_category(self):
         port, stop = serve({"/v1/models": (200, {"data": [{"id": "big"}]}, {})})
@@ -283,11 +309,32 @@ class Hardening(Env):
         srv = ThreadingHTTPServer(("127.0.0.1", 0), H)
         threading.Thread(target=srv.serve_forever, daemon=True).start()
         try:
-            st, _, _ = scan._get("http://127.0.0.1:%d" % srv.server_address[1], "/v1/models")
+            st, _, _, _ = scan._get("http://127.0.0.1:%d" % srv.server_address[1], "/v1/models")
             self.assertEqual(st, 302)
             self.assertTrue(seen_ua[0].startswith("Shoggoth/"))
         finally:
             srv.shutdown(), srv.server_close(), stop_t()
+
+    def test_a_text_signature_only_reads_the_first_64_kb(self):
+        body = b"x" * 70000 + b"ninfer_model_info"
+
+        class H(BaseHTTPRequestHandler):
+            def do_GET(self):
+                self.send_response(200)
+                self.send_header("Content-Length", str(len(body)))
+                self.end_headers()
+                self.wfile.write(body)
+
+            def log_message(self, *a):
+                pass
+        srv = ThreadingHTTPServer(("127.0.0.1", 0), H)
+        threading.Thread(target=srv.serve_forever, daemon=True).start()
+        try:
+            status, _, d, text = scan._get("http://127.0.0.1:%d" % srv.server_address[1], "/metrics")
+        finally:
+            srv.shutdown(), srv.server_close()
+        self.assertEqual((status, d, len(text)), (200, None, scan.TEXT_LIMIT))
+        self.assertNotIn("ninfer_model_info", text)
 
     def test_a_port_that_does_not_speak_http_gets_no_signature_probes(self):
         import socket
@@ -387,6 +434,12 @@ class Sources(Env):
         d = scan.sources(proc=self.proc_for(2), defs=[], fresh=True)
         self.assertEqual([(s["id"], s["state"]) for s in d["sources"]], [("other", "offline")])
 
+    def test_an_offline_paired_shoggoth_keeps_its_name(self):
+        store.update(lambda s: s.__setitem__("servers", [{"id": "desk", "preset": "shoggoth", "name": "desk-pc", "url": "https://127.0.0.1:1",
+                                                         "key": "shoggoth-peer-x", "fp": "ab" * 32}]))
+        d = scan.sources(proc=self.proc_for(2), defs=engines.definitions(), fresh=True)
+        self.assertEqual([(s["id"], s["name"], s["kind"], s["state"]) for s in d["sources"]], [("desk", "desk-pc", "shoggoth", "offline")])
+
     def test_a_scan_is_reused_until_asked_again(self):
         port, stop = serve({"/v1/models": (200, {"data": []}, {})})
         try:
@@ -397,6 +450,54 @@ class Sources(Env):
             stop()
         self.assertEqual(len(scan.sources(proc=root, defs=[], include_other=True)["found"]), 1)  # server gone, same scan within 20 s
         self.assertEqual(len(scan.sources(proc=root, defs=[], fresh=True, include_other=True)["found"]), 0)
+
+
+class SourceRows(Env):
+    """What the Models page's strip and the chat bar's picker read: a source's own model rows, and what it served when it last answered."""
+
+    def test_a_connected_source_lists_its_models_as_rows(self):
+        port, stop = serve({"/v1/models": (200, {"data": [{"id": "m1"}, {"id": "m2", "meta": {"n_ctx": 8192}}]}, {})})
+        try:
+            servers.add("other", "http://127.0.0.1:%d" % port, extra={"ctx": 4096})
+            d = scan.sources(proc=self.proc_for(port), defs=[], fresh=True)
+        finally:
+            stop()
+        s = d["sources"][0]
+        self.assertEqual([(i["id"], i["source"], i["model"], i["state"]) for i in s["items"]],
+                         [("other/m1", "other", "m1", "available"), ("other/m2", "other", "m2", "available")])
+        self.assertEqual([i["ctx"] for i in s["items"]], [4096, 4096])          # the size the person typed, when the server says nothing
+
+    def test_an_offline_source_keeps_its_rows_greyed(self):
+        port, stop = serve({"/v1/models": (200, {"data": [{"id": "m1"}]}, {})})
+        try:
+            servers.add("other", "http://127.0.0.1:%d" % port)
+            scan.sources(proc=self.proc_for(port), defs=[], fresh=True)
+        finally:
+            stop()
+        d = scan.sources(proc=self.proc_for(port), defs=[], fresh=True)          # the server has gone
+        s = d["sources"][0]
+        self.assertEqual((s["state"], [i["state"] for i in s["items"]], [i["id"] for i in s["items"]]),
+                         ("offline", ["offline"], ["other/m1"]))
+        self.assertEqual(scan.last_known("other")["ids"], ["m1"])
+
+    def test_a_remembered_address_stays_on_this_computer(self):
+        port, stop = serve({"/v1/models": (200, {"data": []}, {})})
+        try:
+            servers.add("other", "http://127.0.0.1:%d" % port, extra={"local": False})
+            d = scan.sources(proc=self.proc_for(port), defs=[], fresh=True)
+        finally:
+            stop()
+        self.assertTrue(d["sources"][0]["leaves_computer"])                         # the person said it is elsewhere
+
+    def test_the_connect_state_does_not_need_a_scan(self):
+        port, stop = serve({"/v1/models": (200, {"data": [{"id": "m1"}]}, {})})
+        try:
+            servers.add("other", "http://127.0.0.1:%d" % port)
+            self.assertEqual(scan.connected_state("other"), "ready")
+        finally:
+            stop()
+        self.assertEqual(scan.connected_state("other"), "offline")
+        self.assertEqual(scan.connected_state("nobody"), "")
 
 
 class RealServers(Env):

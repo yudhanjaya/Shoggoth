@@ -37,7 +37,7 @@
   "version": "2026.42.1",
   "websocket_port": 9001
  },
- "/api/v1/downloads": [],
+ "/ui/models/downloads": [],
  "/api/v1/stats": {
   "cache_tokens": null,
   "cache_tokens_total": 0,
@@ -53,448 +53,183 @@
   "time_to_first_token": 0,
   "tokens_per_second": 0
  },
- "/api/v1/models?show_all=true": {
+ "/ui/models/list": {
   "data": [
    {
-    "checkpoint": "Serveurperso/ACE-Step-1.5-GGUF:acestep-v15-xl-sft-Q8_0.gguf",
-    "checkpoints": {
-     "main": "Serveurperso/ACE-Step-1.5-GGUF:acestep-v15-xl-sft-Q8_0.gguf"
-    },
-    "components": [],
-    "created": 1234567890,
-    "downloaded": false,
-    "id": "ACE-Step-Music",
-    "labels": [
-     "audio-generation"
-    ],
-    "object": "model",
-    "owned_by": "lemonade",
-    "recipe": "acestep",
-    "recipe_options": {},
-    "registry_source": "huggingface",
-    "size": 10.5,
-    "source": "huggingface",
-    "suggested": true,
-    "update_available": false
-   },
-   {
-    "checkpoint": "lemonade-sdk/bert-finetuned-phishing-ONNX",
-    "checkpoints": {
-     "main": "lemonade-sdk/bert-finetuned-phishing-ONNX"
-    },
-    "components": [],
-    "created": 1234567890,
-    "downloaded": false,
-    "id": "Bert-Phishing-ONNX",
-    "labels": [
-     "classification"
-    ],
-    "object": "model",
-    "owned_by": "lemonade",
-    "recipe": "onnxruntime",
-    "recipe_options": {},
-    "registry_source": "huggingface",
-    "size": 1.34,
-    "source": "huggingface",
-    "suggested": false,
-    "update_available": false
-   },
-   {
-    "checkpoint": "prism-ml/Bonsai-1.7B-gguf:Q1_0",
-    "checkpoints": {
-     "main": "prism-ml/Bonsai-1.7B-gguf:Q1_0"
-    },
-    "components": [],
-    "context_length": 131072,
-    "created": 1234567890,
-    "downloaded": false,
     "id": "Bonsai-1.7B-gguf",
-    "labels": [
-     "chat",
-     "llamacpp"
-    ],
-    "object": "model",
-    "owned_by": "lemonade",
+    "title": "Bonsai-1.7B-gguf",
     "recipe": "llamacpp",
-    "recipe_options": {},
-    "registry_source": "huggingface",
     "size": 0.25,
-    "source": "huggingface",
+    "downloaded": false,
+    "labels": [
+     "chat",
+     "llamacpp"
+    ],
+    "checkpoint": "prism-ml/Bonsai-1.7B-gguf:Q1_0",
     "suggested": true,
-    "update_available": false
+    "rec": "",
+    "owned": false,
+    "folder": ""
    },
    {
-    "checkpoint": "prism-ml/Bonsai-4B-gguf:Q1_0",
-    "checkpoints": {
-     "main": "prism-ml/Bonsai-4B-gguf:Q1_0"
-    },
-    "components": [],
-    "context_length": 131072,
-    "created": 1234567890,
-    "downloaded": false,
     "id": "Bonsai-4B-gguf",
-    "labels": [
-     "chat",
-     "llamacpp"
-    ],
-    "object": "model",
-    "owned_by": "lemonade",
+    "title": "Bonsai-4B-gguf",
     "recipe": "llamacpp",
-    "recipe_options": {},
-    "registry_source": "huggingface",
     "size": 0.572,
-    "source": "huggingface",
-    "suggested": true,
-    "update_available": false
-   },
-   {
-    "checkpoint": "prism-ml/Bonsai-8B-gguf:Q1_0",
-    "checkpoints": {
-     "main": "prism-ml/Bonsai-8B-gguf:Q1_0"
-    },
-    "components": [],
-    "context_length": 131072,
-    "created": 1234567890,
     "downloaded": false,
-    "id": "Bonsai-8B-gguf",
     "labels": [
      "chat",
      "llamacpp"
     ],
-    "object": "model",
-    "owned_by": "lemonade",
-    "recipe": "llamacpp",
-    "recipe_options": {},
-    "registry_source": "huggingface",
-    "size": 1.16,
-    "source": "huggingface",
+    "checkpoint": "prism-ml/Bonsai-4B-gguf:Q1_0",
     "suggested": true,
-    "update_available": false
+    "rec": "",
+    "owned": false,
+    "folder": ""
    },
    {
-    "checkpoint": "unsloth/DeepSeek-R1-0528-Qwen3-8B-GGUF:Q4_1",
-    "checkpoints": {
-     "main": "unsloth/DeepSeek-R1-0528-Qwen3-8B-GGUF:Q4_1"
-    },
-    "components": [],
-    "context_length": 131072,
-    "created": 1234567890,
+    "id": "Bonsai-8B-gguf",
+    "title": "Bonsai-8B-gguf",
+    "recipe": "llamacpp",
+    "size": 1.16,
     "downloaded": false,
+    "labels": [
+     "chat",
+     "llamacpp"
+    ],
+    "checkpoint": "prism-ml/Bonsai-8B-gguf:Q1_0",
+    "suggested": true,
+    "rec": "",
+    "owned": false,
+    "folder": ""
+   },
+   {
     "id": "DeepSeek-Qwen3-8B-GGUF",
+    "title": "DeepSeek-Qwen3-8B-GGUF",
+    "recipe": "llamacpp",
+    "size": 5.25,
+    "downloaded": false,
     "labels": [
      "chat",
      "reasoning"
     ],
-    "object": "model",
-    "owned_by": "lemonade",
-    "recipe": "llamacpp",
-    "recipe_options": {},
-    "registry_source": "huggingface",
-    "size": 5.25,
-    "source": "huggingface",
+    "checkpoint": "unsloth/DeepSeek-R1-0528-Qwen3-8B-GGUF:Q4_1",
     "suggested": true,
-    "update_available": false
+    "rec": "",
+    "owned": false,
+    "folder": ""
    },
    {
-    "checkpoint": "mistralai/Devstral-Small-2507_gguf:Q4_K_M",
-    "checkpoints": {
-     "main": "mistralai/Devstral-Small-2507_gguf:Q4_K_M"
-    },
-    "components": [],
-    "context_length": 131072,
-    "created": 1234567890,
-    "downloaded": false,
     "id": "Devstral-Small-2507-GGUF",
+    "title": "Devstral-Small-2507-GGUF",
+    "recipe": "llamacpp",
+    "size": 14.3,
+    "downloaded": false,
     "labels": [
      "chat",
      "coding",
      "tool-calling"
     ],
-    "object": "model",
-    "owned_by": "lemonade",
-    "recipe": "llamacpp",
-    "recipe_options": {},
-    "registry_source": "huggingface",
-    "size": 14.3,
-    "source": "huggingface",
+    "checkpoint": "mistralai/Devstral-Small-2507_gguf:Q4_K_M",
     "suggested": true,
-    "update_available": false
+    "rec": "",
+    "owned": false,
+    "folder": ""
    },
    {
-    "checkpoint": "black-forest-labs/FLUX.2-klein-4B:flux-2-klein-4b.safetensors",
-    "checkpoints": {
-     "main": "black-forest-labs/FLUX.2-klein-4B:flux-2-klein-4b.safetensors",
-     "text_encoder": "Comfy-Org/vae-text-encorder-for-flux-klein-4b:split_files/text_encoders/qwen_3_4b.safetensors",
-     "vae": "Comfy-Org/vae-text-encorder-for-flux-klein-4b:split_files/vae/flux2-vae.safetensors"
-    },
-    "components": [],
-    "created": 1234567890,
-    "downloaded": false,
-    "id": "Flux-2-Klein-4B",
-    "image_defaults": {
-     "cfg_scale": 1,
-     "height": 1024,
-     "steps": 4,
-     "width": 1024
-    },
-    "labels": [
-     "image",
-     "edit"
-    ],
-    "object": "model",
-    "owned_by": "lemonade",
-    "recipe": "sd-cpp",
-    "recipe_options": {
-     "cfg_scale": 1,
-     "height": 1024,
-     "steps": 4,
-     "width": 1024
-    },
-    "registry_source": "huggingface",
-    "size": 16.1,
-    "source": "huggingface",
-    "suggested": true,
-    "update_available": false
-   },
-   {
-    "checkpoint": "unsloth/FLUX.2-klein-9B-GGUF:flux-2-klein-9b-Q8_0.gguf",
-    "checkpoints": {
-     "main": "unsloth/FLUX.2-klein-9B-GGUF:flux-2-klein-9b-Q8_0.gguf",
-     "text_encoder": "unsloth/Qwen3-8B-GGUF:Qwen3-8B-Q8_0.gguf",
-     "vae": "Comfy-Org/vae-text-encorder-for-flux-klein-9b:split_files/vae/flux2-vae.safetensors"
-    },
-    "components": [],
-    "created": 1234567890,
-    "downloaded": false,
-    "id": "Flux-2-Klein-9B-GGUF",
-    "image_defaults": {
-     "cfg_scale": 1,
-     "height": 256,
-     "steps": 4,
-     "width": 256
-    },
-    "labels": [
-     "image",
-     "edit"
-    ],
-    "object": "model",
-    "owned_by": "lemonade",
-    "recipe": "sd-cpp",
-    "recipe_options": {
-     "cfg_scale": 1,
-     "height": 256,
-     "steps": 4,
-     "width": 256
-    },
-    "registry_source": "huggingface",
-    "size": 19,
-    "source": "huggingface",
-    "suggested": true,
-    "update_available": false
-   },
-   {
-    "checkpoint": "unsloth/GLM-4.7-Flash-GGUF:GLM-4.7-Flash-UD-Q4_K_XL.gguf",
-    "checkpoints": {
-     "main": "unsloth/GLM-4.7-Flash-GGUF:GLM-4.7-Flash-UD-Q4_K_XL.gguf"
-    },
-    "components": [],
-    "context_length": 131072,
-    "created": 1234567890,
-    "downloaded": false,
     "id": "GLM-4.7-Flash-GGUF",
+    "title": "GLM-4.7-Flash-GGUF",
+    "recipe": "llamacpp",
+    "size": 17.5,
+    "downloaded": false,
     "labels": [
      "chat",
      "tool-calling"
     ],
-    "object": "model",
-    "owned_by": "lemonade",
-    "recipe": "llamacpp",
-    "recipe_options": {},
-    "registry_source": "huggingface",
-    "size": 17.5,
-    "source": "huggingface",
+    "checkpoint": "unsloth/GLM-4.7-Flash-GGUF:GLM-4.7-Flash-UD-Q4_K_XL.gguf",
     "suggested": true,
-    "update_available": false
+    "rec": "",
+    "owned": false,
+    "folder": ""
    },
    {
-    "checkpoint": "ggml-org/gemma-3-4b-it-GGUF:Q4_K_M",
-    "checkpoints": {
-     "main": "ggml-org/gemma-3-4b-it-GGUF:Q4_K_M",
-     "mmproj": "ggml-org/gemma-3-4b-it-GGUF:mmproj-model-f16.gguf"
-    },
-    "components": [],
-    "context_length": 131072,
-    "created": 1234567890,
-    "downloaded": false,
     "id": "Gemma-3-4b-it-GGUF",
-    "labels": [
-     "chat",
-     "vision"
-    ],
-    "object": "model",
-    "owned_by": "lemonade",
+    "title": "Gemma-3-4b-it-GGUF",
     "recipe": "llamacpp",
-    "recipe_options": {},
-    "registry_source": "huggingface",
     "size": 3.34,
-    "source": "huggingface",
+    "downloaded": false,
+    "labels": [
+     "chat",
+     "vision"
+    ],
+    "checkpoint": "ggml-org/gemma-3-4b-it-GGUF:Q4_K_M",
     "suggested": true,
-    "update_available": false
+    "rec": "",
+    "owned": false,
+    "folder": ""
    },
    {
-    "checkpoint": "unsloth/gemma-4-12b-it-GGUF:Q4_K_M",
-    "checkpoints": {
-     "main": "unsloth/gemma-4-12b-it-GGUF:Q4_K_M",
-     "mmproj": "unsloth/gemma-4-12b-it-GGUF:mmproj-F16.gguf"
-    },
-    "components": [],
-    "context_length": 131072,
-    "created": 1234567890,
-    "downloaded": false,
     "id": "Gemma-4-12B-it-GGUF",
-    "labels": [
-     "chat",
-     "tool-calling",
-     "vision",
-     "llamacpp"
-    ],
-    "object": "model",
-    "owned_by": "lemonade",
+    "title": "Gemma-4-12B-it-GGUF",
     "recipe": "llamacpp",
-    "recipe_options": {},
-    "registry_source": "huggingface",
     "size": 7.29,
-    "source": "huggingface",
-    "suggested": true,
-    "update_available": false
-   },
-   {
+    "downloaded": false,
+    "labels": [
+     "chat",
+     "tool-calling",
+     "vision",
+     "llamacpp"
+    ],
     "checkpoint": "unsloth/gemma-4-12b-it-GGUF:Q4_K_M",
-    "checkpoints": {
-     "draft": "unsloth/gemma-4-12b-it-GGUF:mtp-gemma-4-12b-it.gguf",
-     "main": "unsloth/gemma-4-12b-it-GGUF:Q4_K_M",
-     "mmproj": "unsloth/gemma-4-12b-it-GGUF:mmproj-F16.gguf"
-    },
-    "components": [],
-    "context_length": 131072,
-    "created": 1234567890,
-    "downloaded": false,
+    "suggested": true,
+    "rec": "",
+    "owned": false,
+    "folder": ""
+   },
+   {
     "id": "Gemma-4-12B-it-MTP-GGUF",
-    "labels": [
-     "chat",
-     "tool-calling",
-     "llamacpp",
-     "vision",
-     "mtp"
-    ],
-    "object": "model",
-    "owned_by": "lemonade",
+    "title": "Gemma-4-12B-it-MTP-GGUF",
     "recipe": "llamacpp",
-    "recipe_options": {},
-    "registry_source": "huggingface",
     "size": 7.75,
-    "source": "huggingface",
+    "downloaded": false,
+    "labels": [
+     "chat",
+     "tool-calling",
+     "llamacpp",
+     "vision",
+     "mtp"
+    ],
+    "checkpoint": "unsloth/gemma-4-12b-it-GGUF:Q4_K_M",
     "suggested": true,
-    "update_available": false
+    "rec": "",
+    "owned": false,
+    "folder": ""
    },
    {
-    "checkpoint": "unsloth/gemma-4-26B-A4B-it-GGUF:UD-Q4_K_M",
-    "checkpoints": {
-     "main": "unsloth/gemma-4-26B-A4B-it-GGUF:UD-Q4_K_M",
-     "mmproj": "unsloth/gemma-4-26B-A4B-it-GGUF:mmproj-F16.gguf"
-    },
-    "components": [],
-    "context_length": 131072,
-    "created": 1234567890,
-    "downloaded": false,
     "id": "Gemma-4-26B-A4B-it-GGUF",
-    "labels": [
-     "chat",
-     "hot",
-     "tool-calling",
-     "vision",
-     "llamacpp"
-    ],
-    "object": "model",
-    "owned_by": "lemonade",
+    "title": "Gemma-4-26B-A4B-it-GGUF",
     "recipe": "llamacpp",
-    "recipe_options": {},
-    "registry_source": "huggingface",
     "size": 18.1,
-    "source": "huggingface",
-    "suggested": true,
-    "update_available": false
-   },
-   {
+    "downloaded": false,
+    "labels": [
+     "chat",
+     "hot",
+     "tool-calling",
+     "vision",
+     "llamacpp"
+    ],
     "checkpoint": "unsloth/gemma-4-26B-A4B-it-GGUF:UD-Q4_K_M",
-    "checkpoints": {
-     "draft": "unsloth/gemma-4-26B-A4B-it-GGUF:mtp-gemma-4-26B-A4B-it.gguf",
-     "main": "unsloth/gemma-4-26B-A4B-it-GGUF:UD-Q4_K_M",
-     "mmproj": "unsloth/gemma-4-26B-A4B-it-GGUF:mmproj-F16.gguf"
-    },
-    "components": [],
-    "context_length": 131072,
-    "created": 1234567890,
-    "downloaded": false,
+    "suggested": true,
+    "rec": "",
+    "owned": false,
+    "folder": ""
+   },
+   {
     "id": "Gemma-4-26B-A4B-it-MTP-GGUF",
-    "labels": [
-     "chat",
-     "hot",
-     "tool-calling",
-     "vision",
-     "llamacpp",
-     "mtp"
-    ],
-    "object": "model",
-    "owned_by": "lemonade",
+    "title": "Gemma-4-26B-A4B-it-MTP-GGUF",
     "recipe": "llamacpp",
-    "recipe_options": {},
-    "registry_source": "huggingface",
     "size": 18.5,
-    "source": "huggingface",
-    "suggested": true,
-    "update_available": false
-   },
-   {
-    "checkpoint": "unsloth/gemma-4-31B-it-GGUF:Q4_K_M",
-    "checkpoints": {
-     "main": "unsloth/gemma-4-31B-it-GGUF:Q4_K_M",
-     "mmproj": "unsloth/gemma-4-31B-it-GGUF:mmproj-F16.gguf"
-    },
-    "components": [],
-    "context_length": 131072,
-    "created": 1234567890,
     "downloaded": false,
-    "id": "Gemma-4-31B-it-GGUF",
-    "labels": [
-     "chat",
-     "hot",
-     "tool-calling",
-     "vision",
-     "llamacpp"
-    ],
-    "object": "model",
-    "owned_by": "lemonade",
-    "recipe": "llamacpp",
-    "recipe_options": {},
-    "registry_source": "huggingface",
-    "size": 19.5,
-    "source": "huggingface",
-    "suggested": true,
-    "update_available": false
-   },
-   {
-    "checkpoint": "unsloth/gemma-4-31B-it-GGUF:Q4_K_M",
-    "checkpoints": {
-     "draft": "unsloth/gemma-4-31B-it-GGUF:mtp-gemma-4-31B-it.gguf",
-     "main": "unsloth/gemma-4-31B-it-GGUF:Q4_K_M",
-     "mmproj": "unsloth/gemma-4-31B-it-GGUF:mmproj-F16.gguf"
-    },
-    "components": [],
-    "context_length": 131072,
-    "created": 1234567890,
-    "downloaded": false,
-    "id": "Gemma-4-31B-it-MTP-GGUF",
     "labels": [
      "chat",
      "hot",
@@ -503,761 +238,405 @@
      "llamacpp",
      "mtp"
     ],
-    "object": "model",
-    "owned_by": "lemonade",
+    "checkpoint": "unsloth/gemma-4-26B-A4B-it-GGUF:UD-Q4_K_M",
+    "suggested": true,
+    "rec": "",
+    "owned": false,
+    "folder": ""
+   },
+   {
+    "id": "Gemma-4-31B-it-GGUF",
+    "title": "Gemma-4-31B-it-GGUF",
     "recipe": "llamacpp",
-    "recipe_options": {},
-    "registry_source": "huggingface",
+    "size": 19.5,
+    "downloaded": false,
+    "labels": [
+     "chat",
+     "hot",
+     "tool-calling",
+     "vision",
+     "llamacpp"
+    ],
+    "checkpoint": "unsloth/gemma-4-31B-it-GGUF:Q4_K_M",
+    "suggested": true,
+    "rec": "",
+    "owned": false,
+    "folder": ""
+   },
+   {
+    "id": "Gemma-4-31B-it-MTP-GGUF",
+    "title": "Gemma-4-31B-it-MTP-GGUF",
+    "recipe": "llamacpp",
     "size": 20,
-    "source": "huggingface",
+    "downloaded": false,
+    "labels": [
+     "chat",
+     "hot",
+     "tool-calling",
+     "vision",
+     "llamacpp",
+     "mtp"
+    ],
+    "checkpoint": "unsloth/gemma-4-31B-it-GGUF:Q4_K_M",
     "suggested": true,
-    "update_available": false
+    "rec": "",
+    "owned": false,
+    "folder": ""
    },
    {
-    "checkpoint": "unsloth/gemma-4-E2B-it-GGUF:Q4_K_M",
-    "checkpoints": {
-     "main": "unsloth/gemma-4-E2B-it-GGUF:Q4_K_M",
-     "mmproj": "unsloth/gemma-4-E2B-it-GGUF:mmproj-F16.gguf"
-    },
-    "components": [],
-    "context_length": 131072,
-    "created": 1234567890,
-    "downloaded": false,
     "id": "Gemma-4-E2B-it-GGUF",
-    "labels": [
-     "chat",
-     "tool-calling",
-     "vision",
-     "llamacpp"
-    ],
-    "object": "model",
-    "owned_by": "lemonade",
+    "title": "Gemma-4-E2B-it-GGUF",
     "recipe": "llamacpp",
-    "recipe_options": {},
-    "registry_source": "huggingface",
     "size": 4.09,
-    "source": "huggingface",
-    "suggested": true,
-    "update_available": false
-   },
-   {
-    "checkpoint": "unsloth/gemma-4-E4B-it-GGUF:Q4_K_M",
-    "checkpoints": {
-     "main": "unsloth/gemma-4-E4B-it-GGUF:Q4_K_M",
-     "mmproj": "unsloth/gemma-4-E4B-it-GGUF:mmproj-F16.gguf"
-    },
-    "components": [],
-    "context_length": 131072,
-    "created": 1234567890,
     "downloaded": false,
-    "id": "Gemma-4-E4B-it-GGUF",
     "labels": [
      "chat",
      "tool-calling",
      "vision",
      "llamacpp"
     ],
-    "object": "model",
-    "owned_by": "lemonade",
+    "checkpoint": "unsloth/gemma-4-E2B-it-GGUF:Q4_K_M",
+    "suggested": true,
+    "rec": "",
+    "owned": false,
+    "folder": ""
+   },
+   {
+    "id": "Gemma-4-E4B-it-GGUF",
+    "title": "Gemma-4-E4B-it-GGUF",
     "recipe": "llamacpp",
-    "recipe_options": {},
-    "registry_source": "huggingface",
     "size": 5.97,
-    "source": "huggingface",
+    "downloaded": false,
+    "labels": [
+     "chat",
+     "tool-calling",
+     "vision",
+     "llamacpp"
+    ],
+    "checkpoint": "unsloth/gemma-4-E4B-it-GGUF:Q4_K_M",
     "suggested": true,
-    "update_available": false
+    "rec": "",
+    "owned": false,
+    "folder": ""
    },
    {
-    "checkpoint": "Menlo/Jan-nano-128k-gguf:jan-nano-128k-Q4_K_M.gguf",
-    "checkpoints": {
-     "main": "Menlo/Jan-nano-128k-gguf:jan-nano-128k-Q4_K_M.gguf"
-    },
-    "components": [],
-    "context_length": 131072,
-    "created": 1234567890,
-    "downloaded": false,
     "id": "Jan-nano-128k-GGUF",
+    "title": "Jan-nano-128k-GGUF",
+    "recipe": "llamacpp",
+    "size": 2.5,
+    "downloaded": false,
     "labels": [
      "chat"
     ],
-    "object": "model",
-    "owned_by": "lemonade",
-    "recipe": "llamacpp",
-    "recipe_options": {},
-    "registry_source": "huggingface",
-    "size": 2.5,
-    "source": "huggingface",
+    "checkpoint": "Menlo/Jan-nano-128k-gguf:jan-nano-128k-Q4_K_M.gguf",
     "suggested": true,
-    "update_available": false
+    "rec": "",
+    "owned": false,
+    "folder": ""
    },
    {
-    "checkpoint": "janhq/Jan-v1-4B-GGUF:Jan-v1-4B-Q4_K_M.gguf",
-    "checkpoints": {
-     "main": "janhq/Jan-v1-4B-GGUF:Jan-v1-4B-Q4_K_M.gguf"
-    },
-    "components": [],
-    "context_length": 131072,
-    "created": 1234567890,
-    "downloaded": false,
     "id": "Jan-v1-4B-GGUF",
-    "labels": [
-     "chat"
-    ],
-    "object": "model",
-    "owned_by": "lemonade",
+    "title": "Jan-v1-4B-GGUF",
     "recipe": "llamacpp",
-    "recipe_options": {},
-    "registry_source": "huggingface",
     "size": 2.5,
-    "source": "huggingface",
+    "downloaded": false,
+    "labels": [
+     "chat"
+    ],
+    "checkpoint": "janhq/Jan-v1-4B-GGUF:Jan-v1-4B-Q4_K_M.gguf",
     "suggested": true,
-    "update_available": false
+    "rec": "",
+    "owned": false,
+    "folder": ""
    },
    {
-    "checkpoint": "LiquidAI/LFM2-1.2B-GGUF:LFM2-1.2B-Q4_K_M.gguf",
-    "checkpoints": {
-     "main": "LiquidAI/LFM2-1.2B-GGUF:LFM2-1.2B-Q4_K_M.gguf"
-    },
-    "components": [],
-    "context_length": 131072,
-    "created": 1234567890,
-    "downloaded": false,
     "id": "LFM2-1.2B-GGUF",
+    "title": "LFM2-1.2B-GGUF",
+    "recipe": "llamacpp",
+    "size": 0.731,
+    "downloaded": false,
     "labels": [
      "chat"
     ],
-    "object": "model",
-    "owned_by": "lemonade",
-    "recipe": "llamacpp",
-    "recipe_options": {},
-    "registry_source": "huggingface",
-    "size": 0.731,
-    "source": "huggingface",
+    "checkpoint": "LiquidAI/LFM2-1.2B-GGUF:LFM2-1.2B-Q4_K_M.gguf",
     "suggested": true,
-    "update_available": false
+    "rec": "",
+    "owned": false,
+    "folder": ""
    },
    {
-    "checkpoint": "LiquidAI/LFM2-24B-A2B-GGUF:Q4_K_M",
-    "checkpoints": {
-     "main": "LiquidAI/LFM2-24B-A2B-GGUF:Q4_K_M"
-    },
-    "components": [],
-    "context_length": 131072,
-    "created": 1234567890,
-    "downloaded": false,
     "id": "LFM2-24B-A2B-GGUF",
-    "labels": [
-     "chat"
-    ],
-    "object": "model",
-    "owned_by": "lemonade",
+    "title": "LFM2-24B-A2B-GGUF",
     "recipe": "llamacpp",
-    "recipe_options": {},
-    "registry_source": "huggingface",
     "size": 14.4,
-    "source": "huggingface",
+    "downloaded": false,
+    "labels": [
+     "chat"
+    ],
+    "checkpoint": "LiquidAI/LFM2-24B-A2B-GGUF:Q4_K_M",
     "suggested": true,
-    "update_available": false
+    "rec": "",
+    "owned": false,
+    "folder": ""
    },
    {
-    "checkpoint": "LiquidAI/LFM2-8B-A1B-GGUF:Q4_K_M",
-    "checkpoints": {
-     "main": "LiquidAI/LFM2-8B-A1B-GGUF:Q4_K_M"
-    },
-    "components": [],
-    "context_length": 131072,
-    "created": 1234567890,
-    "downloaded": false,
     "id": "LFM2-8B-A1B-GGUF",
-    "labels": [
-     "chat"
-    ],
-    "object": "model",
-    "owned_by": "lemonade",
+    "title": "LFM2-8B-A1B-GGUF",
     "recipe": "llamacpp",
-    "recipe_options": {},
-    "registry_source": "huggingface",
     "size": 5.04,
-    "source": "huggingface",
+    "downloaded": false,
+    "labels": [
+     "chat"
+    ],
+    "checkpoint": "LiquidAI/LFM2-8B-A1B-GGUF:Q4_K_M",
     "suggested": true,
-    "update_available": false
+    "rec": "",
+    "owned": false,
+    "folder": ""
    },
    {
-    "checkpoint": "LiquidAI/LFM2.5-1.2B-Instruct-GGUF:LFM2.5-1.2B-Instruct-Q4_K_M.gguf",
-    "checkpoints": {
-     "main": "LiquidAI/LFM2.5-1.2B-Instruct-GGUF:LFM2.5-1.2B-Instruct-Q4_K_M.gguf"
-    },
-    "components": [],
-    "context_length": 131072,
-    "created": 1234567890,
-    "downloaded": false,
     "id": "LFM2.5-1.2B-Instruct-GGUF",
-    "labels": [
-     "chat"
-    ],
-    "object": "model",
-    "owned_by": "lemonade",
+    "title": "LFM2.5-1.2B-Instruct-GGUF",
     "recipe": "llamacpp",
-    "recipe_options": {},
-    "registry_source": "huggingface",
     "size": 0.731,
-    "source": "huggingface",
+    "downloaded": false,
+    "labels": [
+     "chat"
+    ],
+    "checkpoint": "LiquidAI/LFM2.5-1.2B-Instruct-GGUF:LFM2.5-1.2B-Instruct-Q4_K_M.gguf",
     "suggested": true,
-    "update_available": false
+    "rec": "",
+    "owned": false,
+    "folder": ""
    },
    {
-    "checkpoint": "LiquidAI/LFM2.5-8B-A1B-GGUF:LFM2.5-8B-A1B-Q4_K_M.gguf",
-    "checkpoints": {
-     "main": "LiquidAI/LFM2.5-8B-A1B-GGUF:LFM2.5-8B-A1B-Q4_K_M.gguf"
-    },
-    "components": [],
-    "context_length": 131072,
-    "created": 1234567890,
-    "downloaded": false,
     "id": "LFM2.5-8B-A1B",
-    "labels": [
-     "chat"
-    ],
-    "object": "model",
-    "owned_by": "lemonade",
+    "title": "LFM2.5-8B-A1B",
     "recipe": "llamacpp",
-    "recipe_options": {},
-    "registry_source": "huggingface",
     "size": 5.16,
-    "source": "huggingface",
-    "suggested": true,
-    "update_available": false
-   },
-   {
-    "checkpoint": "lemonade-sdk/LMX-Omni-5.5B-Lite",
-    "checkpoints": {
-     "main": "lemonade-sdk/LMX-Omni-5.5B-Lite"
-    },
-    "components": [],
-    "created": 1234567890,
     "downloaded": false,
-    "id": "LMX-Omni-5.5B-Lite",
     "labels": [
      "chat"
     ],
-    "models": [],
-    "object": "model",
-    "owned_by": "lemonade",
-    "recipe": "collection.omni",
-    "recipe_options": {},
-    "registry_source": "huggingface",
-    "size": 9.3,
-    "source": "huggingface",
+    "checkpoint": "LiquidAI/LFM2.5-8B-A1B-GGUF:LFM2.5-8B-A1B-Q4_K_M.gguf",
     "suggested": true,
-    "update_available": false
+    "rec": "",
+    "owned": false,
+    "folder": ""
    },
    {
-    "checkpoint": "lemonade-sdk/LMX-Omni-52B-Halo",
-    "checkpoints": {
-     "main": "lemonade-sdk/LMX-Omni-52B-Halo"
-    },
-    "components": [],
-    "created": 1234567890,
-    "downloaded": false,
-    "id": "LMX-Omni-52B-Halo",
-    "labels": [
-     "chat"
-    ],
-    "models": [],
-    "object": "model",
-    "owned_by": "lemonade",
-    "recipe": "collection.omni",
-    "recipe_options": {},
-    "registry_source": "huggingface",
-    "size": 44.77,
-    "source": "huggingface",
-    "suggested": true,
-    "update_available": false
-   },
-   {
-    "checkpoint": "unsloth/Llama-3.2-1B-Instruct-GGUF:Llama-3.2-1B-Instruct-UD-Q4_K_XL.gguf",
-    "checkpoints": {
-     "main": "unsloth/Llama-3.2-1B-Instruct-GGUF:Llama-3.2-1B-Instruct-UD-Q4_K_XL.gguf"
-    },
-    "components": [],
-    "context_length": 131072,
-    "created": 1234567890,
-    "downloaded": false,
     "id": "Llama-3.2-1B-Instruct-GGUF",
-    "labels": [
-     "chat"
-    ],
-    "object": "model",
-    "owned_by": "lemonade",
+    "title": "Llama-3.2-1B-Instruct-GGUF",
     "recipe": "llamacpp",
-    "recipe_options": {},
-    "registry_source": "huggingface",
     "size": 0.834,
-    "source": "huggingface",
-    "suggested": true,
-    "update_available": false
-   },
-   {
-    "checkpoint": "unsloth/Llama-3.2-3B-Instruct-GGUF:Llama-3.2-3B-Instruct-UD-Q4_K_XL.gguf",
-    "checkpoints": {
-     "main": "unsloth/Llama-3.2-3B-Instruct-GGUF:Llama-3.2-3B-Instruct-UD-Q4_K_XL.gguf"
-    },
-    "components": [],
-    "context_length": 131072,
-    "created": 1234567890,
     "downloaded": false,
-    "id": "Llama-3.2-3B-Instruct-GGUF",
     "labels": [
      "chat"
     ],
-    "object": "model",
-    "owned_by": "lemonade",
+    "checkpoint": "unsloth/Llama-3.2-1B-Instruct-GGUF:Llama-3.2-1B-Instruct-UD-Q4_K_XL.gguf",
+    "suggested": true,
+    "rec": "",
+    "owned": false,
+    "folder": ""
+   },
+   {
+    "id": "Llama-3.2-3B-Instruct-GGUF",
+    "title": "Llama-3.2-3B-Instruct-GGUF",
     "recipe": "llamacpp",
-    "recipe_options": {},
-    "registry_source": "huggingface",
     "size": 2.06,
-    "source": "huggingface",
-    "suggested": true,
-    "update_available": false
-   },
-   {
-    "audio_defaults": {
-     "pcm_channels": 1,
-     "pcm_sample_rate": 48000
-    },
-    "checkpoint": "ilintar/moss-soundeffect-gguf:moss-soundeffect-2.0.gguf",
-    "checkpoints": {
-     "main": "ilintar/moss-soundeffect-gguf:moss-soundeffect-2.0.gguf",
-     "main_extras": "ilintar/moss-soundeffect-gguf:moss-soundeffect-2.0.extras.gguf"
-    },
-    "components": [],
-    "created": 1234567890,
     "downloaded": false,
-    "id": "MOSS-SoundEffect",
     "labels": [
-     "audio-generation"
+     "chat"
     ],
-    "object": "model",
-    "owned_by": "lemonade",
-    "recipe": "openmoss",
-    "recipe_options": {},
-    "registry_source": "huggingface",
-    "size": 6.6,
-    "source": "huggingface",
+    "checkpoint": "unsloth/Llama-3.2-3B-Instruct-GGUF:Llama-3.2-3B-Instruct-UD-Q4_K_XL.gguf",
     "suggested": true,
-    "update_available": false
+    "rec": "",
+    "owned": false,
+    "folder": ""
    },
    {
-    "audio_defaults": {
-     "pcm_channels": 2,
-     "pcm_sample_rate": 48000
-    },
-    "checkpoint": "ilintar/moss-tts-local-gguf:moss-tts-local-1.5-q8_0.gguf",
-    "checkpoints": {
-     "main": "ilintar/moss-tts-local-gguf:moss-tts-local-1.5-q8_0.gguf",
-     "main_extras": "ilintar/moss-tts-local-gguf:moss-tts-local-1.5-q8_0.extras.gguf",
-     "voicegen": "ilintar/moss-voicegen-gguf:moss-voicegen.gguf",
-     "voicegen_extras": "ilintar/moss-voicegen-gguf:moss-voicegen.extras.gguf"
-    },
-    "components": [],
-    "created": 1234567890,
-    "downloaded": false,
-    "id": "MOSS-TTS-Local",
-    "labels": [
-     "tts"
-    ],
-    "object": "model",
-    "owned_by": "lemonade",
-    "recipe": "openmoss",
-    "recipe_options": {},
-    "registry_source": "huggingface",
-    "size": 8.5,
-    "source": "huggingface",
-    "suggested": true,
-    "update_available": false
-   },
-   {
-    "audio_defaults": {
-     "pcm_channels": 1,
-     "pcm_sample_rate": 24000
-    },
-    "checkpoint": "ilintar/moss-voicegen-gguf:moss-voicegen.gguf",
-    "checkpoints": {
-     "main": "ilintar/moss-voicegen-gguf:moss-voicegen.gguf",
-     "main_extras": "ilintar/moss-voicegen-gguf:moss-voicegen.extras.gguf"
-    },
-    "components": [],
-    "created": 1234567890,
-    "downloaded": false,
-    "id": "MOSS-VoiceGen",
-    "labels": [
-     "tts",
-     "voice-design"
-    ],
-    "object": "model",
-    "owned_by": "lemonade",
-    "recipe": "openmoss",
-    "recipe_options": {},
-    "registry_source": "huggingface",
-    "size": 7.3,
-    "source": "huggingface",
-    "suggested": true,
-    "update_available": false
-   },
-   {
-    "checkpoint": "OpenBMB/MiniCPM-V-4-gguf:ggml-model-Q4_K_M.gguf",
-    "checkpoints": {
-     "main": "OpenBMB/MiniCPM-V-4-gguf:ggml-model-Q4_K_M.gguf",
-     "mmproj": "OpenBMB/MiniCPM-V-4-gguf:mmproj-model-f16.gguf"
-    },
-    "components": [],
-    "context_length": 131072,
-    "created": 1234567890,
-    "downloaded": false,
     "id": "MiniCPM-V-4-GGUF",
-    "labels": [
-     "chat",
-     "vision"
-    ],
-    "object": "model",
-    "owned_by": "lemonade",
+    "title": "MiniCPM-V-4-GGUF",
     "recipe": "llamacpp",
-    "recipe_options": {},
-    "registry_source": "modelscope",
     "size": 3.15,
-    "source": "modelscope",
-    "suggested": true,
-    "update_available": false
-   },
-   {
-    "checkpoint": "OpenBMB/MiniCPM-V-4_5-gguf:MiniCPM-V-4_5-Q4_K_M.gguf",
-    "checkpoints": {
-     "main": "OpenBMB/MiniCPM-V-4_5-gguf:MiniCPM-V-4_5-Q4_K_M.gguf",
-     "mmproj": "OpenBMB/MiniCPM-V-4_5-gguf:mmproj-model-f16.gguf"
-    },
-    "components": [],
-    "context_length": 131072,
-    "created": 1234567890,
     "downloaded": false,
-    "id": "MiniCPM-V-4.5-GGUF",
     "labels": [
      "chat",
      "vision"
     ],
-    "object": "model",
-    "owned_by": "lemonade",
-    "recipe": "llamacpp",
-    "recipe_options": {},
-    "registry_source": "modelscope",
-    "size": 6.12,
-    "source": "modelscope",
+    "checkpoint": "OpenBMB/MiniCPM-V-4-gguf:ggml-model-Q4_K_M.gguf",
     "suggested": true,
-    "update_available": false
+    "rec": "",
+    "owned": false,
+    "folder": ""
    },
    {
-    "checkpoint": "OpenBMB/MiniCPM-V-4.6-gguf:MiniCPM-V-4_6-Q4_K_M.gguf",
-    "checkpoints": {
-     "main": "OpenBMB/MiniCPM-V-4.6-gguf:MiniCPM-V-4_6-Q4_K_M.gguf",
-     "mmproj": "OpenBMB/MiniCPM-V-4.6-gguf:mmproj-model-f16.gguf"
-    },
-    "components": [],
-    "context_length": 131072,
-    "created": 1234567890,
+    "id": "MiniCPM-V-4.5-GGUF",
+    "title": "MiniCPM-V-4.5-GGUF",
+    "recipe": "llamacpp",
+    "size": 6.12,
     "downloaded": false,
+    "labels": [
+     "chat",
+     "vision"
+    ],
+    "checkpoint": "OpenBMB/MiniCPM-V-4_5-gguf:MiniCPM-V-4_5-Q4_K_M.gguf",
+    "suggested": true,
+    "rec": "",
+    "owned": false,
+    "folder": ""
+   },
+   {
     "id": "MiniCPM-V-4.6-GGUF",
+    "title": "MiniCPM-V-4.6-GGUF",
+    "recipe": "llamacpp",
+    "size": 1.64,
+    "downloaded": false,
     "labels": [
      "chat",
      "hot",
      "vision"
     ],
-    "object": "model",
-    "owned_by": "lemonade",
-    "recipe": "llamacpp",
-    "recipe_options": {},
-    "registry_source": "modelscope",
-    "size": 1.64,
-    "source": "modelscope",
+    "checkpoint": "OpenBMB/MiniCPM-V-4.6-gguf:MiniCPM-V-4_6-Q4_K_M.gguf",
     "suggested": true,
-    "update_available": false
+    "rec": "",
+    "owned": false,
+    "folder": ""
    },
    {
-    "checkpoint": "OpenBMB/MiniCPM-V-4.6-Thinking-gguf:MiniCPM-V-4_6-Thinking-Q4_K_M.gguf",
-    "checkpoints": {
-     "main": "OpenBMB/MiniCPM-V-4.6-Thinking-gguf:MiniCPM-V-4_6-Thinking-Q4_K_M.gguf",
-     "mmproj": "OpenBMB/MiniCPM-V-4.6-Thinking-gguf:mmproj-model-f16.gguf"
-    },
-    "components": [],
-    "context_length": 131072,
-    "created": 1234567890,
-    "downloaded": false,
     "id": "MiniCPM-V-4.6-Thinking-GGUF",
+    "title": "MiniCPM-V-4.6-Thinking-GGUF",
+    "recipe": "llamacpp",
+    "size": 1.64,
+    "downloaded": false,
     "labels": [
      "chat",
      "reasoning",
      "vision"
     ],
-    "object": "model",
-    "owned_by": "lemonade",
-    "recipe": "llamacpp",
-    "recipe_options": {},
-    "registry_source": "modelscope",
-    "size": 1.64,
-    "source": "modelscope",
+    "checkpoint": "OpenBMB/MiniCPM-V-4.6-Thinking-gguf:MiniCPM-V-4_6-Thinking-Q4_K_M.gguf",
     "suggested": true,
-    "update_available": false
+    "rec": "",
+    "owned": false,
+    "folder": ""
    },
    {
-    "checkpoint": "OpenBMB/MiniCPM-o-2_6-gguf:Model-7.6B-Q4_K_M.gguf",
-    "checkpoints": {
-     "main": "OpenBMB/MiniCPM-o-2_6-gguf:Model-7.6B-Q4_K_M.gguf",
-     "mmproj": "OpenBMB/MiniCPM-o-2_6-gguf:mmproj-model-f16.gguf"
-    },
-    "components": [],
-    "context_length": 131072,
-    "created": 1234567890,
-    "downloaded": false,
     "id": "MiniCPM-o-2.6-Vision-GGUF",
-    "labels": [
-     "chat",
-     "vision"
-    ],
-    "object": "model",
-    "owned_by": "lemonade",
+    "title": "MiniCPM-o-2.6-Vision-GGUF",
     "recipe": "llamacpp",
-    "recipe_options": {},
-    "registry_source": "modelscope",
     "size": 5.73,
-    "source": "modelscope",
-    "suggested": true,
-    "update_available": false
-   },
-   {
-    "checkpoint": "OpenBMB/MiniCPM-o-4_5-gguf:MiniCPM-o-4_5-Q4_K_M.gguf",
-    "checkpoints": {
-     "main": "OpenBMB/MiniCPM-o-4_5-gguf:MiniCPM-o-4_5-Q4_K_M.gguf",
-     "mmproj": "OpenBMB/MiniCPM-o-4_5-gguf:vision/MiniCPM-o-4_5-vision-F16.gguf"
-    },
-    "components": [],
-    "context_length": 131072,
-    "created": 1234567890,
     "downloaded": false,
-    "id": "MiniCPM-o-4.5-Vision-GGUF",
     "labels": [
      "chat",
      "vision"
     ],
-    "object": "model",
-    "owned_by": "lemonade",
+    "checkpoint": "OpenBMB/MiniCPM-o-2_6-gguf:Model-7.6B-Q4_K_M.gguf",
+    "suggested": true,
+    "rec": "",
+    "owned": false,
+    "folder": ""
+   },
+   {
+    "id": "MiniCPM-o-4.5-Vision-GGUF",
+    "title": "MiniCPM-o-4.5-Vision-GGUF",
     "recipe": "llamacpp",
-    "recipe_options": {},
-    "registry_source": "modelscope",
     "size": 6.12,
-    "source": "modelscope",
+    "downloaded": false,
+    "labels": [
+     "chat",
+     "vision"
+    ],
+    "checkpoint": "OpenBMB/MiniCPM-o-4_5-gguf:MiniCPM-o-4_5-Q4_K_M.gguf",
     "suggested": true,
-    "update_available": false
+    "rec": "",
+    "owned": false,
+    "folder": ""
    },
    {
-    "checkpoint": "OpenBMB/MiniCPM3-4B-GGUF:minicpm3-4b-q4_k_m.gguf",
-    "checkpoints": {
-     "main": "OpenBMB/MiniCPM3-4B-GGUF:minicpm3-4b-q4_k_m.gguf"
-    },
-    "components": [],
-    "context_length": 131072,
-    "created": 1234567890,
-    "downloaded": false,
     "id": "MiniCPM3-4B-GGUF",
-    "labels": [
-     "chat"
-    ],
-    "object": "model",
-    "owned_by": "lemonade",
+    "title": "MiniCPM3-4B-GGUF",
     "recipe": "llamacpp",
-    "recipe_options": {},
-    "registry_source": "modelscope",
     "size": 2.47,
-    "source": "modelscope",
-    "suggested": true,
-    "update_available": false
-   },
-   {
-    "checkpoint": "OpenBMB/MiniCPM4-8B-GGUF:MiniCPM4-8B-Q4_K_M.gguf",
-    "checkpoints": {
-     "main": "OpenBMB/MiniCPM4-8B-GGUF:MiniCPM4-8B-Q4_K_M.gguf"
-    },
-    "components": [],
-    "context_length": 131072,
-    "created": 1234567890,
     "downloaded": false,
-    "id": "MiniCPM4-8B-GGUF",
     "labels": [
      "chat"
     ],
-    "object": "model",
-    "owned_by": "lemonade",
-    "recipe": "llamacpp",
-    "recipe_options": {},
-    "registry_source": "modelscope",
-    "size": 4.97,
-    "source": "modelscope",
+    "checkpoint": "OpenBMB/MiniCPM3-4B-GGUF:minicpm3-4b-q4_k_m.gguf",
     "suggested": true,
-    "update_available": false
+    "rec": "",
+    "owned": false,
+    "folder": ""
    },
    {
-    "checkpoint": "OpenBMB/MiniCPM4.1-8B-GGUF:MiniCPM4.1-8B-Q4_K_M.gguf",
-    "checkpoints": {
-     "main": "OpenBMB/MiniCPM4.1-8B-GGUF:MiniCPM4.1-8B-Q4_K_M.gguf"
-    },
-    "components": [],
-    "context_length": 131072,
-    "created": 1234567890,
+    "id": "MiniCPM4-8B-GGUF",
+    "title": "MiniCPM4-8B-GGUF",
+    "recipe": "llamacpp",
+    "size": 4.97,
     "downloaded": false,
+    "labels": [
+     "chat"
+    ],
+    "checkpoint": "OpenBMB/MiniCPM4-8B-GGUF:MiniCPM4-8B-Q4_K_M.gguf",
+    "suggested": true,
+    "rec": "",
+    "owned": false,
+    "folder": ""
+   },
+   {
     "id": "MiniCPM4.1-8B-GGUF",
+    "title": "MiniCPM4.1-8B-GGUF",
+    "recipe": "llamacpp",
+    "size": 4.97,
+    "downloaded": false,
     "labels": [
      "chat",
      "reasoning"
     ],
-    "object": "model",
-    "owned_by": "lemonade",
-    "recipe": "llamacpp",
-    "recipe_options": {},
-    "registry_source": "modelscope",
-    "size": 4.97,
-    "source": "modelscope",
+    "checkpoint": "OpenBMB/MiniCPM4.1-8B-GGUF:MiniCPM4.1-8B-Q4_K_M.gguf",
     "suggested": true,
-    "update_available": false
+    "rec": "",
+    "owned": false,
+    "folder": ""
    },
    {
-    "checkpoint": "OpenBMB/MiniCPM5-1B-GGUF:MiniCPM5-1B-Q4_K_M.gguf",
-    "checkpoints": {
-     "main": "OpenBMB/MiniCPM5-1B-GGUF:MiniCPM5-1B-Q4_K_M.gguf"
-    },
-    "components": [],
-    "context_length": 131072,
-    "created": 1234567890,
-    "downloaded": false,
     "id": "MiniCPM5-1B-GGUF",
+    "title": "MiniCPM5-1B-GGUF",
+    "recipe": "llamacpp",
+    "size": 0.69,
+    "downloaded": false,
     "labels": [
      "chat",
      "hot",
      "reasoning"
     ],
-    "object": "model",
-    "owned_by": "lemonade",
-    "recipe": "llamacpp",
-    "recipe_options": {},
-    "registry_source": "modelscope",
-    "size": 0.69,
-    "source": "modelscope",
+    "checkpoint": "OpenBMB/MiniCPM5-1B-GGUF:MiniCPM5-1B-Q4_K_M.gguf",
     "suggested": true,
-    "update_available": false
+    "rec": "",
+    "owned": false,
+    "folder": ""
    },
    {
-    "checkpoint": "mistralai/Ministral-3-3B-Instruct-2512-GGUF:Ministral-3-3B-Instruct-2512-Q4_K_M.gguf",
-    "checkpoints": {
-     "main": "mistralai/Ministral-3-3B-Instruct-2512-GGUF:Ministral-3-3B-Instruct-2512-Q4_K_M.gguf",
-     "mmproj": "mistralai/Ministral-3-3B-Instruct-2512-GGUF:Ministral-3-3B-Instruct-2512-BF16-mmproj.gguf"
-    },
-    "components": [],
-    "context_length": 131072,
-    "created": 1234567890,
-    "downloaded": false,
     "id": "Ministral-3-3B-Instruct-2512-GGUF",
+    "title": "Ministral-3-3B-Instruct-2512-GGUF",
+    "recipe": "llamacpp",
+    "size": 2.99,
+    "downloaded": false,
     "labels": [
      "chat",
      "vision"
     ],
-    "object": "model",
-    "owned_by": "lemonade",
-    "recipe": "llamacpp",
-    "recipe_options": {},
-    "registry_source": "huggingface",
-    "size": 2.99,
-    "source": "huggingface",
+    "checkpoint": "mistralai/Ministral-3-3B-Instruct-2512-GGUF:Ministral-3-3B-Instruct-2512-Q4_K_M.gguf",
     "suggested": true,
-    "update_available": false
+    "rec": "",
+    "owned": false,
+    "folder": ""
    },
    {
-    "checkpoint": "UsefulSensors/moonshine-streaming:onnx/medium",
-    "checkpoints": {
-     "main": "UsefulSensors/moonshine-streaming:onnx/medium"
-    },
-    "components": [],
-    "created": 1234567890,
-    "downloaded": false,
-    "id": "Moonshine-Medium-Streaming",
-    "labels": [
-     "transcription",
-     "realtime-transcription",
-     "hot"
-    ],
-    "object": "model",
-    "owned_by": "lemonade",
-    "recipe": "moonshine",
-    "recipe_options": {},
-    "registry_source": "huggingface",
-    "size": 1.08,
-    "source": "huggingface",
-    "suggested": true,
-    "update_available": false
-   },
-   {
-    "checkpoint": "UsefulSensors/moonshine-streaming:onnx/small",
-    "checkpoints": {
-     "main": "UsefulSensors/moonshine-streaming:onnx/small"
-    },
-    "components": [],
-    "created": 1234567890,
-    "downloaded": false,
-    "id": "Moonshine-Small-Streaming",
-    "labels": [
-     "transcription",
-     "realtime-transcription"
-    ],
-    "object": "model",
-    "owned_by": "lemonade",
-    "recipe": "moonshine",
-    "recipe_options": {},
-    "registry_source": "huggingface",
-    "size": 0.431,
-    "source": "huggingface",
-    "suggested": true,
-    "update_available": false
-   },
-   {
-    "checkpoint": "UsefulSensors/moonshine-streaming:onnx/tiny",
-    "checkpoints": {
-     "main": "UsefulSensors/moonshine-streaming:onnx/tiny"
-    },
-    "components": [],
-    "created": 1234567890,
-    "downloaded": false,
-    "id": "Moonshine-Tiny-Streaming",
-    "labels": [
-     "transcription",
-     "realtime-transcription"
-    ],
-    "object": "model",
-    "owned_by": "lemonade",
-    "recipe": "moonshine",
-    "recipe_options": {},
-    "registry_source": "huggingface",
-    "size": 0.202,
-    "source": "huggingface",
-    "suggested": true,
-    "update_available": false
-   },
-   {
-    "checkpoint": "unsloth/Muse-Glimmer-30B-GGUF:UD-Q4_K_XL",
-    "checkpoints": {
-     "draft": "unsloth/Muse-Glimmer-30B-GGUF:dflash-kquant.gguf",
-     "main": "unsloth/Muse-Glimmer-30B-GGUF:UD-Q4_K_XL",
-     "mmproj": "unsloth/Muse-Glimmer-30B-GGUF:mmproj-Muse-Glimmer-30B-BF16.gguf"
-    },
-    "components": [],
-    "context_length": 131072,
-    "created": 1234567890,
-    "downloaded": false,
     "id": "Muse-Glimmer-30B-GGUF",
+    "title": "Muse-Glimmer-30B-GGUF",
+    "recipe": "llamacpp",
+    "size": 19.9,
+    "downloaded": false,
     "labels": [
      "chat",
      "hot",
@@ -1267,1057 +646,613 @@
      "llamacpp",
      "dflash"
     ],
-    "object": "model",
-    "owned_by": "lemonade",
-    "recipe": "llamacpp",
-    "recipe_options": {},
-    "registry_source": "huggingface",
-    "size": 19.9,
-    "source": "huggingface",
+    "checkpoint": "unsloth/Muse-Glimmer-30B-GGUF:UD-Q4_K_XL",
     "suggested": true,
-    "update_available": false
+    "rec": "",
+    "owned": false,
+    "folder": ""
    },
    {
-    "checkpoint": "unsloth/NVIDIA-Nemotron-3.5-Lightning-30B-A3B-GGUF:NVIDIA-Nemotron-3.5-Lightning-30B-A3B-UD-Q4_K_XL.gguf",
-    "checkpoints": {
-     "main": "unsloth/NVIDIA-Nemotron-3.5-Lightning-30B-A3B-GGUF:NVIDIA-Nemotron-3.5-Lightning-30B-A3B-UD-Q4_K_XL.gguf"
-    },
-    "components": [],
-    "context_length": 131072,
-    "created": 1234567890,
-    "downloaded": false,
     "id": "NVIDIA-Nemotron-3.5-Lightning-30B-A3B-GGUF",
-    "labels": [
-     "chat",
-     "reasoning",
-     "tool-calling",
-     "mtp",
-     "hot"
-    ],
-    "object": "model",
-    "owned_by": "lemonade",
+    "title": "NVIDIA-Nemotron-3.5-Lightning-30B-A3B-GGUF",
     "recipe": "llamacpp",
-    "recipe_options": {},
-    "registry_source": "huggingface",
     "size": 25.5,
-    "source": "huggingface",
+    "downloaded": false,
+    "labels": [
+     "chat",
+     "reasoning",
+     "tool-calling",
+     "mtp",
+     "hot"
+    ],
+    "checkpoint": "unsloth/NVIDIA-Nemotron-3.5-Lightning-30B-A3B-GGUF:NVIDIA-Nemotron-3.5-Lightning-30B-A3B-UD-Q4_K_XL.gguf",
     "suggested": true,
-    "update_available": false
+    "rec": "",
+    "owned": false,
+    "folder": ""
    },
    {
-    "checkpoint": "unsloth/Nemotron-3-Nano-30B-A3B-GGUF:Nemotron-3-Nano-30B-A3B-UD-Q4_K_XL.gguf",
-    "checkpoints": {
-     "main": "unsloth/Nemotron-3-Nano-30B-A3B-GGUF:Nemotron-3-Nano-30B-A3B-UD-Q4_K_XL.gguf"
-    },
-    "components": [],
-    "context_length": 131072,
-    "created": 1234567890,
-    "downloaded": false,
     "id": "Nemotron-3-Nano-30B-A3B-GGUF",
-    "labels": [
-     "chat"
-    ],
-    "object": "model",
-    "owned_by": "lemonade",
+    "title": "Nemotron-3-Nano-30B-A3B-GGUF",
     "recipe": "llamacpp",
-    "recipe_options": {},
-    "registry_source": "huggingface",
     "size": 22.8,
-    "source": "huggingface",
-    "suggested": true,
-    "update_available": false
-   },
-   {
-    "audio_defaults": {
-     "pcm_channels": 1,
-     "pcm_sample_rate": 24000
-    },
-    "checkpoint": "ilintar/moss-tts-gguf:moss-tts-1.5-q8_0.gguf",
-    "checkpoints": {
-     "main": "ilintar/moss-tts-gguf:moss-tts-1.5-q8_0.gguf",
-     "main_extras": "ilintar/moss-tts-gguf:moss-tts-1.5-q8_0.extras.gguf",
-     "voicegen": "ilintar/moss-voicegen-gguf:moss-voicegen.gguf",
-     "voicegen_extras": "ilintar/moss-voicegen-gguf:moss-voicegen.extras.gguf"
-    },
-    "components": [],
-    "created": 1234567890,
     "downloaded": false,
-    "id": "OpenMOSS-TTS",
     "labels": [
-     "tts"
+     "chat"
     ],
-    "object": "model",
-    "owned_by": "lemonade",
-    "recipe": "openmoss",
-    "recipe_options": {},
-    "registry_source": "huggingface",
-    "size": 12.5,
-    "source": "huggingface",
+    "checkpoint": "unsloth/Nemotron-3-Nano-30B-A3B-GGUF:Nemotron-3-Nano-30B-A3B-UD-Q4_K_XL.gguf",
     "suggested": true,
-    "update_available": false
+    "rec": "",
+    "owned": false,
+    "folder": ""
    },
    {
-    "checkpoint": "ornith-ai/Ornith-1.5-35B-A3B-GGUF:Q4_K_M",
-    "checkpoints": {
-     "main": "ornith-ai/Ornith-1.5-35B-A3B-GGUF:Q4_K_M",
-     "mmproj": "ornith-ai/Ornith-1.5-35B-A3B-GGUF:mmproj-Ornith-1.5-35B-BF16.gguf"
-    },
-    "components": [],
-    "context_length": 131072,
-    "created": 1234567890,
-    "downloaded": false,
     "id": "Ornith-1.5-35B-A3B-GGUF",
-    "labels": [
-     "chat",
-     "coding",
-     "reasoning",
-     "tool-calling",
-     "vision"
-    ],
-    "object": "model",
-    "owned_by": "lemonade",
+    "title": "Ornith-1.5-35B-A3B-GGUF",
     "recipe": "llamacpp",
-    "recipe_options": {},
-    "registry_source": "huggingface",
     "size": 22.6,
-    "source": "huggingface",
+    "downloaded": false,
+    "labels": [
+     "chat",
+     "coding",
+     "reasoning",
+     "tool-calling",
+     "vision"
+    ],
+    "checkpoint": "ornith-ai/Ornith-1.5-35B-A3B-GGUF:Q4_K_M",
     "suggested": true,
-    "update_available": false
+    "rec": "",
+    "owned": false,
+    "folder": ""
    },
    {
-    "checkpoint": "ornith-ai/Ornith-1.5-9B-GGUF:Q4_K_M",
-    "checkpoints": {
-     "main": "ornith-ai/Ornith-1.5-9B-GGUF:Q4_K_M",
-     "mmproj": "ornith-ai/Ornith-1.5-9B-GGUF:mmproj-Ornith-1.5-9B-BF16.gguf"
-    },
-    "components": [],
-    "context_length": 131072,
-    "created": 1234567890,
-    "downloaded": false,
     "id": "Ornith-1.5-9B-GGUF",
-    "labels": [
-     "chat",
-     "coding",
-     "reasoning",
-     "tool-calling",
-     "vision"
-    ],
-    "object": "model",
-    "owned_by": "lemonade",
+    "title": "Ornith-1.5-9B-GGUF",
     "recipe": "llamacpp",
-    "recipe_options": {},
-    "registry_source": "huggingface",
     "size": 6.7,
-    "source": "huggingface",
+    "downloaded": false,
+    "labels": [
+     "chat",
+     "coding",
+     "reasoning",
+     "tool-calling",
+     "vision"
+    ],
+    "checkpoint": "ornith-ai/Ornith-1.5-9B-GGUF:Q4_K_M",
     "suggested": true,
-    "update_available": false
+    "rec": "",
+    "owned": false,
+    "folder": ""
    },
    {
-    "checkpoint": "unsloth/Phi-4-mini-instruct-GGUF:Phi-4-mini-instruct-Q4_K_M.gguf",
-    "checkpoints": {
-     "main": "unsloth/Phi-4-mini-instruct-GGUF:Phi-4-mini-instruct-Q4_K_M.gguf"
-    },
-    "components": [],
-    "context_length": 131072,
-    "created": 1234567890,
-    "downloaded": false,
     "id": "Phi-4-mini-instruct-GGUF",
-    "labels": [
-     "chat"
-    ],
-    "object": "model",
-    "owned_by": "lemonade",
+    "title": "Phi-4-mini-instruct-GGUF",
     "recipe": "llamacpp",
-    "recipe_options": {},
-    "registry_source": "huggingface",
     "size": 2.49,
-    "source": "huggingface",
-    "suggested": true,
-    "update_available": false
-   },
-   {
-    "checkpoint": "lemonade-sdk/phishing-email-detection-distilbert-ONNX",
-    "checkpoints": {
-     "main": "lemonade-sdk/phishing-email-detection-distilbert-ONNX"
-    },
-    "components": [],
-    "created": 1234567890,
     "downloaded": false,
-    "id": "Phishing-Email-Detection-ONNX",
-    "labels": [
-     "classification"
-    ],
-    "object": "model",
-    "owned_by": "lemonade",
-    "recipe": "onnxruntime",
-    "recipe_options": {},
-    "registry_source": "huggingface",
-    "size": 0.27,
-    "source": "huggingface",
-    "suggested": false,
-    "update_available": false
-   },
-   {
-    "checkpoint": "playable/Playable1-GGUF:Playable1-q4_k_m.gguf",
-    "checkpoints": {
-     "main": "playable/Playable1-GGUF:Playable1-q4_k_m.gguf"
-    },
-    "components": [],
-    "context_length": 131072,
-    "created": 1234567890,
-    "downloaded": false,
-    "id": "Playable1-GGUF",
-    "labels": [
-     "chat",
-     "coding"
-    ],
-    "object": "model",
-    "owned_by": "lemonade",
-    "recipe": "llamacpp",
-    "recipe_options": {},
-    "registry_source": "huggingface",
-    "size": 4.68,
-    "source": "huggingface",
-    "suggested": false,
-    "update_available": false
-   },
-   {
-    "checkpoint": "mradermacher/PromptBridge-0.6b-Alpha-GGUF:PromptBridge-0.6b-Alpha.Q4_K_M.gguf",
-    "checkpoints": {
-     "main": "mradermacher/PromptBridge-0.6b-Alpha-GGUF:PromptBridge-0.6b-Alpha.Q4_K_M.gguf"
-    },
-    "components": [],
-    "context_length": 131072,
-    "created": 1234567890,
-    "downloaded": false,
-    "id": "PromptBridge-0.6b-Alpha-GGUF",
     "labels": [
      "chat"
     ],
-    "object": "model",
-    "owned_by": "lemonade",
+    "checkpoint": "unsloth/Phi-4-mini-instruct-GGUF:Phi-4-mini-instruct-Q4_K_M.gguf",
+    "suggested": true,
+    "rec": "",
+    "owned": false,
+    "folder": ""
+   },
+   {
+    "id": "Playable1-GGUF",
+    "title": "Playable1-GGUF",
     "recipe": "llamacpp",
-    "recipe_options": {},
-    "registry_source": "huggingface",
-    "size": 0.397,
-    "source": "huggingface",
-    "suggested": false,
-    "update_available": false
-   },
-   {
-    "checkpoint": "unsloth/Qwen-Image-2512-GGUF:qwen-image-2512-Q5_0.gguf",
-    "checkpoints": {
-     "main": "unsloth/Qwen-Image-2512-GGUF:qwen-image-2512-Q5_0.gguf",
-     "text_encoder": "unsloth/Qwen2.5-VL-7B-Instruct-GGUF:Qwen2.5-VL-7B-Instruct-UD-Q4_K_XL.gguf",
-     "vae": "Comfy-Org/Qwen-Image_ComfyUI:split_files/vae/qwen_image_vae.safetensors"
-    },
-    "components": [],
-    "created": 1234567890,
+    "size": 4.68,
     "downloaded": false,
-    "id": "Qwen-Image-2512-GGUF",
-    "image_defaults": {
-     "cfg_scale": 2.5,
-     "flow_shift": 3,
-     "height": 512,
-     "sampling_method": "euler",
-     "steps": 20,
-     "width": 512
-    },
-    "labels": [
-     "image"
-    ],
-    "object": "model",
-    "owned_by": "lemonade",
-    "recipe": "sd-cpp",
-    "recipe_options": {
-     "cfg_scale": 2.5,
-     "flow_shift": 3,
-     "height": 512,
-     "sampling_method": "euler",
-     "sdcpp_args": "--diffusion-fa --offload-to-cpu",
-     "steps": 20,
-     "width": 512
-    },
-    "registry_source": "huggingface",
-    "size": 19.4,
-    "source": "huggingface",
-    "suggested": true,
-    "update_available": false
-   },
-   {
-    "checkpoint": "unsloth/Qwen-Image-GGUF:qwen-image-Q4_K_M.gguf",
-    "checkpoints": {
-     "main": "unsloth/Qwen-Image-GGUF:qwen-image-Q4_K_M.gguf",
-     "text_encoder": "unsloth/Qwen2.5-VL-7B-Instruct-GGUF:Qwen2.5-VL-7B-Instruct-UD-Q4_K_XL.gguf",
-     "vae": "Comfy-Org/Qwen-Image_ComfyUI:split_files/vae/qwen_image_vae.safetensors"
-    },
-    "components": [],
-    "created": 1234567890,
-    "downloaded": false,
-    "id": "Qwen-Image-GGUF",
-    "image_defaults": {
-     "cfg_scale": 2.5,
-     "flow_shift": 3,
-     "height": 512,
-     "sampling_method": "euler",
-     "steps": 20,
-     "width": 512
-    },
-    "labels": [
-     "image"
-    ],
-    "object": "model",
-    "owned_by": "lemonade",
-    "recipe": "sd-cpp",
-    "recipe_options": {
-     "cfg_scale": 2.5,
-     "flow_shift": 3,
-     "height": 512,
-     "sampling_method": "euler",
-     "sdcpp_args": "--diffusion-fa --offload-to-cpu",
-     "steps": 20,
-     "width": 512
-    },
-    "registry_source": "huggingface",
-    "size": 18.2,
-    "source": "huggingface",
-    "suggested": true,
-    "update_available": false
-   },
-   {
-    "checkpoint": "Qwen/Qwen2.5-Coder-32B-Instruct-GGUF:Q4_K_M",
-    "checkpoints": {
-     "main": "Qwen/Qwen2.5-Coder-32B-Instruct-GGUF:Q4_K_M"
-    },
-    "components": [],
-    "context_length": 131072,
-    "created": 1234567890,
-    "downloaded": false,
-    "id": "Qwen2.5-Coder-32B-Instruct-GGUF",
     "labels": [
      "chat",
      "coding"
     ],
-    "object": "model",
-    "owned_by": "lemonade",
+    "checkpoint": "playable/Playable1-GGUF:Playable1-q4_k_m.gguf",
+    "suggested": false,
+    "rec": "",
+    "owned": false,
+    "folder": ""
+   },
+   {
+    "id": "PromptBridge-0.6b-Alpha-GGUF",
+    "title": "PromptBridge-0.6b-Alpha-GGUF",
     "recipe": "llamacpp",
-    "recipe_options": {},
-    "registry_source": "huggingface",
+    "size": 0.397,
+    "downloaded": false,
+    "labels": [
+     "chat"
+    ],
+    "checkpoint": "mradermacher/PromptBridge-0.6b-Alpha-GGUF:PromptBridge-0.6b-Alpha.Q4_K_M.gguf",
+    "suggested": false,
+    "rec": "",
+    "owned": false,
+    "folder": ""
+   },
+   {
+    "id": "Qwen2.5-Coder-32B-Instruct-GGUF",
+    "title": "Qwen2.5-Coder-32B-Instruct-GGUF",
+    "recipe": "llamacpp",
     "size": 19.9,
-    "source": "huggingface",
+    "downloaded": false,
+    "labels": [
+     "chat",
+     "coding"
+    ],
+    "checkpoint": "Qwen/Qwen2.5-Coder-32B-Instruct-GGUF:Q4_K_M",
     "suggested": true,
-    "update_available": false
+    "rec": "",
+    "owned": false,
+    "folder": ""
    },
    {
-    "checkpoint": "ggml-org/Qwen2.5-Omni-3B-GGUF:Q4_K_M",
-    "checkpoints": {
-     "main": "ggml-org/Qwen2.5-Omni-3B-GGUF:Q4_K_M",
-     "mmproj": "ggml-org/Qwen2.5-Omni-3B-GGUF:mmproj-Qwen2.5-Omni-3B-f16.gguf"
-    },
-    "components": [],
-    "context_length": 131072,
-    "created": 1234567890,
-    "downloaded": false,
     "id": "Qwen2.5-Omni-3B-GGUF",
-    "labels": [
-     "chat",
-     "vision",
-     "chat-transcription"
-    ],
-    "object": "model",
-    "owned_by": "lemonade",
+    "title": "Qwen2.5-Omni-3B-GGUF",
     "recipe": "llamacpp",
-    "recipe_options": {},
-    "registry_source": "huggingface",
     "size": 4.73,
-    "source": "huggingface",
-    "suggested": true,
-    "update_available": false
-   },
-   {
-    "checkpoint": "ggml-org/Qwen2.5-Omni-7B-GGUF:Q4_K_M",
-    "checkpoints": {
-     "main": "ggml-org/Qwen2.5-Omni-7B-GGUF:Q4_K_M",
-     "mmproj": "ggml-org/Qwen2.5-Omni-7B-GGUF:mmproj-Qwen2.5-Omni-7B-f16.gguf"
-    },
-    "components": [],
-    "context_length": 131072,
-    "created": 1234567890,
     "downloaded": false,
-    "id": "Qwen2.5-Omni-7B-GGUF",
     "labels": [
      "chat",
      "vision",
      "chat-transcription"
     ],
-    "object": "model",
-    "owned_by": "lemonade",
+    "checkpoint": "ggml-org/Qwen2.5-Omni-3B-GGUF:Q4_K_M",
+    "suggested": true,
+    "rec": "",
+    "owned": false,
+    "folder": ""
+   },
+   {
+    "id": "Qwen2.5-Omni-7B-GGUF",
+    "title": "Qwen2.5-Omni-7B-GGUF",
     "recipe": "llamacpp",
-    "recipe_options": {},
-    "registry_source": "huggingface",
     "size": 7.33,
-    "source": "huggingface",
+    "downloaded": false,
+    "labels": [
+     "chat",
+     "vision",
+     "chat-transcription"
+    ],
+    "checkpoint": "ggml-org/Qwen2.5-Omni-7B-GGUF:Q4_K_M",
     "suggested": true,
-    "update_available": false
+    "rec": "",
+    "owned": false,
+    "folder": ""
    },
    {
-    "checkpoint": "ggml-org/Qwen2.5-VL-3B-Instruct-GGUF:Q4_K_M",
-    "checkpoints": {
-     "main": "ggml-org/Qwen2.5-VL-3B-Instruct-GGUF:Q4_K_M",
-     "mmproj": "ggml-org/Qwen2.5-VL-3B-Instruct-GGUF:mmproj-Qwen2.5-VL-3B-Instruct-f16.gguf"
-    },
-    "components": [],
-    "context_length": 131072,
-    "created": 1234567890,
-    "downloaded": false,
     "id": "Qwen2.5-VL-3B-Instruct-GGUF",
-    "labels": [
-     "chat",
-     "vision"
-    ],
-    "object": "model",
-    "owned_by": "lemonade",
+    "title": "Qwen2.5-VL-3B-Instruct-GGUF",
     "recipe": "llamacpp",
-    "recipe_options": {},
-    "registry_source": "huggingface",
     "size": 3.27,
-    "source": "huggingface",
+    "downloaded": false,
+    "labels": [
+     "chat",
+     "vision"
+    ],
+    "checkpoint": "ggml-org/Qwen2.5-VL-3B-Instruct-GGUF:Q4_K_M",
     "suggested": true,
-    "update_available": false
+    "rec": "",
+    "owned": false,
+    "folder": ""
    },
    {
-    "checkpoint": "ggml-org/Qwen2.5-VL-7B-Instruct-GGUF:Q4_K_M",
-    "checkpoints": {
-     "main": "ggml-org/Qwen2.5-VL-7B-Instruct-GGUF:Q4_K_M",
-     "mmproj": "ggml-org/Qwen2.5-VL-7B-Instruct-GGUF:mmproj-Qwen2.5-VL-7B-Instruct-f16.gguf"
-    },
-    "components": [],
-    "context_length": 131072,
-    "created": 1234567890,
-    "downloaded": false,
     "id": "Qwen2.5-VL-7B-Instruct-GGUF",
-    "labels": [
-     "chat",
-     "vision"
-    ],
-    "object": "model",
-    "owned_by": "lemonade",
+    "title": "Qwen2.5-VL-7B-Instruct-GGUF",
     "recipe": "llamacpp",
-    "recipe_options": {},
-    "registry_source": "huggingface",
     "size": 6.04,
-    "source": "huggingface",
+    "downloaded": false,
+    "labels": [
+     "chat",
+     "vision"
+    ],
+    "checkpoint": "ggml-org/Qwen2.5-VL-7B-Instruct-GGUF:Q4_K_M",
     "suggested": true,
-    "update_available": false
+    "rec": "",
+    "owned": false,
+    "folder": ""
    },
    {
-    "checkpoint": "unsloth/Qwen3-0.6B-GGUF:Q4_0",
-    "checkpoints": {
-     "main": "unsloth/Qwen3-0.6B-GGUF:Q4_0"
-    },
-    "components": [],
-    "context_length": 131072,
-    "created": 1234567890,
-    "downloaded": false,
     "id": "Qwen3-0.6B-GGUF",
-    "labels": [
-     "chat",
-     "reasoning"
-    ],
-    "object": "model",
-    "owned_by": "lemonade",
+    "title": "Qwen3-0.6B-GGUF",
     "recipe": "llamacpp",
-    "recipe_options": {},
-    "registry_source": "huggingface",
     "size": 0.38,
-    "source": "huggingface",
+    "downloaded": false,
+    "labels": [
+     "chat",
+     "reasoning"
+    ],
+    "checkpoint": "unsloth/Qwen3-0.6B-GGUF:Q4_0",
     "suggested": true,
-    "update_available": false
+    "rec": "",
+    "owned": false,
+    "folder": ""
    },
    {
-    "checkpoint": "unsloth/Qwen3-1.7B-GGUF:Q4_0",
-    "checkpoints": {
-     "main": "unsloth/Qwen3-1.7B-GGUF:Q4_0"
-    },
-    "components": [],
-    "context_length": 131072,
-    "created": 1234567890,
-    "downloaded": false,
     "id": "Qwen3-1.7B-GGUF",
-    "labels": [
-     "chat",
-     "reasoning"
-    ],
-    "object": "model",
-    "owned_by": "lemonade",
+    "title": "Qwen3-1.7B-GGUF",
     "recipe": "llamacpp",
-    "recipe_options": {},
-    "registry_source": "huggingface",
     "size": 1.06,
-    "source": "huggingface",
+    "downloaded": false,
+    "labels": [
+     "chat",
+     "reasoning"
+    ],
+    "checkpoint": "unsloth/Qwen3-1.7B-GGUF:Q4_0",
     "suggested": true,
-    "update_available": false
+    "rec": "",
+    "owned": false,
+    "folder": ""
    },
    {
-    "checkpoint": "unsloth/Qwen3-14B-GGUF:Q4_0",
-    "checkpoints": {
-     "main": "unsloth/Qwen3-14B-GGUF:Q4_0"
-    },
-    "components": [],
-    "context_length": 131072,
-    "created": 1234567890,
-    "downloaded": false,
     "id": "Qwen3-14B-GGUF",
-    "labels": [
-     "chat",
-     "reasoning"
-    ],
-    "object": "model",
-    "owned_by": "lemonade",
+    "title": "Qwen3-14B-GGUF",
     "recipe": "llamacpp",
-    "recipe_options": {},
-    "registry_source": "huggingface",
     "size": 8.54,
-    "source": "huggingface",
+    "downloaded": false,
+    "labels": [
+     "chat",
+     "reasoning"
+    ],
+    "checkpoint": "unsloth/Qwen3-14B-GGUF:Q4_0",
     "suggested": true,
-    "update_available": false
+    "rec": "",
+    "owned": false,
+    "folder": ""
    },
    {
-    "checkpoint": "unsloth/Qwen3-30B-A3B-GGUF:Q4_0",
-    "checkpoints": {
-     "main": "unsloth/Qwen3-30B-A3B-GGUF:Q4_0"
-    },
-    "components": [],
-    "context_length": 131072,
-    "created": 1234567890,
-    "downloaded": false,
     "id": "Qwen3-30B-A3B-GGUF",
+    "title": "Qwen3-30B-A3B-GGUF",
+    "recipe": "llamacpp",
+    "size": 17.4,
+    "downloaded": false,
     "labels": [
      "chat",
      "reasoning"
     ],
-    "object": "model",
-    "owned_by": "lemonade",
-    "recipe": "llamacpp",
-    "recipe_options": {},
-    "registry_source": "huggingface",
-    "size": 17.4,
-    "source": "huggingface",
+    "checkpoint": "unsloth/Qwen3-30B-A3B-GGUF:Q4_0",
     "suggested": true,
-    "update_available": false
+    "rec": "",
+    "owned": false,
+    "folder": ""
    },
    {
-    "checkpoint": "unsloth/Qwen3-30B-A3B-Instruct-2507-GGUF:Qwen3-30B-A3B-Instruct-2507-Q4_0.gguf",
-    "checkpoints": {
-     "main": "unsloth/Qwen3-30B-A3B-Instruct-2507-GGUF:Qwen3-30B-A3B-Instruct-2507-Q4_0.gguf"
-    },
-    "components": [],
-    "context_length": 131072,
-    "created": 1234567890,
-    "downloaded": false,
     "id": "Qwen3-30B-A3B-Instruct-2507-GGUF",
-    "labels": [
-     "chat",
-     "tool-calling"
-    ],
-    "object": "model",
-    "owned_by": "lemonade",
+    "title": "Qwen3-30B-A3B-Instruct-2507-GGUF",
     "recipe": "llamacpp",
-    "recipe_options": {},
-    "registry_source": "huggingface",
     "size": 17.4,
-    "source": "huggingface",
+    "downloaded": false,
+    "labels": [
+     "chat",
+     "tool-calling"
+    ],
+    "checkpoint": "unsloth/Qwen3-30B-A3B-Instruct-2507-GGUF:Qwen3-30B-A3B-Instruct-2507-Q4_0.gguf",
     "suggested": true,
-    "update_available": false
+    "rec": "",
+    "owned": false,
+    "folder": ""
    },
    {
-    "checkpoint": "unsloth/Qwen3-4B-GGUF:Q4_0",
-    "checkpoints": {
-     "main": "unsloth/Qwen3-4B-GGUF:Q4_0"
-    },
-    "components": [],
-    "context_length": 131072,
-    "created": 1234567890,
-    "downloaded": false,
     "id": "Qwen3-4B-GGUF",
-    "labels": [
-     "chat",
-     "reasoning"
-    ],
-    "object": "model",
-    "owned_by": "lemonade",
+    "title": "Qwen3-4B-GGUF",
     "recipe": "llamacpp",
-    "recipe_options": {},
-    "registry_source": "huggingface",
     "size": 2.38,
-    "source": "huggingface",
-    "suggested": true,
-    "update_available": false
-   },
-   {
-    "checkpoint": "unsloth/Qwen3-4B-Instruct-2507-GGUF:Qwen3-4B-Instruct-2507-Q4_K_M.gguf",
-    "checkpoints": {
-     "main": "unsloth/Qwen3-4B-Instruct-2507-GGUF:Qwen3-4B-Instruct-2507-Q4_K_M.gguf"
-    },
-    "components": [],
-    "context_length": 131072,
-    "created": 1234567890,
     "downloaded": false,
-    "id": "Qwen3-4B-Instruct-2507-GGUF",
-    "labels": [
-     "chat",
-     "tool-calling"
-    ],
-    "object": "model",
-    "owned_by": "lemonade",
-    "recipe": "llamacpp",
-    "recipe_options": {},
-    "registry_source": "huggingface",
-    "size": 2.5,
-    "source": "huggingface",
-    "suggested": true,
-    "update_available": false
-   },
-   {
-    "checkpoint": "unsloth/Qwen3-8B-GGUF:Q4_1",
-    "checkpoints": {
-     "main": "unsloth/Qwen3-8B-GGUF:Q4_1"
-    },
-    "components": [],
-    "context_length": 131072,
-    "created": 1234567890,
-    "downloaded": false,
-    "id": "Qwen3-8B-GGUF",
     "labels": [
      "chat",
      "reasoning"
     ],
-    "object": "model",
-    "owned_by": "lemonade",
+    "checkpoint": "unsloth/Qwen3-4B-GGUF:Q4_0",
+    "suggested": true,
+    "rec": "",
+    "owned": false,
+    "folder": ""
+   },
+   {
+    "id": "Qwen3-4B-Instruct-2507-GGUF",
+    "title": "Qwen3-4B-Instruct-2507-GGUF",
     "recipe": "llamacpp",
-    "recipe_options": {},
-    "registry_source": "huggingface",
+    "size": 2.5,
+    "downloaded": false,
+    "labels": [
+     "chat",
+     "tool-calling"
+    ],
+    "checkpoint": "unsloth/Qwen3-4B-Instruct-2507-GGUF:Qwen3-4B-Instruct-2507-Q4_K_M.gguf",
+    "suggested": true,
+    "rec": "",
+    "owned": false,
+    "folder": ""
+   },
+   {
+    "id": "Qwen3-8B-GGUF",
+    "title": "Qwen3-8B-GGUF",
+    "recipe": "llamacpp",
     "size": 5.25,
-    "source": "huggingface",
+    "downloaded": false,
+    "labels": [
+     "chat",
+     "reasoning"
+    ],
+    "checkpoint": "unsloth/Qwen3-8B-GGUF:Q4_1",
     "suggested": true,
-    "update_available": false
+    "rec": "",
+    "owned": false,
+    "folder": ""
    },
    {
-    "checkpoint": "unsloth/Qwen3-Coder-30B-A3B-Instruct-GGUF:Qwen3-Coder-30B-A3B-Instruct-Q4_K_M.gguf",
-    "checkpoints": {
-     "main": "unsloth/Qwen3-Coder-30B-A3B-Instruct-GGUF:Qwen3-Coder-30B-A3B-Instruct-Q4_K_M.gguf"
-    },
-    "components": [],
-    "context_length": 131072,
-    "created": 1234567890,
-    "downloaded": false,
     "id": "Qwen3-Coder-30B-A3B-Instruct-GGUF",
-    "labels": [
-     "chat",
-     "coding",
-     "tool-calling",
-     "hot"
-    ],
-    "object": "model",
-    "owned_by": "lemonade",
+    "title": "Qwen3-Coder-30B-A3B-Instruct-GGUF",
     "recipe": "llamacpp",
-    "recipe_options": {},
-    "registry_source": "huggingface",
     "size": 18.6,
-    "source": "huggingface",
-    "suggested": true,
-    "update_available": false
-   },
-   {
-    "checkpoint": "unsloth/Qwen3-Coder-Next-GGUF:Qwen3-Coder-Next-MXFP4_MOE.gguf",
-    "checkpoints": {
-     "main": "unsloth/Qwen3-Coder-Next-GGUF:Qwen3-Coder-Next-MXFP4_MOE.gguf"
-    },
-    "components": [],
-    "context_length": 131072,
-    "created": 1234567890,
     "downloaded": false,
-    "id": "Qwen3-Coder-Next-GGUF",
     "labels": [
      "chat",
      "coding",
      "tool-calling",
      "hot"
     ],
-    "object": "model",
-    "owned_by": "lemonade",
+    "checkpoint": "unsloth/Qwen3-Coder-30B-A3B-Instruct-GGUF:Qwen3-Coder-30B-A3B-Instruct-Q4_K_M.gguf",
+    "suggested": true,
+    "rec": "",
+    "owned": false,
+    "folder": ""
+   },
+   {
+    "id": "Qwen3-Coder-Next-GGUF",
+    "title": "Qwen3-Coder-Next-GGUF",
     "recipe": "llamacpp",
-    "recipe_options": {},
-    "registry_source": "huggingface",
     "size": 48,
-    "source": "huggingface",
+    "downloaded": false,
+    "labels": [
+     "chat",
+     "coding",
+     "tool-calling",
+     "hot"
+    ],
+    "checkpoint": "unsloth/Qwen3-Coder-Next-GGUF:Qwen3-Coder-Next-MXFP4_MOE.gguf",
     "suggested": true,
-    "update_available": false
+    "rec": "",
+    "owned": false,
+    "folder": ""
    },
    {
-    "checkpoint": "Qwen/Qwen3-Embedding-0.6B-GGUF:Qwen3-Embedding-0.6B-Q8_0.gguf",
-    "checkpoints": {
-     "main": "Qwen/Qwen3-Embedding-0.6B-GGUF:Qwen3-Embedding-0.6B-Q8_0.gguf"
-    },
-    "components": [],
-    "context_length": 131072,
-    "created": 1234567890,
-    "downloaded": false,
     "id": "Qwen3-Embedding-0.6B-GGUF",
-    "labels": [
-     "embeddings"
-    ],
-    "object": "model",
-    "owned_by": "lemonade",
+    "title": "Qwen3-Embedding-0.6B-GGUF",
     "recipe": "llamacpp",
-    "recipe_options": {},
-    "registry_source": "huggingface",
     "size": 0.64,
-    "source": "huggingface",
+    "downloaded": false,
+    "labels": [
+     "embeddings"
+    ],
+    "checkpoint": "Qwen/Qwen3-Embedding-0.6B-GGUF:Qwen3-Embedding-0.6B-Q8_0.gguf",
     "suggested": true,
-    "update_available": false
+    "rec": "",
+    "owned": false,
+    "folder": ""
    },
    {
-    "checkpoint": "Qwen/Qwen3-Embedding-4B-GGUF:Qwen3-Embedding-4B-Q8_0.gguf",
-    "checkpoints": {
-     "main": "Qwen/Qwen3-Embedding-4B-GGUF:Qwen3-Embedding-4B-Q8_0.gguf"
-    },
-    "components": [],
-    "context_length": 131072,
-    "created": 1234567890,
-    "downloaded": false,
     "id": "Qwen3-Embedding-4B-GGUF",
-    "labels": [
-     "embeddings"
-    ],
-    "object": "model",
-    "owned_by": "lemonade",
+    "title": "Qwen3-Embedding-4B-GGUF",
     "recipe": "llamacpp",
-    "recipe_options": {},
-    "registry_source": "huggingface",
     "size": 4.28,
-    "source": "huggingface",
-    "suggested": true,
-    "update_available": false
-   },
-   {
-    "checkpoint": "Qwen/Qwen3-Embedding-8B-GGUF:Qwen3-Embedding-8B-Q8_0.gguf",
-    "checkpoints": {
-     "main": "Qwen/Qwen3-Embedding-8B-GGUF:Qwen3-Embedding-8B-Q8_0.gguf"
-    },
-    "components": [],
-    "context_length": 131072,
-    "created": 1234567890,
     "downloaded": false,
-    "id": "Qwen3-Embedding-8B-GGUF",
     "labels": [
      "embeddings"
     ],
-    "object": "model",
-    "owned_by": "lemonade",
+    "checkpoint": "Qwen/Qwen3-Embedding-4B-GGUF:Qwen3-Embedding-4B-Q8_0.gguf",
+    "suggested": true,
+    "rec": "",
+    "owned": false,
+    "folder": ""
+   },
+   {
+    "id": "Qwen3-Embedding-8B-GGUF",
+    "title": "Qwen3-Embedding-8B-GGUF",
     "recipe": "llamacpp",
-    "recipe_options": {},
-    "registry_source": "huggingface",
     "size": 8.05,
-    "source": "huggingface",
+    "downloaded": false,
+    "labels": [
+     "embeddings"
+    ],
+    "checkpoint": "Qwen/Qwen3-Embedding-8B-GGUF:Qwen3-Embedding-8B-Q8_0.gguf",
     "suggested": true,
-    "update_available": false
+    "rec": "",
+    "owned": false,
+    "folder": ""
    },
    {
-    "checkpoint": "unsloth/Qwen3-Next-80B-A3B-Instruct-GGUF:Qwen3-Next-80B-A3B-Instruct-UD-Q4_K_XL.gguf",
-    "checkpoints": {
-     "main": "unsloth/Qwen3-Next-80B-A3B-Instruct-GGUF:Qwen3-Next-80B-A3B-Instruct-UD-Q4_K_XL.gguf"
-    },
-    "components": [],
-    "context_length": 131072,
-    "created": 1234567890,
-    "downloaded": false,
     "id": "Qwen3-Next-80B-A3B-Instruct-GGUF",
-    "labels": [
-     "chat",
-     "tool-calling"
-    ],
-    "object": "model",
-    "owned_by": "lemonade",
+    "title": "Qwen3-Next-80B-A3B-Instruct-GGUF",
     "recipe": "llamacpp",
-    "recipe_options": {},
-    "registry_source": "huggingface",
     "size": 46.1,
-    "source": "huggingface",
+    "downloaded": false,
+    "labels": [
+     "chat",
+     "tool-calling"
+    ],
+    "checkpoint": "unsloth/Qwen3-Next-80B-A3B-Instruct-GGUF:Qwen3-Next-80B-A3B-Instruct-UD-Q4_K_XL.gguf",
     "suggested": true,
-    "update_available": false
+    "rec": "",
+    "owned": false,
+    "folder": ""
    },
    {
-    "checkpoint": "Qwen/Qwen3-VL-4B-Instruct-GGUF:Q4_K_M",
-    "checkpoints": {
-     "main": "Qwen/Qwen3-VL-4B-Instruct-GGUF:Q4_K_M",
-     "mmproj": "Qwen/Qwen3-VL-4B-Instruct-GGUF:mmproj-Qwen3VL-4B-Instruct-F16.gguf"
-    },
-    "components": [],
-    "context_length": 131072,
-    "created": 1234567890,
-    "downloaded": false,
     "id": "Qwen3-VL-4B-Instruct-GGUF",
-    "labels": [
-     "chat",
-     "vision"
-    ],
-    "object": "model",
-    "owned_by": "lemonade",
+    "title": "Qwen3-VL-4B-Instruct-GGUF",
     "recipe": "llamacpp",
-    "recipe_options": {},
-    "registry_source": "huggingface",
     "size": 3.33,
-    "source": "huggingface",
-    "suggested": true,
-    "update_available": false
-   },
-   {
-    "checkpoint": "Qwen/Qwen3-VL-8B-Instruct-GGUF:Q4_K_M",
-    "checkpoints": {
-     "main": "Qwen/Qwen3-VL-8B-Instruct-GGUF:Q4_K_M",
-     "mmproj": "Qwen/Qwen3-VL-8B-Instruct-GGUF:mmproj-Qwen3VL-8B-Instruct-F16.gguf"
-    },
-    "components": [],
-    "context_length": 131072,
-    "created": 1234567890,
     "downloaded": false,
-    "id": "Qwen3-VL-8B-Instruct-GGUF",
     "labels": [
      "chat",
      "vision"
     ],
-    "object": "model",
-    "owned_by": "lemonade",
+    "checkpoint": "Qwen/Qwen3-VL-4B-Instruct-GGUF:Q4_K_M",
+    "suggested": true,
+    "rec": "",
+    "owned": false,
+    "folder": ""
+   },
+   {
+    "id": "Qwen3-VL-8B-Instruct-GGUF",
+    "title": "Qwen3-VL-8B-Instruct-GGUF",
     "recipe": "llamacpp",
-    "recipe_options": {},
-    "registry_source": "huggingface",
     "size": 6.19,
-    "source": "huggingface",
+    "downloaded": false,
+    "labels": [
+     "chat",
+     "vision"
+    ],
+    "checkpoint": "Qwen/Qwen3-VL-8B-Instruct-GGUF:Q4_K_M",
     "suggested": true,
-    "update_available": false
+    "rec": "",
+    "owned": false,
+    "folder": ""
    },
    {
-    "checkpoint": "unsloth/Qwen3.5-0.8B-GGUF:Qwen3.5-0.8B-UD-Q4_K_XL.gguf",
-    "checkpoints": {
-     "main": "unsloth/Qwen3.5-0.8B-GGUF:Qwen3.5-0.8B-UD-Q4_K_XL.gguf",
-     "mmproj": "unsloth/Qwen3.5-0.8B-GGUF:mmproj-F16.gguf"
-    },
-    "components": [],
-    "context_length": 131072,
-    "created": 1234567890,
-    "downloaded": false,
     "id": "Qwen3.5-0.8B-GGUF",
-    "labels": [
-     "chat",
-     "vision",
-     "tool-calling"
-    ],
-    "object": "model",
-    "owned_by": "lemonade",
+    "title": "Qwen3.5-0.8B-GGUF",
     "recipe": "llamacpp",
-    "recipe_options": {},
-    "registry_source": "huggingface",
     "size": 0.764,
-    "source": "huggingface",
+    "downloaded": false,
+    "labels": [
+     "chat",
+     "vision",
+     "tool-calling"
+    ],
+    "checkpoint": "unsloth/Qwen3.5-0.8B-GGUF:Qwen3.5-0.8B-UD-Q4_K_XL.gguf",
     "suggested": true,
-    "update_available": false
+    "rec": "",
+    "owned": false,
+    "folder": ""
    },
    {
-    "checkpoint": "unsloth/Qwen3.5-27B-GGUF:Qwen3.5-27B-UD-Q4_K_XL.gguf",
-    "checkpoints": {
-     "main": "unsloth/Qwen3.5-27B-GGUF:Qwen3.5-27B-UD-Q4_K_XL.gguf",
-     "mmproj": "unsloth/Qwen3.5-27B-GGUF:mmproj-F16.gguf"
-    },
-    "components": [],
-    "context_length": 131072,
-    "created": 1234567890,
-    "downloaded": false,
     "id": "Qwen3.5-27B-GGUF",
-    "labels": [
-     "chat",
-     "vision",
-     "tool-calling"
-    ],
-    "object": "model",
-    "owned_by": "lemonade",
+    "title": "Qwen3.5-27B-GGUF",
     "recipe": "llamacpp",
-    "recipe_options": {},
-    "registry_source": "huggingface",
     "size": 18.5,
-    "source": "huggingface",
+    "downloaded": false,
+    "labels": [
+     "chat",
+     "vision",
+     "tool-calling"
+    ],
+    "checkpoint": "unsloth/Qwen3.5-27B-GGUF:Qwen3.5-27B-UD-Q4_K_XL.gguf",
     "suggested": true,
-    "update_available": false
+    "rec": "",
+    "owned": false,
+    "folder": ""
    },
    {
-    "checkpoint": "unsloth/Qwen3.5-2B-GGUF:Qwen3.5-2B-UD-Q4_K_XL.gguf",
-    "checkpoints": {
-     "main": "unsloth/Qwen3.5-2B-GGUF:Qwen3.5-2B-UD-Q4_K_XL.gguf",
-     "mmproj": "unsloth/Qwen3.5-2B-GGUF:mmproj-F16.gguf"
-    },
-    "components": [],
-    "context_length": 131072,
-    "created": 1234567890,
-    "downloaded": false,
     "id": "Qwen3.5-2B-GGUF",
-    "labels": [
-     "chat",
-     "vision",
-     "tool-calling"
-    ],
-    "object": "model",
-    "owned_by": "lemonade",
+    "title": "Qwen3.5-2B-GGUF",
     "recipe": "llamacpp",
-    "recipe_options": {},
-    "registry_source": "huggingface",
     "size": 2.01,
-    "source": "huggingface",
-    "suggested": true,
-    "update_available": false
-   },
-   {
-    "checkpoint": "unsloth/Qwen3.5-35B-A3B-GGUF:Qwen3.5-35B-A3B-UD-Q4_K_XL.gguf",
-    "checkpoints": {
-     "main": "unsloth/Qwen3.5-35B-A3B-GGUF:Qwen3.5-35B-A3B-UD-Q4_K_XL.gguf",
-     "mmproj": "unsloth/Qwen3.5-35B-A3B-GGUF:mmproj-F16.gguf"
-    },
-    "components": [],
-    "context_length": 131072,
-    "created": 1234567890,
     "downloaded": false,
-    "id": "Qwen3.5-35B-A3B-GGUF",
     "labels": [
      "chat",
      "vision",
      "tool-calling"
     ],
-    "object": "model",
-    "owned_by": "lemonade",
-    "recipe": "llamacpp",
-    "recipe_options": {},
-    "registry_source": "huggingface",
-    "size": 23.1,
-    "source": "huggingface",
+    "checkpoint": "unsloth/Qwen3.5-2B-GGUF:Qwen3.5-2B-UD-Q4_K_XL.gguf",
     "suggested": true,
-    "update_available": false
+    "rec": "",
+    "owned": false,
+    "folder": ""
    },
    {
-    "checkpoint": "unsloth/Qwen3.5-4B-GGUF:Qwen3.5-4B-UD-Q4_K_XL.gguf",
-    "checkpoints": {
-     "main": "unsloth/Qwen3.5-4B-GGUF:Qwen3.5-4B-UD-Q4_K_XL.gguf",
-     "mmproj": "unsloth/Qwen3.5-4B-GGUF:mmproj-F16.gguf"
-    },
-    "components": [],
-    "context_length": 131072,
-    "created": 1234567890,
+    "id": "Qwen3.5-35B-A3B-GGUF",
+    "title": "Qwen3.5-35B-A3B-GGUF",
+    "recipe": "llamacpp",
+    "size": 23.1,
     "downloaded": false,
+    "labels": [
+     "chat",
+     "vision",
+     "tool-calling"
+    ],
+    "checkpoint": "unsloth/Qwen3.5-35B-A3B-GGUF:Qwen3.5-35B-A3B-UD-Q4_K_XL.gguf",
+    "suggested": true,
+    "rec": "",
+    "owned": false,
+    "folder": ""
+   },
+   {
     "id": "Qwen3.5-4B-GGUF",
+    "title": "Qwen3.5-4B-GGUF",
+    "recipe": "llamacpp",
+    "size": 3.58,
+    "downloaded": false,
     "labels": [
      "chat",
      "vision",
      "tool-calling",
      "hot"
     ],
-    "object": "model",
-    "owned_by": "lemonade",
-    "recipe": "llamacpp",
-    "recipe_options": {},
-    "registry_source": "huggingface",
-    "size": 3.58,
-    "source": "huggingface",
+    "checkpoint": "unsloth/Qwen3.5-4B-GGUF:Qwen3.5-4B-UD-Q4_K_XL.gguf",
     "suggested": true,
-    "update_available": false
+    "rec": "",
+    "owned": false,
+    "folder": ""
    },
    {
-    "checkpoint": "unsloth/Qwen3.5-4B-MTP-GGUF:Qwen3.5-4B-UD-Q4_K_XL.gguf",
-    "checkpoints": {
-     "main": "unsloth/Qwen3.5-4B-MTP-GGUF:Qwen3.5-4B-UD-Q4_K_XL.gguf",
-     "mmproj": "unsloth/Qwen3.5-4B-MTP-GGUF:mmproj-F16.gguf"
-    },
-    "components": [],
-    "context_length": 131072,
-    "created": 1234567890,
-    "downloaded": false,
     "id": "Qwen3.5-4B-MTP-GGUF",
+    "title": "Qwen3.5-4B-MTP-GGUF",
+    "recipe": "llamacpp",
+    "size": 3.66,
+    "downloaded": false,
     "labels": [
      "chat",
      "vision",
      "tool-calling",
      "mtp"
     ],
-    "object": "model",
-    "owned_by": "lemonade",
-    "recipe": "llamacpp",
-    "recipe_options": {},
-    "registry_source": "huggingface",
-    "size": 3.66,
-    "source": "huggingface",
+    "checkpoint": "unsloth/Qwen3.5-4B-MTP-GGUF:Qwen3.5-4B-UD-Q4_K_XL.gguf",
     "suggested": true,
-    "update_available": false
+    "rec": "",
+    "owned": false,
+    "folder": ""
    },
    {
-    "checkpoint": "unsloth/Qwen3.5-9B-GGUF:Qwen3.5-9B-UD-Q4_K_XL.gguf",
-    "checkpoints": {
-     "main": "unsloth/Qwen3.5-9B-GGUF:Qwen3.5-9B-UD-Q4_K_XL.gguf",
-     "mmproj": "unsloth/Qwen3.5-9B-GGUF:mmproj-F16.gguf"
-    },
-    "components": [],
-    "context_length": 131072,
-    "created": 1234567890,
-    "downloaded": false,
     "id": "Qwen3.5-9B-GGUF",
-    "labels": [
-     "chat",
-     "vision",
-     "tool-calling"
-    ],
-    "object": "model",
-    "owned_by": "lemonade",
+    "title": "Qwen3.5-9B-GGUF",
     "recipe": "llamacpp",
-    "recipe_options": {},
-    "registry_source": "huggingface",
     "size": 6.88,
-    "source": "huggingface",
-    "suggested": true,
-    "update_available": false
-   },
-   {
-    "checkpoint": "unsloth/Qwen3.6-27B-GGUF:Qwen3.6-27B-UD-Q4_K_XL.gguf",
-    "checkpoints": {
-     "main": "unsloth/Qwen3.6-27B-GGUF:Qwen3.6-27B-UD-Q4_K_XL.gguf",
-     "mmproj": "unsloth/Qwen3.6-27B-GGUF:mmproj-F16.gguf"
-    },
-    "components": [],
-    "context_length": 131072,
-    "created": 1234567890,
     "downloaded": false,
-    "id": "Qwen3.6-27B-GGUF",
     "labels": [
      "chat",
      "vision",
      "tool-calling"
     ],
-    "object": "model",
-    "owned_by": "lemonade",
-    "recipe": "llamacpp",
-    "recipe_options": {},
-    "registry_source": "huggingface",
-    "size": 18.5,
-    "source": "huggingface",
+    "checkpoint": "unsloth/Qwen3.5-9B-GGUF:Qwen3.5-9B-UD-Q4_K_XL.gguf",
     "suggested": true,
-    "update_available": false
+    "rec": "",
+    "owned": false,
+    "folder": ""
    },
    {
-    "checkpoint": "unsloth/Qwen3.6-27B-MTP-GGUF:Qwen3.6-27B-UD-Q4_K_XL.gguf",
-    "checkpoints": {
-     "main": "unsloth/Qwen3.6-27B-MTP-GGUF:Qwen3.6-27B-UD-Q4_K_XL.gguf",
-     "mmproj": "unsloth/Qwen3.6-27B-MTP-GGUF:mmproj-F16.gguf"
-    },
-    "components": [],
-    "context_length": 131072,
-    "created": 1234567890,
+    "id": "Qwen3.6-27B-GGUF",
+    "title": "Qwen3.6-27B-GGUF",
+    "recipe": "llamacpp",
+    "size": 18.5,
     "downloaded": false,
+    "labels": [
+     "chat",
+     "vision",
+     "tool-calling"
+    ],
+    "checkpoint": "unsloth/Qwen3.6-27B-GGUF:Qwen3.6-27B-UD-Q4_K_XL.gguf",
+    "suggested": true,
+    "rec": "",
+    "owned": false,
+    "folder": ""
+   },
+   {
     "id": "Qwen3.6-27B-MTP-GGUF",
+    "title": "Qwen3.6-27B-MTP-GGUF",
+    "recipe": "llamacpp",
+    "size": 18.8,
+    "downloaded": false,
     "labels": [
      "chat",
      "vision",
@@ -2325,81 +1260,54 @@
      "mtp",
      "hot"
     ],
-    "object": "model",
-    "owned_by": "lemonade",
-    "recipe": "llamacpp",
-    "recipe_options": {},
-    "registry_source": "huggingface",
-    "size": 18.8,
-    "source": "huggingface",
+    "checkpoint": "unsloth/Qwen3.6-27B-MTP-GGUF:Qwen3.6-27B-UD-Q4_K_XL.gguf",
     "suggested": true,
-    "update_available": false
+    "rec": "",
+    "owned": false,
+    "folder": ""
    },
    {
-    "checkpoint": "unsloth/Qwen3.6-35B-A3B-GGUF:Qwen3.6-35B-A3B-UD-Q4_K_XL.gguf",
-    "checkpoints": {
-     "main": "unsloth/Qwen3.6-35B-A3B-GGUF:Qwen3.6-35B-A3B-UD-Q4_K_XL.gguf",
-     "mmproj": "unsloth/Qwen3.6-35B-A3B-GGUF:mmproj-F16.gguf"
-    },
-    "components": [],
-    "context_length": 131072,
-    "created": 1234567890,
-    "downloaded": false,
     "id": "Qwen3.6-35B-A3B-GGUF",
+    "title": "Qwen3.6-35B-A3B-GGUF",
+    "recipe": "llamacpp",
+    "size": 23.3,
+    "downloaded": false,
     "labels": [
      "chat",
      "vision",
      "tool-calling",
      "hot"
     ],
-    "object": "model",
-    "owned_by": "lemonade",
-    "recipe": "llamacpp",
-    "recipe_options": {},
-    "registry_source": "huggingface",
-    "size": 23.3,
-    "source": "huggingface",
+    "checkpoint": "unsloth/Qwen3.6-35B-A3B-GGUF:Qwen3.6-35B-A3B-UD-Q4_K_XL.gguf",
     "suggested": true,
-    "update_available": false
+    "rec": "",
+    "owned": false,
+    "folder": ""
    },
    {
-    "checkpoint": "unsloth/Qwen3.6-35B-A3B-MTP-GGUF:Qwen3.6-35B-A3B-UD-Q4_K_XL.gguf",
-    "checkpoints": {
-     "main": "unsloth/Qwen3.6-35B-A3B-MTP-GGUF:Qwen3.6-35B-A3B-UD-Q4_K_XL.gguf",
-     "mmproj": "unsloth/Qwen3.6-35B-A3B-MTP-GGUF:mmproj-F16.gguf"
-    },
-    "components": [],
-    "context_length": 131072,
-    "created": 1234567890,
-    "downloaded": false,
     "id": "Qwen3.6-35B-A3B-MTP-GGUF",
+    "title": "Qwen3.6-35B-A3B-MTP-GGUF",
+    "recipe": "llamacpp",
+    "size": 23.8,
+    "downloaded": false,
     "labels": [
      "chat",
      "vision",
      "tool-calling",
      "mtp"
     ],
-    "object": "model",
-    "owned_by": "lemonade",
-    "recipe": "llamacpp",
-    "recipe_options": {},
-    "registry_source": "huggingface",
-    "size": 23.8,
-    "source": "huggingface",
+    "checkpoint": "unsloth/Qwen3.6-35B-A3B-MTP-GGUF:Qwen3.6-35B-A3B-UD-Q4_K_XL.gguf",
     "suggested": true,
-    "update_available": false
+    "rec": "",
+    "owned": false,
+    "folder": ""
    },
    {
-    "checkpoint": "unsloth/Qwen3.8-27B-GGUF:Qwen3.8-27B-UD-Q4_K_XL.gguf",
-    "checkpoints": {
-     "main": "unsloth/Qwen3.8-27B-GGUF:Qwen3.8-27B-UD-Q4_K_XL.gguf",
-     "mmproj": "unsloth/Qwen3.8-27B-GGUF:mmproj-F16.gguf"
-    },
-    "components": [],
-    "context_length": 131072,
-    "created": 1234567890,
-    "downloaded": false,
     "id": "Qwen3.8-27B-GGUF",
+    "title": "Qwen3.8-27B-GGUF",
+    "recipe": "llamacpp",
+    "size": 18.8,
+    "downloaded": false,
     "labels": [
      "chat",
      "reasoning",
@@ -2408,784 +1316,186 @@
      "mtp",
      "hot"
     ],
-    "object": "model",
-    "owned_by": "lemonade",
-    "recipe": "llamacpp",
-    "recipe_options": {},
-    "registry_source": "huggingface",
-    "size": 18.8,
-    "source": "huggingface",
+    "checkpoint": "unsloth/Qwen3.8-27B-GGUF:Qwen3.8-27B-UD-Q4_K_XL.gguf",
     "suggested": true,
-    "update_available": false
+    "rec": "",
+    "owned": false,
+    "folder": ""
    },
    {
-    "checkpoint": "lemonade-sdk/RPG-HaloTales-V1",
-    "checkpoints": {
-     "main": "lemonade-sdk/RPG-HaloTales-V1"
-    },
-    "components": [],
-    "created": 1234567890,
-    "downloaded": false,
-    "id": "RPG-HaloTales-V1",
-    "labels": [
-     "chat"
-    ],
-    "models": [],
-    "object": "model",
-    "owned_by": "lemonade",
-    "recipe": "collection.omni",
-    "recipe_options": {},
-    "registry_source": "huggingface",
-    "size": 39.77,
-    "source": "huggingface",
-    "suggested": true,
-    "update_available": false
-   },
-   {
-    "checkpoint": "lemonade-sdk/RPG-HaloTales-V2",
-    "checkpoints": {
-     "main": "lemonade-sdk/RPG-HaloTales-V2"
-    },
-    "components": [],
-    "created": 1234567890,
-    "downloaded": false,
-    "id": "RPG-HaloTales-V2",
-    "labels": [
-     "chat"
-    ],
-    "models": [],
-    "object": "model",
-    "owned_by": "lemonade",
-    "recipe": "collection.omni",
-    "recipe_options": {},
-    "registry_source": "huggingface",
-    "size": 55.77,
-    "source": "huggingface",
-    "suggested": true,
-    "update_available": false
-   },
-   {
-    "checkpoint": "amd/realesrgan-x4plus:RealESRGAN_x4plus.pth",
-    "checkpoints": {
-     "main": "amd/realesrgan-x4plus:RealESRGAN_x4plus.pth"
-    },
-    "components": [],
-    "created": 1234567890,
-    "downloaded": false,
-    "id": "RealESRGAN-x4plus",
-    "labels": [
-     "upscaling",
-     "image"
-    ],
-    "object": "model",
-    "owned_by": "lemonade",
-    "recipe": "sd-cpp",
-    "recipe_options": {},
-    "registry_source": "huggingface",
-    "size": 0.064,
-    "source": "huggingface",
-    "suggested": true,
-    "update_available": false
-   },
-   {
-    "checkpoint": "amd/realesrgan-x4plus-anime-6b:RealESRGAN_x4plus_anime_6B.pth",
-    "checkpoints": {
-     "main": "amd/realesrgan-x4plus-anime-6b:RealESRGAN_x4plus_anime_6B.pth"
-    },
-    "components": [],
-    "created": 1234567890,
-    "downloaded": false,
-    "id": "RealESRGAN-x4plus-anime",
-    "labels": [
-     "upscaling",
-     "image"
-    ],
-    "object": "model",
-    "owned_by": "lemonade",
-    "recipe": "sd-cpp",
-    "recipe_options": {},
-    "registry_source": "huggingface",
-    "size": 0.017,
-    "source": "huggingface",
-    "suggested": true,
-    "update_available": false
-   },
-   {
-    "checkpoint": "stable-diffusion-v1-5/stable-diffusion-v1-5:v1-5-pruned.safetensors",
-    "checkpoints": {
-     "main": "stable-diffusion-v1-5/stable-diffusion-v1-5:v1-5-pruned.safetensors"
-    },
-    "components": [],
-    "created": 1234567890,
-    "downloaded": false,
-    "id": "SD-1.5",
-    "image_defaults": {
-     "cfg_scale": 7.5,
-     "height": 512,
-     "steps": 20,
-     "width": 512
-    },
-    "labels": [
-     "image"
-    ],
-    "object": "model",
-    "owned_by": "lemonade",
-    "recipe": "sd-cpp",
-    "recipe_options": {
-     "cfg_scale": 7.5,
-     "height": 512,
-     "steps": 20,
-     "width": 512
-    },
-    "registry_source": "huggingface",
-    "size": 7.7,
-    "source": "huggingface",
-    "suggested": true,
-    "update_available": false
-   },
-   {
-    "checkpoint": "stabilityai/sd-turbo:sd_turbo.safetensors",
-    "checkpoints": {
-     "main": "stabilityai/sd-turbo:sd_turbo.safetensors"
-    },
-    "components": [],
-    "created": 1234567890,
-    "downloaded": false,
-    "id": "SD-Turbo",
-    "image_defaults": {
-     "cfg_scale": 1,
-     "height": 512,
-     "steps": 4,
-     "width": 512
-    },
-    "labels": [
-     "image"
-    ],
-    "object": "model",
-    "owned_by": "lemonade",
-    "recipe": "sd-cpp",
-    "recipe_options": {
-     "cfg_scale": 1,
-     "height": 512,
-     "steps": 4,
-     "width": 512
-    },
-    "registry_source": "huggingface",
-    "size": 5.21,
-    "source": "huggingface",
-    "suggested": true,
-    "update_available": false
-   },
-   {
-    "checkpoint": "Green-Sky/SD-Turbo-GGUF:sd_turbo-f16-q8_0.gguf",
-    "checkpoints": {
-     "main": "Green-Sky/SD-Turbo-GGUF:sd_turbo-f16-q8_0.gguf"
-    },
-    "components": [],
-    "created": 1234567890,
-    "downloaded": false,
-    "id": "SD-Turbo-GGUF",
-    "image_defaults": {
-     "cfg_scale": 1,
-     "height": 512,
-     "steps": 4,
-     "width": 512
-    },
-    "labels": [
-     "image"
-    ],
-    "object": "model",
-    "owned_by": "lemonade",
-    "recipe": "sd-cpp",
-    "recipe_options": {
-     "cfg_scale": 1,
-     "height": 512,
-     "steps": 4,
-     "width": 512
-    },
-    "registry_source": "huggingface",
-    "size": 2.02,
-    "source": "huggingface",
-    "suggested": false,
-    "update_available": false
-   },
-   {
-    "checkpoint": "stabilityai/stable-diffusion-xl-base-1.0:sd_xl_base_1.0.safetensors",
-    "checkpoints": {
-     "main": "stabilityai/stable-diffusion-xl-base-1.0:sd_xl_base_1.0.safetensors"
-    },
-    "components": [],
-    "created": 1234567890,
-    "downloaded": false,
-    "id": "SDXL-Base-1.0",
-    "image_defaults": {
-     "cfg_scale": 7.5,
-     "height": 1024,
-     "steps": 20,
-     "width": 1024
-    },
-    "labels": [
-     "image"
-    ],
-    "object": "model",
-    "owned_by": "lemonade",
-    "recipe": "sd-cpp",
-    "recipe_options": {
-     "cfg_scale": 7.5,
-     "height": 1024,
-     "steps": 20,
-     "width": 1024
-    },
-    "registry_source": "huggingface",
-    "size": 6.94,
-    "source": "huggingface",
-    "suggested": true,
-    "update_available": false
-   },
-   {
-    "checkpoint": "stabilityai/sdxl-turbo:sd_xl_turbo_1.0_fp16.safetensors",
-    "checkpoints": {
-     "main": "stabilityai/sdxl-turbo:sd_xl_turbo_1.0_fp16.safetensors"
-    },
-    "components": [],
-    "created": 1234567890,
-    "downloaded": false,
-    "id": "SDXL-Turbo",
-    "image_defaults": {
-     "cfg_scale": 1,
-     "height": 512,
-     "steps": 4,
-     "width": 512
-    },
-    "labels": [
-     "image"
-    ],
-    "object": "model",
-    "owned_by": "lemonade",
-    "recipe": "sd-cpp",
-    "recipe_options": {
-     "cfg_scale": 1,
-     "height": 512,
-     "steps": 4,
-     "width": 512
-    },
-    "registry_source": "huggingface",
-    "size": 6.94,
-    "source": "huggingface",
-    "suggested": true,
-    "update_available": false
-   },
-   {
-    "checkpoint": "unsloth/SmolLM3-3B-128K-GGUF:SmolLM3-3B-128K-UD-Q4_K_XL.gguf",
-    "checkpoints": {
-     "main": "unsloth/SmolLM3-3B-128K-GGUF:SmolLM3-3B-128K-UD-Q4_K_XL.gguf"
-    },
-    "components": [],
-    "context_length": 131072,
-    "created": 1234567890,
-    "downloaded": false,
     "id": "SmolLM3-3B-GGUF",
-    "labels": [
-     "chat"
-    ],
-    "object": "model",
-    "owned_by": "lemonade",
+    "title": "SmolLM3-3B-GGUF",
     "recipe": "llamacpp",
-    "recipe_options": {},
-    "registry_source": "huggingface",
     "size": 1.94,
-    "source": "huggingface",
-    "suggested": true,
-    "update_available": false
-   },
-   {
-    "checkpoint": "ilintar/trellis2-gguf",
-    "checkpoints": {
-     "main": "ilintar/trellis2-gguf"
-    },
-    "components": [],
-    "created": 1234567890,
     "downloaded": false,
-    "id": "TRELLIS-3D",
-    "labels": [
-     "3d"
-    ],
-    "object": "model",
-    "owned_by": "lemonade",
-    "recipe": "trellis",
-    "recipe_options": {},
-    "registry_source": "huggingface",
-    "size": 15.4,
-    "source": "huggingface",
-    "suggested": true,
-    "update_available": false
-   },
-   {
-    "checkpoint": "ilintar/thinksound-gguf",
-    "checkpoints": {
-     "main": "ilintar/thinksound-gguf"
-    },
-    "components": [],
-    "created": 1234567890,
-    "downloaded": false,
-    "id": "ThinkSound-SFX",
-    "labels": [
-     "audio-generation"
-    ],
-    "object": "model",
-    "owned_by": "lemonade",
-    "recipe": "thinksound",
-    "recipe_options": {},
-    "registry_source": "huggingface",
-    "size": 6.4,
-    "source": "huggingface",
-    "suggested": true,
-    "update_available": false
-   },
-   {
-    "checkpoint": "unsloth/gemma-3-270m-it-GGUF:gemma-3-270m-it-UD-IQ2_M.gguf",
-    "checkpoints": {
-     "main": "unsloth/gemma-3-270m-it-GGUF:gemma-3-270m-it-UD-IQ2_M.gguf"
-    },
-    "components": [],
-    "context_length": 131072,
-    "created": 1234567890,
-    "downloaded": false,
-    "id": "Tiny-Test-Model-GGUF",
     "labels": [
      "chat"
     ],
-    "object": "model",
-    "owned_by": "lemonade",
+    "checkpoint": "unsloth/SmolLM3-3B-128K-GGUF:SmolLM3-3B-128K-UD-Q4_K_XL.gguf",
+    "suggested": true,
+    "rec": "",
+    "owned": false,
+    "folder": ""
+   },
+   {
+    "id": "Tiny-Test-Model-GGUF",
+    "title": "Tiny-Test-Model-GGUF",
     "recipe": "llamacpp",
-    "recipe_options": {},
-    "registry_source": "huggingface",
     "size": 0.18,
-    "source": "huggingface",
+    "downloaded": false,
+    "labels": [
+     "chat"
+    ],
+    "checkpoint": "unsloth/gemma-3-270m-it-GGUF:gemma-3-270m-it-UD-IQ2_M.gguf",
     "suggested": false,
-    "update_available": false
+    "rec": "",
+    "owned": false,
+    "folder": ""
    },
    {
-    "checkpoint": "ggerganov/whisper.cpp:ggml-base.bin",
-    "checkpoints": {
-     "main": "ggerganov/whisper.cpp:ggml-base.bin",
-     "npu_cache": "amd/whisper-base-onnx-npu:ggml-base-encoder-vitisai.rai"
-    },
-    "components": [],
-    "created": 1234567890,
-    "downloaded": false,
-    "id": "Whisper-Base",
-    "labels": [
-     "transcription",
-     "realtime-transcription"
-    ],
-    "object": "model",
-    "owned_by": "lemonade",
-    "recipe": "whispercpp",
-    "recipe_options": {},
-    "registry_source": "huggingface",
-    "size": 0.148,
-    "source": "huggingface",
-    "suggested": true,
-    "update_available": false
-   },
-   {
-    "checkpoint": "ggerganov/whisper.cpp:ggml-large-v3.bin",
-    "checkpoints": {
-     "main": "ggerganov/whisper.cpp:ggml-large-v3.bin",
-     "npu_cache": "amd/whisper-large-v3-onnx-npu:ggml-large-v3-encoder-vitisai.rai"
-    },
-    "components": [],
-    "created": 1234567890,
-    "downloaded": false,
-    "id": "Whisper-Large-v3",
-    "labels": [
-     "transcription",
-     "realtime-transcription"
-    ],
-    "object": "model",
-    "owned_by": "lemonade",
-    "recipe": "whispercpp",
-    "recipe_options": {},
-    "registry_source": "huggingface",
-    "size": 3.1,
-    "source": "huggingface",
-    "suggested": true,
-    "update_available": false
-   },
-   {
-    "checkpoint": "ggerganov/whisper.cpp:ggml-large-v3-turbo.bin",
-    "checkpoints": {
-     "main": "ggerganov/whisper.cpp:ggml-large-v3-turbo.bin",
-     "npu_cache": "amd/whisper-large-turbo-onnx-npu:ggml-large-v3-turbo-encoder-vitisai.rai"
-    },
-    "components": [],
-    "created": 1234567890,
-    "downloaded": false,
-    "id": "Whisper-Large-v3-Turbo",
-    "labels": [
-     "transcription",
-     "realtime-transcription",
-     "hot"
-    ],
-    "object": "model",
-    "owned_by": "lemonade",
-    "recipe": "whispercpp",
-    "recipe_options": {},
-    "registry_source": "huggingface",
-    "size": 1.62,
-    "source": "huggingface",
-    "suggested": true,
-    "update_available": false
-   },
-   {
-    "checkpoint": "ggerganov/whisper.cpp:ggml-medium.bin",
-    "checkpoints": {
-     "main": "ggerganov/whisper.cpp:ggml-medium.bin",
-     "npu_cache": "amd/whisper-medium-onnx-npu:ggml-medium-encoder-vitisai.rai"
-    },
-    "components": [],
-    "created": 1234567890,
-    "downloaded": false,
-    "id": "Whisper-Medium",
-    "labels": [
-     "transcription",
-     "realtime-transcription"
-    ],
-    "object": "model",
-    "owned_by": "lemonade",
-    "recipe": "whispercpp",
-    "recipe_options": {},
-    "registry_source": "huggingface",
-    "size": 1.53,
-    "source": "huggingface",
-    "suggested": true,
-    "update_available": false
-   },
-   {
-    "checkpoint": "ggerganov/whisper.cpp:ggml-small.bin",
-    "checkpoints": {
-     "main": "ggerganov/whisper.cpp:ggml-small.bin",
-     "npu_cache": "amd/whisper-small-onnx-npu:ggml-small-encoder-vitisai.rai"
-    },
-    "components": [],
-    "created": 1234567890,
-    "downloaded": false,
-    "id": "Whisper-Small",
-    "labels": [
-     "transcription",
-     "realtime-transcription"
-    ],
-    "object": "model",
-    "owned_by": "lemonade",
-    "recipe": "whispercpp",
-    "recipe_options": {},
-    "registry_source": "huggingface",
-    "size": 0.488,
-    "source": "huggingface",
-    "suggested": true,
-    "update_available": false
-   },
-   {
-    "checkpoint": "ggerganov/whisper.cpp:ggml-tiny.bin",
-    "checkpoints": {
-     "main": "ggerganov/whisper.cpp:ggml-tiny.bin",
-     "npu_cache": "amd/whisper-tiny-onnx-npu:ggml-tiny-encoder-vitisai.rai"
-    },
-    "components": [],
-    "created": 1234567890,
-    "downloaded": false,
-    "id": "Whisper-Tiny",
-    "labels": [
-     "transcription",
-     "realtime-transcription"
-    ],
-    "object": "model",
-    "owned_by": "lemonade",
-    "recipe": "whispercpp",
-    "recipe_options": {},
-    "registry_source": "huggingface",
-    "size": 0.075,
-    "source": "huggingface",
-    "suggested": true,
-    "update_available": false
-   },
-   {
-    "checkpoint": "Comfy-Org/z_image_turbo:split_files/diffusion_models/z_image_turbo_bf16.safetensors",
-    "checkpoints": {
-     "main": "Comfy-Org/z_image_turbo:split_files/diffusion_models/z_image_turbo_bf16.safetensors",
-     "text_encoder": "Comfy-Org/z_image_turbo:split_files/text_encoders/qwen_3_4b.safetensors",
-     "vae": "Comfy-Org/z_image_turbo:split_files/vae/ae.safetensors"
-    },
-    "components": [],
-    "created": 1234567890,
-    "downloaded": false,
-    "id": "Z-Image-Turbo",
-    "image_defaults": {
-     "cfg_scale": 1,
-     "height": 1024,
-     "steps": 9,
-     "width": 1024
-    },
-    "labels": [
-     "image"
-    ],
-    "object": "model",
-    "owned_by": "lemonade",
-    "recipe": "sd-cpp",
-    "recipe_options": {
-     "cfg_scale": 1,
-     "height": 1024,
-     "steps": 9,
-     "width": 1024
-    },
-    "registry_source": "huggingface",
-    "size": 20.7,
-    "source": "huggingface",
-    "suggested": true,
-    "update_available": false
-   },
-   {
-    "checkpoint": "pqnet/bge-reranker-v2-m3-Q8_0-GGUF",
-    "checkpoints": {
-     "main": "pqnet/bge-reranker-v2-m3-Q8_0-GGUF"
-    },
-    "components": [],
-    "context_length": 131072,
-    "created": 1234567890,
-    "downloaded": false,
     "id": "bge-reranker-v2-m3-GGUF",
+    "title": "bge-reranker-v2-m3-GGUF",
+    "recipe": "llamacpp",
+    "size": 0.636,
+    "downloaded": false,
     "labels": [
      "reranking"
     ],
-    "object": "model",
-    "owned_by": "lemonade",
-    "recipe": "llamacpp",
-    "recipe_options": {},
-    "registry_source": "huggingface",
-    "size": 0.636,
-    "source": "huggingface",
+    "checkpoint": "pqnet/bge-reranker-v2-m3-Q8_0-GGUF",
     "suggested": true,
-    "update_available": false
+    "rec": "",
+    "owned": false,
+    "folder": ""
    },
    {
-    "checkpoint": "/home/user/zest/zd/views/lemonade/gemma-3-270m-it-UD-IQ2_M.gguf",
-    "checkpoints": {
-     "main": "/home/user/zest/zd/views/lemonade/gemma-3-270m-it-UD-IQ2_M.gguf"
-    },
-    "components": [],
-    "context_length": 131072,
-    "created": 1234567890,
-    "downloaded": true,
     "id": "gemma-3-270m-it-UD-IQ2_M",
+    "title": "gemma-3-270m-it-UD-IQ2_M",
+    "recipe": "llamacpp",
+    "size": 0.17,
+    "downloaded": true,
     "labels": [
      "custom",
      "chat"
     ],
-    "max_context_window": 32768,
-    "object": "model",
-    "owned_by": "lemonade",
-    "recipe": "llamacpp",
-    "recipe_options": {},
-    "registry_source": "huggingface",
-    "size": 0.17,
-    "source": "extra_models_dir",
+    "checkpoint": "/home/user/zest/zd/views/lemonade/gemma-3-270m-it-UD-IQ2_M.gguf",
     "suggested": true,
-    "update_available": false
+    "rec": "",
+    "owned": true,
+    "folder": ""
    },
    {
-    "checkpoint": "unsloth/gemma-3-270m-it-GGUF:Q4_K_M",
-    "checkpoints": {
-     "main": "unsloth/gemma-3-270m-it-GGUF:Q4_K_M"
-    },
-    "components": [],
-    "context_length": 131072,
-    "created": 1234567890,
-    "downloaded": true,
     "id": "gemma270m-q4",
+    "title": "gemma270m-q4",
+    "recipe": "llamacpp",
+    "size": 0.236,
+    "downloaded": true,
     "labels": [
      "chat",
      "custom"
     ],
-    "max_context_window": 32768,
-    "object": "model",
-    "owned_by": "lemonade",
-    "recipe": "llamacpp",
-    "recipe_options": {},
-    "registry_source": "huggingface",
-    "size": 0.236,
-    "source": "huggingface",
+    "checkpoint": "unsloth/gemma-3-270m-it-GGUF:Q4_K_M",
     "suggested": true,
-    "update_available": false
+    "rec": "",
+    "owned": true,
+    "folder": ""
    },
    {
-    "checkpoint": "unsloth/gpt-oss-20b-GGUF:Q4_K_M",
-    "checkpoints": {
-     "main": "unsloth/gpt-oss-20b-GGUF:Q4_K_M"
-    },
-    "components": [],
-    "context_length": 131072,
-    "created": 1234567890,
-    "downloaded": false,
     "id": "gpt-oss-20b-GGUF",
+    "title": "gpt-oss-20b-GGUF",
+    "recipe": "llamacpp",
+    "size": 11.6,
+    "downloaded": false,
     "labels": [
      "chat",
      "reasoning",
      "tool-calling"
     ],
-    "object": "model",
-    "owned_by": "lemonade",
-    "recipe": "llamacpp",
-    "recipe_options": {},
-    "registry_source": "huggingface",
-    "size": 11.6,
-    "source": "huggingface",
+    "checkpoint": "unsloth/gpt-oss-20b-GGUF:Q4_K_M",
     "suggested": false,
-    "update_available": false
+    "rec": "",
+    "owned": false,
+    "folder": ""
    },
    {
-    "checkpoint": "ggml-org/gpt-oss-20b-GGUF",
-    "checkpoints": {
-     "main": "ggml-org/gpt-oss-20b-GGUF"
-    },
-    "components": [],
-    "context_length": 131072,
-    "created": 1234567890,
-    "downloaded": false,
     "id": "gpt-oss-20b-mxfp4-GGUF",
+    "title": "gpt-oss-20b-mxfp4-GGUF",
+    "recipe": "llamacpp",
+    "size": 12.1,
+    "downloaded": false,
     "labels": [
      "chat",
      "hot",
      "reasoning",
      "tool-calling"
     ],
-    "object": "model",
-    "owned_by": "lemonade",
-    "recipe": "llamacpp",
-    "recipe_options": {},
-    "registry_source": "huggingface",
-    "size": 12.1,
-    "source": "huggingface",
+    "checkpoint": "ggml-org/gpt-oss-20b-GGUF",
     "suggested": true,
-    "update_available": false
+    "rec": "",
+    "owned": false,
+    "folder": ""
    },
    {
-    "checkpoint": "unsloth/granite-4.0-h-tiny-GGUF:Q4_K_M",
-    "checkpoints": {
-     "main": "unsloth/granite-4.0-h-tiny-GGUF:Q4_K_M"
-    },
-    "components": [],
-    "context_length": 131072,
-    "created": 1234567890,
-    "downloaded": false,
     "id": "granite-4.0-h-tiny-GGUF",
+    "title": "granite-4.0-h-tiny-GGUF",
+    "recipe": "llamacpp",
+    "size": 4.25,
+    "downloaded": false,
     "labels": [
      "chat",
      "tool-calling"
     ],
-    "object": "model",
-    "owned_by": "lemonade",
-    "recipe": "llamacpp",
-    "recipe_options": {},
-    "registry_source": "huggingface",
-    "size": 4.25,
-    "source": "huggingface",
+    "checkpoint": "unsloth/granite-4.0-h-tiny-GGUF:Q4_K_M",
     "suggested": true,
-    "update_available": false
+    "rec": "",
+    "owned": false,
+    "folder": ""
    },
    {
-    "checkpoint": "mradermacher/jina-reranker-v1-tiny-en-GGUF:Q8_0",
-    "checkpoints": {
-     "main": "mradermacher/jina-reranker-v1-tiny-en-GGUF:Q8_0"
-    },
-    "components": [],
-    "context_length": 131072,
-    "created": 1234567890,
-    "downloaded": false,
     "id": "jina-reranker-v1-tiny-en-GGUF",
+    "title": "jina-reranker-v1-tiny-en-GGUF",
+    "recipe": "llamacpp",
+    "size": 0.0367,
+    "downloaded": false,
     "labels": [
      "reranking"
     ],
-    "object": "model",
-    "owned_by": "lemonade",
-    "recipe": "llamacpp",
-    "recipe_options": {},
-    "registry_source": "huggingface",
-    "size": 0.0367,
-    "source": "huggingface",
+    "checkpoint": "mradermacher/jina-reranker-v1-tiny-en-GGUF:Q8_0",
     "suggested": false,
-    "update_available": false
+    "rec": "",
+    "owned": false,
+    "folder": ""
    },
    {
-    "checkpoint": "mikkoph/kokoro-onnx",
-    "checkpoints": {
-     "main": "mikkoph/kokoro-onnx"
-    },
-    "components": [],
-    "created": 1234567890,
-    "downloaded": false,
-    "id": "kokoro-v1",
-    "labels": [
-     "tts"
-    ],
-    "object": "model",
-    "owned_by": "lemonade",
-    "recipe": "kokoro",
-    "recipe_options": {},
-    "registry_source": "huggingface",
-    "size": 0.354,
-    "source": "huggingface",
-    "suggested": true,
-    "update_available": false
-   },
-   {
-    "checkpoint": "nomic-ai/nomic-embed-text-v1-GGUF:Q4_K_S",
-    "checkpoints": {
-     "main": "nomic-ai/nomic-embed-text-v1-GGUF:Q4_K_S"
-    },
-    "components": [],
-    "context_length": 131072,
-    "created": 1234567890,
-    "downloaded": false,
     "id": "nomic-embed-text-v1-GGUF",
+    "title": "nomic-embed-text-v1-GGUF",
+    "recipe": "llamacpp",
+    "size": 0.0781,
+    "downloaded": false,
     "labels": [
      "embeddings"
     ],
-    "object": "model",
-    "owned_by": "lemonade",
-    "recipe": "llamacpp",
-    "recipe_options": {},
-    "registry_source": "huggingface",
-    "size": 0.0781,
-    "source": "huggingface",
+    "checkpoint": "nomic-ai/nomic-embed-text-v1-GGUF:Q4_K_S",
     "suggested": true,
-    "update_available": false
+    "rec": "",
+    "owned": false,
+    "folder": ""
    },
    {
-    "checkpoint": "nomic-ai/nomic-embed-text-v2-moe-GGUF:Q8_0",
-    "checkpoints": {
-     "main": "nomic-ai/nomic-embed-text-v2-moe-GGUF:Q8_0"
-    },
-    "components": [],
-    "context_length": 131072,
-    "created": 1234567890,
-    "downloaded": false,
     "id": "nomic-embed-text-v2-moe-GGUF",
+    "title": "nomic-embed-text-v2-moe-GGUF",
+    "recipe": "llamacpp",
+    "size": 0.51,
+    "downloaded": false,
     "labels": [
      "embeddings"
     ],
-    "object": "model",
-    "owned_by": "lemonade",
-    "recipe": "llamacpp",
-    "recipe_options": {},
-    "registry_source": "huggingface",
-    "size": 0.51,
-    "source": "huggingface",
+    "checkpoint": "nomic-ai/nomic-embed-text-v2-moe-GGUF:Q8_0",
     "suggested": true,
-    "update_available": false
+    "rec": "",
+    "owned": false,
+    "folder": ""
    }
-  ],
-  "object": "list"
+  ]
  },
  "/ui/gpu": {
   "gpus": [
@@ -3234,56 +1544,68 @@
   "setup_done": false,
   "mode": "builtin",
   "mode_saved": null,
-  "forced": false,
+  "client_only": false,
   "engine": {
-   "available": true,
-   "state": "running",
+   "installed": true,
    "running": true,
    "port": 13307,
-   "error": null,
-   "log_tail": [],
-   "programs": [
+   "tag": "b12375",
+   "backend": "cuda13",
+   "backend_name": "NVIDIA CUDA 13",
+   "bundled": false,
+   "pinned": "",
+   "builds": [
     {
-     "version": "2026.42.1",
-     "source": "bundled",
-     "active": true
+     "tag": "b12375",
+     "backend": "cuda13",
+     "name": "NVIDIA CUDA 13",
+     "bundled": false
     }
    ],
-   "active": {
-    "version": "2026.42.1",
-    "source": "bundled"
-   },
-   "pinned": "",
-   "bundled": true,
-   "arch_supported": true,
+   "backends": [
+    {
+     "id": "cpu",
+     "name": "Processor only"
+    },
+    {
+     "id": "vulkan",
+     "name": "Vulkan (AMD, Intel, NVIDIA)"
+    },
+    {
+     "id": "cuda12",
+     "name": "NVIDIA CUDA 12"
+    },
+    {
+     "id": "cuda13",
+     "name": "NVIDIA CUDA 13"
+    },
+    {
+     "id": "rocm",
+     "name": "AMD ROCm"
+    }
+   ],
+   "recommended": "cuda13",
+   "max_loaded": 2,
+   "device": "",
+   "error": null,
    "update": {
     "state": "idle",
     "bytes": 0,
     "total": 0,
-    "version": null,
+    "tag": null,
+    "backend": null,
     "error": null
-   }
+   },
+   "log": "/home/user/zest/zd/llamacpp/llama-server.log"
   },
-  "existing": {
-   "host": "127.0.0.1",
-   "port": 13305,
-   "reachable": true
-  },
-  "lemonade": {
-   "reachable": true,
-   "target": "127.0.0.1:13307"
-  },
+  "connected": 0,
   "models": {
    "storage": "hf",
    "custom_dir": "",
    "hf_dir": "/home/user/.cache/huggingface/hub",
    "imports": [],
-   "live": {
-    "models_dir": "/home/user/zest/models/lemonade",
-    "extra_models_dir": "/home/user/zest/zd/views/lemonade"
-   }
+   "view": "/home/user/zest/zd/views/llamacpp"
   },
-  "arch_supported": true,
   "gpus_found": [
    {
     "vendor": "NVIDIA",
@@ -3311,273 +1633,53 @@
   "recipes": [
    {
     "recipe": "llamacpp",
-    "name": "Llama.cpp GPU",
-    "modality": "Text generation",
+    "name": "llama.cpp",
+    "modality": "llm",
     "experimental": false,
     "order": 0,
     "selectable": true,
-    "default": "cuda",
+    "default": "cuda13",
     "current": "auto",
     "backends": [
      {
       "name": "cpu",
       "state": "installable",
-      "message": "Backend is supported but not installed.",
-      "version": "b11393",
-      "release_url": "https://github.com/ggml-org/llama.cpp/releases/tag/b11393",
-      "file": "llama-b11393-bin-ubuntu-x64.tar.gz"
+      "message": "Processor only",
+      "version": null,
+      "release_url": null,
+      "file": null
      },
      {
-      "name": "cuda",
+      "name": "vulkan",
+      "state": "installable",
+      "message": "Vulkan (AMD, Intel, NVIDIA)",
+      "version": null,
+      "release_url": null,
+      "file": null
+     },
+     {
+      "name": "cuda12",
+      "state": "installable",
+      "message": "NVIDIA CUDA 12",
+      "version": null,
+      "release_url": null,
+      "file": null
+     },
+     {
+      "name": "cuda13",
       "state": "installed",
-      "message": "",
-      "version": "b11395",
-      "release_url": "https://github.com/lemonade-sdk/llama.cpp/releases/tag/b11395",
-      "file": "llama-b11395-ubuntu-cuda-sm_89-x64.tar.xz"
+      "message": "NVIDIA CUDA 13",
+      "version": "b12375",
+      "release_url": null,
+      "file": null
      },
      {
-      "name": "vulkan",
+      "name": "rocm",
       "state": "installable",
-      "message": "Backend is supported but not installed.",
-      "version": "b11393",
-      "release_url": "https://github.com/ggml-org/llama.cpp/releases/tag/b11393",
-      "file": "llama-b11393-bin-ubuntu-vulkan-x64.tar.gz"
-     }
-    ]
-   },
-   {
-    "recipe": "whispercpp",
-    "name": "Whisper.cpp",
-    "modality": "Speech-to-text",
-    "experimental": false,
-    "order": 2,
-    "selectable": true,
-    "default": "vulkan",
-    "current": "auto",
-    "backends": [
-     {
-      "name": "cpu",
-      "state": "installable",
-      "message": "Backend is supported but not installed.",
-      "version": "v1.8.4",
-      "release_url": "https://github.com/lemonade-sdk/whisper.cpp-rocm/releases/tag/v1.8.4",
-      "file": "whisper-v1.8.4-linux-cpu-x86_64.tar.gz"
-     },
-     {
-      "name": "vulkan",
-      "state": "installable",
-      "message": "Backend is supported but not installed.",
-      "version": "v1.8.4",
-      "release_url": "https://github.com/lemonade-sdk/whisper.cpp-rocm/releases/tag/v1.8.4",
-      "file": "whisper-v1.8.4-linux-vulkan-x86_64.tar.gz"
-     }
-    ]
-   },
-   {
-    "recipe": "moonshine",
-    "name": "Moonshine",
-    "modality": "Speech-to-text",
-    "experimental": false,
-    "order": 3,
-    "selectable": false,
-    "default": "cpu",
-    "current": "auto",
-    "backends": [
-     {
-      "name": "cpu",
-      "state": "installable",
-      "message": "Backend is supported but not installed.",
-      "version": "moonshine0.0.62",
-      "release_url": "https://github.com/lemonade-sdk/moonshine-server-rocm/releases/tag/moonshine0.0.62",
-      "file": "moonshine-server-moonshine0.0.62-linux-x64.tar.gz"
-     }
-    ]
-   },
-   {
-    "recipe": "kokoro",
-    "name": "Kokoro",
-    "modality": "Text-to-speech",
-    "experimental": false,
-    "order": 4,
-    "selectable": false,
-    "default": "cpu",
-    "current": "auto",
-    "backends": [
-     {
-      "name": "cpu",
-      "state": "installable",
-      "message": "Backend is supported but not installed.",
-      "version": "b21",
-      "release_url": "https://github.com/lemonade-sdk/Kokoros/releases/tag/b21",
-      "file": "kokoros-linux-x86_64.tar.gz"
-     }
-    ]
-   },
-   {
-    "recipe": "sd-cpp",
-    "name": "StableDiffusion.cpp",
-    "modality": "Image generation",
-    "experimental": false,
-    "order": 5,
-    "selectable": true,
-    "default": "cuda",
-    "current": "auto",
-    "backends": [
-     {
-      "name": "cpu",
-      "state": "installable",
-      "message": "Backend is supported but not installed.",
-      "version": "master-894-017cc8e",
-      "release_url": "https://github.com/lemonade-sdk/stable-diffusion.cpp/releases/tag/master-894-017cc8e",
-      "file": "sd-master-017cc8e-bin-Linux-Ubuntu-24.04-x86_64.zip"
-     },
-     {
-      "name": "cuda",
-      "state": "installable",
-      "message": "Backend is supported but not installed.",
-      "version": "master-894-017cc8e",
-      "release_url": "https://github.com/lemonade-sdk/stable-diffusion.cpp/releases/tag/master-894-017cc8e",
-      "file": "sd-master-017cc8e-ubuntu-cuda-sm_89-x64.tar.xz"
-     },
-     {
-      "name": "vulkan",
-      "state": "installable",
-      "message": "Backend is supported but not installed.",
-      "version": "master-894-017cc8e",
-      "release_url": "https://github.com/lemonade-sdk/stable-diffusion.cpp/releases/tag/master-894-017cc8e",
-      "file": "sd-master-017cc8e-bin-Linux-Ubuntu-24.04-x86_64-vulkan.zip"
-     }
-    ]
-   },
-   {
-    "recipe": "thinksound",
-    "name": "ThinkSound",
-    "modality": "Audio generation",
-    "experimental": true,
-    "order": 12,
-    "selectable": true,
-    "default": "cuda",
-    "current": "auto",
-    "backends": [
-     {
-      "name": "cuda",
-      "state": "installable",
-      "message": "Backend is supported but not installed.",
-      "version": "v0.1.2",
-      "release_url": "https://github.com/pwilkin/thinksound.cpp/releases/tag/v0.1.2",
-      "file": "thinksound-cuda-linux-x64.tar.gz"
-     },
-     {
-      "name": "vulkan",
-      "state": "installable",
-      "message": "Backend is supported but not installed.",
-      "version": "v0.1.2",
-      "release_url": "https://github.com/pwilkin/thinksound.cpp/releases/tag/v0.1.2",
-      "file": "thinksound-vulkan-linux-x64.tar.gz"
-     }
-    ]
-   },
-   {
-    "recipe": "acestep",
-    "name": "ACE-Step",
-    "modality": "Audio generation",
-    "experimental": true,
-    "order": 13,
-    "selectable": true,
-    "default": "cuda",
-    "current": "auto",
-    "backends": [
-     {
-      "name": "cuda",
-      "state": "installable",
-      "message": "Backend is supported but not installed.",
-      "version": "v0.1.1",
-      "release_url": "https://github.com/pwilkin/acestep.cpp/releases/tag/v0.1.1",
-      "file": "acestep-cuda-linux-x64.tar.gz"
-     },
-     {
-      "name": "vulkan",
-      "state": "installable",
-      "message": "Backend is supported but not installed.",
-      "version": "v0.1.1",
-      "release_url": "https://github.com/pwilkin/acestep.cpp/releases/tag/v0.1.1",
-      "file": "acestep-vulkan-linux-x64.tar.gz"
-     }
-    ]
-   },
-   {
-    "recipe": "onnxruntime",
-    "name": "ONNX Runtime",
-    "modality": "Text classification",
-    "experimental": true,
-    "order": 14,
-    "selectable": false,
-    "default": "cpu",
-    "current": "auto",
-    "backends": [
-     {
-      "name": "cpu",
-      "state": "installable",
-      "message": "Backend is supported but not installed.",
-      "version": "0.3.7",
-      "release_url": "https://github.com/lemonade-sdk/ort-server/releases/tag/0.3.7",
-      "file": "ort-server-0.3.7-linux-x64.tar.gz"
-     }
-    ]
-   },
-   {
-    "recipe": "trellis",
-    "name": "TRELLIS.2",
-    "modality": "3D generation",
-    "experimental": true,
-    "order": 15,
-    "selectable": true,
-    "default": "cuda",
-    "current": "auto",
-    "backends": [
-     {
-      "name": "cuda",
-      "state": "installable",
-      "message": "Backend is supported but not installed.",
-      "version": "v0.4.3",
-      "release_url": "https://github.com/pwilkin/trellis.cpp/releases/tag/v0.4.3",
-      "file": "trellis-cuda-linux-x64.tar.gz"
-     },
-     {
-      "name": "vulkan",
-      "state": "installable",
-      "message": "Backend is supported but not installed.",
-      "version": "v0.4.3",
-      "release_url": "https://github.com/pwilkin/trellis.cpp/releases/tag/v0.4.3",
-      "file": "trellis-vulkan-linux-x64.tar.gz"
-     }
-    ]
-   },
-   {
-    "recipe": "openmoss",
-    "name": "OpenMOSS TTS",
-    "modality": "Text-to-speech",
-    "experimental": true,
-    "order": 16,
-    "selectable": true,
-    "default": "cuda",
-    "current": "auto",
-    "backends": [
-     {
-      "name": "cuda",
-      "state": "installable",
-      "message": "Backend is supported but not installed.",
-      "version": "v0.3.0",
-      "release_url": "https://github.com/pwilkin/openmoss/releases/tag/v0.3.0",
-      "file": "moss-tts-cuda-linux-x64.tar.gz"
-     },
-     {
-      "name": "vulkan",
-      "state": "installable",
-      "message": "Backend is supported but not installed.",
-      "version": "v0.3.0",
-      "release_url": "https://github.com/pwilkin/openmoss/releases/tag/v0.3.0",
-      "file": "moss-tts-vulkan-linux-x64.tar.gz"
+      "message": "AMD ROCm",
+      "version": null,
+      "release_url": null,
+      "file": null
      }
     ]
    }
@@ -3613,9 +1715,9 @@
   ],
   "devices_assumed": false,
   "needs_backend": false,
-  "lemonade": "127.0.0.1:13307",
   "mode": "builtin",
-  "zest": "3.4.3"
+  "zest": "3.4.3",
+  "llama_tag": "b12375"
  },
  "/ui/library": {
   "root": "/home/user/zest/models",
@@ -3720,7 +1822,7 @@
     "kv_gb": 0.03,
     "id": "gemma-3-270m-it-ud-iq2-m-182787104",
     "tier": "small",
-    "provider": "lemonade",
+    "provider": "llamacpp",
     "need_gb": 0.2,
     "fit": "fits",
     "why": "",
@@ -3735,7 +1837,7 @@
      }
     },
     "ids": {
-     "lemonade": "gemma-3-270m-it-UD-IQ2_M",
+     "llamacpp": "gemma-3-270m-it-UD-IQ2_M",
      "llama-server": "gemma-3-270m-it-UD-IQ2_M"
     },
     "ref": "gemma-3-270m-it-UD-IQ2_M",
@@ -3758,8 +1860,8 @@
     "mmproj": "",
     "mtp": false,
     "folder": "/home/user/zest/models/lemonade/models--unsloth--gemma-3-270m-it-GGUF/snapshots/c90975dbd40c0c7b275fefaae758c3415c906238",
-    "source": "Lemonade",
-    "owner": "lemonade",
+    "source": "llama.cpp",
+    "owner": "llamacpp",
     "attn": {
      "layers": 18,
      "kv_heads": 1,
@@ -3772,7 +1874,7 @@
     "kv_gb": 0.03,
     "id": "gemma-3-270m-it-q4-k-m-253115424",
     "tier": "small",
-    "provider": "lemonade",
+    "provider": "llamacpp",
     "need_gb": 0.3,
     "fit": "fits",
     "why": "",
@@ -3787,7 +1889,7 @@
      }
     },
     "ids": {
-     "lemonade": "gemma270m-q4",
+     "llamacpp": "gemma270m-q4",
      "llama-server": "gemma-3-270m-it-Q4_K_M"
     },
     "ref": "gemma270m-q4",
@@ -3896,7 +1998,7 @@
     ]
    },
    {
-    "id": "zest",
+    "id": "shoggoth",
     "name": "Shoggoth basics",
     "blurb": "Skills written for Shoggoth: diagrams that appear as pictures in the chat, and clear Markdown for documents.",
     "source": "",
@@ -3937,6 +2039,35 @@
     "bundled": false,
     "mine": true,
     "skills": []
+   },
+   {
+    "id": "own",
+    "name": "Written by your models",
+    "blurb": "Skills a model proposed and you said yes to.",
+    "source": "",
+    "license": "",
+    "author": "",
+    "note": "",
+    "bundled": false,
+    "mine": false,
+    "own": true,
+    "package": "",
+    "skills": [
+     {
+      "key": "own/release-notes",
+      "name": "release-notes",
+      "dir": "release-notes",
+      "description": "Use when writing release notes from a chat.",
+      "enabled": true,
+      "bytes": 168,
+      "auto": true,
+      "from": {
+       "chat": "chat-42",
+       "model": "Qwen3-8B",
+       "date": "2026-11-14T10:00:00+05:30"
+      }
+     }
+    ]
    }
   ]
  },
@@ -4078,9 +2209,9 @@
  "/ui/providers": {
   "providers": [
    {
-    "id": "lemonade",
-    "name": "Lemonade",
-    "summary": "Runs everyday models quickly (llama.cpp and others) and loads them in seconds.",
+    "id": "llamacpp",
+    "name": "llama.cpp",
+    "summary": "Runs chat and writing models on this computer, and stops when you close Shoggoth.",
     "tier": "small-medium",
     "trusted": true,
     "approved": true,
@@ -4097,9 +2228,9 @@
       "owner": "zest"
      }
     ],
-    "bin": "/home/user/zest/lem",
+    "bin": "/home/user/zest/zd/llamacpp/llama-server",
     "problems": [],
-    "version": "2026.42.1",
+    "version": "b12375",
     "consent": null,
     "update": {
      "state": "idle",
@@ -4167,323 +2298,70 @@
  },
  "/ui/config": {
   "config": {
-   "_generated": "GENERATED by docs/tools/gen_backend_boilerplate.py -- do not hand-edit per-recipe sections (they come from each backend's descriptor config_defaults()). Global keys are hand-maintained in this file. Regenerate and verify with that script; CI --check fails on drift.",
-   "acestep": {
-    "backend": "auto",
-    "cuda_bin": "builtin",
-    "rocm_bin": "builtin",
-    "vulkan_bin": "builtin"
-   },
-   "allowed_origins": "",
-   "auto_check_model_updates": true,
-   "auto_evict": false,
-   "auto_evict_threshold_pct": 0.9,
-   "auto_update_models": false,
-   "broadcast": true,
-   "cloud_providers": [],
-   "config_version": 2,
-   "ctx_size": 131072,
-   "default_model_source": "huggingface",
-   "disable_model_filtering": false,
-   "download_rate_limit": "",
-   "ds4": {
-    "args": ""
-   },
-   "enable_dgpu_gtt": false,
-   "extra_models_dir": "/home/user/zest/zd/views/lemonade",
-   "flm": {
-    "args": "",
-    "prefer_system": false
-   },
-   "global_timeout": 86400,
-   "host": "localhost",
-   "hrx": {
-    "args": "",
-    "hrx_bin": "builtin"
-   },
-   "inhibit_suspend": true,
-   "kokoro": {
-    "cpu_bin": "builtin"
-   },
-   "llamacpp": {
-    "args": "",
-    "backend": "auto",
-    "cpu_args": "",
-    "cpu_bin": "builtin",
-    "cuda_bin": "builtin",
-    "device": "",
-    "prefer_system": true,
-    "rocm_args": "",
-    "rocm_bin": "builtin",
-    "vulkan_args": "",
-    "vulkan_bin": "builtin"
-   },
-   "log_file": "auto",
-   "log_level": "info",
-   "log_max_file_size_mb": 10,
-   "log_max_files": 5,
-   "max_loaded_models": 1,
-   "models_dir": "/home/user/zest/models/lemonade",
-   "moonshine": {
-    "args": "",
-    "cpu_args": "",
-    "cpu_bin": "builtin"
-   },
-   "no_fetch_executables": false,
-   "offline": false,
-   "onnxruntime": {
-    "args": "",
-    "cpu_args": "",
-    "cpu_bin": "builtin"
-   },
-   "openmoss": {
-    "backend": "auto",
-    "cuda_bin": "builtin",
-    "vulkan_bin": "builtin"
-   },
-   "port": 13305,
-   "rocm_channel": "stable",
-   "rocm_install_method": "auto",
-   "ryzenai": {
-    "server_bin": "builtin"
-   },
-   "sdcpp": {
-    "args": "",
-    "backend": "auto",
-    "cfg_scale": 7,
-    "cpu_args": "",
-    "cpu_bin": "builtin",
-    "cuda_args": "",
-    "cuda_bin": "builtin",
-    "height": 512,
-    "rocm_args": "",
-    "rocm_bin": "builtin",
-    "steps": 20,
-    "vulkan_args": "",
-    "vulkan_bin": "builtin",
-    "width": 512
-   },
-   "telemetry": {
-    "enabled": false,
-    "hide_inputs": false,
-    "hide_outputs": false,
-    "hide_thinking": false,
-    "max_queue_capacity": 1000,
-    "otlp": {
-     "batch_timeout_s": 1,
-     "endpoint": "http://localhost:4318/v1/traces",
-     "headers": {},
-     "max_retries": 0,
-     "protocol": "http/protobuf",
-     "retry_backoff_base_s": 5,
-     "semantics": [
-      "openinference",
-      "otel_genai"
-     ],
-     "send_batch_size": 100
-    },
-    "session": {
-     "headers": {
-      "client": [],
-      "id": []
-     }
-    },
-    "trust_incoming_trace_context": false
-   },
-   "thenoise": {
-    "backend": "auto",
-    "lora_dir": "",
-    "rocm_bin": "builtin",
-    "upscaler_dir": ""
-   },
-   "thinksound": {
-    "backend": "auto",
-    "cuda_bin": "builtin",
-    "rocm_bin": "builtin",
-    "vulkan_bin": "builtin"
-   },
-   "trellis": {
-    "args": "",
-    "backend": "auto",
-    "cuda_bin": "builtin",
-    "rocm_bin": "builtin",
-    "vulkan_bin": "builtin"
-   },
-   "vllm": {
-    "args": "",
-    "backend": "auto"
-   },
-   "websocket_port": "auto",
-   "whispercpp": {
-    "args": "",
-    "backend": "auto",
-    "cpu_args": "",
-    "cpu_bin": "builtin",
-    "npu_args": "",
-    "npu_bin": "builtin"
-   }
+   "max_loaded": 2,
+   "enabled": true,
+   "device": "",
+   "backend": "auto",
+   "tag": ""
   },
-  "defaults": {
-   "_generated": "GENERATED by docs/tools/gen_backend_boilerplate.py -- do not hand-edit per-recipe sections (they come from each backend's descriptor config_defaults()). Global keys are hand-maintained in this file. Regenerate and verify with that script; CI --check fails on drift.",
-   "acestep": {
-    "backend": "auto",
-    "cuda_bin": "builtin",
-    "rocm_bin": "builtin",
-    "vulkan_bin": "builtin"
-   },
-   "allowed_origins": "",
-   "auto_check_model_updates": true,
-   "auto_evict": false,
-   "auto_evict_threshold_pct": 0.9,
-   "auto_update_models": false,
-   "broadcast": true,
-   "cloud_providers": [],
-   "config_version": 2,
-   "ctx_size": -1,
-   "default_model_source": "huggingface",
-   "disable_model_filtering": false,
-   "download_rate_limit": "",
-   "ds4": {
-    "args": ""
-   },
-   "enable_dgpu_gtt": false,
-   "extra_models_dir": "",
-   "flm": {
-    "args": "",
-    "prefer_system": false
-   },
-   "global_timeout": 600,
-   "host": "localhost",
-   "hrx": {
-    "args": "",
-    "hrx_bin": "builtin"
-   },
-   "inhibit_suspend": true,
-   "kokoro": {
-    "cpu_bin": "builtin"
-   },
-   "llamacpp": {
-    "args": "",
-    "backend": "auto",
-    "cpu_args": "",
-    "cpu_bin": "builtin",
-    "cuda_bin": "builtin",
-    "prefer_system": true,
-    "rocm_args": "",
-    "rocm_bin": "builtin",
-    "vulkan_args": "",
-    "vulkan_bin": "builtin"
-   },
-   "log_file": "auto",
-   "log_level": "info",
-   "log_max_file_size_mb": 10,
-   "log_max_files": 5,
-   "max_loaded_models": 1,
-   "models_dir": "auto",
-   "moonshine": {
-    "args": "",
-    "cpu_args": "",
-    "cpu_bin": "builtin"
-   },
-   "no_fetch_executables": false,
-   "offline": false,
-   "onnxruntime": {
-    "args": "",
-    "cpu_args": "",
-    "cpu_bin": "builtin"
-   },
-   "openmoss": {
-    "backend": "auto",
-    "cuda_bin": "builtin",
-    "vulkan_bin": "builtin"
-   },
-   "port": 13305,
-   "rocm_channel": "stable",
-   "rocm_install_method": "auto",
-   "ryzenai": {
-    "server_bin": "builtin"
-   },
-   "sdcpp": {
-    "args": "",
-    "backend": "auto",
-    "cfg_scale": 7,
-    "cpu_args": "",
-    "cpu_bin": "builtin",
-    "cuda_args": "",
-    "cuda_bin": "builtin",
-    "height": 512,
-    "rocm_args": "",
-    "rocm_bin": "builtin",
-    "steps": 20,
-    "vulkan_args": "",
-    "vulkan_bin": "builtin",
-    "width": 512
-   },
-   "telemetry": {
-    "enabled": false,
-    "hide_inputs": false,
-    "hide_outputs": false,
-    "hide_thinking": false,
-    "max_queue_capacity": 1000,
-    "otlp": {
-     "batch_timeout_s": 1,
-     "endpoint": "http://localhost:4318/v1/traces",
-     "headers": {},
-     "max_retries": 0,
-     "protocol": "http/protobuf",
-     "retry_backoff_base_s": 5,
-     "semantics": [
-      "openinference",
-      "otel_genai"
-     ],
-     "send_batch_size": 100
+  "engine": {
+   "installed": true,
+   "running": true,
+   "port": 13307,
+   "tag": "b12375",
+   "backend": "cuda13",
+   "backend_name": "NVIDIA CUDA 13",
+   "bundled": false,
+   "pinned": "",
+   "builds": [
+    {
+     "tag": "b12375",
+     "backend": "cuda13",
+     "name": "NVIDIA CUDA 13",
+     "bundled": false
+    }
+   ],
+   "backends": [
+    {
+     "id": "cpu",
+     "name": "Processor only"
     },
-    "session": {
-     "headers": {
-      "client": [],
-      "id": []
-     }
+    {
+     "id": "vulkan",
+     "name": "Vulkan (AMD, Intel, NVIDIA)"
     },
-    "trust_incoming_trace_context": false
+    {
+     "id": "cuda12",
+     "name": "NVIDIA CUDA 12"
+    },
+    {
+     "id": "cuda13",
+     "name": "NVIDIA CUDA 13"
+    },
+    {
+     "id": "rocm",
+     "name": "AMD ROCm"
+    }
+   ],
+   "recommended": "cuda13",
+   "max_loaded": 2,
+   "device": "",
+   "error": null,
+   "update": {
+    "state": "idle",
+    "bytes": 0,
+    "total": 0,
+    "tag": null,
+    "backend": null,
+    "error": null
    },
-   "thenoise": {
-    "backend": "auto",
-    "lora_dir": "",
-    "rocm_bin": "builtin",
-    "upscaler_dir": ""
-   },
-   "thinksound": {
-    "backend": "auto",
-    "cuda_bin": "builtin",
-    "rocm_bin": "builtin",
-    "vulkan_bin": "builtin"
-   },
-   "trellis": {
-    "args": "",
-    "backend": "auto",
-    "cuda_bin": "builtin",
-    "rocm_bin": "builtin",
-    "vulkan_bin": "builtin"
-   },
-   "vllm": {
-    "args": "",
-    "backend": "auto"
-   },
-   "websocket_port": "auto",
-   "whispercpp": {
-    "args": "",
-    "backend": "auto",
-    "cpu_args": "",
-    "cpu_bin": "builtin",
-    "npu_args": "",
-    "npu_bin": "builtin"
-   }
+   "log": "/home/user/zest/zd/llamacpp/llama-server.log"
   }
  },
  "/ui/tuning": {
   "targets": [
    {
-    "engine": "lemonade",
+    "engine": "llamacpp",
     "id": "gemma-3-270m-it-UD-IQ2_M",
     "title": "gemma-3-270m-it-UD-IQ2_M",
     "detail": "Lemonade \u00b7 llama.cpp",
@@ -4500,7 +2378,7 @@
     }
    },
    {
-    "engine": "lemonade",
+    "engine": "llamacpp",
     "id": "gemma270m-q4",
     "title": "gemma270m-q4",
     "detail": "Lemonade \u00b7 llama.cpp",
@@ -4601,7 +2479,7 @@
      "blurb": ""
     },
     "engines": {
-     "title": "More engines worth knowing",
+     "title": "Other engines",
      "blurb": "Other programs that run models. Add one under Add an engine below."
     },
     "guides": {
@@ -5190,6 +3068,80 @@
     "hint": "Any OpenAI-style server."
    }
   ],
-  "servers": []
+  "servers": [],
+  "definitions_folder": "/home/you/.local/share/shoggoth/engines.d",
+  "models_file": "/home/you/.local/share/shoggoth/recommendations/models.yaml"
+ },
+ "/ui/engine/lemonade": {
+  "lemonade_bytes": 0,
+  "lemonade_gb": 0.0,
+  "depend_on_lemonade": 0
+ },
+ "/ui/model/headroom": {
+  "default": {
+   "llamacpp": 0.0
+  },
+  "set": {}
+ },
+ "/ui/update": {
+  "state": "idle",
+  "error": null,
+  "items": {}
+ },
+ "/ui/skills/own": {
+  "skills": [
+   {
+    "name": "release-notes",
+    "key": "own/release-notes",
+    "title": "Release notes",
+    "description": "Use when writing release notes from a chat.",
+    "enabled": true,
+    "bytes": 168,
+    "source": {
+     "chat": "chat-42",
+     "model": "Qwen3-8B",
+     "date": "2026-11-14T10:00:00+05:30"
+    },
+    "text": "---\nname: release-notes\ndescription: \"Use when writing release notes from a chat.\"\n---\n\n1. Collect the changes.\n2. Write one line for each.\n"
+   }
+  ]
+ },
+ "/ui/packages": {
+  "packages": [
+   {
+    "name": "bun-docx",
+    "version": "0.29.0",
+    "installed": false,
+    "installed_version": null,
+    "enabled": false,
+    "runs_code": "Runs code on your computer",
+    "note": "Not for 5.0. Needs Bun, or downloads an unverified binary at run time."
+   },
+   {
+    "name": "@sttronn/pi-sheets",
+    "version": "0.1.2",
+    "installed": true,
+    "installed_version": "0.1.2",
+    "enabled": true,
+    "runs_code": "Runs code on your computer",
+    "note": "Spreadsheets."
+   },
+   {
+    "name": "@dietrichgebert/ponytail",
+    "version": "5.3.3",
+    "installed": false,
+    "installed_version": null,
+    "enabled": true,
+    "runs_code": "Runs code on your computer",
+    "note": "Code best practices."
+   }
+  ],
+  "install": {
+   "state": "idle",
+   "name": null,
+   "done": 0,
+   "total": 0,
+   "error": null
+  }
  }
 }

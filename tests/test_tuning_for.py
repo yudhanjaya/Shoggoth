@@ -63,6 +63,13 @@ class LlamaSide(Env):
         with mock.patch.object(tuning, "llamacpp_env", lambda: dict(self.ENV)):
             self.assertEqual(tuning.tuning_for("m")["state"], "tuned")
 
+    def test_a_lemonade_record_offers_no_undo_and_says_why(self):
+        self.save(engine="lemonade", applied={"llamacpp_args": "-t 8 -fa on"}, saved_before={"llamacpp_args": "-t 4"})
+        with mock.patch.object(tuning, "llamacpp_env", lambda: dict(self.ENV)):
+            t = tuning.tuning_for("m")
+        self.assertEqual((t["state"], t["can_undo"], t["details"]["lemonade"]), ("tuned", False, True))
+        self.assertIn("Lemonade", t["details"]["reasons"][0])
+
 
 class SameShape(Env):
     def test_a_tuned_and_an_untuned_model_answer_with_the_same_keys(self):

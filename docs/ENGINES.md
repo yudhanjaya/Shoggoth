@@ -1,25 +1,91 @@
-# Add an engine in ten minutes
+# Engines
 
-An **engine** is a program that loads a model and serves inference. Shoggoth bundles one: [Lemonade](https://lemonade-server.ai). You can connect a server you run yourself (see the next section), or add an engine Shoggoth starts for you. Those engines are defined by **one folder containing one YAML file**, with no change to Shoggoth's source.
+An **engine** is a program that loads a model and serves inference. Shoggoth bundles one: [llama.cpp](https://github.com/ggml-org/llama.cpp)'s `llama-server`, which it runs in router mode. You can connect a server you run yourself, or add an engine Shoggoth starts for you.
 
-For any registered engine, Shoggoth:
+Two kinds of file describe engines, and they do different jobs:
+
+- An **engine definition file** (`shoggoth/engines.d/*.yaml`) names an engine and says where to find it and how to recognise it. It is data. It can start, install or run nothing.
+- A **provider** (a folder with `provider.yaml`, and `provider.py` only when YAML is not enough) tells Shoggoth how to start, stop, install or update an engine. It is described in the second half of this page.
+
+## Engine definition files
+
+The bundled definitions live in `shoggoth/engines.d/`. A definition of your own goes in `engines.d/` inside Shoggoth's data folder (`~/.local/share/shoggoth/engines.d/`) as `.yaml`, `.yml` or `.json`. One file holds one definition or a list of them. A definition of yours with the same `id` replaces the bundled one; `enabled: false` hides it. Files are read again when any of them changes.
+
+Shoggoth uses definitions in three places:
+
+- **The sources list** (`/ui/sources`) names the servers it found on this computer and the servers you connected.
+- **The scan** (`scan.py`) reads `/proc/net/tcp`, asks each listening port `GET /v1/models`, and uses the definitions to say what answered. It only reads and sends GETs; it never starts, stops or looks at another computer.
+- **Connect a server** uses the definition's `hint`, `key`, `formats` and `key_url` to show the right form for a service.
+
+A definition cannot carry a command. `engines.py` refuses any key outside its schema, and a `url` that is not `http(s)` or a probe path that is not a plain GET path. A file with mistakes still loads what it can; each bad definition is skipped and reported.
+
+Here is a local engine, `ollama.yaml`:
+
+```yaml
+id: ollama
+name: Ollama
+category: local
+summary: Runs models on your computer and loads each one the first time it is asked for.
+url: http://127.0.0.1:11434
+ports: [11434]
+match: [ollama]
+identify:
+  - {path: /api/version, json: "$.version"}
+formats:
+  - {api: openai-completions}
+loads: ollama
+key: none
+docs: https://github.com/ollama/ollama
+hint: "Ollama's usual address. Start Ollama first, then pull a model with ollama pull."
+```
+
+| Setting | What it says |
+| --- | --- |
+| `id`, `name`, `summary` | A short id (lowercase letters, digits, `-`, `_`, up to 48), the friendly name, and one line. `id` and `name` are needed for an enabled definition. |
+| `category` | `local`, `specialized` (built for very large models) or `hosted` (a service online). |
+| `url` | The service's usual base address. `http://` or `https://`, with no user name or password in it. |
+| `ports` | Ports the engine usually listens on. If `url` names a loopback port and `ports` is missing, the port is taken from the address. |
+| `match` | Process names to look for in `/proc`: the program name, or any word of its command line. Case-insensitive. |
+| `cwd` | Folder names to look for in the process's working folder. Use this for an engine that only shows `python main.py`, such as TabbyAPI or text-generation-webui. |
+| `identify` | Signatures in a reply, checked in order. `path` is a GET path with no query. Add `json` (a path such as `$.data[*].owned_by`) with `equals`, or `equals`/`contains` on a plain-text body (the first 64 KB), or `header` plus `equals`/`contains`. |
+| `formats` | The API formats the service speaks, and a regular expression to choose one for a model: `api` is `openai-completions`, `openai-responses`, `anthropic-messages` or `google-generative-ai`; `match` is optional and is tried against the model name. |
+| `context` | `{path, json}`: where to read a model's context size, for example `{path: /props, json: "$.default_generation_settings.n_ctx"}`. |
+| `loads` | `router` (loads and unloads models on request), `ollama` (loads the first time a model is asked for) or `fixed` (the model was chosen when it started). |
+| `key` | `none`, `optional` or `required`. |
+| `key_url`, `docs` | Web addresses for where to get a key and the project's documentation. |
+| `hint` | One line shown under the address field. |
+| `enabled` | `false` hides the definition. |
+
+**No online services are bundled.** Their prices and terms change faster than Shoggoth is released. Put a `category: hosted` definition in your own `engines.d` to have Shoggoth name one, pick its API format per model, and show it in **Connect a server**. Shoggoth reads the folder again when a file changes; nothing has to be rebuilt.
+
+**Check a file before you reload.** This reads the file and starts nothing:
+
+```bash
+./Shoggoth-*-x86_64.AppImage engines check ~/.local/share/shoggoth/engines.d/my-engine.yaml
+```
+
+It prints `✓` or `✗` for each file, the line number of a mistake, and a close match for a misspelt key. `--json` prints the same report for tools. A bad file does not stop Shoggoth or the other definitions: it is skipped and listed in the Models page's sources strip, with the line to fix.
+
+## Connect a server you already run
+
+Under **Advanced > Engines**, **Connect a server** takes the address of a server you run yourself. Pick a name for the usual address (Ollama `http://127.0.0.1:11434`, LM Studio `http://127.0.0.1:1234`, llama-server `http://127.0.0.1:9931`, Strata, Maya, Unsloth, or **Another server**), add the API key if it has one, press **Test**, then **Connect**. **Probe and connect** asks each preset's usual address on this computer for its model list (`/v1/models`, nothing else) and connects what answers, skipping servers that want a key and ones already connected. An address several presets share (8080) is connected as "Server at 127.0.0.1:8080".
+
+- A connected server is an engine that is only an address (`shoggoth/servers.py`). Its models are named `<server id>/<model>`, so two servers that both have `llama3` stay apart. Saved servers live in the `servers` setting.
+- Shoggoth never installs, starts, stops, updates, tunes or frees memory for it. If it shares a graphics card with Shoggoth's llama.cpp, you manage that.
+- The address must start with `http://` or `https://` and carry no user name or password. A trailing `/v1` is dropped. `localhost` and `127.0.0.1` count as the same address.
+- The key is kept in Shoggoth's settings file and is never sent back to the page; the page sees only its last four characters.
+- Shoggoth does not ship setup for Strata or Maya. The names are labels and default addresses (`shoggoth/engines.d/`), nothing more.
+
+## An engine Shoggoth starts: the provider folder
+
+A **provider** is one folder containing `provider.yaml`. It tells Shoggoth how to start the engine, how to tell it is ready, and where it serves. For any provider engine, Shoggoth:
 
 - lists it under **Advanced > Engines** and detects an instance that is already running;
 - starts it when one of its models is selected, after freeing memory held by conflicting engines;
 - stops it after an idle period; and
 - lists its models in the **Library** alongside those of other engines.
 
-## Connect a server you already run
-
-Under **Advanced > Engines**, **Connect a server** takes the address of a server you run yourself. Pick a name for the usual address (Ollama `http://127.0.0.1:11434`, LM Studio `http://127.0.0.1:1234`, llama.cpp `http://127.0.0.1:8080`, Strata, Maya, Unsloth, or **Another server**), add the API key if it has one, press **Test**, then **Connect**. **Probe and connect** asks each preset's usual address on this computer for its model list (`/v1/models`, nothing else) and connects what answers, skipping servers that want a key and ones already connected. An address several presets share (8080) is connected as "Server at 127.0.0.1:8080".
-
-- A connected server is an engine that is only an address (`shoggoth/servers.py`). Its models are named `<server id>/<model>`, so two servers that both have `llama3` stay apart. Saved servers live in the `servers` setting.
-- Shoggoth never installs, starts, stops, updates, tunes or frees memory for it. If it shares a graphics card with Lemonade, you manage that.
-- The address must start with `http://` or `https://` and carry no user name or password. A trailing `/v1` is dropped. `localhost` and `127.0.0.1` count as the same address.
-- The key is kept in Shoggoth's settings file and is never sent back to the page; the page sees only its last four characters.
-- Shoggoth does not ship setup for Strata or Maya. The names are labels and default addresses (`shoggoth/recommendations/servers.yaml`), nothing more.
-
-## Ten minutes, start to finish
+### Ten minutes, start to finish
 
 This builds an engine around `llama-server` (the program that comes with [llama.cpp](https://github.com/ggml-org/llama.cpp)). You need `llama-server` on your computer and one `.gguf` model.
 
@@ -56,9 +122,9 @@ A `✗` is a problem that stops Shoggoth loading the engine. It says which setti
 
 **4. Reload.** Open **Advanced > Engines**, press **Reload engines**. The card appears, with a box that says exactly what the engine will run and an **Allow it** button. Shoggoth only asks once per version of the files: change the YAML and it asks again.
 
-**5. Use a model.** `llama-server` is added after Lemonade, so Lemonade gets the models both can run. To send one kind of model to your engine, name it in `prefer_architectures` (see below), or just run Shoggoth without Lemonade. Pick the model in the chat's model picker. Shoggoth starts `llama-server` on a free port, waits for `/health`, and chats through it. It stops it again when you pick a model another engine runs, or after 20 idle minutes.
+**5. Use a model.** Your engine is added after Shoggoth's own llama.cpp, so llama.cpp gets the models both can run. To send one kind of model to your engine, name it in `prefer_architectures` (see below). Pick the model in the chat's model picker. Shoggoth starts `llama-server` on a free port, waits for `/health`, and chats through it. It stops it again when you pick a model another engine runs, or after 20 idle minutes.
 
-## The file, setting by setting
+### The file, setting by setting
 
 Everything except `id`, `name` and `api_version: 1` is optional, but a managed engine needs a way to start, a way to tell it is ready, and an address.
 
@@ -87,20 +153,20 @@ Everything except `id`, `name` and `api_version: 1` is optional, but a managed e
 
 `{context}` is the context window Shoggoth wants, in tokens (128k by default). A model is started once at that size. To change it, reload the model from the chat bar.
 
-## Rules Shoggoth follows
+### Rules Shoggoth follows
 
 - **One at a time.** Unless `capabilities.multi_model: true`, starting a second model on your engine stops the first.
 - **Memory.** Before it starts a model, Shoggoth stops what it started in any other engine of the same `memory.group` (if either is `exclusive`), unless that engine is answering right now, in which case it says so and waits for you. It never stops something you started yourself: if your engine needs the memory to itself, that is an error with the plain reason. Shoggoth doesn't measure free memory for a YAML-only engine, so one that is too big for the card fails when the engine does.
 - **What it never does.** Stop an engine it didn't start, or update it.
 - **Trust.** Engines that come with Shoggoth are trusted. One you add must be allowed once. Shoggoth remembers the allowed files by their fingerprint, so a changed file asks again. The box shows the real commands, with `{bin}` replaced by the real program. An engine that only points at an address that is already running needs no approval. A folder that fails to load is skipped and shown on the Engines page with the line to fix; it never stops Shoggoth or the other engines.
 
-## What a YAML-only engine can't do
+### What a YAML-only engine can't do
 
-Some settings exist in the files of Shoggoth's own engines but are acted on only by an engine with a `provider.py`: `install` (download and run an installer, with a checksum), `update.apply`, `models.download` (the engine downloads for itself), `models.setup`, and `capabilities.tuning`. A YAML-only engine can be found, started, stopped, listed, chatted with, and checked for updates by command, but not installed or tuned by Shoggoth. Plain GGUF downloads are done by Lemonade, whichever engine later runs the file.
+Some settings exist in the files of Shoggoth's own engines but are acted on only by an engine with a `provider.py`: `install` (download and run an installer, with a checksum), `update.apply`, `models.download` (the engine downloads for itself), `models.setup`, and `capabilities.tuning`. A YAML-only engine can be found, started, stopped, listed, chatted with, and checked for updates by command, but not installed or tuned by Shoggoth. Plain GGUF downloads are done by Shoggoth itself, whichever engine later runs the file.
 
-## When YAML isn't enough: `provider.py`
+### When YAML isn't enough: `provider.py`
 
-Add a `provider.py` next to the YAML with `class Provider(provbase.GenericProvider)` (or `provbase.Base` to do everything yourself) and override only what the YAML can't say. `shoggoth/provbase.py` documents every method; the shortest real example is `shoggoth/providers/lemonade/provider.py`. The interface in one line each:
+Add a `provider.py` next to the YAML with `class Provider(provbase.GenericProvider)` (or `provbase.Base` to do everything yourself) and override only what the YAML can't say. `shoggoth/provbase.py` documents every method; the shortest real example is `shoggoth/providers/llamacpp/provider.py`. The interface in one line each:
 
 - `detect()`, `status()`: what is there, and what the card shows.
 - `models()`, `chat_models()`, `endpoint()`, `ensure(model_id, progress, opts)`, `stop()`: serving.
@@ -112,7 +178,7 @@ Add a `provider.py` next to the YAML with `class Provider(provbase.GenericProvid
 
 A step an engine can't do raises `NotImplementedError` and Shoggoth shows it as unavailable. A `provider.py` runs inside Shoggoth with your permissions, so Shoggoth names that in the box you must allow.
 
-## Testing your engine
+### Testing your engine
 
 `providers check` covers the file. To test the behaviour, copy the approach in `tests/test_providers.py`: a YAML-only fake engine that starts `tests/fixtures/openai_server.py` (a small OpenAI-style server), `registry.approve(id)`, then `ensure`, `models`, `stop`. Run all tests with `python3 -m unittest discover tests`.
 

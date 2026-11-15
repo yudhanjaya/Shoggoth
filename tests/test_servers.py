@@ -310,6 +310,34 @@ class AsAnEngine(Env):
             stop()
 
 
+class StaleModels(Env):
+    """Master plan 2.4: removing a server drops its models from every list at once, without a restart."""
+
+    def test_removing_a_server_takes_its_models_out_at_once(self):
+        import agent
+        import library
+        import registry
+        import router
+        url, stop = fake_server(models=("m1",))
+        try:
+            e = servers.add("ollama", url)
+            registry.reload()
+            self.assertIn("ollama/m1", [m["id"] for m in router.chat_models()])
+            library._pk["v"] = None
+            self.assertIn("ollama/m1", [m["id"] for m in library.picker(max_age=0)["models"]])
+            agent.write_config(router.chat_models(), "ollama/m1")
+            path = os.path.join(agent.agent_dir(), "models.json")
+            with open(path) as f:
+                self.assertIn("m1", f.read())
+            servers.remove(e["id"])                       # no registry.reload or router.invalidate of our own
+            self.assertNotIn("ollama/m1", [m["id"] for m in router.chat_models()])
+            self.assertNotIn("ollama/m1", [m["id"] for m in library.picker(max_age=0)["models"]])
+            with open(path) as f:
+                self.assertNotIn("m1", f.read())
+        finally:
+            stop()
+
+
 class Routes(Env):
     def setUp(self):
         super().setUp()

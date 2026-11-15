@@ -352,6 +352,14 @@ _cache_lock = threading.Lock()
 _now = time.time
 
 
+def _has_gguf(m):
+    """Does this search hit list at least one .gguf file? Falls back to its tags when Hugging Face omits the file list."""
+    sib = m.get("siblings")
+    if isinstance(sib, list):
+        return any(str(f.get("rfilename") or "").lower().endswith(".gguf") for f in sib if isinstance(f, dict))
+    return "gguf" in (m.get("tags") or []) or bool(m.get("gguf"))
+
+
 def search(q):
     """Models with GGUF files matching q: [{'repo', 'downloads', 'likes', 'trusted'}], trusted uploaders first, then by downloads."""
     q = (q or "").strip()
@@ -363,11 +371,11 @@ def search(q):
         if hit and _now() - hit[0] < CACHE_SECONDS:
             _cache.move_to_end(key)
             return [dict(x) for x in hit[1]]
-    data = _get_json(BASE + "/api/models?" + urllib.parse.urlencode({"search": q, "filter": "gguf", "sort": "downloads", "limit": 40}))
+    data = _get_json(BASE + "/api/models?" + urllib.parse.urlencode({"search": q, "filter": "gguf", "sort": "downloads", "limit": 40, "full": "true"}))
     out = []
     for m in data if isinstance(data, list) else []:
         repo = m.get("id") or m.get("modelId") or ""
-        if not _REPO.match(repo) or not ("gguf" in (m.get("tags") or []) or m.get("gguf")):
+        if not _REPO.match(repo) or not _has_gguf(m):
             continue
         out.append({"repo": repo, "downloads": int(m.get("downloads") or 0), "likes": int(m.get("likes") or 0),
                     "trusted": repo.split("/", 1)[0].lower() in ALLOWED_UPLOADERS})

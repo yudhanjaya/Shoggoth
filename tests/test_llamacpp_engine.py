@@ -90,6 +90,41 @@ class Builds(Env):
         self.assertEqual(llamacpp.NEEDS_GLIBC, (2, 38))
 
 
+class NewerLinux(Env):
+    """A build that won't start on an older Linux says which Linux it needs."""
+
+    GLIBC_ERROR = ("./llama-server: /lib/x86_64-linux-gnu/libc.so.6: version `GLIBC_2.38' not found "
+                   "(required by ./libggml-base.so)\n")
+
+    def test_a_glibc_not_found_error_names_2_38_and_the_distros(self):
+        with mock.patch.object(llamacpp.util, "run", return_value=(1, self.GLIBC_ERROR)), \
+                mock.patch.object(llamacpp, "_glibc", lambda: (2, 31)):
+            with self.assertRaises(RuntimeError) as e:
+                llamacpp.check_build("/x/llama-server", "b12375")
+        msg = str(e.exception)
+        for bit in ("needs a newer Linux", "glibc 2.38", "Ubuntu 24.04", "Debian 13", "Fedora 39",
+                    "Linux Mint 22", "this computer has 2.31"):
+            self.assertIn(bit, msg)
+
+    def test_an_old_glibc_without_a_message_still_says_which_linux(self):
+        with mock.patch.object(llamacpp.util, "run", return_value=(1, "Segmentation fault")), \
+                mock.patch.object(llamacpp, "_glibc", lambda: (2, 35)):
+            with self.assertRaises(RuntimeError) as e:
+                llamacpp.check_build("/x/llama-server", "b12375")
+        self.assertIn("glibc 2.38", str(e.exception))
+
+    def test_a_build_that_runs_is_accepted(self):
+        with mock.patch.object(llamacpp.util, "run", return_value=(0, "build 12375")):
+            llamacpp.check_build("/x/llama-server", "b12375")
+
+    def test_some_other_failure_is_not_called_an_old_linux(self):
+        with mock.patch.object(llamacpp.util, "run", return_value=(1, "cannot execute: x")), \
+                mock.patch.object(llamacpp, "_glibc", lambda: (2, 39)):
+            with self.assertRaises(RuntimeError) as e:
+                llamacpp.check_build("/x/llama-server", "b12375")
+        self.assertIn("won't start", str(e.exception))
+
+
 class LoadLog(Env):
     def test_what_a_load_took_is_read_from_the_load_log(self):
         with open(os.path.join(HERE, "fixtures", "kvlogs", "qwen3-0.6b-q4_0-q8-8192.log")) as f:
@@ -142,6 +177,8 @@ class Devices(Env):
         st = {b["name"]: (b["state"], b["version"]) for b in r["backends"]}
         self.assertEqual(st["vulkan"], ("installed", "b12375"))
         self.assertEqual(st["cuda13"], ("installable", None))
+        self.assertEqual([x["recipe"] for x in hardware.backends() if x["recipe"] == "llamacpp"], ["llamacpp"])   # one recipe, no Lemonade
+        self.assertEqual(sorted(b["name"] for b in r["backends"]), ["cpu", "cuda12", "cuda13", "rocm", "vulkan"])
 
 
 class ChatContext(Env):
@@ -277,6 +314,22 @@ class Routes(Env):
         self.assertEqual(json.loads(self.call("POST", "/ui/setup/mode", {"mode": "connected"})[1])["mode"], "connected")
         self.assertEqual(self.call("POST", "/ui/setup/mode", {"mode": "existing-lemonade"})[0], 400)
 
+    def test_choosing_a_paired_shoggoth_skips_the_engine_download(self):
+        store.update(lambda s: s["servers"].append({"id": "desk", "preset": "shoggoth", "name": "desk-pc", "url": "https://192.168.1.5:13308",
+                                                    "key": "shoggoth-peer-x", "fp": "ab" * 32}))
+        st, raw = self.call("POST", "/ui/setup/mode", {"mode": "connected"})
+        self.assertEqual((st, json.loads(raw)["client_only"]), (200, True))
+        self.assertTrue(store.load()["client_only"])
+        self.assertTrue(json.loads(self.call("GET", "/ui/setup")[1])["client_only"])
+        st, raw = self.call("POST", "/ui/setup/mode", {"mode": "builtin"})            # "also run models on this computer"
+        self.assertEqual((st, json.loads(raw)["client_only"]), (200, False))
+
+    def test_another_kind_of_server_does_not_skip_the_engine_download(self):
+        store.update(lambda s: s["servers"].append({"id": "box", "preset": "ollama", "name": "box", "url": "http://192.168.1.6:11434",
+                                                    "key": "shoggoth-peer-x"}))
+        st, raw = self.call("POST", "/ui/setup/mode", {"mode": "connected"})
+        self.assertEqual((st, json.loads(raw)["client_only"]), (200, False))
+
     def test_api_forwards_only_the_openai_style_paths(self):
         st, raw = self.call("GET", "/api/v1/system-info")
         self.assertEqual(st, 404)
@@ -293,6 +346,149 @@ class Routes(Env):
         self.assertEqual(self.server.Handler._tune_args({"engine": "llamacpp", "target": "m"})[:2], ("llamacpp", "m"))
         with self.assertRaises(ValueError):
             self.server.Handler._tune_args({"engine": "lemonade", "target": "m"})
+
+
+class ChildProcessMemory(Env):
+    """S2: what a load really took, measured on the model's own process (nvidia-smi and /proc), not the router's quiet log."""
+
+    def setUp(self):
+        super().setUp()
+        self._old = {k: llamacpp._state.get(k) for k in ("pid", "port")}
+        self.addCleanup(lambda: llamacpp._state.update(self._old))
+
+    def smi(self, text=None):
+        """A fake nvidia-smi on PATH printing `text`; None leaves it out (an AMD card or a processor-only computer)."""
+        d = os.path.join(self.tmp, "bin")
+        os.makedirs(d, exist_ok=True)
+        if text is not None:
+            with open(os.path.join(d, "nvidia-smi"), "w") as f:
+                f.write("#!/bin/sh\n" + "".join("printf '%%s\\n' %r\n" % line for line in text.splitlines()))
+            os.chmod(os.path.join(d, "nvidia-smi"), 0o755)
+        elif os.path.exists(os.path.join(d, "nvidia-smi")):
+            os.remove(os.path.join(d, "nvidia-smi"))
+        p = mock.patch.dict(os.environ, {"PATH": d})
+        p.start()
+        self.addCleanup(p.stop)
+
+    def proc(self, router=1000, kids=None, ports=None, rss_kb=1048576, children_file=True):
+        """A fake /proc: the router's children list and each child's command line and VmRSS."""
+        kids = list(kids or [4242])
+        ports = ports or {p: 41234 for p in kids}
+        root = os.path.join(self.tmp, "proc")
+        if children_file:
+            task = os.path.join(root, str(router), "task", str(router))
+            os.makedirs(task, exist_ok=True)
+            with open(os.path.join(task, "children"), "w") as f:
+                f.write(" ".join(str(p) for p in kids))
+        for pid, port in ports.items():
+            d = os.path.join(root, str(pid))
+            os.makedirs(d, exist_ok=True)
+            with open(os.path.join(d, "cmdline"), "wb") as f:
+                f.write(("llama-server\0--port\0%d\0" % port).encode())
+            if rss_kb is not None:
+                with open(os.path.join(d, "status"), "w") as f:
+                    f.write("Name:\tllama-server\nVmRSS:\t%d kB\n" % rss_kb)
+            elif os.path.exists(os.path.join(d, "status")):
+                os.remove(os.path.join(d, "status"))
+        llamacpp._state["pid"] = router
+        return root
+
+    def model(self, args):
+        p = mock.patch.object(llamacpp, "models", lambda: [{"id": "m", "status": "loaded", "args": args, "ctx": 8192}])
+        p.start()
+        self.addCleanup(p.stop)
+
+    def test_the_models_own_gpu_memory_is_summed_over_its_cards(self):
+        self.smi("4242, 3072\n4242, 512\n9999, 1024")
+        root = self.proc()
+        self.model(["llama-server", "--port", "41234"])
+        self.assertEqual(llamacpp.measured_process_gb("m", proc_root=root), 3.5)
+
+    def test_processor_memory_is_added_when_experts_stay_there(self):
+        self.smi("4242, 3072")
+        root = self.proc(rss_kb=1048576)                     # 1 GB of processor memory
+        self.model(["llama-server", "--port", "41234", "--n-cpu-moe", "24"])
+        self.assertEqual(llamacpp.measured_process_gb("m", proc_root=root), 4.0)
+
+    def test_a_model_on_the_processor_is_its_memory(self):
+        self.smi("9999, 1024")                               # nvidia-smi is here, but this process holds no card
+        root = self.proc(rss_kb=2097152)
+        self.model(["llama-server", "--port", "41234", "--device", "none"])
+        self.assertEqual(llamacpp.measured_process_gb("m", proc_root=root), 2.0)
+
+    def test_no_nvidia_smi_uses_processor_memory(self):
+        self.smi(None)
+        root = self.proc(rss_kb=3145728)
+        self.model(["llama-server", "--port", "41234"])
+        self.assertEqual(llamacpp.measured_process_gb("m", proc_root=root), 3.0)
+
+    def test_a_child_on_another_port_is_not_this_model(self):
+        self.smi("4243, 1024")
+        root = self.proc(kids=[4242, 4243], ports={4242: 40001, 4243: 41234})
+        self.model(["llama-server", "--port", "41234"])
+        self.assertEqual(llamacpp.measured_process_gb("m", proc_root=root), 1.0)
+
+    def test_children_are_found_by_parent_when_the_kernel_lists_are_missing(self):
+        self.smi("4242, 2048")
+        root = self.proc(children_file=False)
+        for pid, ppid in ((1000, 1), (4242, 1000)):
+            os.makedirs(os.path.join(root, str(pid)), exist_ok=True)
+            with open(os.path.join(root, str(pid), "stat"), "w") as f:
+                f.write("%d (llama-server) S %d 0 0 0\n" % (pid, ppid))
+        self.model(["llama-server", "--port", "41234"])
+        self.assertEqual(llamacpp.measured_process_gb("m", proc_root=root), 2.0)
+
+    def test_unknown_records_nothing(self):
+        self.smi("4242, 1024")
+        root = self.proc()
+        with mock.patch.object(llamacpp, "_state", dict(llamacpp._state, pid=None)):
+            self.model(["llama-server", "--port", "41234"])
+            self.assertIsNone(llamacpp.measured_process_gb("m", proc_root=root))
+        self.smi(None)
+        root = self.proc(rss_kb=None)                        # no VmRSS and no nvidia-smi
+        self.model(["llama-server", "--port", "41234"])
+        self.assertIsNone(llamacpp.measured_process_gb("m", proc_root=root))
+
+
+class ProviderRecordsMeasured(Env):
+    """S2: the provider records the measurement once the load succeeds, at the context it was loaded with."""
+
+    def provider(self):
+        import importlib.util
+        import provbase
+        path = os.path.join(HERE, "..", "shoggoth", "providers", "llamacpp", "provider.py")
+        spec = importlib.util.spec_from_file_location("s2_provider_llamacpp", path)
+        mod = importlib.util.module_from_spec(spec)
+        spec.loader.exec_module(mod)
+        return mod.Provider({"id": "llamacpp", "name": "llama.cpp", "api_version": 1}, self.tmp, provbase.Context())
+
+    def load(self, log_gb, process_gb, seen):
+        import library
+        with mock.patch.object(llamacpp, "running", lambda: True), \
+                mock.patch.object(llamacpp, "endpoint", lambda: {"base_url": "http://127.0.0.1:1/v1", "key": "k"}), \
+                mock.patch.object(llamacpp, "models", lambda: [{"id": "m", "status": "loaded", "args": ["--port", "41234"], "ctx": 8192}]), \
+                mock.patch.object(llamacpp, "measured_gb", lambda mid: log_gb), \
+                mock.patch.object(llamacpp, "measured_process_gb", lambda mid: process_gb), \
+                mock.patch.object(llamacpp, "reload", lambda: True), \
+                mock.patch.object(llamacpp, "unload", lambda mid: (True, "")), \
+                mock.patch.object(llamacpp, "load", lambda mid: (True, "")), \
+                mock.patch.object(library, "record_measured", lambda mid, gb, ctx=None: seen.append((mid, gb, ctx))):
+            return self.provider().ensure("m", lambda t: None, {"force": True})
+
+    def test_the_process_measurement_is_recorded(self):
+        seen = []
+        self.load(None, 4.25, seen)
+        self.assertEqual(seen, [("m", 4.25, 8192)])
+
+    def test_the_load_log_wins_when_it_has_the_buffers(self):
+        seen = []
+        self.load(2.0, 9.9, seen)
+        self.assertEqual(seen, [("m", 2.0, 8192)])
+
+    def test_nothing_is_recorded_when_it_cannot_be_measured(self):
+        seen = []
+        self.assertIsNotNone(self.load(None, None, seen))
+        self.assertEqual(seen, [])
 
 
 if __name__ == "__main__":

@@ -46,6 +46,10 @@ CHAT_SEARCH = " You can look things up with the web_search tool; the user is ask
 JOB_PROMPT = ("This is a background job. Nobody is watching each step, so work on your own toward the goal and only stop to ask "
               "the user something when you are truly blocked. Work in rounds: in each one make the most useful progress you can, "
               "then stop and say in one short sentence what you changed.")
+MAKE_SKILL_PROMPT = ("Look back over this conversation. If something here worked and will come up again, distil it into a skill: "
+                     "the steps that worked, in order, short enough for a small model, with one example. Call save_skill with a "
+                     "short name, a description saying when to use it, and the numbered steps as the body. If nothing here is "
+                     "worth keeping, say so in one sentence and save nothing.")
 NOT_CHAT = ("sd-cpp", "whispercpp", "kokoro", "moonshine", "acestep", "thinksound", "trellis", "openmoss")
 JOB_ACTIVE = ("queued", "working", "paused")
 JOB_FINAL = ("done", "stopped", "failed")
@@ -179,14 +183,22 @@ def model_ctx(model):
 
 
 def model_state():
-    """What the chat bar shows: the model in memory, how much context it has, and what Shoggoth is loading right now."""
+    """What the chat bar shows: the model in memory, how much context it has, and what Shoggoth is loading right now.
+
+    `auto_ctx` is what a load would ask for while the setting is "auto", so the chat bar can say "Auto (32k)" instead of only "auto"."""
     name, ctx = None, 0
     live = [m for m in router.chat_models() if m["live"]]           # the providers' own lists (llama.cpp: router GET /models, status loaded)
     if live:
         name, ctx = live[0]["id"], live[0]["ctx"]
     with _lock:
         loading = dict(_loading) if _loading["model"] else None
-    return {"loaded": name, "ctx": ctx, "chat_ctx": chat_ctx_setting(), "loading": loading, "default_ctx": DEFAULT_CTX,
+    auto = 0
+    if chat_ctx_setting() == "auto":
+        for m in router.chat_models():                            # the loaded one first, else the first model a chat could pick
+            auto = _auto_ctx(m["id"]) or 0
+            if auto and (m["live"] or not live):
+                break
+    return {"loaded": name, "ctx": ctx, "chat_ctx": chat_ctx_setting(), "auto_ctx": auto, "loading": loading, "default_ctx": DEFAULT_CTX,
             "step": router.state()["step"]}
 
 
@@ -304,9 +316,8 @@ def model_api(m):
     return engines.api_for(entry.get("preset") or "", m.get("pi_model") or m.get("id"))
 
 
-def write_config(models, default, ctx=0):
-    d = agent_dir()
-    os.makedirs(d, exist_ok=True)
+def _provider_map(models, default, ctx=0):
+    """The `providers` part of Pi's models.json: one provider per engine (or connected server), each with its models."""
     providers, groups = {}, {}
     for m in models:
         groups.setdefault(m["pi_provider"], []).append(m)
@@ -331,6 +342,13 @@ def write_config(models, default, ctx=0):
                            "models": entries}
         if any(e["api"] == "anthropic-messages" for e in entries):
             providers[name]["authHeader"] = True                 # services that front Claude may want the key as a Bearer token as well as x-api-key
+    return providers
+
+
+def write_config(models, default, ctx=0):
+    d = agent_dir()
+    os.makedirs(d, exist_ok=True)
+    providers = _provider_map(models, default, ctx)
     _write(os.path.join(d, "models.json"), {"providers": providers})
     chosen = router.info(default) or {}
     settings = {"defaultProvider": chosen.get("pi_provider", "llamacpp"), "defaultProjectTrust": "never", "quietStartup": True,
@@ -342,6 +360,22 @@ def write_config(models, default, ctx=0):
     if pi_packages():
         settings["packages"] = pi_packages()
     _write(os.path.join(d, "settings.json"), settings)
+
+
+def sync_models():
+    """Rewrite Pi's models.json from the engines' current lists, keeping the chosen default. A removed source's models go at once."""
+    path = os.path.join(agent_dir(), "models.json")
+    if not os.path.isfile(path):
+        return
+    default = ""
+    try:
+        with open(os.path.join(agent_dir(), "settings.json")) as f:
+            default = str((json.load(f) or {}).get("defaultModel") or "")
+    except (OSError, ValueError):
+        pass
+    models = chat_models()
+    chosen = next((m["id"] for m in models if str(m.get("pi_model") or m["id"]) == default), default)
+    _write(path, {"providers": _provider_map(models, chosen, 0)})
 
 
 def pi_packages():
@@ -1108,6 +1142,18 @@ def command(sid, cmd):
                 s.loading = False
     s.send(cmd)
     return {"ok": True}
+
+
+def make_skill(sid):
+    """The chat menu's "Make a skill from this chat": send the chat's Pi session the fixed prompt that asks it to distil what worked
+    and call save_skill. The approval card for the save still comes from skillsmith, so nothing is kept without the person's yes."""
+    t = get_task(sid)
+    if not t:
+        raise ValueError("That chat isn't here any more.")
+    if _is_job(t):
+        raise ValueError("That is a background job, not a chat, so there is no one to ask about a skill.")
+    command(sid, {"type": "prompt", "message": MAKE_SKILL_PROMPT})
+    return {"ok": True, "prompt": MAKE_SKILL_PROMPT}
 
 
 def set_mode(sid, mode):

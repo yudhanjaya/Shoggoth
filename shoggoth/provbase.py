@@ -113,10 +113,13 @@ def _pinned_json(url, h, data, method, timeout, pin):
         conn.close()
 
 
-def http_json(url, key="", timeout=3, method="GET", body=None, pin=None):
+def http_json(url, key="", timeout=3, method="GET", body=None, pin=None, headers=None):
     """(status, json) from a URL; (0, {}) when it can't be reached. With `pin` (a certificate's sha256), the URL must be https and the
-    server must present exactly that certificate; any other certificate counts as unreachable and the request is never sent."""
+    server must present exactly that certificate; any other certificate counts as unreachable and the request is never sent.
+    `headers` adds to (or overrides) the ones made here, for services that want their key in their own header."""
     h = {"Authorization": "Bearer " + key} if key else {}
+    if headers:
+        h.update(headers)
     data = None
     if body is not None:
         data, h["Content-Type"] = json.dumps(body).encode(), "application/json"

@@ -14,7 +14,7 @@ sys.path.insert(0, os.path.join(HERE, "..", "shoggoth"))
 import engines  # noqa: E402
 
 GOOD = {"id": "ninfer", "name": "Ninfer", "category": "specialized", "summary": "Big models.", "url": "http://127.0.0.1:9100", "ports": [9100],
-        "match": ["ninfer"], "identify": [{"path": "/v1/models", "json": "$.data[*].owned_by", "equals": "ninfer"}],
+        "match": ["ninfer"], "cwd": [], "identify": [{"path": "/v1/models", "json": "$.data[*].owned_by", "equals": "ninfer"}],
         "formats": [{"api": "openai-completions"}], "context": {"path": "/props", "json": "$.n_ctx"}, "loads": "fixed", "key": "optional",
         "key_url": "", "docs": "https://example.com/ninfer", "hint": "Use the address it prints.", "enabled": True}
 
@@ -70,6 +70,15 @@ class BundledFiles(unittest.TestCase):
         self.assertEqual({by[i]["category"] for i in ("strata", "maya")}, {"specialized"})
         self.assertEqual(by["strata"]["match"], ["strata"])
 
+    def test_engines_that_only_say_python_are_matched_by_their_folder(self):
+        by = {e["id"]: e for e in engines.definitions()}
+        self.assertEqual(by["tabbyapi"]["cwd"], ["tabbyAPI"])
+        self.assertEqual(by["textgen"]["cwd"], ["text-generation-webui", "textgen"])
+
+    def test_ninfer_is_recognised_by_its_metrics(self):
+        by = {e["id"]: e for e in engines.definitions()}
+        self.assertIn({"path": "/metrics", "contains": "ninfer_"}, by["ninfer"]["identify"])
+
 
 class Schema(unittest.TestCase):
     def bad(self, **kw):
@@ -93,6 +102,11 @@ class Schema(unittest.TestCase):
             for u in ("file:///etc/passwd", "ftp://x/y", "javascript:alert(1)", "http://u:p@h", "//h/x", "http://h:99999"):
                 self.assertIn("`%s`" % key, self.bad(**{key: u}), u)
 
+    def test_prices_and_terms_are_not_kept(self):
+        """Services change their prices and terms faster than Shoggoth is released, so a definition doesn't carry them."""
+        self.assertIn("unknown key `price`", self.bad(price="From $1 a month"))
+        self.assertIn("unknown key `terms`", self.bad(terms="https://example.com/terms"))
+
     def test_identify_paths_must_be_plain(self):
         for p in ("props", "http://evil/props", "/props?x=1", "/a/../b", "//evil", "/p q", "/p#frag", ""):
             self.assertNotEqual(self.bad(identify=[{"path": p}]), "", p)
@@ -115,6 +129,15 @@ class Schema(unittest.TestCase):
         self.assertNotEqual(self.bad(ports=["8080"]), "")
         self.assertNotEqual(self.bad(id="Has Space"), "")
 
+    def test_cwd_takes_working_folder_names(self):
+        d, errs = engines.clean(dict(GOOD, cwd="TabbyAPI"))
+        self.assertEqual((errs, d["cwd"]), ([], ["TabbyAPI"]))
+        self.assertIn("`cwd` must be a list", self.bad(cwd=5))
+
+    def test_a_plain_text_signature_needs_only_a_path_and_contains(self):
+        d, errs = engines.clean(dict(GOOD, identify=[{"path": "/metrics", "contains": "ninfer_"}]))
+        self.assertEqual((errs, d["identify"]), ([], [{"path": "/metrics", "contains": "ninfer_"}]))
+
     def test_a_hidden_entry_needs_only_an_id(self):
         d, errs = engines.clean({"id": "strata", "enabled": False})
         self.assertEqual((errs, d["enabled"]), ([], False))
@@ -136,28 +159,17 @@ class Merging(Env):
         self.assertEqual((by["ollama"]["name"], by["ollama"]["ports"]), ("My Ollama", [11999]))
         self.assertEqual(self.ids().count("ollama"), 1)
 
-    def test_a_user_definition_cannot_move_a_hosted_service(self):
-        self.put("or.yaml", "id: openrouter\nname: OpenRouter fix\ncategory: hosted\nurl: https://evil.example/api/v1\nkey: required\n")
-        by = {e["id"]: e for e in engines.definitions()}
-        self.assertEqual(by["openrouter"]["url"], "https://openrouter.ai/api/v1")
-        self.assertEqual(by["openrouter"]["name"], "OpenRouter")
-        msg = [p for p in engines.problems() if p["file"].endswith("or.yaml")]
-        self.assertEqual(len(msg), 1)
-        self.assertIn("openrouter.ai", msg[0]["error"])
-        self.assertIn("new `id`", msg[0]["error"])
+    def test_no_online_service_is_bundled(self):
+        self.assertEqual([e["id"] for e in engines.definitions() if e["category"] == "hosted"], [])
 
-    def test_a_user_definition_may_restate_a_hosted_service_or_use_a_new_id(self):
-        self.put("or.yaml", "id: openrouter\nname: My OpenRouter\ncategory: hosted\nurl: https://openrouter.ai/api/v1\nkey: required\n")
-        self.put("mine.yaml", "id: myhost\nname: Mine\ncategory: hosted\nurl: https://llm.example.com/v1\nkey: required\n")
+    def test_an_online_service_of_yours_is_added_from_a_file_and_carries_its_host(self):
+        self.put("mine.yaml", "id: myhost\nname: Mine\ncategory: hosted\nurl: https://llm.example.com/v1\nkey: required\n"
+                 "formats:\n  - {api: anthropic-messages, match: \"^claude\"}\n")
         by = {e["id"]: e for e in engines.definitions()}
-        self.assertEqual(by["openrouter"]["name"], "My OpenRouter")
-        self.assertIn("myhost", by)
-        self.assertEqual(engines.problems(), [])
-
-    def test_hosted_definitions_carry_their_host(self):
-        by = {e["id"]: e for e in engines.definitions()}
-        self.assertEqual(by["openrouter"]["host"], "openrouter.ai")
+        self.assertEqual(by["myhost"]["host"], "llm.example.com")
         self.assertNotIn("host", by["ollama"])
+        self.assertEqual(engines.api_for("myhost", "claude-x"), "anthropic-messages")
+        self.assertEqual(engines.problems(), [])
 
     def test_alias_bombs_are_refused(self):
         bomb = "a: &a [x, x, x, x, x, x, x, x, x, x]\n" + "".join(

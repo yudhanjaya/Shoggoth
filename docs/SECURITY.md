@@ -8,7 +8,8 @@ Shoggoth's UI can change settings, start engines, and run commands inside a fold
 | --- | --- | --- | --- |
 | UI server | `127.0.0.1:13306` | The browser UI and `/ui/*`, `/api/*` | Session cookie, or bearer token |
 | Gateway | `127.0.0.1:13308` | OpenAI-compatible endpoints for other applications | API key, always required |
-| Built-in Lemonade | Private port | Inference | Random `LEMONADE_API_KEY`, known only to Shoggoth |
+| Gateway, LAN side | `0.0.0.0:13308` when sharing is on | The same endpoints for other Shoggoths on the network | HTTPS only, plus that Shoggoth's own pairing key |
+| Built-in llama.cpp router | Private port | Inference | Random API key, known only to Shoggoth |
 
 ## UI authentication
 
@@ -23,8 +24,18 @@ Shoggoth's UI can change settings, start engines, and run commands inside a fold
 
 - The UI server rejects requests whose `Host` header does not name the local machine. This mitigates DNS rebinding.
 - Use `--host 0.0.0.0` only on a trusted network. The UI is authenticated, but traffic is not encrypted.
-- The gateway can be opened to the local network from **Advanced > Server**. Any holder of the API key can then use the loaded models. Traffic is unencrypted. **Make a new key** invalidates the previous key immediately.
+- The gateway can be opened to other Shoggoths on the local network from the Server page. The network side is HTTPS only. Any holder of the API key, or a Shoggoth paired with this computer, can then use the loaded models over that encrypted connection. **Make a new key** invalidates the previous key immediately.
 - The gateway cannot download, delete, or install anything, or change settings.
+
+## Sharing with other Shoggoths
+
+- The network side of the gateway speaks HTTPS only, TLS 1.2 or newer. The certificate is self-signed and made once, on the first share, then kept in the config folder.
+- Plain HTTP from another device is not served. The connection is answered with a short message that tells the person to use `https://` and to trust the certificate shown on the Server page.
+- Pairing uses a 6-digit code. The code is shown on the server and typed on the client, and the exchange runs over the TLS link the client has already pinned to the certificate fingerprint it saw in the beacon.
+- Each paired client gets its own key. The server keeps only a hash of each key, so the keys cannot be read back out of the settings file.
+- **Remove** revokes a key at once.
+- The beacon is a UDP packet every 2 seconds on port 13309. It carries the computer's name, a profile id, the Shoggoth version, the gateway port, the certificate fingerprint and the model count. It carries no model names, chats, folders or keys.
+- Keys for servers you connect are stored in the settings file, which is kept at mode `600`.
 
 ## Agent approval gate
 
@@ -40,6 +51,16 @@ Related controls:
 
 ## Supply chain
 
-- Downloaded components (Lemonade, Pi, and the AppImage build inputs) are verified against pinned or published checksums before use. Pi's npm tarball is verified against the registry's sha512 integrity value.
+- Downloaded components (llama.cpp, Pi, whisper.cpp and Piper, and the AppImage build inputs) are verified against pinned or published checksums before use. Pi's npm tarball is verified against the registry's sha512 integrity value. GitHub publishes no checksum for Piper's Linux tarballs, so their sha256 values are kept in `tts.py`; each voice from Hugging Face is checked against its published sha256.
 - Skills installed from a link are downloaded as plain files from `codeload.github.com` (40 MB cap, 3,000 files, no path escapes). Nothing from the download is executed at install time. A skill's scripts run only if the model runs them, which requires approval in `ask` mode.
-- Engines added by users must be approved once. Approval is keyed to a fingerprint of the engine's files, so any change prompts again. Engines bundled with Shoggoth are trusted.
+- Engines added by users must be approved once. Approval is keyed to a fingerprint of the engine's files, so any change prompts again. Engines bundled with Shoggoth are trusted. An engine definition file (`engines.d/*.yaml`) is data: it can name an engine and describe how to recognise it, but it cannot carry a command, and a built-in hosted service cannot be pointed at another address.
+
+## Pi packages
+
+A Pi package is npm code that runs inside Pi. Shoggoth installs only the pinned entries in `shoggoth/recommendations/pi-packages.yaml`, at an exact version, checked against the sha512 npm publishes. It never runs npm or a lifecycle script: the tarball is unpacked, and a dependency from anywhere except the npm registry is refused. All entries shipped with 5.0 are switched off until they have been tested.
+
+Once installed and turned on, a package's code runs in Pi's own process, with the user's permissions. The approval gate covers Pi's tools, not an extension's own code, so a package can do what any program on the computer can. Shoggoth says "Runs code on your computer" next to it for that reason.
+
+## Attachments
+
+A file attached in a chat is written as it came and never executed. Its name is cleaned: folder parts, control characters and direction-changing characters are refused, and one file is capped at 50 MB. A PDF is read with `pdftotext` or rendered with `pdftoppm` only if poppler is installed; no content from a file is passed to a shell.

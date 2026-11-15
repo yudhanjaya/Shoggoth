@@ -177,5 +177,45 @@ class Run(Env):
         self.assertEqual(llamatune.results(), {})
 
 
+class LemonadeRecords(Env):
+    """tuning.json entries the 4.x Lemonade tuner wrote: `applied` holds Lemonade's option names, not llama-server preset keys."""
+
+    def legacy(self, **kw):
+        res = {"engine": "lemonade", "model": "m", "when": "2026-09-01T10:00:00", "use": "chat", "outcome": "improved", "gain_pct": 7.0,
+               "decode_tok_s": 50.0, "baseline_tok_s": 47.0, "change": "8 threads",
+               "applied": {"llamacpp_args": "-t 8 -fa on", "llamacpp_backend": "rocm", "llamacpp_device": "gpu"},
+               "saved_before": {"llamacpp_args": "-t 4", "llamacpp_backend": "rocm", "llamacpp_device": "gpu"}}
+        res.update(kw)
+        llamatune._save_results({"m": res})
+        return res
+
+    def test_it_is_recognised(self):
+        self.assertTrue(llamatune.written_by_lemonade(self.legacy()))
+        self.assertTrue(llamatune.written_by_lemonade({"outcome": "improved", "applied": "-t 8 -fa on"}))
+        self.assertTrue(llamatune.written_by_lemonade({"outcome": "improved", "applied": {"llamacpp_args": "-t 8"}}))
+
+    def test_a_5x_record_is_not(self):
+        self.assertFalse(llamatune.written_by_lemonade({"engine": "llamacpp", "applied": {"ubatch-size": 1024}, "saved_before": {"ubatch-size": None}}))
+        self.assertFalse(llamatune.written_by_lemonade({"engine": "llamacpp", "applied": None}))
+        self.assertFalse(llamatune.written_by_lemonade(None))
+
+    def test_undo_refuses_and_leaves_presets_alone(self):
+        self.legacy()
+        before = llamacpp.read_presets()
+        ok, msg = llamatune.rollback("m")
+        self.assertFalse(ok)
+        self.assertIn("Lemonade", msg)
+        self.assertEqual(llamacpp.read_presets(), before)
+        self.assertEqual(llamatune.results()["m"]["applied"], {"llamacpp_args": "-t 8 -fa on", "llamacpp_backend": "rocm", "llamacpp_device": "gpu"})
+
+    def test_an_unexpected_string_is_refused_not_iterated(self):
+        self.legacy(applied="-t 8 -fa on")
+        before = llamacpp.read_presets()
+        ok, msg = llamatune.rollback("m")
+        self.assertFalse(ok)
+        self.assertIn("Lemonade", msg)
+        self.assertEqual(llamacpp.read_presets(), before)
+
+
 if __name__ == "__main__":
     unittest.main()

@@ -38,6 +38,8 @@ class Fake(http.server.BaseHTTPRequestHandler):
     branch = "main"            # the repo's default branch
     no_lfs = set()             # files listed without an lfs entry (no sha256)
     huge = False               # answer the tree request with a reply bigger than hf.MAX_JSON
+    with_siblings = False      # list each search hit's files (the real API does when asked for full results)
+    siblings = {}              # {repo id: [{"rfilename": ...}]}; the others get one .gguf
 
     def log_message(self, *a):
         pass
@@ -72,8 +74,12 @@ class Fake(http.server.BaseHTTPRequestHandler):
             return self.reply(404, b"{}")
         if path.startswith("/api/models?"):
             Fake.search_hits += 1
+
             def m(i, dl, tags=("gguf",)):
-                return {"id": i, "downloads": dl, "likes": 1, "tags": list(tags)}
+                hit = {"id": i, "downloads": dl, "likes": 1, "tags": list(tags)}
+                if Fake.with_siblings:
+                    hit["siblings"] = Fake.siblings.get(i, [{"rfilename": "model-Q4_K_M.gguf"}])
+                return hit
             return self.reply(200, json.dumps([
                 m("random/Big-GGUF", 9000), m("bartowski/Mid-GGUF", 50), m("unsloth/Low-GGUF", 10),
                 m("nogguf/Thing", 99999, ("transformers",)), m("lmstudio-community/High-GGUF", 500)]).encode())
@@ -131,6 +137,7 @@ class Base(unittest.TestCase):
         self.tmp = tempfile.mkdtemp()
         Fake.log, Fake.drop_after, Fake.ignore_range, Fake.corrupt = [], None, False, set()
         Fake.branch, Fake.no_lfs, Fake.huge = "main", set(), False
+        Fake.with_siblings, Fake.siblings = False, {}
         hf._cache.clear()
         self.addCleanup(shutil.rmtree, self.tmp, True)
 
@@ -325,8 +332,15 @@ class Search(Base):
         self.assertEqual([x["repo"] for x in r], ["lmstudio-community/High-GGUF", "bartowski/Mid-GGUF", "unsloth/Low-GGUF", "random/Big-GGUF"])
         self.assertEqual([x["trusted"] for x in r], [True, True, True, False])
         url = [p for p, _, _ in Fake.log if p.startswith("/api/models?")][0]
-        for part in ("search=tiny", "filter=gguf", "sort=downloads", "limit=40"):
+        for part in ("search=tiny", "filter=gguf", "sort=downloads", "limit=40", "full=true"):
             self.assertIn(part, url)
+
+    def test_hides_a_repo_whose_files_have_no_gguf(self):
+        Fake.with_siblings = True
+        Fake.siblings = {"random/Big-GGUF": [{"rfilename": "README.md"}]}
+        repos = [x["repo"] for x in hf.search("tiny")]
+        self.assertNotIn("random/Big-GGUF", repos)
+        self.assertIn("bartowski/Mid-GGUF", repos)
 
     def test_cached_for_ten_minutes(self):
         clock = [1000.0]

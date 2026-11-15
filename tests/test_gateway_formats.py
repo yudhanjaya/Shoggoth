@@ -15,8 +15,10 @@ from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 
 HERE = os.path.dirname(os.path.abspath(__file__))
 sys.path.insert(0, os.path.join(HERE, "..", "shoggoth"))
+sys.path.insert(0, HERE)
 
 import gateway  # noqa: E402
+import online_services  # noqa: E402
 import registry  # noqa: E402
 import router  # noqa: E402
 import servers  # noqa: E402
@@ -68,6 +70,7 @@ class Env(unittest.TestCase):
         self.tmp = tempfile.mkdtemp()
         self._old = {k: os.environ.get(k) for k in ("SHOGGOTH_DATA_DIR", "SHOGGOTH_CONFIG_DIR")}
         os.environ["SHOGGOTH_DATA_DIR"], os.environ["SHOGGOTH_CONFIG_DIR"] = os.path.join(self.tmp, "data"), os.path.join(self.tmp, "config")
+        online_services.install()
         self.fakes = []
         self.gate = None
 

@@ -31,7 +31,7 @@ The UI is served at <http://127.0.0.1:13306> and opens in a browser unless `--no
 | | `SHOGGOTH_AUTH=off` | | Disable UI authentication |
 | | `XDG_CONFIG_HOME`, `XDG_DATA_HOME` | | Relocate config and data. See [PRIVACY.md](PRIVACY.md). |
 
-A Lemonade, Ollama or other server you run yourself is connected under **Advanced > Engines** (Shoggoth finds most of them on its own). Shoggoth never updates, starts or stops those.
+A server you run yourself, such as Ollama or LM Studio, is connected under **Advanced > Engines** (Shoggoth finds most of them on its own). Shoggoth never updates, starts or stops those.
 
 ## Tests
 

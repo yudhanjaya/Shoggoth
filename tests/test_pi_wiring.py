@@ -194,23 +194,33 @@ class OwnSet(Base):
 
 class Bundled(Base):
     def test_good_code_is_short_and_listed(self):
-        p = os.path.join(skills.BUNDLED, "zest", "skills", "good-code", "SKILL.md")
+        p = os.path.join(skills.BUNDLED, "shoggoth", "skills", "good-code", "SKILL.md")
         self.assertLessEqual(os.path.getsize(p), 2048)
-        names = [k["dir"] for s in skills.scan() if s["id"] == "zest" for k in s["skills"]]
+        names = [k["dir"] for s in skills.scan() if s["id"] == "shoggoth" for k in s["skills"]]
         self.assertIn("good-code", names)
         self.assertNotIn("good-code", [x["name"] for x in skills.inline()])
 
     def test_unslop_is_a_placeholder_that_is_off_and_never_reaches_a_model(self):
-        item = next(k for s in skills.scan() if s["id"] == "zest" for k in s["skills"] if k["dir"] == "unslop")
+        item = next(k for s in skills.scan() if s["id"] == "shoggoth" for k in s["skills"] if k["dir"] == "unslop")
         self.assertTrue(item["placeholder"])
         self.assertFalse(item["enabled"])
         self.assertNotIn("unslop", [x["name"] for x in skills.inline()])
-        skills.toggle("zest/unslop", True)                                 # switched on, still nothing to hand over
+        skills.toggle("shoggoth/unslop", True)                             # switched on, still nothing to hand over
         self.assertNotIn("unslop", [x["name"] for x in skills.inline()])
         live, _ = skills.live_dir()
-        self.assertFalse(os.path.lexists(os.path.join(live, "zest__unslop")))
-        with open(os.path.join(skills.BUNDLED, "zest", "set.json")) as f:
+        self.assertFalse(os.path.lexists(os.path.join(live, "shoggoth__unslop")))
+        with open(os.path.join(skills.BUNDLED, "shoggoth", "set.json")) as f:
             self.assertIn("unslop", json.load(f)["inline"])
+
+    def test_state_from_before_the_rename_still_switches_the_same_skills(self):
+        os.makedirs(skills.root(), exist_ok=True)
+        with open(os.path.join(skills.root(), "state.json"), "w") as f:
+            json.dump({"disabled": ["zest/good-code"], "enabled": ["zest/unslop"]}, f)
+        sets = {s["id"]: s for s in skills.scan()}
+        self.assertIn("shoggoth", sets)
+        items = {k["dir"]: k for k in sets["shoggoth"]["skills"]}
+        self.assertFalse(items["good-code"]["enabled"])      # switched off before the rename, still off
+        self.assertTrue(items["unslop"]["enabled"])          # switched on before the rename, still on (placeholder, so never handed over)
 
 
 if __name__ == "__main__":

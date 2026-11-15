@@ -1,14 +1,14 @@
 # A definition is data: it names an engine and says how to recognise it. It can start, install or run nothing, and engines.py refuses any key outside its schema.
-id: command-code
-name: Command Code
+id: opencode-zen
+name: OpenCode Zen
 category: hosted
-summary: Hosted models from several makers through Command Code.
-url: https://api.commandcode.ai/provider/v1
+summary: Hosted models from several makers through OpenCode, paid as you go.
+url: https://opencode.ai/zen/v1
 formats:
   - {api: anthropic-messages, match: "^(anthropic/|claude)"}
   - {api: openai-responses, match: "^(openai/)?gpt-"}
   - {api: openai-completions}
 key: required
-key_url: https://commandcode.ai
-docs: https://commandcode.ai
-hint: "Paste your Command Code key. Claude models use the Anthropic format; GPT models use the Responses format."
+key_url: https://opencode.ai/console
+docs: https://opencode.ai
+hint: "Paste your OpenCode key. Claude models use the Anthropic format; GPT models use the Responses format."

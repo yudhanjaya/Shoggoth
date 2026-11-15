@@ -6,6 +6,7 @@ summary: A server for ExLlamaV2 and ExLlamaV3 models on GPUs. It needs a key fro
 url: http://127.0.0.1:5000
 ports: [5000]
 match: [tabbyAPI]
+cwd: [tabbyAPI]
 formats:
   - {api: openai-completions}
 loads: router

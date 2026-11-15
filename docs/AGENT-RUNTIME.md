@@ -92,9 +92,34 @@ A thread per job (`_job_loop` in `agent.py`) prompts Pi, waits for `agent_settle
 - **Diagrams.** A fenced `mermaid` block is rendered by Mermaid in the page (`securityLevel: strict`), loaded from `/ui/vendor/mermaid.js`. A parse failure shows the error and an *Ask the model to fix it* action. An `svg` block is displayed as an image, which cannot execute scripts.
 - **Selection rationale.** Of the 52 skill projects listed on Hermes Atlas, only Superpowers has skills short enough for small models to follow that also work without additional tools. It is bundled without its subagent, git-worktree, code-review, and plan-execution skills, which depend on tooling Shoggoth does not provide. The diagram and writing skills are Shoggoth's own so their output matches what the page can render. Larger third-party sets (for example avoid-ai-writing, drawio-skill, conorbronsdon/agent-skills) can be added from the Skills page; individual skills run up to 33 KB and suit larger models.
 
+### Skills written by your models
+
+Pi has a `save_skill` tool (`shoggoth/pi/zest-skillsmith.js`) that proposes a reusable skill: a name, one or two sentences on when to use it, numbered steps, and up to five small extra files. The tool always asks, in every mode including *Do everything* and *Look only*, with a card that shows the whole `SKILL.md` and the content of every file. The choices are Save, Save and turn on, Don't save, or Replace when the name exists. Nothing is saved without that yes.
+
+- Accepted skills go in `~/.local/share/shoggoth/skills/sets/own/skills/<name>/`, with a `source.json` saying which chat and model wrote it. They appear on the Skills page as **Written by your models** and can be switched on or off like any other skill.
+- `GET /ui/skills/own` returns each one with its source and its whole text. `POST /ui/skills/own/save {name, text}` edits one under the same limits `save_skill` uses (a 40-character slug name, 300-character description, 8 KB of steps, 16 KB for the whole file, no control or direction-changing characters). It edits, never creates, so a skill still appears only after `save_skill`. `POST /ui/skills/own/delete {name}` removes it and its enablement keys.
+- `POST /ui/chat/make-skill {chat}` sends that chat's Pi session a fixed prompt: distil what worked into a skill and call `save_skill`. The page supplies no text of its own, and a job is refused.
+- Every change calls the same notification the Skills page uses, so idle tasks restart with the new list.
+
+### Pi packages
+
+A Pi package is an npm package that adds an extension, skill or prompt to Pi. Packages run code on this computer, so Shoggoth installs only the pinned list in `shoggoth/recommendations/pi-packages.yaml` (`pipkgs.py`). Each entry pins an exact version and the sha512 npm publishes. Shoggoth downloads the tarball, checks the checksum, and unpacks it under `~/.local/share/shoggoth/pi-packages/<name>@<version>/` with its dependencies. It never runs npm or a lifecycle script, and it refuses a dependency from anywhere but the npm registry. Every installed package must be turned on in the list; an entry with `enabled: false` (all of them in 5.0) cannot be installed.
+
+- `GET /ui/packages` lists the pinned entries with installed, enabled, the review note, and "Runs code on your computer".
+- `POST /ui/packages/install {name}` installs one in a background thread with progress in the same reply. `POST /ui/packages/remove {name}` deletes every installed version of it.
+- After a real change, idle tasks restart (`agent.restart_idle()`), so Pi loads the package's files on the next message. Installed packages are handed to Pi as local folders through `packages` in its `settings.json`, and any skills they ship are listed like other skill sets.
+
+### Attachments
+
+The composer's paperclip and drag-and-drop post the file's bytes to `POST /ui/attach?chat=<id>&name=<file>` (`filetypes.py`). The route returns `{path, handler, label}` and saves the file under `attachments/` in the chat's folder, or in the chat's scratch folder when it has none.
+
+- The handler is chosen from the extension: text and code read directly; images go to a vision model; a PDF is read with `pdftotext -layout` when poppler is installed, or its pages are rendered to images with `pdftoppm`; spreadsheets and Word documents say they need a tool that is not installed yet.
+- The name is cleaned: folder parts, control characters and direction-changing characters are refused rather than trimmed, and a name already in use gets `-1`, `-2`. One file is capped at 50 MB.
+- The bytes are written as they came. Nothing in a file is read, parsed or run when it is attached.
+
 ## Updating Pi
 
-`piup.py` (shown as **The agent helper** under Advanced > Engines) works like the Lemonade update:
+`piup.py` (shown as **The agent helper** under Advanced > Engines) works like the llama.cpp update:
 
 1. Query the npm registry for the latest release.
 2. Download the tarball and the exact `jiti` version that release depends on, and verify both against npm's sha512 integrity values.

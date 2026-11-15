@@ -42,7 +42,7 @@ class Shipped(Env):
 
     def test_they_say_what_the_app_used_to_hard_code(self):
         m, t = recs.models(), recs.tools()
-        self.assertEqual([r["id"] for r in m["recommended"]][:3], ["LFM2.5-8B-A1B", "user.MiMo-V2.6-Distill-Qwen-9B-Q4_K_M", "Gemma-4-12B-it-MTP-GGUF"])
+        self.assertEqual([r["id"] for r in m["recommended"]][:3], ["LFM3-Omni-2B", "LFM2.5-8B-A1B", "user.MiMo-V2.6-Distill-Qwen-9B-Q4_K_M"])
         self.assertEqual([f["size"] for f in m["first_run"]], ["small", "medium"])
         self.assertNotIn("strata", m)
         ids = {x["id"]: x for x in t["tools"]}
@@ -56,7 +56,7 @@ class ThePicks(Env):
 
     def test_small_and_medium_lists_are_the_owners(self):
         rec = {r["id"]: r for r in recs.models()["recommended"]}
-        self.assertEqual(list(rec), ["LFM2.5-8B-A1B", "user.MiMo-V2.6-Distill-Qwen-9B-Q4_K_M", "Gemma-4-12B-it-MTP-GGUF", "Qwen3.6-35B-A3B-MTP-GGUF",
+        self.assertEqual(list(rec), ["LFM3-Omni-2B", "LFM2.5-8B-A1B", "user.MiMo-V2.6-Distill-Qwen-9B-Q4_K_M", "Gemma-4-12B-it-MTP-GGUF", "Qwen3.6-35B-A3B-MTP-GGUF",
                                      "Gemma-4-26B-A4B-it-MTP-GGUF", "GLM-4.7-Flash-GGUF", "Gemma-4-31B-it-MTP-GGUF", "Qwen3.8-27B-GGUF"])
         for r in rec.values():
             self.assertTrue(r["title"] and r["take"] and r["size_gb"], r["id"])
@@ -71,15 +71,21 @@ class ThePicks(Env):
 
     def test_every_model_says_where_to_fetch_it_and_how_big_its_quants_are(self):
         for r in recs.models()["recommended"]:
-            self.assertRegex(r["download"]["checkpoint"], r"^(unsloth|bartowski)/[^:]+:[^:]+\.gguf$", r["id"])
+            self.assertRegex(r["download"]["checkpoint"], r"^(unsloth|bartowski|ggml-org)/[^:]+:[^:]+\.gguf$", r["id"])
             self.assertTrue(2 <= len(r["quants"]) <= 4, r["id"])
             self.assertTrue(all(v > 0 for v in r["quants"].values()), r["id"])
             if r["vision"]:
-                self.assertRegex(r["download"]["mmproj"], r"^(unsloth|bartowski)/[^:]+:mmproj[^:]*\.gguf$", r["id"])
+                self.assertRegex(r["download"]["mmproj"], r"^(unsloth|bartowski|ggml-org)/[^:]+:mmproj[^:]*\.gguf$", r["id"])
 
-    def test_the_two_models_that_are_not_ready_show_as_coming_soon(self):
-        self.assertEqual([c["title"] for c in recs.models()["coming_soon"]], ["LFM3", "GLM 5.3 Flash"])
-        self.assertTrue(all(c["take"] for c in recs.models()["coming_soon"]))
+    def test_lfm3_omni_is_the_first_small_pick_and_sees_pictures(self):
+        m = recs.models()
+        lfm = next(r for r in m["recommended"] if r["id"] == "LFM3-Omni-2B")
+        self.assertTrue(lfm["vision"])
+        self.assertEqual(lfm["download"]["checkpoint"], "ggml-org/LFM3-Omni-2B-GGUF:LFM3-Omni-2B-Q8_0.gguf")
+        self.assertEqual(next(f for f in m["first_run"] if f["size"] == "small")["models"][0], "LFM3-Omni-2B")
+
+    def test_there_is_no_coming_soon_list(self):
+        self.assertNotIn("coming_soon", recs.models())
 
     def test_recommendations_name_no_engine_but_llamacpp(self):
         for r in recs.models()["recommended"]:
@@ -91,21 +97,36 @@ class ThePicks(Env):
         for r in recs.models()["recommended"]:
             self.assertNotRegex(r["take"] + r["title"], r"tok/s|tokens/s|tokens per second")
 
-    def test_a_bad_download_or_coming_soon_entry_is_reported(self):
-        self.mine("models", "recommended:\n  - {id: A, label: a, download: {mmproj: x}}\ncoming_soon:\n  - {take: no title}\n")
+    def test_a_bad_download_entry_is_reported(self):
+        self.mine("models", "recommended:\n  - {id: A, label: a, download: {mmproj: x}}\n")
         s = recs.summary()
         joined = "\n".join(s["problems"])
         self.assertIn("recommended[0].download: needs `checkpoint`", joined)
-        self.assertIn("coming_soon[0]: needs `title`", joined)
-        self.assertEqual(s["models"]["coming_soon"], [])
         self.assertNotIn("download", s["models"]["recommended"][0])
 
 
 class Yours(Env):
-    def test_a_copy_in_the_data_folder_is_used_instead(self):
-        self.mine("models", "version: 1\nrecommended:\n  - {id: My-Model, label: Mine}\n")
-        self.assertEqual([m["id"] for m in recs.models()["recommended"]], ["My-Model"])
+    def test_yours_adds_to_shoggoths_list_yours_first(self):
+        self.mine("models", "version: 1\nrecommended:\n  - {id: My-Model, label: Mine, download: {checkpoint: 'unsloth/My-GGUF:Q4_K_M'}}\n")
+        ids = [m["id"] for m in recs.models()["recommended"]]
+        self.assertEqual(ids[0], "My-Model")
+        self.assertIn("LFM2.5-8B-A1B", ids)
+        self.assertEqual(recs.models()["first_run"], recs.load("models", os.path.join(recs.BUNDLED, "models.yaml"))["data"]["first_run"])
         self.assertTrue(recs.summary()["files"]["models"].startswith(self.tmp))
+
+    def test_the_same_id_replaces_shoggoths_entry(self):
+        self.mine("models", "recommended:\n  - {id: LFM2.5-8B-A1B, title: My LFM, download: {checkpoint: 'unsloth/LFM2.5-8B-A1B-GGUF:Q8_0'}}\n")
+        got = [m for m in recs.models()["recommended"] if m["id"] == "LFM2.5-8B-A1B"]
+        self.assertEqual([m["title"] for m in got], ["My LFM"])
+
+    def test_replace_true_uses_yours_alone(self):
+        self.mine("models", "version: 1\nreplace: true\nrecommended:\n  - {id: My-Model, label: Mine, download: {checkpoint: 'unsloth/My-GGUF:Q4_K_M'}}\n")
+        self.assertEqual([m["id"] for m in recs.models()["recommended"]], ["My-Model"])
+        self.assertEqual(recs.models()["first_run"], [])
+
+    def test_your_first_run_replaces_shoggoths(self):
+        self.mine("models", "recommended: []\nfirst_run:\n  - {size: small, models: [LFM2.5-8B-A1B]}\n")
+        self.assertEqual([f["models"] for f in recs.models()["first_run"]], [["LFM2.5-8B-A1B"]])
 
     def test_a_change_is_read_without_a_restart(self):
         self.mine("models", "recommended:\n  - {id: A, label: a}\n")
@@ -118,7 +139,7 @@ class Yours(Env):
     def test_a_mistake_skips_that_entry_and_says_where(self):
         self.mine("models", "recommended:\n  - {id: A, size_gb: lots}\n  - {id: B, label: fine}\nfirst_run:\n  - {size: tiny, models: [X]}\n")
         s = recs.summary()
-        self.assertEqual([m["id"] for m in s["models"]["recommended"]], ["A", "B"])
+        self.assertEqual([m["id"] for m in s["models"]["recommended"]][:2], ["A", "B"])
         self.assertIsNone(s["models"]["recommended"][0]["size_gb"])
         self.assertEqual(s["models"]["first_run"], [])
         joined = "\n".join(s["problems"])
@@ -160,6 +181,31 @@ class Yours(Env):
             self.assertEqual(recs.main(["check", os.path.join(recs.user_dir(), "models.yaml")]), 1)
             self.assertEqual(recs.main(["check", os.path.join(recs.BUNDLED, "models.yaml")]), 0)
         self.assertIn("`lable` isn't a setting Shoggoth reads (did you mean `label`?)", out.getvalue())
+
+    def test_every_entry_says_where_to_fetch_it(self):
+        self.mine("models", "recommended:\n  - {id: No-Download}\n"
+                            "  - {id: Fine, download: {checkpoint: 'unsloth/x-GGUF:x-Q4_K_M.gguf'}}\n")
+        problems = "\n".join(recs.summary()["problems"])
+        self.assertIn("recommended[0]: needs `download`", problems)
+        self.assertNotIn("recommended[1]", problems)
+
+    def test_an_unknown_uploader_is_a_warning_unless_trusted(self):
+        self.mine("models", "recommended:\n"
+                            "  - {id: A, download: {checkpoint: 'someone/Custom-GGUF:Q4_K_M.gguf'}}\n"
+                            "  - {id: B, trusted: true, download: {checkpoint: 'someone/Custom-GGUF:Q4_K_M.gguf'}}\n")
+        s = recs.summary()
+        problems = "\n".join(s["problems"])
+        self.assertIn("recommended[0].download", problems)
+        self.assertIn("someone", problems)
+        self.assertIn("trusted: true", problems)
+        self.assertNotIn("recommended[1]", problems)
+        self.assertTrue(s["models"]["recommended"][1]["trusted"])
+
+    def test_a_recommended_title_is_found_by_its_id_and_other_names(self):
+        self.assertEqual(recs.title_for("Gemma-4-12B-it-MTP-GGUF"), "Gemma-4-12B-it (MTP)")
+        self.assertEqual(recs.title_for("llamacpp/Gemma-4-12B-it-MTP-GGUF"), "Gemma-4-12B-it (MTP)")
+        self.assertEqual(recs.title_for("MiMo-V2.6-Distill-Qwen-9B-Q4_K_M"), "MiMo-V2.6-Distill-Qwen-9B")
+        self.assertEqual(recs.title_for("not-a-pick"), "")
 
 
 class Flavour(Env):

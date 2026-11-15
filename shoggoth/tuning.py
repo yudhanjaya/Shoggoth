@@ -67,13 +67,17 @@ def tuning_for(model):
     """What is known about tuning one model, whichever engine runs it, in one shape. States: tuned, default_best (the defaults were
     already the fastest), stale (made under other versions or settings), not_tuned. They come from llamatune's results."""
     r = llamatune.results().get(model)
-    if not r or r.get("outcome") is None:
+    if not isinstance(r, dict) or r.get("outcome") is None:
         return _record("llamacpp", model, "not_tuned")
     now, then = llamacpp_env(), r.get("env") or {}
     changed = [k for k in ("backend", "llama") if then.get(k) and now.get(k) and then[k] != now[k]]
     state = "stale" if changed else "default_best" if r["outcome"] == "default_confirmed" else "tuned"
+    lemonade = llamatune.written_by_lemonade(r)
+    reasons = ["%s changed (%s to %s)" % (k, then[k], now[k]) for k in changed]
+    if lemonade:
+        reasons.insert(0, llamatune.LEMONADE_UNDO)          # first, because the page shows only the first reason
     return _record("llamacpp", model, state, gain_pct=r.get("gain_pct"), decode_tok_s=r.get("decode_tok_s"), baseline_tok_s=r.get("baseline_tok_s"), when=r.get("when"),
-                   can_undo=bool(r.get("applied")), details={"reasons": ["%s changed (%s to %s)" % (k, then[k], now[k]) for k in changed], "outcome": r["outcome"], "change": r.get("change"), "noise": r.get("noise")})
+                   can_undo=bool(r.get("applied")) and not lemonade, details={"reasons": reasons, "outcome": r["outcome"], "change": r.get("change"), "noise": r.get("noise"), "lemonade": lemonade})
 
 
 def _models():

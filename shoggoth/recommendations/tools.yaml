@@ -29,7 +29,7 @@ version: 1
 places:
   library: {title: "Make any model better: a harness and skills", blurb: A model gets much more useful when it can search the web and follow skills.}
   server: {title: Connect an app}
-  engines: {title: More engines worth knowing, blurb: Other programs that run models. Add one under Add an engine below.}
+  engines: {title: Other engines, blurb: Other programs that run models. Add one under Add an engine below.}
   guides: {title: Where to compare models}
 
 tools:
