@@ -773,3 +773,35 @@ W1 is done and committed as `22df924` on `deepseek-rest`.
 Terminated.
 ```
 </details>
+
+## W3 (2026-11-15T15:57:50+05:30)
+
+- exit code 0, 1 new commit(s), tests: ---------------------------------------------------------------------- Ran 798 tests in 226.024s  OK 
+
+<details><summary>Worker report (tail)</summary>
+
+```
+=== W3 started 2026-11-15T15:44:34+05:30
+W3 is done and committed as `828653f`.
+
+**What I did**
+- Wrote `docs/RELEASE-5.0.md` with the four required parts: what's new, what's removed, what moving from 4.x does, and known gaps from `upgrade-progress.md`.
+- Added it to the docs index in `docs/README.md`.
+- Extended `tests/test_docs.py` to include the new doc in the link/copy checks and pin its required sections.
+
+**Files changed** (1 commit, 3 files, +150/−1)
+- `docs/RELEASE-5.0.md` (new)
+- `docs/README.md`
+- `tests/test_docs.py`
+
+**Tests**
+- `python3 -W ignore -m unittest tests.test_docs -v` → 9 tests, OK (re-run after the final text edits).
+- `python3 -W ignore -m unittest discover tests` → 798 tests, OK. The usual stray fake-`lemond` `KeyboardInterrupt` traceback appears; it is not a failure.
+- No UI files touched, so no `tests/ui/*.test.mjs` runs.
+
+**Not done / not verified**
+- The notes record real gaps rather than fixing them. The main one: the page's Get it/download controls still call `/api/v1/pull` and `/api/v1/downloads*`; I confirmed the gateway's matcher refuses all three routes, so page downloads report "not available". This is server/page work outside W3.
+- Also recorded: no Read aloud button, PDF text extraction not wired, all Pi packages disabled, client-only flag unused by the page, W2 website update unfinished, `VERSION` and the AppStream release still `4.3.0`, and no 5.0 AppImage built.
+- `site/` W2 leftovers and `.driver.out` remain untracked and were not staged. Nothing pushed, no `git stash`, no GPU used, all work inside the worktree.
+```
+</details>
