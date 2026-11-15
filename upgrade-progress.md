@@ -805,3 +805,74 @@ W3 is done and committed as `828653f`.
 - `site/` W2 leftovers and `.driver.out` remain untracked and were not staged. Nothing pushed, no `git stash`, no GPU used, all work inside the worktree.
 ```
 </details>
+
+## W4 (2026-11-15T16:35:00+05:30)
+
+- exit code 0, 1 new commit(s), tests: Ran 798 tests in 225.533s  OK. All 14 UI files (`tests/ui/*.test.mjs`, `models.test.cjs`, `smoke.js`) OK.
+
+<details><summary>Worker report</summary>
+
+```
+=== W4 started 2026-11-15
+Final check: the full suite, every UI test, then the app on a scratch profile with the 3080 only.
+
+**What I did**
+
+1. Full suite, on the final tree: `python3 -W ignore -m unittest discover tests` → 798 tests, OK, exit 0 (run twice, plus one earlier run at session start).
+2. Every UI testfile, all OK: copy, creature, gate, gate-skillsmith, job, lan, mic, problems, setup, skills-attach, skillsmith, tube (`.test.mjs`), models (`.test.cjs`), smoke.js. `tests/ui/node_modules` (jsdom) is present here, so nothing was skipped. `creature.test.mjs` passes — U8's fix holds.
+3. Started the app from this worktree on a scratch profile:
+   `XDG_DATA_HOME=/tmp/claude-1000/llt/data`, `SHOGGOTH_CONFIG_DIR=/tmp/w4scratch/config/shoggoth`,
+   `SHOGGOTH_DATA_DIR=/tmp/w4scratch/data/shoggoth`, `CUDA_DEVICE_ORDER=PCI_BUS_ID CUDA_VISIBLE_DEVICES=0`,
+   `--port 13406 --no-browser`, `SHOGGOTH_AUTH=off`. Rule 7's own fixtures were absent (`/tmp/claude-1000/llt/data/shoggoth/llamacpp/b12375/`
+   and `/tmp/claude-1000/llt/models` do not exist — S2 hit the same), so the scratch profile used links to local read-only files:
+   the Unsloth CUDA build b11786 and two small Qwen3-0.6B/Gemma-3-270M GGUFs. Nothing in `~/.local/share/shoggoth` or
+   `~/.config/shoggoth` was read or written (their mtimes are unchanged from before this run).
+
+**The three things W4 asks for**
+
+- **Getting ready → model → chat.** `/ui/setup` reported `mode: builtin`, `engine.installed: true`, `running: true`,
+  `tag: b11786`, `backend: cuda12`, and the page rendered the whole card from live data ("Looked at your computer · RTX 3080 and
+  RTX 4080 SUPER, 63 GB of RAM", "llama.cpp is ready · b11786 · NVIDIA CUDA 12", "Set up for this computer · Uses NVIDIA CUDA 12").
+  `POST /ui/model/load` loaded Qwen3-0.6B at 4096 context (2.4 s) and it appeared on GPU 0, the 3080 (1.1 GB).
+  A chat in a scratch folder answered through Pi: `POST /ui/cowork/new` → `/ui/cowork/cmd {type:prompt}` → the request
+  finished 200 and Pi's transcript holds `user: 'Reply with exactly the word: ready'` / `assistant: ' Reply'`.
+- **The sources list.** `/ui/sources` first entry is llama.cpp: `{id:"llamacpp", kind:"builtin", own:true, label:"llama.cpp
+  (on this computer)", state:"ready", models:4, loaded:["Qwen3-0.6B-cleanup-Q8_0"], version:"b11786", backend:"cuda12"}`.
+  The page's `#srcstrip` rendered it ("On this computer · llama.cpp (on this computer) · Answering · 4 models ·
+  http://127.0.0.1:13341 · b11786 · cuda12 · Settings"), plus the two unconnected servers the scan found.
+- **The speech status route.** `GET /ui/speech/status` → `{installed:false, model_ready:false, running:false, runs_on:null,
+  download:{state:"idle"}}`; `GET /ui/speech/read` → Piper disabled, `bark:false`, note "Bark isn't available, so read aloud
+  uses Piper." Both answer cleanly with nothing installed. I did not run `POST /ui/speech/setup` (it would download ~100 MB
+  for a check W4 does not ask for).
+
+**Two defects found, not fixed** (rule 8: `index.html` has one writer, the U tasks; W4 is a check, and the task says write the
+result in the progress log rather than patch the page):
+
+1. **Getting ready's "Choose your first model" cards stay empty on a real install.** The cards need `m.recipe === "llamacpp" && m.size`
+   (`index.html` 3496, 3376, 2524), but `/api/v1/models` does not send `recipe` or `size`. Proven with the real page in jsdom:
+   given the live payload the card area reads "No models to suggest yet. Open Models to add one."; add `recipe:"llamacpp", size:0.2,
+   downloaded:true` to the same four models and both cards render. On a first run with models already on disk, Getting ready therefore
+   shows no model to pick. `tests/ui/api.json` does not carry `recipe`/`size` either, so no test covers it.
+2. **The "Found on this computer" rows print the model array, not a count.** `srcFoundLine` does `· ${f.models} model(s)`, but
+   `scan._look` sends `models` as a list of `{id,title,ctx}`. Real output: "llama.cpp server · Needs a key · on port 13340 ·
+   `[] models`"; with two models, "`[object Object],[object Object] models`". It should be `f.chat_models` or `f.models.length`.
+   No test covers this row (`api.json`'s `/ui/sources` has no `found` entries).
+
+Neither is a 5.0 regression in behaviour the plan shipped: the `recipe`/`size` filter predates the rename (`4a1eb7e`), and the
+download gap both depend on is already in `docs/RELEASE-5.0.md` ("Model downloads from the page", the first thing to fix).
+
+**Not done / not verified**
+
+- Rule 7's scratch fixtures were missing; the real b12375 build and the Qwen3-0.6B model it names were not available, so the run used
+  the local read-only Unsloth b11786 build instead. Not the exact build the plan expects.
+- The Gemma-3-270M's own chat template rejects Pi's two system messages ("Conversation roles must alternate user/assistant…"), so I
+  used the Qwen3 model for the chat leg. That is the model's template, not Shoggoth: the same model answers a direct single-system
+  request normally. The raw Jinja error is also what the page would show for that model.
+- No browser: the page was driven in jsdom against the live server. No visual check of layout, and no real microphone, Piper voice,
+  AppImage, hosted service, LAN peer or second machine — none of which W4 asks for, all still listed in the release notes.
+- `VERSION` is still `4.3.0`; the app printed "Shoggoth 4.3.0" (recorded by W3 as a known gap, not W4's to change).
+- Everything I started is stopped: server, router and child llama-server. GPU 0 (3080) is back to its baseline; GPU 1 (4080) was
+  never used and its process was never touched. Temporary jsdom scripts used for the checks were deleted; the tree holds no
+  source change. No `git stash`, nothing pushed, nothing outside the worktree.
+```
+</details>
