@@ -876,3 +876,31 @@ download gap both depend on is already in `docs/RELEASE-5.0.md` ("Model download
   source change. No `git stash`, nothing pushed, nothing outside the worktree.
 ```
 </details>
+
+## W4 (2026-11-15T16:41:10+05:30)
+
+- exit code 0, 1 new commit(s), tests: ---------------------------------------------------------------------- Ran 798 tests in 226.281s  OK 
+
+<details><summary>Worker report (tail)</summary>
+
+```
+Started the app from this worktree on a scratch profile with `CUDA_DEVICE_ORDER=PCI_BUS_ID CUDA_VISIBLE_DEVICES=0`, `XDG_DATA_HOME=/tmp/claude-1000/llt/data`, and its own config/data dirs, and checked the three listed things:
+   - **Getting ready → model → chat** — `/ui/setup` showed llama.cpp b11786 (CUDA 12) installed and running; the page drew the whole card from live data; `/ui/model/load` loaded Qwen3-0.6B at 4096 ctx on the 3080; a chat in a scratch folder answered through Pi (request 200, reply in the transcript).
+   - **The sources list** — `/ui/sources` leads with llama.cpp (builtin, own, ready, 4 models, one loaded); the page's strip rendered it plus the two servers the scan found.
+   - **The speech status route** — `/ui/speech/status` and `/ui/speech/read` answer cleanly with nothing installed.
+
+**Files changed:** `upgrade-progress.md` only (+71 lines). No source touched — W4 is a check, and rule 8 gives `index.html` a single writer (the U tasks).
+
+**Commit:** `dcc5758 W4: Final check`, with the required trailer.
+
+**Tests run and results:** as above — 798 Python tests OK, 14/14 UI files OK.
+
+**Two defects found, deliberately not fixed** (written into the progress log instead):
+1. **Getting ready's first-model cards are empty on a real install.** They need `m.recipe === "llamacpp" && m.size`, but `/api/v1/models` sends neither. Proven in jsdom: live payload → "No models to suggest yet"; add `recipe`/`size` to the same models → both cards render.
+2. **The "Found on this computer" rows print the array, not a count** — `· ${f.models} model(s)` renders `[] models`, or `[object Object],[object Object] models`. Should be `f.models.length` or `f.chat_models`.
+
+Neither is a 5.0 regression in shipped behaviour, and both are unexercised by the fixtures.
+
+**Not done / not verified:** rule 7's fixtures were absent (`/tmp/claude-1000/llt/data/shoggoth/llamacpp/b12375/` and `/tmp/claude-1000/llt/models` don't exist — S2 hit this too), so I linked to the local read-only Unsloth b11786 build and a Qwen3-0.6B GGUF instead of the exact build named. The Gemma-3-270M's own template rejects Pi's two system messages, so the chat leg used Qwen3 (the model's template, not Shoggoth). No browser (jsdom only), no AppImage, no microphone/Piper/hosted service/LAN run. `VERSION` is still `4.3.0` as W3 recorded. All my processes are stopped, GPU 0 is back to baseline, the 4080 was never used, no `git stash`, nothing pushed, nothing outside the worktree.
+```
+</details>
