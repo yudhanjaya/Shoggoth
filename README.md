@@ -10,6 +10,8 @@
 
 # Run AI on your own computer. Put it to work.
 
+Created by: @yudhanjaya, Claude Sonnet 5.5, Claude Opus 5.5, Deepseek 4.1
+
 **Shoggoth is one download that runs open-weights language models on your own hardware.** Chat with them, draw diagrams, write documents, or let a model read and change the files in a folder while you watch. Shoggoth gives you the complete setup - backend, agent, harness, monitoring - without needing much technical know-how.
 
 **[⬇ Download for Linux](../../releases/latest)** · [Install in three steps](#install) · [Read the docs](shoggoth/docs.md)
