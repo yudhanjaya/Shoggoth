@@ -812,14 +812,20 @@ def summary(settings=None):
 _BUF = re.compile(r"(?:model buffer size|compute buffer size)\s*=\s*([\d.]+) MiB|llama_kv_cache: size\s*=\s*([\d.]+) MiB")
 
 
+def _port_from_args(args):
+    for i, x in enumerate(args[:-1]):
+        if x == "--port" and str(args[i + 1]).isdigit():
+            return int(args[i + 1])
+    for x in args:
+        if x.startswith("--port=") and x.split("=", 1)[1].isdigit():
+            return int(x.split("=", 1)[1])
+    return None
+
+
 def instance_port(model_id):
     """The port the router gave the process serving `model_id`, or None."""
     m = next((m for m in models() if m["id"] == model_id), None)
-    a = (m or {}).get("args") or []
-    for i, x in enumerate(a[:-1]):
-        if x == "--port" and str(a[i + 1]).isdigit():
-            return int(a[i + 1])
-    return None
+    return _port_from_args((m or {}).get("args") or [])
 
 
 def measured_gb(model_id, text=None):
@@ -844,3 +850,149 @@ def measured_gb(model_id, text=None):
         if m:
             mib += float(m.group(1) or m.group(2))
     return round(mib / 1024, 2) if mib else None
+
+
+# ---------------------------------------------------------------- what a loaded model really holds
+# The router starts one llama-server per model, so the memory that model takes is its own child process's. At the default log
+# level the router's log has no buffer sizes, so ask the kernel (VmRSS) and nvidia-smi (what the card holds) instead.
+def _children(pid, proc_root="/proc"):
+    """The pids of the processes `pid` started. Read from the kernel's children lists (one per thread), or by each process's
+    parent when those files aren't there."""
+    base = os.path.join(proc_root, str(pid), "task")
+    out, read = set(), False
+    try:
+        tids = os.listdir(base)
+    except OSError:
+        tids = []
+    for tid in tids:
+        try:
+            with open(os.path.join(base, tid, "children")) as f:
+                text = f.read()
+        except OSError:
+            continue
+        read = True
+        out.update(int(x) for x in text.split() if x.isdigit())
+    if read:
+        return sorted(out)
+    try:
+        pids = [p for p in os.listdir(proc_root) if p.isdigit()]
+    except OSError:
+        return []
+    for p in pids:
+        try:
+            with open(os.path.join(proc_root, p, "stat")) as f:
+                stat = f.read()
+            if int(stat.rsplit(")", 1)[1].split()[1]) == pid:      # state, then the parent's pid
+                out.add(int(p))
+        except (OSError, ValueError, IndexError):
+            continue
+    return sorted(out)
+
+
+def _cmdline(pid, proc_root="/proc"):
+    try:
+        with open(os.path.join(proc_root, str(pid), "cmdline"), "rb") as f:
+            raw = f.read()
+    except OSError:
+        return []
+    return [a.decode("utf8", "replace") for a in raw.split(b"\0") if a]
+
+
+def _instance(model_id, proc_root="/proc"):
+    """(pid, args) of the process serving `model_id`: the router's child whose own command line carries the port the router
+    listed for the model. Either half is None when it can't be found."""
+    m = next((m for m in models() if m["id"] == model_id), None)
+    args = (m or {}).get("args") or []
+    router = _state.get("pid")
+    port = _port_from_args(args)
+    if not router or not port:
+        return None, args
+    for pid in _children(router, proc_root):
+        if _port_from_args(_cmdline(pid, proc_root)) == port:
+            return pid, args
+    return None, args
+
+
+def rss_gb(pid, proc_root="/proc"):
+    """The memory a process really holds (VmRSS), in GB, or None when it can't be read."""
+    try:
+        with open(os.path.join(proc_root, str(pid), "status")) as f:
+            for line in f:
+                if line.startswith("VmRSS:"):
+                    return round(int(line.split()[1]) / 1048576, 2)
+    except (OSError, ValueError, IndexError):
+        return None
+    return None
+
+
+def gpu_mib():
+    """{pid: MiB} of graphics memory each compute process holds, from nvidia-smi, or None when it isn't here (AMD, or processor
+    only). An empty dict means it is here but no process holds any."""
+    code, out = util.run(["nvidia-smi", "--query-compute-apps=pid,used_memory", "--format=csv,noheader,nounits"], 5)
+    if code != 0:
+        return None
+    held = {}
+    for line in out.strip().splitlines():
+        p = [x.strip() for x in line.split(",")]
+        if len(p) < 2 or not p[0].isdigit():
+            continue
+        try:
+            held[int(p[0])] = held.get(int(p[0]), 0.0) + float(p[1])
+        except ValueError:
+            continue
+    return held
+
+
+def _arg_value(args, names):
+    for i, a in enumerate(args):
+        for n in names:
+            if a == n and i + 1 < len(args):
+                return args[i + 1]
+            if a.startswith(n + "="):
+                return a.split("=", 1)[1]
+    return None
+
+
+def runs_on_processor(args):
+    """True when the model's settings keep it off the graphics card altogether."""
+    if (_arg_value(args, ("--device", "-dev")) or "").lower() == "none":
+        return True
+    v = _arg_value(args, ("--n-gpu-layers", "-ngl", "--gpu-layers"))
+    if v is None:
+        return False
+    try:
+        return int(v) <= 0
+    except ValueError:
+        return False
+
+
+def offloads_experts(args):
+    """True when the model's settings keep some expert layers in memory on the processor (--n-cpu-moe and friends)."""
+    if any(a in ("--cpu-moe", "-cmoe") for a in args):
+        return True
+    v = _arg_value(args, ("--n-cpu-moe", "-ncmoe"))
+    if v is None:
+        return False
+    try:
+        return int(v) > 0
+    except ValueError:
+        return True
+
+
+def measured_process_gb(model_id, proc_root="/proc"):
+    """What a loaded model really holds, in GB, over the whole load of `model_id`: the graphics memory nvidia-smi reports for its
+    own process, plus the memory it holds on the processor when it runs there or keeps experts there, or its processor memory
+    alone when nvidia-smi isn't here. None when it can't be told (nothing is recorded then)."""
+    pid, args = _instance(model_id, proc_root)
+    if not pid:
+        return None
+    held = gpu_mib()
+    rss = rss_gb(pid, proc_root)
+    if held is None:
+        return rss
+    vram = round(held.get(pid, 0.0) / 1024, 2)
+    if not vram:
+        return rss                                 # nvidia-smi is here, but this process isn't on a card
+    if runs_on_processor(args) or offloads_experts(args):
+        return round(vram + (rss or 0), 2)
+    return vram
