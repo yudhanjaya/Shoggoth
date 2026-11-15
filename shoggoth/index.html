@@ -263,6 +263,15 @@ main{display:flex;flex-direction:column;min-width:0;height:100dvh}
 .cwpics .pic{position:relative;width:64px;height:64px;border-radius:10px;overflow:hidden;border:1px solid var(--line);background:var(--well)}
 .cwpics .pic img{width:100%;height:100%;object-fit:cover;display:block}
 .cwpics .pic button{position:absolute;top:2px;right:2px;width:20px;height:20px;border-radius:50%;border:0;background:rgba(0,0,0,.65);color:#fff;font:700 13px/1 var(--sans,inherit);cursor:pointer;padding:0}
+/* files attached with the paperclip or by dropping them on the composer: the name and how the chat will read it */
+.cwatts{display:flex;flex-wrap:wrap;gap:8px;padding:0 0 10px}
+.cwatts .att{display:inline-flex;align-items:center;gap:8px;max-width:100%;border:1px solid var(--line);border-radius:10px;background:var(--surface-2);padding:6px 8px 6px 10px;font-size:12.5px}
+.cwatts .att b{font-weight:600;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:22ch}
+.cwatts .att span{color:var(--muted)}
+.cwatts .att.no{border-color:color-mix(in srgb,var(--warn) 45%,transparent)}
+.cwatts .att.no span{color:var(--warn)}
+.cwatts .att button{border:0;background:none;color:var(--faint);cursor:pointer;font:700 14px/1 var(--sans,inherit);padding:2px 4px}
+.cwatts .att button:hover{color:var(--text)}
 .composer.dropping{border-color:var(--lemon);box-shadow:0 0 0 3px var(--lemon-wash)}
 .msg.user .pics{display:flex;flex-wrap:wrap;gap:8px;margin-bottom:8px}
 .msg.user .pics img{max-width:220px;max-height:180px;border-radius:10px;display:block}
@@ -953,6 +962,13 @@ h4.sub{margin:12px 0 0;font:600 13px var(--sans);color:var(--muted);text-transfo
 .approve .awhat{margin:0;background:var(--surface);border:1px solid var(--line);border-radius:10px;padding:8px 12px;font:12.5px var(--mono);white-space:pre-wrap;overflow-wrap:anywhere;max-height:160px;overflow:auto}
 .approve .warn{color:var(--warn);font-size:13px}
 .approve .abtns{display:flex;gap:8px;flex-wrap:wrap}
+/* a skill a model wants to save: the whole SKILL.md and every extra file, before anyone says yes */
+.approve.skillcard h5{margin:10px 0 4px;font:600 12px var(--sans);color:var(--faint)}
+.approve.skillcard .awhat.full{max-height:340px}
+.approve.skillcard .skfile{border:1px solid var(--line-soft);border-radius:8px;padding:6px 8px;margin-top:6px}
+.approve.skillcard .skfile summary{cursor:pointer;display:flex;gap:8px;align-items:center}
+.approve.skillcard .skfile summary small{color:var(--faint);margin-left:auto}
+.approve.skillcard .skfile pre{margin:6px 0 0;font:12.5px var(--mono);white-space:pre-wrap;overflow-wrap:anywhere;max-height:240px;overflow:auto}
 .cwbanner{border:1px solid color-mix(in srgb,var(--warn) 45%,transparent);background:var(--warn-bg);border-radius:12px;padding:12px 16px;margin:0 auto 12px;max-width:780px;display:flex;gap:12px;align-items:center;flex-wrap:wrap;font-size:14px}
 .cwbanner span{flex:1;min-width:200px}
 .cwqueue{max-width:780px;margin:0 auto 8px;font-size:13px;color:var(--muted)}
@@ -1235,6 +1251,28 @@ svg.gl{width:1.2em;height:1.2em;vertical-align:-.25em;stroke:currentColor;fill:n
 .skeg button:hover{border-color:var(--lemon)}
 .skeg b{display:block;font:600 13px var(--mono)}
 .skeg span{display:block;font-size:12.5px;color:var(--muted);line-height:1.4}
+/* a skill a model wrote: its whole SKILL.md in a plain textarea, with save and delete beside it */
+.ownsk{display:grid;gap:10px;padding:14px 0;border-top:1px solid var(--line-soft)}
+.ownsk:first-of-type{border-top:0;padding-top:0}
+.ownsk .owhead{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+.ownsk .owhead b{font:600 15px var(--sans)}
+.ownsk textarea{width:100%;min-height:170px;border:1px solid var(--line);border-radius:12px;background:var(--bg);padding:10px 12px;font:12.5px/1.55 var(--mono);outline:none;resize:vertical}
+.ownsk textarea:focus{border-color:var(--lemon);box-shadow:0 0 0 3px var(--lemon-wash)}
+.ownsk .owacts{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+.ownsk .owacts .chk{display:flex;gap:8px;align-items:center;font-size:13px;color:var(--muted)}
+.ownsk .owacts .chk input{width:17px;height:17px;accent-color:var(--lemon-text)}
+/* the Tools section: each pinned Pi package, what it is, and that it runs code here */
+.toolrow{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:12px;padding:14px 0;border-top:1px solid var(--line-soft);align-items:start}
+.toolrow:first-of-type{border-top:0;padding-top:0}
+.toolrow b{font:600 15px var(--sans);overflow-wrap:anywhere}
+.toolrow b small{font:400 12px var(--mono);color:var(--faint);margin-left:6px}
+.toolrow p{margin:4px 0 6px}
+.toolrow .blocked{color:var(--faint);font-size:12.5px;margin:6px 0 0}
+/* the chat bar's menu */
+.cwmenu{position:relative}
+.cwmpop{position:absolute;right:0;top:calc(100% + 6px);z-index:8;background:var(--surface);border:1px solid var(--line);border-radius:12px;box-shadow:0 12px 30px rgba(0,0,0,.14);padding:6px;min-width:230px;display:grid}
+.cwmpop button{text-align:left;border:0;background:none;padding:9px 10px;border-radius:8px;font-size:14px;color:var(--text);cursor:pointer}
+.cwmpop button:hover{background:var(--lemon-wash)}
 .cwpick{max-width:780px;margin:0 auto 8px;border:1px solid var(--line);border-radius:12px;background:var(--surface);overflow:hidden;box-shadow:0 6px 24px rgba(0,0,0,.08)}
 .cwpick button{display:block;width:100%;text-align:left;border:0;background:none;padding:8px 16px}
 .cwpick button[aria-selected="true"],.cwpick button:hover{background:var(--lemon-wash)}
@@ -1502,6 +1540,7 @@ h3.themesec{font:600 13px var(--sans);color:var(--faint);margin:0 0 12px}
           <div class="cwchipwrap"><div class="cwchips" id="cwchips"></div><div class="cwfpop" id="cwfpop" hidden></div></div>
           <span class="grow"></span>
           <span class="chip" id="cwmodechip" hidden></span>
+          <div class="cwmenu" id="cwmenuwrap" hidden><button class="btn ghost" id="cwmore" type="button" aria-haspopup="true" aria-expanded="false" title="Chat options" aria-label="Chat options">⋯</button><div class="cwmpop" id="cwmpop" hidden><button type="button" data-cwact="skill">Make a skill from this chat</button></div></div>
           <button class="btn ghost" id="cwtoggle-side" type="button">Details</button>
         </div>
         <div class="mbar" id="cwmbar" aria-label="Model">
@@ -1526,11 +1565,14 @@ h3.themesec{font:600 13px var(--sans);color:var(--faint);margin:0 0 12px}
           <div class="jobform" id="cwjobform" hidden></div>
           <form class="composer" id="cwform">
             <div class="cwpics" id="cwpics" hidden></div>
+            <div class="cwatts" id="cwatches" hidden></div>
             <label class="sr" for="cwinput">Message</label>
             <textarea id="cwinput" rows="1" placeholder="Ask anything, or describe a job…" autocomplete="off"></textarea>
             <div class="crow">
               <button class="btn ghost" id="cwfolderbtn" type="button" hidden></button>
               <button class="btn ghost" id="cwjobbtn" type="button" hidden>Start a job…</button>
+              <button class="btn ghost" id="cwattachbtn" type="button" title="Attach a file" aria-label="Attach a file"><svg class="i" viewBox="0 0 24 24"><path d="M8 12.5l6.4-6.4a3.5 3.5 0 0 1 5 5L11.6 18.9a5.5 5.5 0 0 1-7.8-7.8l7.4-7.4"/></svg></button>
+              <input type="file" id="cwattachfile" multiple hidden>
               <button class="btn ghost" id="cwpicbtn" type="button" hidden title="This model can look at pictures">Add a picture…</button>
               <input type="file" id="cwpicfile" accept="image/*" multiple hidden>
               <span class="grow"></span>
@@ -5320,7 +5362,7 @@ window.addEventListener("pagehide", () => { try{ navigator.sendBeacon("/ui/bye?t
 <script>
 /* ======================= Cowork: the Pi agent, working in a folder you choose ======================= */
 const CW = {fold: {}, tasks: [], pi: null, id: null, es: null, cursor: -1, ready: null, state: null, stats: null, running: false,
-            tools: {}, files: new Map(), am: null, queue: {steering: [], followUp: []}, folder: "", mode: "ask", timer: null};
+            tools: {}, files: new Map(), am: null, queue: {steering: [], followUp: []}, folder: "", mode: "ask", timer: null, atts: []};
 const CW_MODES = [
   ["ask", "Ask first", "Reads freely. Asks before every edit and command."],
   ["edits", "Edit freely", "Edits inside the folder go through. Commands still ask."],
@@ -5425,11 +5467,18 @@ function cwHomeNote(){
   m.insertBefore(d, m.firstChild);
 }
 function cwSetTitle(t){ cwEl("cwtitle").textContent = t; }
+/* the chat bar's menu: only a chat has it, and a job has neither the menu nor attachments */
+function cwChatMenu(){
+  const wrap = cwEl("cwmenuwrap"), pop = cwEl("cwmpop"), cur = cwFind(CW.id); if(!wrap) return;
+  wrap.hidden = !CW.id || !!(cur && cur.isJob);
+  if(wrap.hidden && pop) pop.hidden = true;
+  const ab = cwEl("cwattachbtn"); if(ab) ab.hidden = !!(cur && cur.isJob);
+}
 function cwNew(){
   cwClose(); CW.id = null; CW.mode = "ask"; CW.extra = []; cwReset(); cwRenderHero(); cwRenderTasks(); cwRenderSide(); cwSetRunning(false); cwJobStrip(); cwChips();
   cwEl("cwmodechip").hidden = true; cwEl("cwinput").focus();
 }
-function cwReset(){ CW.pics = []; CW.n = 0; cwEl("cwmsgs")._hero = ""; cwEl("cwjobform").hidden = true; CW.tools = {}; CW.files = new Map(); CW.am = null; CW.ready = null; CW.state = null; CW.stats = null; CW.queue = {steering: [], followUp: []}; cwEl("cwmsgs").innerHTML = ""; cwEl("cwbanner").innerHTML = ""; cwQueue(); }
+function cwReset(){ CW.pics = []; CW.atts = []; CW.n = 0; cwEl("cwmsgs")._hero = ""; cwEl("cwjobform").hidden = true; CW.tools = {}; CW.files = new Map(); CW.am = null; CW.ready = null; CW.state = null; CW.stats = null; CW.queue = {steering: [], followUp: []}; cwEl("cwmsgs").innerHTML = ""; cwEl("cwbanner").innerHTML = ""; cwQueue(); cwAtchPaint(); }
 function cwClose(){ if(CW.es){ CW.es.close(); CW.es = null; } clearTimeout(CW.timer); }
 
 function cwOpen(id){
@@ -5669,24 +5718,67 @@ cwEl("cwinput").addEventListener("paste", e => { const f = [...((e.clipboardData
 const cwHasFiles = e => [...((e.dataTransfer || {}).types || [])].includes("Files");
 cwEl("cwform").addEventListener("dragover", e => { if(cwHasFiles(e)){ e.preventDefault(); cwEl("cwform").classList.add("dropping"); } });
 cwEl("cwform").addEventListener("dragleave", () => cwEl("cwform").classList.remove("dropping"));
-cwEl("cwform").addEventListener("drop", e => { if(!cwHasFiles(e)) return; e.preventDefault(); cwEl("cwform").classList.remove("dropping"); cwAddPics(e.dataTransfer.files); });
+
+/* ---- files attached with the paperclip or a drop: the server saves the file in the chat's folder and says how the chat will
+   read it. An image this model can't see stays a chip that says so, and is not sent. */
+function cwAttachLabel(a, sees){
+  if(a.handler === "image") return sees ? "Image, sent as a picture" : "This model can't look at pictures, so it won't be sent";
+  return a.label || a.handler || "File";
+}
+function cwAtchPrompt(atts, sees){
+  const use = (atts || []).filter(a => a.handler !== "image");            // pictures travel as picture content, or not at all
+  return use.length ? "\n\nAttached files:\n" + use.map(a => `- ${a.path} (${a.label || a.handler || "file"})`).join("\n") : "";
+}
+function cwAtchPaint(){
+  const row = cwEl("cwatches"); if(!row) return;
+  const sees = cwSees();
+  row.hidden = !CW.atts.length;
+  const h = CW.atts.map((a, i) => `<span class="att ${a.handler === "image" && !sees ? "no" : ""}"><b>${esc(a.name)}</b><span>${esc(cwAttachLabel(a, sees))}</span><button type="button" data-atx="${i}" aria-label="Remove ${esc(a.name)}">×</button></span>`).join("");
+  if(row._h !== h){ row._h = h; row.innerHTML = h; }
+}
+async function cwEnsureChat(){
+  if(CW.id) return;
+  const r = await api("/ui/cowork/new", {method: "POST", body: JSON.stringify({cwd: CW.folder, mode: CW.mode, folders: CW.extra, model: cwBarModel()})});
+  CW.extra = []; await cwLoad(); cwOpen(r.task.id); cwEl("cwinput").focus();
+}
+async function cwAttach(files){
+  const list = [...files].filter(f => f && f.name); if(!list.length) return;
+  try{ await cwEnsureChat(); }catch(e){ toast(e.message); return; }
+  for(const f of list){
+    if(CW.atts.length >= 8){ toast("Up to 8 files at a time."); break; }
+    try{
+      const d = await api(`/ui/attach?chat=${encodeURIComponent(CW.id)}&name=${encodeURIComponent(f.name)}`, {method: "POST", body: f});
+      CW.atts.push({name: f.name, path: d.path, handler: d.handler, label: d.label, file: f});
+    }catch(e){ toast(e.message); }
+  }
+  cwAtchPaint();
+}
+cwEl("cwattachbtn").addEventListener("click", () => cwEl("cwattachfile").click());
+cwEl("cwattachfile").addEventListener("change", e => { cwAttach(e.target.files); e.target.value = ""; });
+cwEl("cwatches").addEventListener("click", e => { const b = e.target.closest("[data-atx]"); if(b){ CW.atts.splice(+b.dataset.atx, 1); cwAtchPaint(); } });
+cwEl("cwform").addEventListener("drop", e => { if(!cwHasFiles(e)) return; e.preventDefault(); cwEl("cwform").classList.remove("dropping"); cwAttach(e.dataTransfer.files); });
 
 /* ---- sending */
 const cwSend = (cmd) => api("/ui/cowork/cmd", {method: "POST", body: JSON.stringify({id: CW.id, cmd})});
 async function cwSubmit(text){
   text = text.trim();
-  if(!text){ if(CW.pics.length) toast("Say what you would like to know about the picture."); return; }
+  if(!text){ if(CW.pics.length) toast("Say what you would like to know about the picture."); else if(CW.atts.length) toast("Say what you would like to do with the file."); return; }
+  const sees = cwSees();
+  for(const a of CW.atts.filter(a => a.handler === "image" && sees)){          // a picture from the paperclip goes as picture content
+    try{ CW.pics.push(await cwReadPic(a.file)); }catch{ toast("Couldn't read " + a.name + "."); }
+  }
   const images = CW.pics.map(p => ({type: "image", data: p.data, mimeType: p.mime}));
-  if(images.length && !cwSees()){ toast("This model can't look at pictures. Remove them, or choose one that can."); return; }
+  if(images.length && !sees){ toast("This model can't look at pictures. Remove them, or choose one that can."); return; }
+  const extra = cwAtchPrompt(CW.atts, sees);
   if(!CW.id){
     try{
       const r = await api("/ui/cowork/new", {method: "POST", body: JSON.stringify({cwd: CW.folder, mode: CW.mode, folders: CW.extra, model: cwBarModel()})});
-      CW.extra = []; await cwLoad(); cwOpenWith(r.task.id, text, images);
+      CW.extra = []; await cwLoad(); cwOpenWith(r.task.id, text + extra, images);
     }catch(e){ toast(e.message); }
     return;
   }
-  cwEl("cwinput").value = ""; cwGrow(); CW.pics = []; cwPicsPaint();
-  try{ const r = await cwSend(Object.assign({type: "prompt", message: text}, images.length ? {images} : {})); if(r && r.queued) toast("Noted. It will see this at the start of the next round."); }catch(e){ toast(e.message); }
+  cwEl("cwinput").value = ""; cwGrow(); CW.pics = []; cwPicsPaint(); CW.atts = []; cwAtchPaint();
+  try{ const r = await cwSend(Object.assign({type: "prompt", message: text + extra}, images.length ? {images} : {})); if(r && r.queued) toast("Noted. It will see this at the start of the next round."); }catch(e){ toast(e.message); }
 }
 function cwOpenWith(id, text, images){
   cwClose(); CW.id = id; CW.cursor = -1; cwReset(); CW.mode = (CW.tasks.find(t => t.id === id) || {}).mode || "ask";
@@ -6039,11 +6131,28 @@ function cwSearchNudge(r){
   const w = cwEl("cwmsgs").querySelector(".cwwork"); cwEl("cwmsgs").insertBefore(d, w); cwScroll();
 }
 /* ---- asking permission */
+/* The save_skill card is its own thing: the whole SKILL.md and every file it would write, before anyone says yes. */
+function saveSkillCardHtml(info, options){
+  const files = (info.files || []).map(f => `<details class="skfile"><summary><b>${esc(f.path)}</b><small>${Number(f.bytes) || 0} bytes</small></summary><pre>${esc(f.content || "")}</pre></details>`).join("");
+  return `<div class="ahead">${info.exists ? "Replace the skill" : "Save a new skill"} <b>${esc(info.what || "")}</b></div>
+    <p class="help" style="margin:0">Read it before you say yes. It goes in your skills folder, and you can edit or delete it under Skills.</p>
+    <h5>The SKILL.md</h5><pre class="awhat full">${esc(info.preview || "")}</pre>
+    ${files ? `<h5>Files it adds</h5>${files}` : ""}
+    ${info.risks && info.risks.length ? `<div class="warn">${info.risks.map(esc).join(", and ")}</div>` : ""}
+    <div class="abtns">${(options || []).map((o, i) => `<button type="button" class="btn ${i === 0 ? "primary" : /n't|no/i.test(o) ? "danger" : ""}" data-ans="${esc(o)}">${esc(o)}</button>`).join("")}</div>`;
+}
 function cwUiRequest(r){
   if(r.method === "notify"){ toast(r.message || ""); return; }
   if(r.method !== "select") return;
   cwPhase("ask", "Waiting for your OK");
   let info = null; try{ info = JSON.parse(r.title); }catch{}
+  if(info && info.tool === "save_skill"){
+    const d = document.createElement("div"); d.className = "approve skillcard"; d.dataset.id = r.id;
+    d.innerHTML = saveSkillCardHtml(info, r.options);
+    const w = cwEl("cwmsgs").querySelector(".cwwork"); cwEl("cwmsgs").insertBefore(d, w); cwScroll();
+    const first = d.querySelector("button"); if(first) first.focus({preventScroll: true});
+    return;
+  }
   const verb = !info ? "" : info.tool === "web_search" ? "search the web for" : info.tool === "bash" ? "run a command" : info.tool === "write" ? "write a file" : info.tool === "edit" ? "edit a file" : "use " + info.tool;
   const d = document.createElement("div"); d.className = "approve"; d.dataset.id = r.id;
   d.innerHTML = `<div class="ahead"><span class="em" aria-hidden="true">${glyph("threshold")}</span> ${info ? `Shoggoth wants to <b>${esc(verb)}</b>` : esc(r.title)}</div>
@@ -6338,6 +6447,7 @@ function cwDetailsTab(t){
 }
 function cwRenderSide(){
   cwModelBar();
+  cwChatMenu();
   const el = cwEl("cwside"), t = cwChat(), cur = cwFind(CW.id);
   const chip = cwEl("cwmodechip"); chip.hidden = !t || t.chat || !!(cur && cur.isJob); if(t) chip.textContent = (CW_MODES.find(x => x[0] === CW.mode) || [])[1] || "";
   const hasJobs = !!(t && (t.jobs || []).length);
@@ -6466,6 +6576,23 @@ cwEl("cwtasks").addEventListener("click", e => { if(e.target.id === "cwolder") s
 cwEl("cwfolderbtn").addEventListener("click", () => cwPickFolder());
 cwEl("cwtoggle-list").addEventListener("click", () => cwEl("cwlist").classList.toggle("open"));
 cwEl("cwtoggle-side").addEventListener("click", () => cwEl("cwside").classList.toggle("open"));
+/* Chat options: one item for now, the fixed prompt from agent.MAKE_SKILL_PROMPT. The save still asks on its own card. */
+cwEl("cwmore").addEventListener("click", e => {
+  e.stopPropagation();
+  const pop = cwEl("cwmpop"); pop.hidden = !pop.hidden;
+  cwEl("cwmore").setAttribute("aria-expanded", String(!pop.hidden));
+});
+document.addEventListener("click", e => {
+  if(!e.target.closest("#cwmenuwrap")){ const pop = cwEl("cwmpop"); if(pop) pop.hidden = true; }
+  const b = e.target.closest("[data-cwact]"); if(!b) return;
+  cwEl("cwmpop").hidden = true;
+  if(b.dataset.cwact === "skill"){
+    if(!CW.id){ toast("Open a chat first."); return; }
+    api("/ui/chat/make-skill", {method: "POST", body: JSON.stringify({chat: CW.id})})
+      .then(() => toast("Asked it to make a skill from this chat."))
+      .catch(err => toast(err.message));
+  }
+});
 cwEl("cwtasks").addEventListener("click", async e => {
   const fold = e.target.closest("[data-fold]");
   if(fold){ e.stopPropagation(); const g = fold.closest(".cwgrp"); CW.fold[fold.dataset.fold] = !g.classList.contains("open"); g.classList.toggle("open", CW.fold[fold.dataset.fold]); fold.setAttribute("aria-expanded", CW.fold[fold.dataset.fold]); cwEl("cwtasks")._h = ""; return; }
@@ -6524,7 +6651,7 @@ document.addEventListener("click", e => {
 });
 
 /* ======================= Skills ======================= */
-const SK = {sets: [], msg: "", busy: false, link: ""};
+const SK = {sets: [], own: [], packs: [], packMsg: "", msg: "", busy: false, link: ""};
 const SK_IDEAS = [
   ["https://github.com/conorbronsdon/avoid-ai-writing", "avoid-ai-writing", "Edits text so it stops sounding machine-written. Long: suits bigger models."],
   ["https://github.com/Agents365-ai/drawio-skill", "drawio-skill", "Makes editable draw.io diagram files. Needs Python 3. Suits bigger models."],
@@ -6532,8 +6659,49 @@ const SK_IDEAS = [
 ];
 async function loadSkills(){
   try{ SK.sets = (await api("/ui/skills")).sets; }catch{}
+  try{ SK.own = (await api("/ui/skills/own")).skills || []; }catch{ SK.own = SK.own || []; }
+  try{ SK.packs = (await api("/ui/packages")).packages || []; }catch{ SK.packs = SK.packs || []; }
   CW.skills = SK.sets.flatMap(s => s.skills.filter(k => k.enabled && k.auto !== false).map(k => ({name: k.name, description: k.description, set: s.id})));
   CW.skillsOn = SK.sets.reduce((n, s) => n + s.skills.filter(k => k.enabled).length, 0);
+}
+async function skRefresh(){ await loadSkills(); paintSkills(); }
+/* one skill a model wrote: its whole SKILL.md in a plain textarea, with save, delete and on/off beside it */
+function skOwnCard(k){
+  const src = k.source || {};
+  return `<div class="ownsk" data-own="${esc(k.name)}">
+    <div class="owhead"><b>${esc(k.title || k.name)}</b><span class="chip ${k.enabled ? "ok" : ""}">${k.enabled ? "On" : "Off"}</span>
+      ${src.model ? `<span class="chip">Written by ${esc(src.model)}</span>` : ""}${src.date ? `<span class="chip">${esc(String(src.date).slice(0, 10))}</span>` : ""}
+      <span class="grow"></span>${src.chat ? `<button class="btn ghost" type="button" data-ownchat="${esc(src.chat)}">From its chat</button>` : ""}</div>
+    ${k.description ? `<p class="help" style="margin:0">${esc(k.description)}</p>` : ""}
+    <label class="sr" for="ow-${esc(k.name)}">The SKILL.md</label>
+    <textarea id="ow-${esc(k.name)}" spellcheck="false">${esc(k.text || "")}</textarea>
+    <div class="owacts"><button class="btn primary" type="button" data-owsave="${esc(k.name)}">Save</button>
+      <button class="btn danger" type="button" data-owdel="${esc(k.name)}">Delete</button>
+      <label class="chk"><input type="checkbox" data-owon="${esc(k.key)}" ${k.enabled ? "checked" : ""}> On</label></div>
+  </div>`;
+}
+function skOwnPanel(){
+  const list = SK.own || [];
+  return `<section class="panel" id="skown"><div class="skhead"><h3>Written by your models</h3><span class="chip">${list.length}</span></div>
+    <p class="help" style="margin:0">Skills a model proposed and you said yes to. Edit one here, or delete it. A skill is instructions a model follows, so read it before you turn it on.</p>
+    ${list.length ? list.map(skOwnCard).join("") : '<p class="help">None yet. When a model offers a skill in a chat and you save it, it appears here.</p>'}</section>`;
+}
+/* one pinned Pi package: what it is, whether it is installed, and the plain warning that it runs code */
+function skToolRow(p){
+  const action = p.installed ? `<button class="btn danger" type="button" data-pkgremove="${esc(p.name)}">Remove</button>`
+    : p.enabled ? `<button class="btn primary" type="button" data-pkginstall="${esc(p.name)}">Install</button>`
+    : '<button class="btn" type="button" disabled>Can\'t install yet</button>';
+  return `<div class="toolrow"><div><b>${esc(p.name)}<small>${esc(p.version || "")}</small></b><p class="help">${esc(p.note || "")}</p>
+      <span class="chip warn">${esc(p.runs_code || "Runs code on your computer")}</span>
+      ${p.enabled ? "" : '<p class="blocked">Not tested with Shoggoth yet, so it can\'t be installed.</p>'}</div>
+    <div>${action}</div></div>`;
+}
+function skToolsPanel(){
+  const list = SK.packs || [];
+  return `<section class="panel" id="sktools"><div class="skhead"><h3>Tools</h3><span class="chip">${list.length}</span></div>
+    <p class="help" style="margin:0">Extra tools for the agent, from Pi's package list. <b>Each one runs code on your computer.</b> Shoggoth installs only a pinned version from its own list.</p>
+    ${SK.packMsg ? `<p class="help" role="status" style="margin:0">${esc(SK.packMsg)}</p>` : ""}
+    ${list.length ? list.map(skToolRow).join("") : '<p class="help">The package list is not available right now.</p>'}</section>`;
 }
 function renderSkills(){
   loadSkills().then(paintSkills); paintSkills();
@@ -6555,17 +6723,57 @@ function paintSkills(){
         <p class="help"><b>Fewer is better for small models.</b> Each skill you switch on adds a line the model reads before every answer. A handful of well-chosen skills beats a hundred.</p>
         <p class="help">Skills are fetched from github.com when you add them. Skills work in a conversation with a folder; the diagram and writing skills also work in a plain chat. Changes apply from the next message.</p></details>
     </section>
-    ${SK.sets.map(set => `<section class="panel skset" data-set="${esc(set.id)}">
+    ${skOwnPanel()}
+    ${SK.sets.filter(set => !set.own).map(set => `<section class="panel skset" data-set="${esc(set.id)}">
       <div class="skhead"><h3>${esc(set.name)}</h3>${set.bundled ? '<span class="chip lem">Comes with Shoggoth</span>' : '<span class="chip">Added by you</span>'}${set.license ? `<span class="chip">${esc(set.license)}</span>` : ""}<span class="grow"></span>
         <button class="btn ghost" type="button" data-skall="1">All on</button><button class="btn ghost" type="button" data-skall="0">All off</button>${set.bundled || set.mine ? "" : '<button class="btn ghost danger" type="button" data-skrm="1">Remove</button>'}</div>
       ${set.blurb ? `<p class="help" style="margin:0">${esc(set.blurb)}</p>` : ""}
       ${set.source ? `<p class="help" style="margin:0"><a href="${esc(set.source)}" target="_blank" rel="noopener noreferrer">${esc(set.source.replace("https://", ""))}</a>${set.author ? " by " + esc(set.author) : ""}</p>` : ""}
       ${set.note ? `<p class="help" style="margin:0">${esc(set.note)}</p>` : ""}
-      <div>${set.skills.map(k => `<label class="skrow"><input type="checkbox" data-sk="${esc(k.key)}" ${k.enabled ? "checked" : ""}><b>${esc(k.name)}<small>${kb(k.bytes)}</small></b><span>${esc(k.description.length > 230 ? k.description.slice(0, 227) + "…" : k.description)}</span></label>`).join("") || '<p class="help">No skills in this set.</p>'}</div>
-    </section>`).join("")}`;
+        <div>${set.skills.map(k => `<label class="skrow"><input type="checkbox" data-sk="${esc(k.key)}" ${k.enabled ? "checked" : ""}><b>${esc(k.name)}<small>${kb(k.bytes)}</small></b><span>${esc(k.description.length > 230 ? k.description.slice(0, 227) + "…" : k.description)}</span></label>`).join("") || '<p class="help">No skills in this set.</p>'}</div>
+      </section>`).join("")}
+    ${skToolsPanel()}`;
 }
 async function skPost(path, body){
   const r = await api(path, {method: "POST", body: JSON.stringify(body)}); SK.sets = r.sets || SK.sets; await loadSkills(); paintSkills(); return r;
+}
+/* the model-written skills and the pinned packages: each action asks the server, then redraws what the server says */
+async function skOwnSave(name){
+  const ta = document.getElementById("ow-" + name); if(!ta) return;
+  ta.disabled = true;
+  try{ await api("/ui/skills/own/save", {method: "POST", body: JSON.stringify({name, text: ta.value})}); toast("Saved " + name + "."); }
+  catch(err){ toast(err.message); }
+  await skRefresh();
+}
+async function skOwnDelete(name){
+  if(!confirm(`Delete the skill “${name}”? Its files go with it. This can't be undone.`)) return;
+  try{ await api("/ui/skills/own/delete", {method: "POST", body: JSON.stringify({name})}); toast("Deleted " + name + "."); }
+  catch(err){ toast(err.message); }
+  await skRefresh();
+}
+async function skPkgInstall(name){
+  try{ await api("/ui/packages/install", {method: "POST", body: JSON.stringify({name})}); }
+  catch(err){ toast(err.message); return; }
+  SK.packMsg = "Installing " + name + "…"; paintSkills();
+  for(let i = 0; i < 150; i++){
+    await new Promise(r => setTimeout(r, 800));
+    let d; try{ d = await api("/ui/packages"); }catch{ break; }
+    SK.packs = d.packages || SK.packs;
+    const st = d.install || {};
+    if(st.state !== "installing"){ SK.packMsg = st.state === "error" ? (st.error || "The install didn't work.") : ""; toast(SK.packMsg || ("Installed " + name + ".")); break; }
+    SK.packMsg = `Installing ${name}… ${st.done || 0} of ${st.total || 1}`; paintSkills();
+  }
+  await skRefresh();
+}
+async function skPkgRemove(name){
+  if(!confirm(`Remove ${name}? Its files are deleted. A chat using it will need it again.`)) return;
+  try{ await api("/ui/packages/remove", {method: "POST", body: JSON.stringify({name})}); toast("Removed " + name + "."); }
+  catch(err){ toast(err.message); }
+  await skRefresh();
+}
+function skOpenChat(id){
+  if(!CW.tasks.some(t => t.id === id)){ toast("That chat isn't here any more."); return; }
+  show("cowork"); cwOpen(id);
 }
 $("#skills").addEventListener("submit", async e => {
   if(e.target.id !== "skform") return; e.preventDefault();
@@ -6577,6 +6785,11 @@ $("#skills").addEventListener("submit", async e => {
 });
 $("#skills").addEventListener("click", async e => {
   const idea = e.target.closest("[data-skidea]"); if(idea){ SK.link = idea.dataset.skidea; paintSkills(); $("#sklink").focus(); return; }
+  const ownChat = e.target.closest("[data-ownchat]"); if(ownChat){ skOpenChat(ownChat.dataset.ownchat); return; }
+  if(e.target.dataset.owsave !== undefined) return void skOwnSave(e.target.dataset.owsave);
+  if(e.target.dataset.owdel !== undefined) return void skOwnDelete(e.target.dataset.owdel);
+  if(e.target.dataset.pkginstall !== undefined) return void skPkgInstall(e.target.dataset.pkginstall);
+  if(e.target.dataset.pkgremove !== undefined) return void skPkgRemove(e.target.dataset.pkgremove);
   const set = e.target.closest("[data-set]"); if(!set) return; const id = set.dataset.set;
   try{
     if(e.target.dataset.skall !== undefined) await skPost("/ui/skills/toggle", {set: id, enabled: e.target.dataset.skall === "1"});
@@ -6584,6 +6797,10 @@ $("#skills").addEventListener("click", async e => {
   }catch(err){ toast(err.message); }
 });
 $("#skills").addEventListener("change", async e => {
+  if(e.target.dataset.owon !== undefined){
+    try{ await api("/ui/skills/toggle", {method: "POST", body: JSON.stringify({key: e.target.dataset.owon, enabled: e.target.checked})}); }catch(err){ toast(err.message); }
+    await skRefresh(); return;
+  }
   if(!e.target.dataset.sk) return;
   try{ await skPost("/ui/skills/toggle", {key: e.target.dataset.sk, enabled: e.target.checked}); }catch(err){ toast(err.message); }
 });

@@ -3729,6 +3729,35 @@
     "bundled": false,
     "mine": true,
     "skills": []
+   },
+   {
+    "id": "own",
+    "name": "Written by your models",
+    "blurb": "Skills a model proposed and you said yes to.",
+    "source": "",
+    "license": "",
+    "author": "",
+    "note": "",
+    "bundled": false,
+    "mine": false,
+    "own": true,
+    "package": "",
+    "skills": [
+     {
+      "key": "own/release-notes",
+      "name": "release-notes",
+      "dir": "release-notes",
+      "description": "Use when writing release notes from a chat.",
+      "enabled": true,
+      "bytes": 168,
+      "auto": true,
+      "from": {
+       "chat": "chat-42",
+       "model": "Qwen3-8B",
+       "date": "2026-11-14T10:00:00+05:30"
+      }
+     }
+    ]
    }
   ]
  },
@@ -4746,5 +4775,61 @@
   "state": "idle",
   "error": null,
   "items": {}
+ },
+ "/ui/skills/own": {
+  "skills": [
+   {
+    "name": "release-notes",
+    "key": "own/release-notes",
+    "title": "Release notes",
+    "description": "Use when writing release notes from a chat.",
+    "enabled": true,
+    "bytes": 168,
+    "source": {
+     "chat": "chat-42",
+     "model": "Qwen3-8B",
+     "date": "2026-11-14T10:00:00+05:30"
+    },
+    "text": "---\nname: release-notes\ndescription: \"Use when writing release notes from a chat.\"\n---\n\n1. Collect the changes.\n2. Write one line for each.\n"
+   }
+  ]
+ },
+ "/ui/packages": {
+  "packages": [
+   {
+    "name": "bun-docx",
+    "version": "0.29.0",
+    "installed": false,
+    "installed_version": null,
+    "enabled": false,
+    "runs_code": "Runs code on your computer",
+    "note": "Not for 5.0. Needs Bun, or downloads an unverified binary at run time."
+   },
+   {
+    "name": "@sttronn/pi-sheets",
+    "version": "0.1.2",
+    "installed": true,
+    "installed_version": "0.1.2",
+    "enabled": true,
+    "runs_code": "Runs code on your computer",
+    "note": "Spreadsheets."
+   },
+   {
+    "name": "@dietrichgebert/ponytail",
+    "version": "5.3.3",
+    "installed": false,
+    "installed_version": null,
+    "enabled": true,
+    "runs_code": "Runs code on your computer",
+    "note": "Code best practices."
+   }
+  ],
+  "install": {
+   "state": "idle",
+   "name": null,
+   "done": 0,
+   "total": 0,
+   "error": null
+  }
  }
 }
