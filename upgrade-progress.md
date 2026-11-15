@@ -576,3 +576,16 @@ U2 is done and committed as `059fe0a`.
 Warning: Reached maximum conversation turns (150). The response may be incomplete. Retry with --max-turns 300 to extend the budget.
 ```
 </details>
+
+## U4 (2026-11-15T09:14:44+05:30)
+
+- exit code 8, 2 new commit(s), tests: ---------------------------------------------------------------------- Ran 740 tests in 221.646s  OK 
+
+<details><summary>Worker report (tail)</summary>
+
+```
+=== U4 started 2026-11-15T08:39:16+05:30
+Now let me check the `lan.py` `set_sharing` name path and whether `/ui/lan/share` returns the right shape.
+Warning: Reached maximum conversation turns (150). The response may be incomplete. Retry with --max-turns 300 to extend the budget.
+```
+</details>
