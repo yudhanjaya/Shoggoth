@@ -606,6 +606,21 @@ a:not([class]){color:var(--lemon-text);text-underline-offset:3px}
 .engine details.engmore[open]>summary{margin-bottom:12px}
 .engerr{display:grid;gap:4px;font-size:13px}
 .engerr code{overflow-wrap:anywhere}
+/* a paid service: where the key goes, what it costs, and the terms it is used under */
+.hosted .estat{gap:6px}
+.hosted .hwhere{font:12.5px var(--mono);color:var(--faint);overflow-wrap:anywhere}
+.hosted .hfld{display:grid;gap:6px}
+.hosted .hfld label{display:grid;gap:4px;font-size:13px;color:var(--muted)}
+.hosted .hfld label>span{font-weight:600;color:var(--text);font-size:12.5px}
+.hosted input{min-height:40px;border:1px solid var(--line);border-radius:10px;background:var(--surface);padding:0 12px;font:inherit;font-size:13.5px;color:var(--text)}
+.hosted input:focus{border-color:var(--lemon);outline:none}
+.hosted .hkeyrow{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:8px;align-items:center}
+.hosted .hfour{font:13.5px var(--mono);color:var(--muted)}
+.hosted .hfour b{font-weight:600;color:var(--text);letter-spacing:.08em}
+.hosted .hlinks{display:flex;flex-wrap:wrap;gap:6px 16px;font-size:13px}
+.hosted .hlinks a{color:var(--muted)}
+.hosted .hlinks a:hover{color:var(--text)}
+.hosted .price{font-size:13px;color:var(--muted)}
 .wlist{list-style:none;margin:16px 0;padding:0;display:grid;gap:12px;text-align:left}
 .wrow2{display:flex;gap:12px;align-items:flex-start}
 .wrow2>i{flex:none;width:26px;height:26px;border-radius:50%;display:grid;place-items:center;font-style:normal;font-size:14px;background:var(--surface-2);color:var(--muted);border:1px solid var(--line)}
@@ -780,6 +795,22 @@ a:not([class]){color:var(--lemon-text);text-underline-offset:3px}
 .swrow b{font-size:15.5px}
 .swrow span{font-size:13.5px;color:var(--muted)}
 .swrow .confirm{display:flex;gap:8px;flex-wrap:wrap}
+/* LAN sharing: the switch and a name, then waiting requests, paired computers, the fingerprint, and other Shoggoths found */
+.lanp{display:grid;gap:16px}
+.lanp .lanrow{display:flex;gap:12px;align-items:center;flex-wrap:wrap}
+.lanp .lanrow input{min-height:40px;border:1px solid var(--line);border-radius:10px;background:var(--surface);padding:0 12px;font:inherit;font-size:13.5px;color:var(--text);max-width:260px}
+.lanp .lanrow input:focus{border-color:var(--lemon);outline:none}
+.lanp .lansub{font:600 13px var(--sans);color:var(--muted);margin:2px 0 0}
+.lanp .lanbox{border:1px solid var(--line);border-radius:12px;background:var(--surface-2);padding:12px 14px;display:grid;gap:8px}
+.lanp .lanitem{display:flex;gap:12px;align-items:center;flex-wrap:wrap}
+.lanp .lanitem .grow{flex:1;min-width:0}
+.lanp .lanitem .mono{overflow-wrap:anywhere}
+.lanp .code{font:600 20px var(--mono);letter-spacing:.22em;color:var(--text)}
+.lanp .fp{font:600 15px var(--mono);letter-spacing:.14em;color:var(--text)}
+.lanp .lanhint{font-size:13px;color:var(--muted);margin:0}
+.lanp .lanerr{color:var(--bad);font-size:13px}
+.lanp .pairform{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+.lanp .pairform input{font:600 16px var(--mono);letter-spacing:.18em;max-width:150px;text-align:center}
 .srvsec{margin:0 0 28px;display:grid;gap:12px}
 .sechead{display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap}
 .panel,.wrap>*{min-width:0}.panel pre{max-width:100%;overflow-x:auto}
@@ -1556,6 +1587,7 @@ h3.themesec{font:600 13px var(--sans);color:var(--faint);margin:0 0 12px}
           </div>
           <label class="mpick"><span class="mlab">Memory</span><select id="mbctx" title="How much of the conversation the model can keep in mind. 128k is the default."></select></label>
           <span class="mstate" id="mbstate" role="status"></span>
+          <span class="chip warn leavechip" id="mbleave" hidden></span>
           <span class="grow"></span>
           <button class="btn primary" id="mbload" type="button" hidden>Load</button>
           <button class="btn ghost" id="mbfree" type="button" hidden title="Unload the model and free its memory">Unload</button>
@@ -3508,8 +3540,41 @@ function engConnCard(p){                 // a server the person connected: Shogg
     <div class="estat">${state}</div>
     <div class="erow"><button class="btn" data-eng="srvremove" data-id="${esc(p.id)}">Remove</button><span class="help" style="margin:0">Shoggoth forgets the address. It doesn't touch the server.</span></div></section>`;
 }
-function engConnect(){                   // the form that connects one
-  const pre = ENG.srv.presets || [], first = pre[0] || {};
+/* Paid services: pick one, paste its key, done. The card says where the key goes, what it costs, and links its terms. The page
+   only ever sees the key's last four characters, because the server never sends the rest. */
+const hostedPresets = () => (ENG.srv.presets || []).filter(p => p.category === "hosted");
+function hostedConnected(p){ return (ENG.srv.servers || []).filter(s => s.preset === p.id); }
+/* What the page is allowed to show of a stored key: its last four characters, from the server. A key too short to hide a
+   quarter of itself comes back with no hint, and the card shows only dots. */
+const hostedMask = hint => hint ? "•••• •••• " + hint : "•••• •••• ••••";
+function hostedCard(p){
+  const conn = hostedConnected(p), c = conn[0], host = p.host || "", busy = ENG.hosted === p.id;
+  const state = c
+    ? `<span><b>Connected.</b> ${c.has_key && c.key_hint ? `The key ends ${esc(c.key_hint)}.` : "It needs a key."}</span>`
+    : `<span>Not connected yet. Paste your key from ${esc(host || p.name)}.</span>`;
+  const keyField = c
+    ? `<div class="hkeyrow"><span class="hfour">${esc(hostedMask(c.key_hint))}</span>
+        <button class="btn ghost" type="button" data-hosted="forget" data-id="${esc(c.id)}">Remove</button></div>`
+    : `<div class="hkeyrow"><input id="hkey-${esc(p.id)}" type="password" placeholder="Your ${esc(p.name)} key" autocomplete="off" spellcheck="false" aria-label="${esc(p.name)} key">
+        <button class="btn primary" type="button" data-hosted="connect" data-id="${esc(p.id)}" ${busy ? "disabled" : ""}>${busy ? "Checking…" : "Connect"}</button></div>`;
+  const links = [p.key_url ? `<a href="${esc(p.key_url)}" target="_blank" rel="noopener noreferrer">Get a key</a>` : "",
+    p.terms ? `<a href="${esc(p.terms)}" target="_blank" rel="noopener noreferrer">Terms</a>` : "",
+    p.docs ? `<a href="${esc(p.docs)}" target="_blank" rel="noopener noreferrer">Docs</a>` : ""].filter(Boolean).join("");
+  return `<section class="panel engine hosted" data-hosted-id="${esc(p.id)}"><div class="ehead"><h3>${esc(p.name)}</h3><span class="chip lem">Paid service</span>
+      ${c ? '<span class="chip ok">Connected</span>' : ""}${host ? `<span class="chip">Leaves your computer</span>` : ""}</div>
+    <p class="help" style="margin:0">${esc(p.summary || "")}</p>
+    <div class="estat">${state}${host ? `<span class="hwhere">Keys go to ${esc(host)}</span>` : ""}${p.price ? `<span class="price">${esc(p.price)}</span>` : ""}</div>
+    <div class="hfld">${keyField}</div>
+    ${links ? `<div class="hlinks">${links}</div>` : ""}
+    ${c ? `<p class="help" style="margin:0">Chats on its models show “Leaves your computer: ${esc(p.name)}”.</p>` : ""}</section>`;
+}
+function hostedSection(){
+  const ps = hostedPresets();
+  if(!ps.length) return "";
+  return `<div class="srchead">Paid services<span>${ps.length}</span></div><p class="help" style="margin:0 0 6px">Models that run on someone else's computer. Your messages leave this computer when a chat uses one.</p>` + ps.map(hostedCard).join("");
+}
+function engConnect(){                   // the form that connects one; paid services have their own cards above
+  const pre = (ENG.srv.presets || []).filter(x => x.category !== "hosted"), first = pre[0] || {};
   return `<section class="panel engine"><div class="ehead"><h3>Connect a server</h3></div>
     <p class="help" style="margin:0">Use a server you already run: Ollama, LM Studio, llama.cpp, Strata, Maya, Unsloth, or anything that speaks the OpenAI API. Shoggoth uses its models in chat and for your other apps. It doesn't install, start, stop or update the server.</p>
     <form class="line" id="srvform" style="margin-top:8px;flex-wrap:wrap">
@@ -3594,9 +3659,9 @@ function engMount(){                     // the engine-specific parts live in a 
 }
 function renderEngines(){
   const d = ENG.d, host = $("#engcards"); if(!d) return;
-  const sig = JSON.stringify([d, ENG.srv, ENG.checks, ENG.msg, ENG.probeMsg, ENG.left, ENG.check, SU.st && SU.st.engine, SU.cfg]);
+  const sig = JSON.stringify([d, ENG.srv, ENG.checks, ENG.msg, ENG.probeMsg, ENG.left, ENG.check, ENG.hosted, SU.st && SU.st.engine, SU.cfg]);
   if(sig === ENG.sig) return;
-  if(host.contains(document.activeElement) && /^(INPUT|SELECT|TEXTAREA)$/.test(document.activeElement.tagName)) return;
+  if([host, $("#engadd")].some(el => el && el.contains(document.activeElement) && /^(INPUT|SELECT|TEXTAREA)$/.test(document.activeElement.tagName))) return;
   ENG.sig = sig;
   const open = new Set([...document.querySelectorAll("#engcards details.engmore[open]")].map(x => x.dataset.part));
   const hold = $("#engparts");
@@ -3605,7 +3670,7 @@ function renderEngines(){
   engMount();
   document.querySelectorAll("#engcards details.engmore").forEach(x => { if(open.has(x.dataset.part)) x.open = true; });
   const form = ["#srvpre", "#srvurl", "#srvkey"].map(q => { const n = $(q); return n ? n.value : null; });
-  $("#engadd").innerHTML = engConnect() + engMore() + `<section class="panel engine"><div class="ehead"><h3>Add an engine</h3></div>
+  $("#engadd").innerHTML = hostedSection() + engConnect() + engMore() + `<section class="panel engine"><div class="ehead"><h3>Add an engine</h3></div>
     <p class="help" style="margin:0">An engine is a folder with a <span class="mono">provider.yaml</span> file in it that says how to start the program, where to reach it and which models it can run. Put the folder in <span class="mono" style="overflow-wrap:anywhere">${esc(d.user_folder || "")}</span>, then press Reload. Shoggoth asks before it lets an added engine run a program.</p>
     <p class="help" style="margin:0">In a terminal, <span class="mono">Shoggoth-*.AppImage providers new my-engine</span> makes a starting folder. <span class="mono">providers check &lt;folder&gt;</span> tells you what to fix before you press Reload. The guide is <span class="mono">docs/ENGINES.md</span> in the Shoggoth repository.</p>
     <div class="erow"><button class="btn" data-eng="reload">Reload engines</button></div>
@@ -3635,6 +3700,27 @@ document.addEventListener("submit", async e => {
     await engLoad();
   }catch(err){ out.textContent = err.message; }
   finally{ btn.disabled = false; }
+});
+/* A paid service's two buttons: connect with the key in its box, or forget a connected one. */
+document.addEventListener("click", async e => {
+  const b = e.target.closest("[data-hosted]"); if(!b || !b.closest("#v-backends")) return;
+  const act = b.dataset.hosted, id = b.dataset.id;
+  try{
+    if(act === "connect"){
+      const box = $("#hkey-" + id), key = (box ? box.value : "").trim(), pre = (ENG.srv.presets || []).find(p => p.id === id) || {};
+      if(!key){ toast("Paste your key first."); return; }
+      ENG.hosted = id; renderEngines();
+      const r = await api("/ui/servers", {method: "POST", body: JSON.stringify({action: "probe", preset: id, url: pre.url || "", key})});
+      ENG.hosted = "";
+      if((r.connected || []).length) toast("Connected " + pre.name + ".");
+      else if((r.needs_key || []).length) toast(pre.name + " didn't accept that key.");
+      else toast("Nothing answered at " + (pre.host || "the service") + ".");
+    }else if(act === "forget"){
+      if(!confirm("Remove this connection? Shoggoth forgets the key. Your account with the service is untouched.")) return;
+      await api("/ui/servers", {method: "POST", body: JSON.stringify({action: "remove", id})}); toast("Removed.");
+    }
+  }catch(err){ ENG.hosted = ""; toast(err.message); }
+  await engLoad();
 });
 document.addEventListener("click", async e => {
   const b = e.target.closest("[data-eng]"); if(!b || !b.closest("#v-backends")) return;
@@ -3804,7 +3890,7 @@ document.addEventListener("click", e => { if(e.target.closest("[data-pick]")){ e
 /* ======================= help + advanced hub ======================= */
 const FAQ = [
   ["What is a model?", "A model is the AI that answers you. It is a big file, usually a few gigabytes, that lives on this computer. Bigger models tend to write better but need a stronger computer and answer more slowly. Shoggoth marks each one as comfortable, snug or too big for your machine."],
-  ["Is my data private?", "Yes. Shoggoth and the models run on this computer. Your conversations are saved on this computer, in Shoggoth's own folder. They are never sent anywhere. Shoggoth only goes online to download a model you ask for, check for updates, fetch skills when you paste a link, or search the web when you allow the model to. It asks first, every time. You can switch it off in the chat's Details panel. The <a href=\"#docs\" data-go=\"docs\">Docs</a> page explains where everything is kept."],
+  ["Is my data private?", "Yes, unless you choose otherwise. Shoggoth and its models run on this computer, and your conversations are saved in Shoggoth's own folder here. They leave this computer only when you ask: a chat on a paid hosted model sends the conversation to that service, and web search sends your search words. Shoggoth also goes online to download a model you ask for, check for updates, or fetch skills from a link you paste. It asks first. The <a href=\"#docs\" data-go=\"docs\">Docs</a> page explains where everything is kept."],
   ["Why is the first answer slow?", "The model has to be loaded into your computer's memory before it can answer. That takes a few seconds to a minute, depending on its size. After that, answers start right away."],
   ["How do I know which model to use?", "It depends on your computer and what you want to do. Start with <b>Recommended for this computer</b> in Models, where I explain each recommendation. <b>Everything</b> shows the rest, with a note on whether each one will fit. <p><button class=\"btn\" type=\"button\" data-pick>Show me how to compare models</button></p>"],
   ["What is the context window?", "It is how much of the conversation a model can see at once. Shoggoth uses <b>128k</b> tokens (about 100,000 words) by default. That's enough for long chats and agent work. You can change it for one model under <b>Details</b>, then <b>Settings for this model</b>. A bigger window needs more graphics memory."],
@@ -3963,6 +4049,7 @@ async function srvFetch(){
     srvLogNote(r.requests, r.gateway);
     if(!SRV.built || changed) srvBuild();
     srvPaint();
+    if(S.view === "server" && Date.now() - (SRV.lant || 0) > 2500){ SRV.lant = Date.now(); lanRefresh(); }   // a waiting code or a found Shoggoth appears without a reload
   }catch(e){
     SRV.err = e.message;
     if(!SRV.built && !$("#srverr")) $("#server").innerHTML = `<div class="hero srvhero"><h2>The server <span class="hl">isn't answering</span></h2>
@@ -3974,6 +4061,7 @@ function srvShow(){
   SRV.reqs = new Map(); SRV.gsig = ""; SRV.built = false; $("#server").innerHTML = `<div class="hero srvhero"><h2>Share your models with <span class="hl">other apps</span></h2><div class="prog ind"><i></i></div></div>`;
   loadLogs();
   srvFetch();
+  SRV.lant = 0; lanLoad();
   clearInterval(SRV.timer); SRV.timer = setInterval(() => { if(S.view !== "server"){ clearInterval(SRV.timer); clearInterval(SRV.fast); return; } if(!document.hidden) srvFetch(); }, 1000);
   clearInterval(SRV.fast); SRV.fast = setInterval(() => { if(S.view === "server" && !document.hidden) srvPaint(); }, 300);
 }
@@ -4043,13 +4131,70 @@ function srvBuild(){
     </section>
     <section class="panel srvshare">
       <h3>Who can connect</h3>
-      <div class="swrow"><div><b>Other devices on my network</b><span>Off means only programs on this computer can connect. Turn it on to use your models from a phone, a laptop or another desktop at home. Anyone on your network who has the key could use them. Traffic on a home network isn't encrypted.</span>${g.lan && g.lan_url ? `<div class="crow2"><span class="cl">Network address</span><code class="cv">${esc(g.lan_url)}</code><button class="btn" type="button" data-sact="copy" data-val="${esc(g.lan_url)}">Copy</button></div>` : ""}</div>
-        <button class="sw" type="button" role="switch" aria-checked="${g.lan}" data-sact="lan"><i></i>${g.lan ? "On" : "Off"}</button></div>
       <div class="swrow"><div><b>Show what models are saying</b><span>Off by default. When on, the request list above keeps the questions and answers so you can read them. They are only held in memory and disappear when you close Shoggoth.</span></div>
         <button class="sw" type="button" role="switch" aria-checked="${g.capture}" data-sact="capture"><i></i>${g.capture ? "On" : "Off"}</button></div>
       <div class="swrow"><div><b>Key</b><span>Apps need this key. If you shared it by accident, make a new one. Apps that use the old key will stop working until you paste the new one.</span></div>
         ${SRV.confirmKey ? `<span class="confirm"><button class="btn danger" type="button" data-sact="newkey">Yes, make a new key</button><button class="btn ghost" type="button" data-sact="nokey">Keep it</button></span>` : `<button class="btn" type="button" data-sact="askkey">Make a new key</button>`}</div>
-    </section>`;
+    </section>
+    <div id="lanwrap">${lanPanel()}</div>`;
+}
+/* ======================= LAN sharing: other Shoggoths on this network ======================= */
+/* The sharing switch and this computer's name, the requests waiting for a code, the computers paired with this one, the short
+   fingerprint both screens show, and the Shoggoths the listener has found. The routes are lan.py's /ui/lan/*. */
+SRV.lan = SRV.lan || {on: null, name: "", fp: "", fp_short: "", url: null, waiting: [], clients: [], error: "", found: [], foundErr: "", pair: null, busy: "", msg: ""};
+function lanLoad(){
+  return Promise.all([api("/ui/lan/status").catch(e => ({error: e.message})), api("/ui/lan/found").catch(e => ({found: [], error: e.message}))])
+    .then(([st, fo]) => { SRV.lan = Object.assign(SRV.lan, st || {}, {found: (fo || {}).found || [], foundErr: (fo || {}).error || ""}); });
+}
+function lanChip(on, word){ return `<span class="chip ${on ? "ok" : ""}">${esc(word)}</span>`; }
+function lanWaiting(w){
+  return `<div class="lanitem"><span class="grow"><b>${esc(w.name || "A computer")} wants to use your models</b><br><span class="mono">from ${esc(w.ip || "another computer")}</span></span>
+    <span class="code">${esc(w.code)}</span>
+    <span class="lanhint">${w.expires_in > 0 ? `Ends in ${Math.max(0, Math.round(w.expires_in))} s` : "Ending"}</span>
+    <button class="btn danger" type="button" data-lan="deny" data-id="${esc(w.id)}">Turn down</button></div>`;
+}
+function lanClient(c){
+  return `<div class="lanitem"><span class="grow"><b>${esc(c.name || "A computer")}</b>${c.ip ? ` <span class="mono">from ${esc(c.ip)}</span>` : ""}</span>
+    <button class="btn" type="button" data-lan="revoke" data-id="${esc(c.id)}">Remove</button></div>`;
+}
+function lanFound(p){
+  const paired = !!p.connected;
+  return `<div class="lanitem"><span class="grow"><b>${esc(p.name)}</b> <span class="mono">${esc(p.ip)}:${esc(String(p.port))}</span><br>
+      <span class="lanhint">${p.models} model${p.models === 1 ? "" : "s"}${p.seen_ago != null ? ` · seen ${p.seen_ago} s ago` : ""}</span></span>
+    ${paired ? '<span class="chip ok">Paired</span>' : `<button class="btn primary" type="button" data-lan="pair" data-fp="${esc(p.fp)}">Pair</button>`}</div>`;
+}
+function lanPairBox(){
+  const p = SRV.lan.pair; if(!p) return "";
+  return `<div class="lanbox"><b>Type the code ${esc(p.server)} shows</b>
+    <p class="lanhint">It is on the other computer's Server page. The two computers must show the same fingerprint: <span class="fp">${esc(p.fp_short || "")}</span>. <b>Check this matches on the other computer.</b></p>
+    <div class="pairform"><input id="lanpaircode" type="text" inputmode="numeric" maxlength="7" autocomplete="one-time-code" placeholder="000000" aria-label="The code the other computer shows">
+      <button class="btn primary" type="button" data-lan="code">Pair</button><button class="btn ghost" type="button" data-lan="cancel">Cancel</button></div>
+    ${SRV.lan.msg ? `<p class="lanerr" role="status">${esc(SRV.lan.msg)}</p>` : ""}</div>`;
+}
+function lanPanel(){
+  const l = SRV.lan, on = !!l.on, fp = l.fp_short || "", er = l.error || "";
+  const status = on
+    ? `<p class="lanhint">Sharing is on${l.url ? ` at <span class="mono">${esc(l.url)}</span>` : ""}. Traffic on the network is encrypted with this computer's own certificate.</p>`
+    : `<p class="lanhint">Off means only programs on this computer can use your models. Turn it on to lend them to another Shoggoth on your network. The network side is encrypted and needs pairing.</p>`;
+  return `<section class="panel lanp" id="lanpanel">
+    <div class="sechead"><h3>Other Shoggoths</h3>${lanChip(on, on ? "On" : "Off")}</div>
+    ${er ? `<p class="lanerr">${esc(er)}</p>` : ""}
+    <div class="lanrow"><label class="lanhint" for="lanname">This computer's name</label>
+      <input id="lanname" type="text" maxlength="48" value="${esc(l.name || "")}" autocomplete="off" aria-label="This computer's name">
+      <button class="btn" type="button" data-lan="name">Save name</button>
+      <button class="sw" type="button" role="switch" aria-checked="${on}" data-lan="share"><i></i>${on ? "Sharing models" : "Share my models"}</button></div>
+    ${status}
+    ${on && fp ? `<div class="lanbox"><div class="lanitem"><span class="grow"><b>This computer's fingerprint</b><br><span class="lanhint">Check this matches on the other computer before you type a code.</span></span>
+      <span class="fp">${esc(fp)}</span></div></div>` : ""}
+    ${on && (l.waiting || []).length ? `<div><p class="lansub">Waiting for you</p><div class="lanbox">${l.waiting.map(lanWaiting).join("")}</div></div>` : ""}
+    ${on ? `<div><p class="lansub">Computers paired with this one</p>
+      ${(l.clients || []).length ? `<div class="lanbox">${l.clients.map(lanClient).join("")}</div>` : `<p class="lanhint">None yet. A computer pairs the first time it asks you for a code.</p>`}</div>` : ""}
+    <div><p class="lansub">Shoggoths found on this network</p>
+      ${l.foundErr ? `<p class="lanerr">${esc(l.foundErr)}</p>` : ""}
+      ${(l.found || []).length ? `<div class="lanbox">${l.found.map(lanFound).join("")}</div>` : `<p class="lanhint">None found yet. Turn sharing on here or on another computer, then press Look again.</p>`}
+      <div class="lanrow" style="margin-top:8px"><button class="btn" type="button" data-lan="look">Look again</button></div></div>
+    ${lanPairBox()}
+  </section>`;
 }
 const appLabel = a => a === "Shoggoth" ? "Shoggoth chat" : a;
 function stateWord(r){ return {waiting: "Reading the question", thinking: "Thinking", answering: "Writing", done: "Done", error: "Didn't work"}[r.state]; }
@@ -4207,7 +4352,6 @@ $("#server").addEventListener("click", async e => {
   if(a === "tab"){ SRV.tab = b.dataset.t; return srvBuild(), srvPaint(); }
   if(a === "code"){ SRV.code = b.dataset.t; srvBuild(); const d = $("details.codebox"); if(d) d.open = true; return srvPaint(); }
   if(a === "enabled") return srvPost({enabled: !g.enabled});
-  if(a === "lan") return srvPost({lan: !g.lan});
   if(a === "capture") return srvPost({capture: !g.capture});
   if(a === "askkey"){ SRV.confirmKey = true; return srvBuild(), srvPaint(); }
   if(a === "nokey"){ SRV.confirmKey = false; return srvBuild(), srvPaint(); }
@@ -4226,6 +4370,72 @@ $("#server").addEventListener("click", async e => {
     }catch(err){ toast("The test didn't work: " + err.message); }
     b.disabled = false; srvFetch();
   }
+});
+
+/* The LAN panel's buttons: the sharing switch, this computer's name, turning a request down, removing a paired computer,
+   pairing with a found one, and typing its code. */
+async function lanPaint(){
+  const el = $("#lanwrap"); if(!el) return;
+  const a = document.activeElement;
+  if(a && el.contains(a) && /^(INPUT|TEXTAREA)$/.test(a.tagName) && a.value && a.value !== a.defaultValue) return;   // keep a half-typed name or code
+  const keep = {};
+  ["#lanname", "#lanpaircode"].forEach(q => { const n = $(q); if(n && n.value) keep[q] = n.value; });
+  el.innerHTML = lanPanel();
+  for(const [q, v] of Object.entries(keep)){ const n = $(q); if(n) n.value = v; }
+  if(SRV.lan.pair && keep["#lanpaircode"]){ const c = $("#lanpaircode"); if(c){ c.focus(); c.setSelectionRange(c.value.length, c.value.length); } }
+}
+/* Refreshed on the Server page's own poll. The panel is only redrawn when what it would say has changed, so it never steals
+   the focus or wipes half-typed text on its own. */
+async function lanRefresh(){
+  const before = JSON.stringify([SRV.lan.on, SRV.lan.name, SRV.lan.fp_short, SRV.lan.url, SRV.lan.error, SRV.lan.waiting, SRV.lan.clients, SRV.lan.found]);
+  await lanLoad();
+  const after = JSON.stringify([SRV.lan.on, SRV.lan.name, SRV.lan.fp_short, SRV.lan.url, SRV.lan.error, SRV.lan.waiting, SRV.lan.clients, SRV.lan.found]);
+  if(before !== after || !$("#lanpanel")) await lanPaint();
+}
+async function lanPost(path, body){
+  const r = await api(path, {method: "POST", body: JSON.stringify(body || {})});
+  if(r && (r.sharing !== undefined || r.waiting !== undefined || r.clients !== undefined)) Object.assign(SRV.lan, r);
+  await lanLoad(); await lanPaint();
+  return r;
+}
+document.addEventListener("click", async e => {
+  const b = e.target.closest("[data-lan]"); if(!b) return;
+  const a = b.dataset.lan;
+  try{
+    if(a === "share"){
+      const on = !(SRV.lan.on);
+      SRV.lan.on = on; await lanPaint();
+      await lanPost("/ui/lan/share", {on, name: ($("#lanname") || {}).value || SRV.lan.name});
+      if(on && SRV.g && SRV.g.lan !== on){ SRV.gsig = ""; srvFetch(); }       // the gateway restarts, so its own state changed too
+      toast(on ? "Sharing your models on this network." : "Sharing stopped.");
+    }
+    else if(a === "name"){
+      const name = (($("#lanname") || {}).value || "").trim();
+      await lanPost("/ui/lan/share", {on: !!SRV.lan.on, name}); toast("Name saved.");
+    }
+    else if(a === "look"){ SRV.lan.foundErr = ""; await lanLoad(); await lanPaint(); toast("Looked for other Shoggoths."); }
+    else if(a === "deny"){ await lanPost("/ui/lan/deny", {id: b.dataset.id}); toast("Turned down."); }
+    else if(a === "revoke"){
+      if(!confirm("Remove this computer? Its key stops working at once. It has to pair again to use your models.")) return;
+      await lanPost("/ui/lan/revoke", {id: b.dataset.id}); toast("Removed.");
+    }
+    else if(a === "pair"){
+      SRV.lan.msg = ""; SRV.lan.busy = b.dataset.fp;
+      const r = await lanPost("/ui/lan/pair", {fp: b.dataset.fp});
+      SRV.lan.pair = r || null; SRV.lan.busy = "";
+      await lanPaint();
+      const c = $("#lanpaircode"); if(c) c.focus();
+    }
+    else if(a === "code"){
+      const code = (($("#lanpaircode") || {}).value || "").trim();
+      if(!/^\d{6}$/.test(code.replace(/\s/g, ""))){ SRV.lan.msg = "The code is 6 digits."; await lanPaint(); return; }
+      SRV.lan.msg = "";
+      const r = await lanPost("/ui/lan/code", {session: (SRV.lan.pair || {}).session, code});
+      SRV.lan.pair = null; await lanPaint(); await pkLoad(true);
+      toast("Paired" + (r && r.server && r.server.name ? " with " + r.server.name : "") + ".");
+    }
+    else if(a === "cancel"){ SRV.lan.pair = null; SRV.lan.msg = ""; await lanPaint(); }
+  }catch(err){ SRV.lan.busy = ""; SRV.lan.msg = err.message; toast(err.message); await lanPaint(); }
 });
 
 /* ======================= the model's picture ======================= */
@@ -5596,6 +5806,18 @@ function loadWatch(on){
     S.loadPoll = setInterval(async () => { try{ S.ms = await api("/ui/model"); }catch{} pkNoteStep(); cwModelBar(); }, 1200);
   }else if(!on && S.loadPoll){ clearInterval(S.loadPoll); S.loadPoll = null; S.loadSteps = []; }
 }
+/* "Leaves your computer: OpenRouter": said for as long as a chat on a paid service is open, not only while it answers. The
+   model's source says `leaves_computer`; the group's plain name is what the person knows the service as. */
+function leaveChip(m){
+  const chip = cwEl("mbleave"); if(!chip) return;
+  const srcId = m && (m.source || m.engine), g = (S.pk.groups || []).find(x => x.id === srcId) || {};
+  const leaves = !!(m && (m.leaves_computer || g.leaves_computer || g.kind === "cloud"));
+  if(!m || !leaves){ chip.hidden = true; chip.textContent = ""; chip.title = ""; return; }
+  const who = g.name || m.source_name || "";
+  chip.hidden = false;
+  chip.textContent = "Leaves your computer" + (who ? ": " + who : "");
+  chip.title = who ? "The model runs on someone else's computer. Messages sent with it go to " + who + "." : "The model runs on someone else's computer.";
+}
 function cwModelBar(){
   cwPicsPaint();
   cwAtchPaint();          // the chip's "this model can't look at pictures" note follows the chosen model
@@ -5638,6 +5860,7 @@ function cwModelBar(){
   st.title = st.textContent;
   const fr = $("#mbfree"); fr.hidden = !ms.loaded || loading || !!CW.running;   // it can't unload mid-answer, so it steps aside
   const ld = $("#mbload"); ld.hidden = !cur || here || loading || !!CW.running || !!(m && m.fit === "no");
+  leaveChip(m);
   // the progress card: what Shoggoth is doing while it gets a model ready
   const card = $("#mbcard");
   if(loading){

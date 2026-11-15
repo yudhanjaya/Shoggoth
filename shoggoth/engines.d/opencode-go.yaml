@@ -9,4 +9,6 @@ formats:
 key: required
 key_url: https://opencode.ai/console
 docs: https://opencode.ai
+terms: https://opencode.ai/legal/terms-of-service
+price: "The Go plan, paid monthly, with a set amount of use included."
 hint: "Paste the key for your OpenCode Go plan. This plan covers open models only."

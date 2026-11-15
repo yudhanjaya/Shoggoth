@@ -1,6 +1,6 @@
 ## What Shoggoth is
 
-Shoggoth lets you use local AI on your own computer. You talk to it like a chat app, but nothing leaves your machine: the AI, your conversations and your files all stay here. The one exception is web search, which you control. If the model wants to look something up, it asks first and shows the words it will search for.
+Shoggoth lets you use local AI on your own computer. You talk to it like a chat app, but the AI, your conversations and your files stay here. Two things can leave: web search, and a chat you start on a paid hosted model, where your message goes to that service. Both are your choice. If the model wants to search, it asks first and shows the words it will use.
 
 Every chat is a working session.
 

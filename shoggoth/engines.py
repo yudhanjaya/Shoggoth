@@ -30,7 +30,7 @@ ID_RE = re.compile(r"^[a-z0-9][a-z0-9_-]{0,47}$")
 PATH_RE = re.compile(r"^/[A-Za-z0-9._~/-]*$")                  # a plain GET path: no query, no fragment, no host
 JSON_RE = re.compile(r"^\$[A-Za-z0-9_.\[\]*-]*$")
 KEYS = ("id", "name", "category", "summary", "url", "ports", "match", "cwd", "identify", "formats", "context", "loads", "key", "key_url",
-        "docs", "hint", "enabled")
+        "docs", "hint", "price", "terms", "enabled")
 CATEGORIES = ("local", "specialized", "hosted")
 LOADS = ("router", "ollama", "fixed")
 KEY_MODES = ("none", "optional", "required")
@@ -248,6 +248,8 @@ def clean(d):
     out["key"] = _choice(d, "key", KEY_MODES, "none", errs)
     out["key_url"] = _url(d.get("key_url"), errs, "key_url")
     out["docs"] = _url(d.get("docs"), errs, "docs")
+    out["terms"] = _url(d.get("terms"), errs, "terms")
+    out["price"] = _text(d, "price", errs, limit=120)
     out["hint"] = _text(d, "hint", errs)
     if out["url"] and not out["ports"]:
         p = urllib.parse.urlsplit(out["url"]).port
