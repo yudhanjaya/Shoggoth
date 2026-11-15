@@ -17,7 +17,7 @@ const slice = (from, to) => {
 {
   const a = html.indexOf("/* ======================= creatures"), b = html.indexOf("const crCache");
   const ctx = {}; vm.createContext(ctx);
-  vm.runInContext(slice("/* ======================= creatures", "const crCache") + "\nconst CR_FORMS = 17; this.generate = generate;", ctx);
+  vm.runInContext(slice("/* ======================= creatures", "const crCache") + "\nthis.generate = generate;", ctx);
   const card = o => ({ seed: "qwen3.6-35b-a3b", params: 35, quant: "Q4_K_M", ctx: 128, vision: true, reasoning: true, tools: true, tone: 0, form: 3, ...o });
 
   const square = ctx.generate(card());
