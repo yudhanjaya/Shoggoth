@@ -3713,6 +3713,7 @@ document.addEventListener("click", async e => {
       const r = await api("/ui/servers", {method: "POST", body: JSON.stringify({action: "probe", preset: id, url: pre.url || "", key})});
       ENG.hosted = "";
       if((r.connected || []).length) toast("Connected " + pre.name + ".");
+      else if((r.already || []).length) toast(pre.name + " is already connected.");
       else if((r.needs_key || []).length) toast(pre.name + " didn't accept that key.");
       else toast("Nothing answered at " + (pre.host || "the service") + ".");
     }else if(act === "forget"){
@@ -4144,7 +4145,13 @@ function srvBuild(){
 SRV.lan = SRV.lan || {on: null, name: "", fp: "", fp_short: "", url: null, waiting: [], clients: [], error: "", found: [], foundErr: "", pair: null, busy: "", msg: ""};
 function lanLoad(){
   return Promise.all([api("/ui/lan/status").catch(e => ({error: e.message})), api("/ui/lan/found").catch(e => ({found: [], error: e.message}))])
-    .then(([st, fo]) => { SRV.lan = Object.assign(SRV.lan, st || {}, {found: (fo || {}).found || [], foundErr: (fo || {}).error || ""}); });
+    .then(([st, fo]) => { SRV.lan = lanMerge(SRV.lan, st, fo); });
+}
+/* /ui/lan/status says `sharing`; the panel reads `on`. A failed status call keeps the last known switch position. */
+function lanMerge(lan, st, fo){
+  st = st || {};
+  const on = st.sharing !== undefined ? !!st.sharing : lan.on;
+  return Object.assign(lan, st, {on, found: (fo || {}).found || [], foundErr: (fo || {}).error || ""});
 }
 function lanChip(on, word){ return `<span class="chip ${on ? "ok" : ""}">${esc(word)}</span>`; }
 function lanWaiting(w){
@@ -4394,7 +4401,7 @@ async function lanRefresh(){
 }
 async function lanPost(path, body){
   const r = await api(path, {method: "POST", body: JSON.stringify(body || {})});
-  if(r && (r.sharing !== undefined || r.waiting !== undefined || r.clients !== undefined)) Object.assign(SRV.lan, r);
+  if(r && r.sharing !== undefined) SRV.lan.on = !!r.sharing;
   await lanLoad(); await lanPaint();
   return r;
 }
