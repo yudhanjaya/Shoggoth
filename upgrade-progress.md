@@ -399,3 +399,33 @@ Commits (all `U1:`, all with the DeepSeek trailer): `71843e3`, `bf8b010`, `6f968
 - `.driver.out` remains untracked; nothing pushed or stashed.
 ```
 </details>
+
+## S2 (2026-11-15T06:47:07+05:30)
+
+- exit code 0, 1 new commit(s), tests: ---------------------------------------------------------------------- Ran 676 tests in 114.906s  OK (skipped=2) 
+
+<details><summary>Worker report (tail)</summary>
+
+```
+pose `children`), read its graphics memory from `nvidia-smi --query-compute-apps=pid,used_memory --format=csv,noheader,nounits` and its processor memory from `/proc/<pid>/status` VmRSS.
+- Rules applied: graphics memory alone for a model fully on a card; graphics + RAM when the preset keeps the model on the processor (`--device none`, `-ngl 0`) or offloads experts (`--n-cpu-moe`, `--cpu-moe`); RAM alone when nvidia-smi is missing or the process holds no card; nothing recorded when the process or its memory can't be determined.
+- `providers/llamacpp/provider.py` now calls it after a successful `llamacpp.load()` when the load log has no buffer sizes, then calls `library.record_measured(model_id, gb, loaded_ctx)`.
+- The log level is unchanged.
+
+**Files changed** (commit `fecd9a2`, 3 files, +302/−5): `shoggoth/llamacpp.py`, `shoggoth/providers/llamacpp/provider.py`, `tests/test_llamacpp_engine.py`.
+
+**Tests**
+
+- New `ChildProcessMemory` (7 cases: summed GPU rows, expert offload adds RSS, processor-only, no nvidia-smi, wrong-port child ignored, parent-scan fallback, unknown records nothing) and `ProviderRecordsMeasured` (3 cases: process measurement recorded at the loaded context, log wins when present, nothing when unmeasurable). Uses a fake `nvidia-smi` script and a fake `/proc`.
+- `python3 -W ignore -m unittest tests.test_llamacpp_engine` → 40 tests, OK.
+- `python3 -W ignore -m unittest discover tests` → 676 tests, `OK (skipped=2)` (the usual stray fake-`lemond` traceback appears; not a failure). No UI tests touched.
+
+**Real run on the RTX 3080** (PCI bus order, device 0): Qwen3-0.6B Q8_0 at 32768 context loaded in 3.5 s; the child process measured 2938 MiB = **2.87 GB**, recorded in `model-meta.json` as `measured_gb: 2.87, measured_ctx: 32768`. That number is in the commit message. All processes were stopped afterwards.
+
+**Not done / not verified**
+
+- The plan's scratch fixtures were absent on this machine (`/tmp/claude-1000/llt/data/shoggoth/llamacpp/b12375/` and `/tmp/claude-1000/llt/models` did not exist). The real run used the local Unsloth CUDA build (b11786) and a local Qwen3-0.6B Q8_0 file, read-only, in a scratch profile under `XDG_DATA_HOME=/tmp/claude-1000/llt/data`; the copied build and model link were removed afterwards.
+- Only the plain CUDA path ran live. Processor-only and expert-offload addition are covered by fakes, not a real CPU/offload load.
+- `.driver.out` remains untracked; nothing pushed, no `git stash`, no GPU work on the 4080.
+```
+</details>
