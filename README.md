@@ -37,7 +37,7 @@ Shoggoth is not meant to be a replacement for various backends or front-ends. I 
 
 | | |
 | --- | --- |
-| **Private by default** | Chats run on your computer. The one exception is web search. The model asks before every search. |
+| **Private by default** | Chats run on your computer. Two things leave it, and you have to choose them: web search (the model asks before every search) and a chat on a paid hosted model. |
 | **It works on your files** | Choose a folder. The model reads, searches, edits and runs things there while you watch. It asks before it changes anything. |
 | **Bigger jobs, in the background** | Describe the work and how to tell it is done, such as a passing test. The job runs round after round. You review its changes before they touch your folder. |
 | **Diagrams and documents** | Ask for a picture or a README. It appears in the chat. |
@@ -131,7 +131,7 @@ The AppImage includes llama.cpp's processor-only build and Pi. Everything update
 
 ## Your data and privacy
 
-Everything stays on your computer. Chats, jobs, skills and settings live in `~/.local/share/shoggoth/` and `~/.config/shoggoth/`. Shoggoth goes online only to download models and updates you ask for, to fetch skills when you paste a link, and for web search, which asks first and shows the exact words. Full details: [docs/PRIVACY.md](docs/PRIVACY.md).
+Everything stays on your computer unless you choose otherwise. Chats, jobs, skills and settings live in `~/.local/share/shoggoth/` and `~/.config/shoggoth/`. Two things can leave: web search, which asks first and shows the exact words, and a chat on a paid hosted model, which goes to that service. Shoggoth also goes online to download models and updates you ask for and to fetch skills when you paste a link. Full details: [docs/PRIVACY.md](docs/PRIVACY.md).
 
 ## Learn more
 

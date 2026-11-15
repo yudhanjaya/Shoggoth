@@ -953,7 +953,7 @@ h4.sub{margin:12px 0 0;font:600 13px var(--sans);color:var(--muted);text-transfo
 .cwtask .fold svg{width:12px;height:12px;transition:transform .15s}
 .cwgrp:not(.open) .fold svg{transform:rotate(-90deg)}
 .cwgrp:not(.open) .cwkids{display:none}
-@media (max-width:1100px){:root{--rail:84px}.brand span,.railnote{display:none}.nav button{flex-direction:column;gap:4px;font-size:11.5px;padding:8px 2px;text-align:center;justify-content:center;min-height:56px}.nav .sub{display:none!important}.brand{justify-content:center;padding:2px 0 16px}}
+@media (max-width:1100px){:root{--rail:84px}.brand span,.railnote,.railmotto{display:none}.nav button{flex-direction:column;gap:4px;font-size:11.5px;padding:8px 2px;text-align:center;justify-content:center;min-height:56px}.nav .sub{display:none!important}.brand{justify-content:center;padding:2px 0 16px}}
 @media (max-width:900px){
   .convs{position:absolute;z-index:6;inset:0 auto 0 0;background:var(--bg);transform:translateX(-102%);transition:transform .25s var(--ease);width:min(300px,86vw);box-shadow:8px 0 30px rgba(0,0,0,.35)}
   .convs.open{transform:none}
@@ -964,7 +964,7 @@ h4.sub{margin:12px 0 0;font:600 13px var(--sans);color:var(--muted);text-transfo
   :root{--rail:0px}
   .app{grid-template-columns:1fr;grid-template-rows:1fr auto}
   .rail{order:2;flex-direction:row;border-right:0;border-top:1px solid var(--line-soft);padding:8px 8px calc(8px + env(safe-area-inset-bottom));justify-content:space-around;overflow:visible}
-  .brand,.rail .spacer,.railnote,.nav .sub{display:none!important}
+  .brand,.rail .spacer,.railnote,.railmotto,.nav .sub{display:none!important}
   .nav{flex-direction:row;justify-content:space-around}
   .nav button{flex:1;min-height:54px;flex-direction:column;justify-content:center;gap:4px;font-size:11.5px;padding:8px 2px;text-align:center}
   main{height:auto;min-height:0}
@@ -1566,7 +1566,7 @@ h3.themesec{font:600 13px var(--sans);color:var(--faint);margin:0 0 12px}
     <div class="railchats" id="railchats"></div>
     <div class="spacer"></div>
     <p class="railmotto">Heavy on the cosmos. Light on your machine.</p>
-    <p class="railnote">Everything runs on this computer.</p>
+    <p class="railnote">Your chats are saved on this computer.</p>
   </nav>
 
   <main>
@@ -1606,7 +1606,7 @@ h3.themesec{font:600 13px var(--sans);color:var(--faint);margin:0 0 12px}
               <button class="send" id="send" type="submit" aria-label="Send"><svg class="i" viewBox="0 0 24 24"><path d="M12 19V5M5 12l7-7 7 7"/></svg></button>
             </div>
           </form>
-          <div class="hint"><span id="hintdev"></span>Enter to send, Shift+Enter for a new line</div>
+          <div class="hint">Enter to send, Shift+Enter for a new line</div>
         </div>
       </div>
     </section>
@@ -1706,7 +1706,7 @@ h3.themesec{font:600 13px var(--sans);color:var(--faint);margin:0 0 12px}
     <section class="view" id="v-specimens"><div class="pad"><div class="wrap" id="specimens"></div></div></section>
     <section class="view" id="v-hardware"><div class="pad"><div class="wrap">
       <p class="lede">Watch your graphics memory fill as models load. If you have more than one card, choose which ones Shoggoth uses and in what order. Changes apply the next time a model loads.</p>
-      <p class="help" id="hwintro" hidden>Each machine at the back is one graphics card. Its lights show how hard it's working. The beaker shows memory used across all your cards. The gauge shows the hottest card. The coil sparks as the cards work harder. The radio has a meter for each one.</p>
+      <p class="help" id="hwintro" hidden>One machine at the back for each graphics card: lights for how hard it is working, a beaker for memory used across all your cards, a gauge for the hottest card.</p>
       <div class="rig" id="hwrig" hidden></div>
       <div class="applybar" id="applybar" hidden></div>
       <div class="gpus" id="gpus"></div>
@@ -1726,7 +1726,7 @@ h3.themesec{font:600 13px var(--sans);color:var(--faint);margin:0 0 12px}
           <p class="help" style="margin:0 0 10px">llama.cpp comes in builds for different kinds of graphics card, called a <b>backend</b>. Pick the one Shoggoth should use, or install one that's missing. Changes apply the next time llama.cpp starts.</p>
           <details class="panel bkhelp"><summary>Which backend should I pick?</summary>
         <dl class="bkdl">
-          <dt>Auto</dt><dd>Let Shoggoth pick the build for this computer. This is the right answer for almost everyone.</dd>
+          <dt>Auto</dt><dd>Let Shoggoth pick the build for this computer. Right for almost everyone.</dd>
           <dt>CUDA 12</dt><dd>For NVIDIA graphics cards.</dd>
           <dt>CUDA 13</dt><dd>For NVIDIA graphics cards. Needs a recent driver.</dd>
           <dt>Vulkan</dt><dd>For NVIDIA, AMD and Intel cards. A good fallback.</dd>
@@ -1991,7 +1991,6 @@ function renderStatus(){
   else { const o = (S.act || []).find(a => a.tps && !(S.busy && a.source === "zest")); if(o) sp = "~" + fmtRate(o.tps) + " tok/s" + (o.source === "zest" ? "" : " · " + o.app); }
   S.spText = sp;
   renderDlPill();
-  $("#hintdev").textContent = "Private: everything runs on this computer. ";
   if(window.cwModelBar) cwModelBar();
 }
 async function tick(){
@@ -3532,7 +3531,7 @@ function renderWelcome(force){
   host.innerHTML = `<div class="wcard">
     <div class="brandbig"><svg viewBox="0 0 64 64" aria-hidden="true"><rect x="2" y="2" width="60" height="60" rx="14" fill="#f7d916"/><rect x="7" y="3.2" width="50" height="1.4" rx=".7" fill="#fff" fill-opacity=".45"/><path d="M7 62 C 6 50 8 40 12 33 C 13 26 18 18 26 17 C 31 13 39 14 43 19 C 50 20 55 27 54 35 C 58 40 58 49 55 56 C 56 59 57 61 58 62 Z" fill="#1d1d22"/><path d="M12 47 C 6 47 4 42 6 38 C 7 36 9 37 8 39 C 7 42 9 44 12 43" fill="none" stroke="#1d1d22" stroke-width="3.2" stroke-linecap="round"/><path d="M53 44 C 59 43 61 38 59 34 C 58 32 56 33 57 35 C 58 38 56 40 53 40" fill="none" stroke="#1d1d22" stroke-width="3" stroke-linecap="round"/><path d="M30 17 C 29 11 32 7 36 8 C 38 8.5 38 10.5 36.5 10.5 C 34.5 10.5 33.5 12.5 34 16" fill="none" stroke="#1d1d22" stroke-width="2.8" stroke-linecap="round"/><g fill="#efe8d2"><ellipse cx="25" cy="32" rx="7.2" ry="6.4"/><ellipse cx="41.5" cy="27" rx="4.8" ry="4.4"/><ellipse cx="38" cy="43" rx="4" ry="3.6"/><ellipse cx="19.5" cy="47" rx="3" ry="2.7"/><ellipse cx="48" cy="38" rx="2.6" ry="2.4"/><ellipse cx="30" cy="51" rx="2.2" ry="2"/></g><g fill="#f7d916"><circle cx="25.6" cy="32.4" r="4.4"/><circle cx="41.8" cy="27.4" r="3"/><circle cx="38.3" cy="43.3" r="2.4"/></g><g fill="#0e0e12"><ellipse cx="25.6" cy="32.4" rx="1.3" ry="3.8"/><ellipse cx="41.8" cy="27.4" rx=".9" ry="2.6"/><ellipse cx="38.3" cy="43.3" rx=".75" ry="2.1"/><ellipse cx="19.7" cy="47.2" rx=".7" ry="1.9"/><ellipse cx="48.1" cy="38.2" rx=".6" ry="1.7"/><ellipse cx="30.1" cy="51.1" rx=".55" ry="1.4"/></g><g fill="#fff" fill-opacity=".85"><circle cx="23" cy="30" r="1.4"/><circle cx="40.3" cy="25.7" r=".9"/></g></svg></div>
     <div class="wbody"><h2>Getting <span class="hl">ready</span></h2>
-    <p class="wl">Shoggoth sets itself up. Everything runs on this computer, so your chats stay private.</p>
+    <p class="wl">Shoggoth sets itself up. The models it runs here keep your chats on this computer.</p>
     ${wanted ? `<p class="wl">When it is ready, Shoggoth will get <b>${esc(wanted.title || wanted.id)}</b> for you.</p>` : ""}
     ${asking ? q : ""}
     <ol class="wlist" aria-label="Getting ready">${rows.map(wRowHTML).join("")}</ol>
@@ -3951,8 +3950,8 @@ const FAQ = [
   ["Is my data private?", "Yes, unless you choose otherwise. Shoggoth and its models run on this computer, and your conversations are saved in Shoggoth's own folder here. They leave this computer only when you ask: a chat on a paid hosted model sends the conversation to that service, and web search sends your search words. Shoggoth also goes online to download a model you ask for, check for updates, or fetch skills from a link you paste. It asks first. The <a href=\"#docs\" data-go=\"docs\">Docs</a> page explains where everything is kept."],
   ["Why is the first answer slow?", "The model has to be loaded into your computer's memory before it can answer. That takes a few seconds to a minute, depending on its size. After that, answers start right away."],
   ["How do I know which model to use?", "It depends on your computer and what you want to do. Start with <b>Recommended for this computer</b> in Models, where I explain each recommendation. <b>Everything</b> shows the rest, with a note on whether each one will fit. <p><button class=\"btn\" type=\"button\" data-pick>Show me how to compare models</button></p>"],
-  ["What is the context window?", "It is how much of the conversation a model can see at once. Shoggoth uses <b>128k</b> tokens (about 100,000 words) by default. That's enough for long chats and agent work. You can change it for one model under <b>Details</b>, then <b>Settings for this model</b>. A bigger window needs more graphics memory."],
-  ["How do I get more models?", "Open the <b>Models</b> and press <b>Get it</b> on any model. Models you already have somewhere else, or ones from Hugging Face, come in with <b>Add models</b>. Large models work the same way: Shoggoth sets up whatever they need and starts them when you pick one."],
+  ["What is the context window?", "It is how much of the conversation a model can see at once. Shoggoth uses <b>128k</b> tokens (about 100,000 words) by default. That's enough for long chats and agent work. You can change it with the <b>Memory</b> menu in a chat, or for one model with <b>Settings</b> on its card. A bigger window needs more graphics memory."],
+  ["How do I get more models?", "Open <b>Models</b> and press <b>Get it</b> on any model. Models you already have somewhere else, or ones from Hugging Face, come in with <b>Add models</b>. Large models work the same way: Shoggoth sets up whatever they need and starts them when you pick one."],
   ["Can other apps use my models?", "Yes. Open <b>Advanced</b>, then <b>Server</b>. Shoggoth gives you an address and a key that you can paste into Hermes, or any chat app or coding assistant that works with an OpenAI-style server."],
   ["Answers are slow or the model won't start", "Close other programs that use your graphics card, such as games or video editors. Then try again. If it still struggles, choose a smaller model in Models. Models marked “Too big for this computer” often fail here. Large models take a couple of minutes to start; the bar at the top of the chat shows how far along they are."]
 ];
@@ -4189,7 +4188,7 @@ function srvBuild(){
     </section>
     <section class="panel srvshare">
       <h3>Who can connect</h3>
-      <div class="swrow"><div><b>Show what models are saying</b><span>Off by default. When on, the request list above keeps the questions and answers so you can read them. They are only held in memory and disappear when you close Shoggoth.</span></div>
+      <div class="swrow"><div><b>Read the questions and answers</b><span>Off by default. When on, the Requests list keeps the questions and answers so you can read them. They are held in memory only and disappear when you close Shoggoth.</span></div>
         <button class="sw" type="button" role="switch" aria-checked="${g.capture}" data-sact="capture"><i></i>${g.capture ? "On" : "Off"}</button></div>
       <div class="swrow"><div><b>Key</b><span>Apps need this key. If you shared it by accident, make a new one. Apps that use the old key will stop working until you paste the new one.</span></div>
         ${SRV.confirmKey ? `<span class="confirm"><button class="btn danger" type="button" data-sact="newkey">Yes, make a new key</button><button class="btn ghost" type="button" data-sact="nokey">Keep it</button></span>` : `<button class="btn" type="button" data-sact="askkey">Make a new key</button>`}</div>
@@ -5966,8 +5965,8 @@ function pkNote(m){
   const bits = [];
   if(m.tier === "large" && m.need_gb) bits.push("Needs about " + Math.round(m.need_gb) + " GB of memory");
   else if(m.size_gb) bits.push(m.size_gb + " GB");
-  if(m.fit === "no") bits.push(esc(m.why || "Won't fit on this computer"));
-  else{ bits.push(m.fit === "tight" ? '<span class="tight">Tight: close other big programs first</span>' : "Fits this computer"); bits.push(m.live ? "Ready now" : esc(m.start || "")); }
+  if(m.fit === "no") bits.push(esc(m.why || "Too big for this computer"));
+  else{ bits.push(m.fit === "tight" ? '<span class="tight">Tight: close other big programs first</span>' : "Runs well"); bits.push(m.live ? "Ready now" : esc(m.start || "")); }
   return bits.filter(Boolean).join(" · ");
 }
 const PK_ICONS = {tools: '<svg class="i pkico" viewBox="0 0 24 24" aria-hidden="true"><path d="M14 6l4 4-7 7H7v-4z"/></svg>',

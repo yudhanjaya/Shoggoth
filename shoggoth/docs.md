@@ -205,7 +205,7 @@ Shoggoth runs llama.cpp by itself. If you already run another server, you can us
 
 **Advanced**, then **Server**, gives you an address and a key to paste into other tools (coding assistants, chat apps, anything that talks to an OpenAI-style server). The same page shows live what those apps are asking for: the model sits in a jar on a bench. Each app's request is a flask that bubbles while the model thinks and fills as it writes. **Send a test message** shows one. It only listens on this computer unless you turn on sharing.
 
-## Under the bonnet
+## Advanced, page by page
 
 Everything in **Advanced** is optional.
 
@@ -217,7 +217,7 @@ Everything in **Advanced** is optional.
 
 ## Where things live, and privacy
 
-Everything stays on your computer.
+Your chats, jobs, skills and settings are saved on your computer. As the opening section says, only web search and a chat on a paid hosted model send anything out, and both are your choice.
 
 - **Conversations and what the AI did** are saved in Shoggoth's own folder (`~/.local/share/shoggoth/cowork/`). That includes the copies that jobs work on until you apply or throw them away.
 - **Skills you added** are in `~/.local/share/shoggoth/skills/`.
@@ -225,7 +225,7 @@ Everything stays on your computer.
 - **Models** are in the folder you chose (the **Models** folder, with a subfolder for each engine), or in the Hugging Face cache (`~/.cache/huggingface/hub`) if you kept that. Models you added from elsewhere stay where they are.
 - **Settings and keys** are in `~/.config/shoggoth/`.
 
-Shoggoth goes online only to: download models you ask for, check for Shoggoth, engine and Pi updates (you can turn that off), and fetch skills when you paste a link. Pi runs offline and sends nothing anywhere. To start from scratch, delete `~/.config/shoggoth` and `~/.local/share/shoggoth`.
+Shoggoth goes online only to: download models you ask for, check for Shoggoth, engine and Pi updates (you can turn that off), fetch skills when you paste a link, search the web when you allow it, and talk to a hosted service you set up. Pi runs offline and sends nothing anywhere. To start from scratch, delete `~/.config/shoggoth` and `~/.local/share/shoggoth`.
 
 **Coming from Zest?** Shoggoth used to be called Zest. The first time it starts, it moves `~/.config/zest` and `~/.local/share/zest` to the new names. It keeps your chats, skills, settings and keys. Apps that use a `zest-` key keep working.
 
