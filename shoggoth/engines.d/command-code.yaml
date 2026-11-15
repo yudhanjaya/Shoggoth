@@ -9,6 +9,6 @@ formats:
   - {api: openai-responses, match: "^(openai/)?gpt-"}
   - {api: openai-completions}
 key: required
-key_url: https://commandcode.ai
+key_url: https://commandcode.ai/studio/
 docs: https://commandcode.ai
 hint: "Paste your Command Code key. Claude models use the Anthropic format; GPT models use the Responses format."

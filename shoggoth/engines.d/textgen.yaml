@@ -4,6 +4,7 @@ name: text-generation-webui
 category: local
 summary: A web UI for running local models, with an API that other apps can use.
 match: [text-generation-webui, textgen]
+cwd: [text-generation-webui, textgen]
 formats:
   - {api: openai-completions}
 loads: router

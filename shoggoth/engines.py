@@ -29,8 +29,8 @@ EXTS = (".yaml", ".yml", ".json")
 ID_RE = re.compile(r"^[a-z0-9][a-z0-9_-]{0,47}$")
 PATH_RE = re.compile(r"^/[A-Za-z0-9._~/-]*$")                  # a plain GET path: no query, no fragment, no host
 JSON_RE = re.compile(r"^\$[A-Za-z0-9_.\[\]*-]*$")
-KEYS = ("id", "name", "category", "summary", "url", "ports", "match", "identify", "formats", "context", "loads", "key", "key_url", "docs",
-        "hint", "enabled")
+KEYS = ("id", "name", "category", "summary", "url", "ports", "match", "cwd", "identify", "formats", "context", "loads", "key", "key_url",
+        "docs", "hint", "enabled")
 CATEGORIES = ("local", "specialized", "hosted")
 LOADS = ("router", "ollama", "fixed")
 KEY_MODES = ("none", "optional", "required")
@@ -240,6 +240,7 @@ def clean(d):
     out["url"] = _url(d.get("url"), errs, "url")
     out["ports"] = _ports(d, errs)
     out["match"] = _words(d, "match", errs)
+    out["cwd"] = _words(d, "cwd", errs)
     out["identify"] = _identify(d, errs)
     out["formats"] = _formats(d, errs)
     out["context"] = _context(d, errs)

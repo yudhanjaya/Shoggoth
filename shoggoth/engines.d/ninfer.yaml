@@ -6,6 +6,8 @@ summary: An inference server for home hardware, with one engine serving one mode
 url: http://127.0.0.1:8080
 ports: [8080]
 match: [ninfer-serve, ninfer]
+identify:
+  - {path: /metrics, contains: "ninfer_"}
 formats:
   - {api: openai-completions}
 context: {path: /v1/models, json: "$.data[0].max_model_len"}

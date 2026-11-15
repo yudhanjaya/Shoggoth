@@ -7,6 +7,6 @@ url: https://opencode.ai/zen/go/v1
 formats:
   - {api: openai-completions}
 key: required
-key_url: https://opencode.ai
+key_url: https://opencode.ai/console
 docs: https://opencode.ai
 hint: "Paste the key for your OpenCode Go plan. This plan covers open models only."

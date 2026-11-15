@@ -14,7 +14,7 @@ sys.path.insert(0, os.path.join(HERE, "..", "shoggoth"))
 import engines  # noqa: E402
 
 GOOD = {"id": "ninfer", "name": "Ninfer", "category": "specialized", "summary": "Big models.", "url": "http://127.0.0.1:9100", "ports": [9100],
-        "match": ["ninfer"], "identify": [{"path": "/v1/models", "json": "$.data[*].owned_by", "equals": "ninfer"}],
+        "match": ["ninfer"], "cwd": [], "identify": [{"path": "/v1/models", "json": "$.data[*].owned_by", "equals": "ninfer"}],
         "formats": [{"api": "openai-completions"}], "context": {"path": "/props", "json": "$.n_ctx"}, "loads": "fixed", "key": "optional",
         "key_url": "", "docs": "https://example.com/ninfer", "hint": "Use the address it prints.", "enabled": True}
 
@@ -70,6 +70,15 @@ class BundledFiles(unittest.TestCase):
         self.assertEqual({by[i]["category"] for i in ("strata", "maya")}, {"specialized"})
         self.assertEqual(by["strata"]["match"], ["strata"])
 
+    def test_engines_that_only_say_python_are_matched_by_their_folder(self):
+        by = {e["id"]: e for e in engines.definitions()}
+        self.assertEqual(by["tabbyapi"]["cwd"], ["tabbyAPI"])
+        self.assertEqual(by["textgen"]["cwd"], ["text-generation-webui", "textgen"])
+
+    def test_ninfer_is_recognised_by_its_metrics(self):
+        by = {e["id"]: e for e in engines.definitions()}
+        self.assertIn({"path": "/metrics", "contains": "ninfer_"}, by["ninfer"]["identify"])
+
 
 class Schema(unittest.TestCase):
     def bad(self, **kw):
@@ -114,6 +123,15 @@ class Schema(unittest.TestCase):
         self.assertNotEqual(self.bad(ports=[0]), "")
         self.assertNotEqual(self.bad(ports=["8080"]), "")
         self.assertNotEqual(self.bad(id="Has Space"), "")
+
+    def test_cwd_takes_working_folder_names(self):
+        d, errs = engines.clean(dict(GOOD, cwd="TabbyAPI"))
+        self.assertEqual((errs, d["cwd"]), ([], ["TabbyAPI"]))
+        self.assertIn("`cwd` must be a list", self.bad(cwd=5))
+
+    def test_a_plain_text_signature_needs_only_a_path_and_contains(self):
+        d, errs = engines.clean(dict(GOOD, identify=[{"path": "/metrics", "contains": "ninfer_"}]))
+        self.assertEqual((errs, d["identify"]), ([], [{"path": "/metrics", "contains": "ninfer_"}]))
 
     def test_a_hidden_entry_needs_only_an_id(self):
         d, errs = engines.clean({"id": "strata", "enabled": False})

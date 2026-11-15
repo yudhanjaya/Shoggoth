@@ -7,6 +7,6 @@ url: https://inference-api.nousresearch.com/v1
 formats:
   - {api: openai-completions}
 key: required
-key_url: https://portal.nousresearch.com
+key_url: https://portal.nousresearch.com/api-keys
 docs: https://portal.nousresearch.com
 hint: "Paste the key from your Nous Portal dashboard. It needs a subscription."

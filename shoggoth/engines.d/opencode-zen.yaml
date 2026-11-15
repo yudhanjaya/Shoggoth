@@ -9,6 +9,6 @@ formats:
   - {api: openai-responses, match: "^(openai/)?gpt-"}
   - {api: openai-completions}
 key: required
-key_url: https://opencode.ai
+key_url: https://opencode.ai/console
 docs: https://opencode.ai
 hint: "Paste your OpenCode key. Claude models use the Anthropic format; GPT models use the Responses format."
