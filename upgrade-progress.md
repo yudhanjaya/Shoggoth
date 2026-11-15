@@ -624,3 +624,16 @@ ton. The own set is drawn there only, not duplicated as an ordinary set.
 - `.driver.out` left untracked. Nothing pushed, no `git stash`, no GPU used, all work inside the worktree.
 ```
 </details>
+
+## U6 (2026-11-15T10:57:33+05:30)
+
+- exit code 8, 0 new commit(s), tests: ---------------------------------------------------------------------- Ran 740 tests in 214.100s  OK 
+
+<details><summary>Worker report (tail)</summary>
+
+```
+=== U6 started 2026-11-15T09:39:21+05:30
+The black blob is ImageMagick failing on the nested `<svg>` — the same pattern as main. Let me verify by rendering main's tube the same way.
+Warning: Reached maximum conversation turns (150). The response may be incomplete. Retry with --max-turns 300 to extend the budget.
+```
+</details>
