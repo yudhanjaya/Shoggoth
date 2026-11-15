@@ -30,6 +30,10 @@ VERSION_RE = re.compile(r"^\d+\.\d+\.\d+(-[0-9A-Za-z.-]+)?(\+[0-9A-Za-z.-]+)?$")
 # Pi supplies these to its packages; a second copy in node_modules would split Pi's registries.
 HOST_PROVIDED = {"@earendil-works/pi-ai", "@earendil-works/pi-agent-core", "@earendil-works/pi-coding-agent", "@earendil-works/pi-tui", "typebox"}
 _lock = threading.RLock()
+_start_lock = threading.Lock()
+RUNS_CODE = "Runs code on your computer"
+# What the install in progress is doing: state idle | installing | done | error, done of total packages fetched.
+UPD = {"state": "idle", "name": None, "done": 0, "total": 0, "error": None}
 
 
 def root():
@@ -186,10 +190,15 @@ def _read_version(d):
 class _Job:
     """One install: fetches and unpacks packages, counting what it has taken."""
 
-    def __init__(self, work):
-        self.count, self.size = 0, 0
+    def __init__(self, work, on_step=None):
+        self.count, self.size, self.total = 0, 0, 0
+        self.on_step = on_step
         self.tmp = os.path.join(work, ".dl")
         os.makedirs(self.tmp, exist_ok=True)
+
+    def step(self):
+        if self.on_step:
+            self.on_step(self.count, max(self.total, self.count))
 
     def fetch(self, name, version, dest, expect=None):
         if not NAME_RE.match(name):
@@ -215,6 +224,7 @@ class _Job:
             self.size += sum(os.path.getsize(os.path.join(d, f)) for f in files)
         if not os.path.isfile(os.path.join(dest, "package.json")):
             raise RuntimeError("%s has no package.json, so it was not installed." % name)
+        self.step()
         return meta
 
     def deps(self, meta, where, top):
@@ -234,6 +244,8 @@ class _Job:
             dest = os.path.join(top, "node_modules", dep)
             if os.path.exists(dest):
                 dest = nested
+            self.total += 1
+            self.step()
             placed.append((self.fetch(dep, ver, dest), dest))
         for sub, dest in placed:
             self.deps(sub, dest, top)
@@ -257,8 +269,8 @@ def installed():
     return sorted(out, key=lambda p: (p["name"], piup.vkey(p["version"])))
 
 
-def install(name, entries=None):
-    """Install the curated package `name` (exactly its pinned version). Raises RuntimeError with a message fit to show."""
+def check(name, entries=None):
+    """The pinned entry for `name`, if it can be installed now. Raises RuntimeError with a message fit to show."""
     entry = next((e for e in (curated() if entries is None else entries) if e["name"] == name), None)
     if not entry:
         raise RuntimeError("%s isn't on Shoggoth's list of packages, so it can't be installed." % name)
@@ -266,27 +278,78 @@ def install(name, entries=None):
         raise RuntimeError("%s hasn't been tested with Shoggoth yet, so it can't be installed." % name)
     if not str(entry.get("integrity") or "").startswith("sha512-"):
         raise RuntimeError("%s hasn't been tested with Shoggoth yet (no checksum is pinned), so it can't be installed." % name)
-    ver = entry.get("version") or ""
-    if not VERSION_RE.match(ver):
+    if not VERSION_RE.match(entry.get("version") or ""):
         raise RuntimeError("%s has no pinned version yet, so it can't be installed." % name)
-    with _lock:
-        os.makedirs(root(), exist_ok=True)
-        final = os.path.join(root(), _dirname(name, ver))
-        work = tempfile.mkdtemp(prefix=".work-", dir=root())
-        try:
-            job = _Job(work)
-            dest = os.path.join(work, "pkg")
-            meta = job.fetch(name, ver, dest, expect=entry["integrity"])
-            job.deps(meta, dest, dest)
-            with open(os.path.join(dest, MARK), "w") as f:
-                json.dump({"name": name, "version": ver, "integrity": meta["dist"]["integrity"], "packages": job.count}, f)
-            shutil.rmtree(final, ignore_errors=True)
-            os.replace(dest, final)
-        except OSError as e:
-            raise RuntimeError("Couldn't install %s (%s)." % (name, getattr(e, "reason", None) or e))
-        finally:
-            shutil.rmtree(work, ignore_errors=True)
+    return entry
+
+
+def install(name, entries=None):
+    """Install the curated package `name` (exactly its pinned version). Raises RuntimeError with a message fit to show.
+    Progress goes in UPD, for the page to read while the install runs in its thread."""
+    entry = check(name, entries)
+    ver = entry["version"]
+    UPD.update(state="installing", name=name, done=0, total=1, error=None)
+    try:
+        with _lock:
+            os.makedirs(root(), exist_ok=True)
+            final = os.path.join(root(), _dirname(name, ver))
+            work = tempfile.mkdtemp(prefix=".work-", dir=root())
+            try:
+                job = _Job(work, lambda done, total: UPD.update(done=done, total=total))
+                job.total = 1
+                dest = os.path.join(work, "pkg")
+                meta = job.fetch(name, ver, dest, expect=entry["integrity"])
+                job.deps(meta, dest, dest)
+                with open(os.path.join(dest, MARK), "w") as f:
+                    json.dump({"name": name, "version": ver, "integrity": meta["dist"]["integrity"], "packages": job.count}, f)
+                shutil.rmtree(final, ignore_errors=True)
+                os.replace(dest, final)
+                UPD.update(done=job.count, total=job.count)
+            except OSError as e:
+                raise RuntimeError("Couldn't install %s (%s)." % (name, getattr(e, "reason", None) or e))
+            finally:
+                shutil.rmtree(work, ignore_errors=True)
+    except Exception as e:  # noqa: BLE001 - the page shows the reason from UPD
+        UPD.update(state="error", error=str(e) or e.__class__.__name__)
+        raise
+    UPD["state"] = "done"
     return {"name": name, "version": ver, "dir": final}
+
+
+def start_install(name, entries=None, on_done=None):
+    """Install a curated package in the background; progress is in UPD and `on_done` runs after a successful install (idle chats
+    restart, so they get the package's skills). False when an install is already running. Refusals raise RuntimeError at once."""
+    check(name, entries)
+    with _start_lock:
+        if UPD["state"] == "installing":
+            return False
+        UPD.update(state="installing", name=name, done=0, total=1, error=None)
+
+    def run():
+        try:
+            install(name, entries)
+        except Exception:  # noqa: BLE001 - install() left the reason in UPD
+            return
+        if on_done:
+            try:
+                on_done()
+            except Exception:  # noqa: BLE001 - a failed restart must not lose the install
+                pass
+
+    threading.Thread(target=run, daemon=True).start()
+    return True
+
+
+def summary():
+    """The pinned list for the Skills page's Tools section: what each package is, whether it is installed and switched on, and the
+    review note. The install in progress is included so the page can show it."""
+    have = {p["name"]: p for p in installed()}
+    out = []
+    for e in curated():
+        p = have.get(e["name"])
+        out.append({"name": e["name"], "version": e["version"], "installed": bool(p), "installed_version": p["version"] if p else None,
+                    "enabled": bool(e["enabled"]), "runs_code": RUNS_CODE, "note": e["notes"]})
+    return {"packages": out, "install": dict(UPD)}
 
 
 def remove(name):

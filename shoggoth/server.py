@@ -38,6 +38,7 @@ import llamacpp    # noqa: E402
 import migrate5    # noqa: E402
 import modelscan   # noqa: E402
 import piup        # noqa: E402
+import pipkgs      # noqa: E402
 import provbase    # noqa: E402
 import recs        # noqa: E402
 import scan        # noqa: E402
@@ -331,6 +332,8 @@ class Handler(BaseHTTPRequestHandler):
             self.send_json(agent.state())
         elif p == "/ui/pi":
             self.send_json(piup.summary())
+        elif p == "/ui/packages":
+            self.send_json(pipkgs.summary())
         elif p == "/ui/picker":
             self.send_json(library.picker(0 if parse_qs(u.query).get("fresh") else 8))
         elif p == "/ui/library":
@@ -435,7 +438,8 @@ class Handler(BaseHTTPRequestHandler):
             "/ui/cowork/job/apply": self.post_job_apply, "/ui/cowork/job/discard": self.post_job_discard,
             "/ui/cowork/folders": self.post_cowork_folders, "/ui/cowork/seen": self.post_cowork_seen,
             "/ui/cowork/allow/remove": self.post_allow_remove, "/ui/cowork/folder": self.post_cowork_folder, "/ui/skills/install": self.post_skills_install, "/ui/pi/check": self.post_pi_check,
-            "/ui/pi/update": self.post_pi_update, "/ui/library/root": self.post_library_root, "/ui/library/folder": self.post_library_folder, "/ui/providers/approve": self.post_provider_approve, "/ui/providers/check": self.post_provider_check, "/ui/providers/update": self.post_provider_update, "/ui/providers/stop": self.post_provider_stop, "/ui/providers/reload": self.post_provider_reload, "/ui/servers": self.post_servers, "/ui/tuning/plan": self.post_tuning_plan, "/ui/model/meta": self.post_model_meta, "/ui/tuning/run": self.post_tuning_run, "/ui/tuning/cancel": self.post_tuning_cancel, "/ui/tuning/action": self.post_tuning_action, "/ui/update/all": self.post_update_all, "/ui/update/restart": self.post_update_restart, "/ui/pi/use": self.post_pi_use,
+            "/ui/pi/update": self.post_pi_update, "/ui/packages/install": self.post_package_install,
+            "/ui/packages/remove": self.post_package_remove, "/ui/library/root": self.post_library_root, "/ui/library/folder": self.post_library_folder, "/ui/providers/approve": self.post_provider_approve, "/ui/providers/check": self.post_provider_check, "/ui/providers/update": self.post_provider_update, "/ui/providers/stop": self.post_provider_stop, "/ui/providers/reload": self.post_provider_reload, "/ui/servers": self.post_servers, "/ui/tuning/plan": self.post_tuning_plan, "/ui/model/meta": self.post_model_meta, "/ui/tuning/run": self.post_tuning_run, "/ui/tuning/cancel": self.post_tuning_cancel, "/ui/tuning/action": self.post_tuning_action, "/ui/update/all": self.post_update_all, "/ui/update/restart": self.post_update_restart, "/ui/pi/use": self.post_pi_use,
             "/ui/skills/remove": self.post_skills_remove, "/ui/skills/toggle": self.post_skills_toggle,
             "/ui/skills/own/save": self.post_own_save, "/ui/skills/own/delete": self.post_own_delete,
             "/ui/chat/make-skill": self.post_make_skill,
@@ -766,6 +770,25 @@ class Handler(BaseHTTPRequestHandler):
 
     def post_pi_update(self, body):
         self.send_json({"started": piup.start_update(), "update": dict(piup.UPD)})
+
+    # ---- Pi packages: only the pinned list in recommendations/pi-packages.yaml can be installed
+    def post_package_install(self, body):
+        """Install one pinned package in the background; progress comes with GET /ui/packages. Only a list entry can be installed."""
+        name = str(body.get("name") or "").strip()
+        try:
+            started = pipkgs.start_install(name, on_done=agent.restart_idle)
+        except RuntimeError as e:
+            return self.send_json({"ok": False, "error": str(e)}, 400)
+        self.send_json({"ok": True, "started": started, "packages": pipkgs.summary()})
+
+    def post_package_remove(self, body):
+        name = str(body.get("name") or "").strip()
+        if not pipkgs.NAME_RE.match(name):
+            return self.send_json({"ok": False, "error": "That isn't a package name."}, 400)
+        gone = pipkgs.remove(name)
+        if gone:
+            agent.restart_idle()          # idle chats restart, so the package's skills go with them
+        self.send_json({"ok": True, "removed": gone, "packages": pipkgs.summary()})
 
     @staticmethod
     def library_summary():
