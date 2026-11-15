@@ -300,6 +300,43 @@ class Catalog(Env):
         self.assertEqual(c["Other-Q4"]["title"], "Test Model")                              # else the GGUF's own general.name
 
 
+class RecommendedCards(Env):
+    """The fit, context and memory figures the Recommended page gets. The page never estimates any of this itself."""
+
+    def one(self, **it):
+        base = {"id": "LFM2.5-8B-A1B", "title": "LFM2.5-8B-A1B", "size_gb": 5.2}
+        base.update(it)
+        return library.recommend_fits([base], self.reg, self.machine)[0]
+
+    def test_a_pick_on_disk_uses_the_catalogs_own_figures(self):
+        write_gguf(os.path.join(self.lib, "llamacpp", "LFM2.5-8B-A1B.gguf"), name="LFM2.5-8B-A1B", ctx=32768, size=int(5.2 * GB))
+        card, cat = self.one(), self.cat()[0]
+        self.assertEqual(card["fit"], cat["fit"])
+        self.assertEqual(card["need_gb"], cat["need_gb"])
+        self.assertEqual(card["ctx"], cat["ctx"])
+        self.assertEqual(card["ctx_why"], cat["ctx_why"])
+        self.assertEqual(card["title"], "LFM2.5-8B-A1B")
+
+    def test_a_pick_not_downloaded_is_priced_from_its_size(self):
+        card = self.one(id="Qwen3.6-35B-A3B-MTP-GGUF", title="Qwen3.6 35B", size_gb=23.8)
+        self.assertEqual(card["need_gb"], 26.2)                  # 1.1 x the file, as the server prices every model
+        self.assertEqual(card["fit"], "tight")                   # over this card, but it would run partly on the processor
+        self.assertNotIn("ctx", card)                            # no file to read a context length from yet
+        self.assertTrue(card["why"])
+
+    def test_a_pick_too_big_for_the_computer_says_so(self):
+        card = library.recommend_fits([{"id": "Big", "size_gb": 100}], self.reg,
+                                      {"ram_gb": 8, "vram_gb": 10, "best_gpu_gb": 10, "gpus": ["Small"]})[0]
+        self.assertEqual(card["fit"], "no")
+        self.assertEqual(card["need_gb"], 110.0)
+
+    def test_without_hardware_there_is_no_badge_to_show(self):
+        card = library.recommend_fits([{"id": "Any", "size_gb": 5}], self.reg,
+                                      {"ram_gb": 0, "vram_gb": 0, "best_gpu_gb": 0, "gpus": []})[0]
+        self.assertNotIn("fit", card)
+        self.assertNotIn("need_gb", card)
+
+
 class Views(Env):
     def setUp(self):
         super().setUp()

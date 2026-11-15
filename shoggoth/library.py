@@ -543,6 +543,40 @@ def reload_engine():
     return True, ""
 
 
+def recommend_fits(entries, reg=None, machine=None, cat=None):
+    """Fill in what the server knows about each recommended model: fit, why, need_gb, ctx, ctx_why.
+
+    A model that is in the library uses the catalog's own figures: its file's shape and the context it will load with. One that
+    isn't downloaded yet is priced from the size models.yaml gives. With nothing known about this computer, no fit is added, so the
+    page shows the card without a badge rather than guessing."""
+    reg = reg or registry.default()
+    machine = machine or hardware.machine()
+    if not (machine.get("best_gpu_gb") or machine.get("vram_gb") or machine.get("ram_gb")):
+        return [dict(e) for e in entries]
+    by_name = {}
+    for e in (catalog(reg, machine) if cat is None else cat):
+        for name in [e.get("id"), e.get("stem"), e.get("title"), e.get("ref")] + list((e.get("ids") or {}).values()):
+            if name:
+                by_name.setdefault(str(name), e)
+    out = []
+    for it in entries:
+        it = dict(it)
+        e = next((by_name[str(n)] for n in [it.get("id")] + list(it.get("also") or []) if str(n) in by_name), None)
+        if e and e.get("provider"):                    # an engine here can run the file that is on disk
+            for k in ("fit", "why", "need_gb", "ctx", "ctx_why"):
+                if e.get(k) is not None:
+                    it[k] = e[k]
+        else:
+            chosen = reg.get("llamacpp") or next(iter(reg.all()), None)
+            size = float(it.get("size_gb") or 0)
+            if chosen and size:
+                fake = {"size_bytes": size * 1e9, "stem": it.get("id", ""), "title": it.get("title", ""), "context": 0}
+                fit, why = chosen.fit(fake, machine)
+                it.update(need_gb=chosen.need_gb(fake), fit=fit, why=why)
+        out.append(it)
+    return out
+
+
 def summary():
     """What the Library page and the first-run screen need."""
     r = root()

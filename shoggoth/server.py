@@ -355,7 +355,9 @@ class Handler(BaseHTTPRequestHandler):
         elif p == "/ui/tuning/job":
             self.send_json(tuning.status())
         elif p == "/ui/recommendations":
-            self.send_json(recs.summary())
+            d = recs.summary()
+            d["models"]["recommended"] = library.recommend_fits(d["models"]["recommended"])
+            self.send_json(d)
         elif p == "/ui/update":
             self.send_json(zestup.status())
         elif p == "/ui/skills":

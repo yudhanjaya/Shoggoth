@@ -307,7 +307,7 @@ main{display:flex;flex-direction:column;min-width:0;height:100dvh}
 .fit i{position:absolute;inset:0 auto 0 0;border-radius:99px;transition:width .5s var(--ease)}
 .fit.ok i{background:var(--leaf)}.fit.tight i{background:var(--warn)}.fit.over i{background:repeating-linear-gradient(135deg,var(--bad) 0 6px,color-mix(in srgb,var(--bad) 60%,transparent) 6px 12px)}
 .fitnote{font-size:12.5px}
-.fitnote.ok{color:var(--leaf)}.fitnote.tight{color:var(--warn)}.fitnote.over{color:var(--bad)}
+.fitnote.ok{color:var(--leaf)}.fitnote.tight,.fitnote.partial{color:var(--warn)}.fitnote.over{color:var(--bad)}
 .card .act{display:flex;gap:8px;margin-top:auto}
 .card .act .btn{flex:1}
 .empty-note{padding:40px;text-align:center;color:var(--muted);border:1px dashed var(--line);border-radius:var(--radius)}
@@ -2133,7 +2133,7 @@ function syncModelSelect(){
   const sig = list.map(m=>m.id).join("|")+"|"+(S.loaded||"");
   if(sel.dataset.sig !== sig){
     if(!S.model || !list.find(m=>m.id===S.model)) S.model = S.loaded && list.find(m=>m.id===S.loaded) ? S.loaded : list[0].id;
-    sel.innerHTML = list.map(m => `<option value="${esc(m.id)}">${m.id===S.loaded?"● ":""}${esc(friendly(m))}</option>`).join("");
+    sel.innerHTML = list.map(m => `<option value="${esc(m.id)}">${m.id===S.loaded?"● ":""}${esc(modelName(m))}</option>`).join("");
     sel.dataset.sig = sig;
   }
   sel.value = S.model;
@@ -2243,10 +2243,12 @@ function friendly(m){
   const t = id.replace(/^user\./, "").replace(/-GGUF$/i, "").replace(/[-_](instruct|it|chat)\b/ig, "").replace(/[-_]+/g, " ").replace(/\s+/g, " ").trim().split(" ").map(niceWord).join(" ");
   return t || id;
 }
+/* the name chain: the title models.yaml gives it, else the model's own GGUF name (both come from the server as `title`), else the id */
+const modelName = m => { if(typeof m === "string") return friendly(m); const t = m && m.title; return t && t !== m.id ? t : friendly(m); };
 /* the title for every model in a list, never the same for two of them: a second "SD Turbo" says what is different about it */
 function libTitles(models){
   const base = {}, count = {};
-  for(const m of models){ base[m.id] = friendly(m); count[base[m.id]] = (count[base[m.id]] || 0) + 1; }
+  for(const m of models){ base[m.id] = modelName(m); count[base[m.id]] = (count[base[m.id]] || 0) + 1; }
   const out = {}, seen = {};
   for(const m of models){
     let t = base[m.id];
@@ -2280,21 +2282,21 @@ function whatFor(m){
   }
   return out.join(" · ") || "Everyday chat and writing";
 }
-function fitInfo(m){
-  const v = vramAvail();
-  if(!v || !m.size || m.recipe !== "llamacpp") return null;
-  // what the server worked out for this model (weights, working space and the conversation memory); a flat margin when it has not listed it
-  const e = ((LIB.d || {}).models || []).find(x => (x.ids || {}).llamacpp === m.id), need = e && e.need_gb ? e.need_gb : m.size + 0.8, r = v.avail > 0 ? need / v.avail : Infinity;
-  // a model that fits this computer but is crowded out right now is a snug fit (amber), not a no (red)
-  const cls = r <= .8 ? "ok" : r <= 1 || need <= v.total ? "tight" : "over";
-  const who = v.holders.length ? v.holders[0].name : "";
-  let note;
-  if(cls === "ok") note = "Runs comfortably on your computer.";
-  else if(r <= 1) note = "Will run, but it's a snug fit. Keep chats short.";
-  else if(need <= v.total) note = v.live && v.avail < 0.6 ? `Your graphics memory is almost full${who ? " (" + who + " is using it)" : ""}. Close that app, then try again.`
-    : `Fits, but ${who || "other apps"} ${who ? "is" : "are"} using the graphics memory right now.`;
-  else note = `Probably too big for your computer: it needs about ${Math.round(need)} GB and you have ${Math.round(v.total)} GB of graphics memory. It may run partly on the processor, very slowly, or not start at all.`;
-  return {cls, pct: Math.min(100, r * 100), note, need, vram: v.avail};
+/* What the server worked out about a model: the library entry for one on this computer, whatever id it is known by there. */
+const libEntry = id => ((LIB.d || {}).models || []).find(e => e.id === id || e.ref === id || Object.values(e.ids || {}).includes(id));
+const FIT_WORDS = {fits: ["Runs well", "ok"], tight: ["Tight", "tight"], partial: ["Runs partly on the processor", "partial"], no: ["Too big for this computer", "over"]};
+/* The server's own fit and need_gb as a badge. Nothing is worked out here: the page and the server have to agree. */
+function fitBadge(e){
+  if(!e || !e.fit) return "";
+  const [word, cls] = FIT_WORDS[e.fit] || [e.fit, ""];
+  const label = e.fit === "no" ? word + (e.need_gb ? `, needs about ${Math.round(e.need_gb)} GB` : "") : word;
+  const why = e.why && e.fit !== "no" ? " · " + esc(e.why) : "";
+  return `<div class="fitnote ${cls}" style="margin-top:2px">${esc(label)}${why ? `<span class="fitsay">${why}</span>` : ""}</div>`;
+}
+/* The context the server picked ("auto"), and why. A model that isn't downloaded yet has no shape to read, so no line. */
+function ctxLine(e){
+  if(!e || !e.ctx) return "";
+  return `<div class="mid">Context: ${fmtTok(e.ctx)}${e.ctx_why ? " · " + esc(e.ctx_why) : ""}</div>`;
 }
 /* One line summing up what has been saved for a model (context size, arguments, backend…). */
 function savedLine(m){
@@ -2328,7 +2330,7 @@ document.addEventListener("change", async e => {
 const TAG_WORDS = {llamacpp: "llama.cpp", "sd-cpp": "stable-diffusion.cpp", whispercpp: "whisper.cpp", "tool-calling": "Tool use", tts: "Text to speech", onnxruntime: "ONNX", mtp: "MTP", dflash: "DFlash", "3d": "3D", "voice-design": "Voice design", "audio-generation": "Audio generation", "chat-transcription": "Chat transcription", "realtime-transcription": "Live transcription", hot: "Popular", "collection.omni": "Omni"};
 const tagWord = l => TAG_WORDS[l] || (l ? l[0].toUpperCase() + l.slice(1) : l);
 function cardHTML(m, extra, title, quiet){            // quiet: in a long list the Get it button is plain, so the bright button means a model you have
-  const f = fitInfo(m), isLoaded = m.id === S.loaded, job = dlJob(m.id);
+  const e = libEntry(m.id), isLoaded = m.id === S.loaded, job = dlJob(m.id);
   const tags = [m.recipe, ...(m.labels||[]).filter(l => l !== m.recipe)].map(l => `<span class="chip">${esc(tagWord(l))}</span>`).join("");
   let act;
   if(!m.downloaded){
@@ -2339,10 +2341,10 @@ function cardHTML(m, extra, title, quiet){            // quiet: in a long list t
   const sh = m.downloaded ? speedHistory(m.id) : null, [shWord, shCls] = sh ? speedWord(sh.tps) : ["", ""];
   const spLine = sh ? `<div class="speedline"><span class="sw ${shCls}">${shWord}</span><span>About <b class="num">${fmtRate(sh.tps)}</b> tok/s on this computer${sh.n > 1 ? ` <small>(from ${sh.n} answers)</small>` : ""}</span></div>` : "";
   return `<article class="card ${isLoaded?"loaded":""}" data-id="${esc(m.id)}">
-    <div class="ctop">${libPic(m.id, {title: friendly(m), size_gb: m.size})}<h3>${esc(title || (recPick(m.id) || {}).title || friendly(m))}</h3>${isLoaded?'<span class="chip ok">Loaded</span>':m.downloaded?'<span class="chip">On this computer</span>':""}${m.downloaded && m.recipe === "llamacpp" ? tnTag("llamacpp", m.id) : ""}</div>
+    <div class="ctop">${libPic(m.id, {title: modelName(m), size_gb: m.size})}<h3>${esc(title || (recPick(m.id) || {}).title || modelName(m))}</h3>${isLoaded?'<span class="chip ok">Loaded</span>':m.downloaded?'<span class="chip">On this computer</span>':""}${m.downloaded && m.recipe === "llamacpp" ? tnTag("llamacpp", m.id) : ""}</div>
     <p class="what">${esc(whatFor(m))}</p>${extra || ""}
     <div class="row"><span>${m.size ? `${sizeWord(m.size)} <span class="mono num">· ${m.size.toFixed(m.size<10?1:0)} GB</span>` : ""}</span></div>
-    ${f ? `<div class="fitwrap"><div class="fit ${f.cls}" role="img" aria-label="${esc(f.note)}"><i style="width:${f.pct}%"></i></div><div class="fitnote ${f.cls}" style="margin-top:6px">${esc(f.note)}</div></div>` : ""}
+    ${fitBadge(e)}${ctxLine(e)}
     ${spLine}
     <div class="act">${act}</div>
     <details class="more"><summary>Details</summary>
@@ -2471,13 +2473,13 @@ function recFacts(it, gb){
 const recExtra = (it, gb) => `${it.label ? `<p class="pickhead"><span class="chip lem">${esc(it.label)}</span></p>` : ""}${it.take ? `<p class="take">${inline(it.take)}</p>` : ""}${recFacts(it, gb)}`;
 /* a pick the engine does not list (llama.cpp is not installed yet, or the model is a custom one): the card is drawn from models.yaml */
 function recGetCard(it){
-  const gb = it.size_gb || 0, job = dlJob(it.id), f = fitInfo({size: gb, recipe: "llamacpp"}), size = gb < 10 ? gb.toFixed(1) : Math.round(gb);
+  const gb = it.size_gb || 0, job = dlJob(it.id), size = gb < 10 ? gb.toFixed(1) : Math.round(gb);
   const act = job ? `<div class="dlrow" style="flex:1"><div class="prog" style="flex:1"><i style="width:${job.percent}%"></i></div>${job.percent}%</div><button class="btn" data-canceldl="${esc(it.id)}">Cancel</button>`
     : PICK.id === it.id ? `<button class="btn" disabled>Getting ready…</button>`
     : `<button class="btn primary" data-recget="${esc(it.id)}">Get it · ${size} GB</button>`;
   return `<article class="card" data-id="${esc(it.id)}"><div class="ctop">${libPic(it.id, {title: it.title, size_gb: it.size_gb})}<h3>${esc(it.title || friendly(it.id))}</h3></div>
     ${recExtra(it, gb)}
-    ${f ? `<div class="fitwrap"><div class="fit ${f.cls}" role="img" aria-label="${esc(f.note)}"><i style="width:${f.pct}%"></i></div><div class="fitnote ${f.cls}" style="margin-top:6px">${esc(f.note)}</div></div>` : ""}
+    ${fitBadge(it)}${ctxLine(it)}
     <div class="act">${act}</div>
     <details class="more"><summary>Details</summary><div class="mbody"><div class="mono mid">${esc(it.id)}</div>${it.download ? `<div class="mono mid">${esc(it.download.checkpoint)}</div>` : ""}</div></details></article>`;
 }
@@ -2510,13 +2512,19 @@ function recResume(){
 function libRecommended(){
   const q = LIB.q.toLowerCase(), by = {small: [], medium: [], large: []}, rm = recModels();
   for(const it of rm.recommended){
-    const m = recModel(it), gb = m ? m.size : it.size_gb, name = it.title || (m ? friendly(m) : friendly(it.id));
+    const m = recModel(it), gb = m ? m.size : it.size_gb, name = it.title || (m ? modelName(m) : friendly(it.id));
     if(q && !(name.toLowerCase().includes(q) || it.id.toLowerCase().includes(q))) continue;
     by[libTier(gb)].push(m ? cardHTML(m, recExtra(it, gb), it.title) : recGetCard(it));
   }
   const soon = (rm.coming_soon || []).filter(c => !q || c.title.toLowerCase().includes(q)).map(recSoonCard);
+  const any = LIB_TIERS.slice(0, 3).some(t => by[t[0]].length) || soon.length;
+  if(!any){
+    const note = q ? `<div class="empty-note">No recommended model matches “${esc(LIB.q)}”. <button class="btn" data-hf>Search Hugging Face instead</button></div>`
+      : `<div class="empty-note">${(RECS.d ? "No recommendations are set up." : "Loading recommendations…")}</div>`;
+    return note + recProblems();
+  }
   const html = LIB_TIERS.slice(0, 3).map(t => libSection(t, by[t[0]], t[0] === "large" && !q ? largeNote() : "")).join("") + libSection(["soon", "Coming soon", "Not ready yet."], soon);
-  return (html || `<div class="empty-note">Shoggoth is still looking at your computer…</div>`) + (q ? "" : libTips()) + recProblems();
+  return html + (q ? "" : libTips()) + recProblems();
 }
 function libEverything(){
   const q = LIB.q.toLowerCase(), by = {small: [], medium: [], large: [], other: []}, titles = libTitles(S.models);
@@ -2577,7 +2585,7 @@ async function libSetRoot(path){
   catch(err){ LIB.err = err.message; renderModels(); }
 }
 function updateModelBadges(){ if(!$("#optdlg").open && !$("#hfdlg").open && !document.activeElement?.closest?.("#grid")) renderModels(); }
-$("#filters").addEventListener("click", e => { const b = e.target.closest("[data-tab]"); if(b){ LIB.tab = b.dataset.tab; store.set("shoggoth.libtab", LIB.tab); renderModels(); } });
+$("#filters").addEventListener("click", e => { const b = e.target.closest("[data-tab]"); if(b){ LIB.tab = b.dataset.tab; LIB.q = ""; store.set("shoggoth.libtab", LIB.tab); renderModels(); } });
 $("#filters").addEventListener("change", e => { if(e.target.id === "libkind"){ LIB.kind = e.target.value; renderModels(); } });
 $("#filters").addEventListener("input", e => { if(e.target.id==="mq"){ LIB.q = e.target.value; const pos = e.target.selectionStart; renderModels(); const n = $("#mq"); n.focus(); n.setSelectionRange(pos,pos); } });
 /* Start a new chat with this model. Nothing is loaded here: the chat's model bar does that (or sending a message does). */
@@ -2818,8 +2826,8 @@ async function openOptions(id){
   if(data.recipe === "llamacpp") await aeLoad((data.saved || {}).llamacpp_args || ""); else AE = null;
   $("#odname").textContent = friendly(m);
   $("#odsub").textContent = id + " · " + (S.loaded === id ? "Loaded right now. Changes apply the next time it loads: press Reload in the chat's model bar." : (m.downloaded ? "Changes apply the next time it loads." : "Not downloaded yet."));
-  const f = fitInfo(m);
-  $("#odfit").innerHTML = f ? `<div class="row" style="display:flex;justify-content:space-between;color:var(--muted);font-size:13px;margin-bottom:8px"><span>Target: <b style="color:var(--text)">${esc(activeName())}</b></span><span class="mono">${m.size?m.size.toFixed(1)+" GB":""}</span></div><div class="fit ${f.cls}"><i style="width:${f.pct}%"></i></div><div class="fitnote ${f.cls}" style="margin-top:6px">${esc(f.note)}</div>` : "";
+  const e = libEntry(id);
+  $("#odfit").innerHTML = `<div class="row" style="display:flex;justify-content:space-between;color:var(--muted);font-size:13px;margin-bottom:8px"><span>Target: <b style="color:var(--text)">${esc(activeName())}</b></span><span class="mono">${m.size?m.size.toFixed(1)+" GB":""}</span></div>${fitBadge(e)}${ctxLine(e)}`;
   $("#oderr").hidden = true;
   renderOptions();
   $("#optdlg").showModal();
@@ -3160,7 +3168,7 @@ function wRowHTML(r){
 }
 /* the first model: one suggestion per size, whichever the computer can take */
 function wFirstModels(){
-  const out = [], fits = m => (fitInfo(m) || {}).cls !== "over", listed = ids => ids.map(id => S.models.find(m => m.id === id && m.recipe === "llamacpp" && m.size)).filter(Boolean),
+  const out = [], fits = m => { const e = libEntry(m.id); return !e || e.fit !== "no"; }, listed = ids => ids.map(id => S.models.find(m => m.id === id && m.recipe === "llamacpp" && m.size)).filter(Boolean),
     pick = ids => listed(ids).find(fits) || listed(ids)[0];                    // one that fits if there is one; otherwise the first, with a note, rather than no card
   const TIER = {small: "Small", medium: "Medium", large: "Large"};
   for(const f of recModels().first_run){
@@ -3172,12 +3180,12 @@ function wFirstModels(){
 }
 function wModelCards(){
   const active = libDlItems().length, cards = wFirstModels().map(o => {
-    const m = o.m, j = m && dlJob(m.id), have = m && m.downloaded, name = friendly(m), size = m.size.toFixed(m.size < 10 ? 1 : 0) + " GB";
+    const m = o.m, j = m && dlJob(m.id), have = m && m.downloaded, name = modelName(m), size = m.size.toFixed(m.size < 10 ? 1 : 0) + " GB";
     const btn = j ? `<button class="btn" data-act="cancel-dl" data-model="${esc(m.id)}">Cancel</button>` : have ? `<button class="btn" disabled>Got it</button>` : `<button class="btn ${o.rec ? "primary" : ""}" data-act="dl" data-model="${esc(m.id)}" ${active ? "disabled" : ""}>Get it</button>`;
-    return `<div class="tier"><div><b>${o.tier}${o.rec ? ' <span class="chip lem">Recommended</span>' : ""}</b><span class="tn">${esc(name)}${size ? " · " + size : ""}</span><p>${esc(o.blurb)} <span class="faint">${esc(o.start)}.</span></p>${j ? `<div class="prog"><i style="width:${j.percent}%"></i></div><small class="wsmall">${j.percent}%</small>` : ""}${(() => { const f = fitInfo(m); return f && f.cls !== "ok" ? `<small class="wsmall fitnote ${f.cls}">${esc(f.note)}</small>` : ""; })()}</div>${btn}</div>`;
+    return `<div class="tier"><div><b>${o.tier}${o.rec ? ' <span class="chip lem">Recommended</span>' : ""}</b><span class="tn">${esc(name)}${size ? " · " + size : ""}</span><p>${esc(o.blurb)} <span class="faint">${esc(o.start)}.</span></p>${j ? `<div class="prog"><i style="width:${j.percent}%"></i></div><small class="wsmall">${j.percent}%</small>` : ""}${(() => { const e = libEntry(m.id); return e && e.fit && e.fit !== "fits" ? `<small class="wsmall">${fitBadge(e)}</small>` : ""; })()}</div>${btn}</div>`;
   }).join("");
   return `<h3 class="wh3">Choose your first model</h3><p class="wl">A model is the AI that answers you. It downloads once, then lives on this computer. You can add more any time.</p>
-    <div class="tiers">${cards || '<p class="wsmall">Shoggoth is still looking at your computer…</p>'}</div>${libDlHTML()}
+    <div class="tiers">${cards || '<p class="wsmall">No models to suggest yet. Open Models to add one.</p>'}</div>${libDlHTML()}
     <div class="wrow"><button class="linkbtn" data-act="w-add">I already have models</button></div>`;
 }
 /* The model "Start chatting" opens with, and names: the one in memory, else the recommended one you have, else your last choice */
@@ -3185,7 +3193,7 @@ function wStartPick(){
   const live = pkFind((S.ms || {}).loaded);
   if(live) return {id: live.id, name: live.title};
   const have = downloadedChat(), m = ((wFirstModels().find(o => o.rec && o.m && o.m.downloaded) || {}).m) || have.find(x => x.id === S.model) || have[0];
-  return m ? {id: m.id, name: friendly(m)} : null;
+  return m ? {id: m.id, name: modelName(m)} : null;
 }
 function renderWelcome(force){
   const host = $("#welcome"); if(!SU.st){ host.innerHTML = `<div class="wcard"><div class="prog ind"><i></i></div></div>`; return; }
@@ -5261,7 +5269,7 @@ async function pkLoad(fresh){
   try{ const d = await api("/ui/picker" + (fresh ? "?fresh=1" : "")); S.pk.models = d.models || []; S.pk.machine = d.machine || null; S.pk.t = Date.now(); }catch{}
   S.pk.busy = false; cwModelBar();
 }
-const pkModels = () => S.pk.models.length ? S.pk.models : chatModels().map(m => ({id: m.id, title: friendly(m), tier: "", tier_label: "Other", fit: "fits", live: S.loaded === m.id, start: "", engine_name: "", ctx: 0, ctx_fixed: false, size_gb: 0}));
+const pkModels = () => S.pk.models.length ? S.pk.models : chatModels().map(m => ({id: m.id, title: modelName(m), tier: "", tier_label: "Other", fit: "fits", live: S.loaded === m.id, start: "", engine_name: "", ctx: 0, ctx_fixed: false, size_gb: 0}));
 const pkFind = id => pkModels().find(m => m.id === id);
 /* the model this chat uses, or would use if it started now */
 function cwBarModel(){
