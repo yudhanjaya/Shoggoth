@@ -589,3 +589,38 @@ Now let me check the `lan.py` `set_sharing` name path and whether `/ui/lan/share
 Warning: Reached maximum conversation turns (150). The response may be incomplete. Retry with --max-turns 300 to extend the budget.
 ```
 </details>
+
+## U5 (2026-11-15T09:39:21+05:30)
+
+- exit code 0, 2 new commit(s), tests: ---------------------------------------------------------------------- Ran 740 tests in 223.872s  OK 
+
+<details><summary>Worker report (tail)</summary>
+
+```
+ton. The own set is drawn there only, not duplicated as an ordinary set.
+- Tools panel for S5's pinned Pi packages: review note, installed state, Install/Remove, Install progress polled from `/ui/packages`, and the plain "Runs code on your computer". An untested package explains why it can't be installed.
+- A dedicated `save_skill` approval card showing the full `SKILL.md`, every extra file's content and any risks, with the server's Save / Save and turn on / Don't save or Replace choices.
+- A chat-bar menu with "Make a skill from this chat", calling S4's `/ui/chat/make-skill`.
+- Composer paperclip and drag-and-drop calling S8's `/ui/attach`; a chip per file with the handler label; the chat is created first if the composer is on a new chat. Text and PDF paths are appended to the message. An image the model can't see is marked "won't be sent"; an image it can see is sent as picture content. The chip note follows a model change.
+
+**Files changed** (2 commits: `db4d0bb`, `b5823a0`)
+- `shoggoth/index.html`
+- `tests/ui/skills-attach.test.mjs` (new)
+- `tests/ui/api.json` (fixtures: own set, `/ui/skills/own`, `/ui/packages`)
+
+**Tests**
+- `python3 -W ignore -m unittest discover tests` → 740 tests, `OK` (run twice, latest after the final tweak).
+- `node tests/ui/skills-attach.test.mjs` → OK (helper extraction plus the real page in jsdom with the new fixtures).
+- `node tests/ui/models.test.cjs`, `setup`, `problems`, `job`, `gate`, `gate-skillsmith`, `skillsmith` → all pass.
+- `node tests/ui/smoke.js` → OK, both on the working tree and on the committed `index.html` alone.
+- Inline scripts: 4 checked, 0 syntax errors.
+
+**Not done / not verified**
+- No live browser or app: jsdom only. No real `/ui/attach` upload, no live Pi session for make-skill, and no real package install (every shipped package is still `enabled: false`, as S5 noted).
+- Attaching in a brand-new chat creates that chat immediately; this is only covered by code/test logic, not a live run.
+- The card's `folder` field isn't displayed — it is the chat's working folder, not where the skill is written.
+- `tests/ui/creature.test.mjs` was not run (known broken on `main`, U8's task).
+- The worktree already held uncommitted U4 work (`engines.d/*.yaml`, `engines.py`, `tests/test_engines.py`, and the U4 hunks in `index.html`). I left it untouched and staged only my U5 hunks; it remains uncommitted.
+- `.driver.out` left untracked. Nothing pushed, no `git stash`, no GPU used, all work inside the worktree.
+```
+</details>
