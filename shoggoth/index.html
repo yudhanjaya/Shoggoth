@@ -33,6 +33,7 @@
 }
 *{box-sizing:border-box}
 html,body{height:100%}
+[hidden]{display:none!important}
 body{margin:0;background:var(--bg);color:var(--text);font:16px/1.55 var(--sans);-webkit-font-smoothing:antialiased;overflow:hidden}
 button,input,select,textarea{font:inherit;color:inherit}
 button{cursor:pointer}
@@ -138,13 +139,15 @@ main{position:relative}
 .top .topctl .cwbar .grow{order:10;flex:1;display:block}
 .top .topctl #cwmodechip{order:11}
 .top .topctl .cwmenu{order:12}
-.top .topctl #cwtoggle-side{order:13;display:inline-flex}
+.top .topctl #cwtoggle-side{order:13;display:inline-flex;margin-left:auto}
+@media (max-width:1279.98px){                   /* not enough room for everything on one line: the folder chips go under the model controls */
+  .topctl{flex-wrap:wrap;row-gap:8px}
+  .top .topctl .cwchipwrap{flex:1 0 100%;order:20}
+}
 @media (max-width:900px){
   .top.cwtop{flex-wrap:wrap;row-gap:8px;padding:10px 16px}
-  .topctl{flex-wrap:wrap}
-  .top.cwtop h1{font-size:36px}
-  .top .topctl .cwtitle{display:block;flex:1 1 auto;min-width:0}
-  .top .topctl .cwchipwrap{flex:1 0 100%;order:20}
+  .top.cwtop h1{display:none}                 /* the chat's own title shows instead */
+  .top .topctl .cwtitle{display:block;flex:1 1 0;min-width:9ch;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
   .top .topctl .mstate{max-width:none;flex:1 0 100%;order:21;white-space:normal}
 }
 .tag{display:inline-block;font-size:11.5px;font-weight:700;padding:1px 8px;border-radius:999px;background:var(--surface-2);border:1px solid var(--line);color:var(--muted)}
@@ -316,6 +319,13 @@ main{display:flex;flex-direction:column;min-width:0;height:100dvh}
 .crow{display:flex;flex-wrap:wrap;align-items:center;gap:4px 8px;margin-top:8px}.crow .btn{white-space:nowrap}
 @media (max-width:640px){.crow .btn.ghost{padding-left:8px;padding-right:8px}}
 .crow .grow{flex:1}
+/* The chat's composer: the folder and job buttons on their own line when they show, then the paperclip, mic and Send together */
+#v-cowork .crow>#cwfolderbtn,#v-cowork .crow>#cwjobbtn{order:1}
+#v-cowork .crow>*{order:3}
+#v-cowork .crow>.grow{order:4}
+#v-cowork .crow>#cwstop,#v-cowork .crow>#cwsend{order:5}
+#v-cowork .crow::before{content:"";order:2;flex-basis:100%;height:0;display:none}
+#v-cowork .crow:has(>#cwfolderbtn:not([hidden]))::before{display:block}
 .pick{display:inline-flex;align-items:center;gap:8px;min-height:36px;padding:0 12px;border-radius:9px;border:1px solid var(--line);background:var(--bg);font-size:13px;max-width:46vw}
 .pick select{appearance:none;border:0;background:none;outline:none;max-width:30ch;text-overflow:ellipsis;cursor:pointer;padding-right:2px}
 .pick select option{background:var(--surface);color:var(--text)}
@@ -565,12 +575,12 @@ a:not([class]){color:var(--lemon-text);text-underline-offset:3px}
 .flow li.now+li{border-left:1px solid var(--line)}
 .flow b{font-size:14px}.flow span{font-size:12px;color:var(--muted)}
 .step{border:1px solid var(--line);border-radius:var(--radius);background:var(--surface);margin-bottom:16px;overflow:hidden}
-.step>header{display:flex;align-items:center;gap:16px;padding:20px 24px;cursor:default}
-.step .num{width:32px;height:32px;border-radius:50%;background:var(--surface-2);display:grid;place-items:center;font:600 14px var(--mono);color:var(--muted);flex:none}
+.step>header{display:flex;align-items:center;gap:12px;padding:24px 24px 0;cursor:default}
+.step .num{width:28px;height:28px;border-radius:50%;background:var(--surface-2);display:grid;place-items:center;font:600 14px var(--mono);color:var(--muted);flex:none}
 .step.done .num{background:var(--lemon);color:var(--lemon-ink)}
-.step h3{margin:0;font:800 22px var(--disp);flex:1}
-.step .sbody{padding:0 24px 24px 68px;display:grid;gap:16px}
-.step .lead{margin:0;color:var(--muted);max-width:66ch}
+.step h3{margin:0;font:800 20px var(--disp);flex:1}
+.step .sbody{padding:16px 24px 24px;display:grid;gap:16px}
+.step .lead{margin:0;color:var(--muted)}
 .choices{display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:12px}
 .choice{border:1px solid var(--line);border-radius:12px;padding:16px 16px;background:var(--bg);display:grid;gap:8px;align-content:start;position:relative}
 .choice[aria-checked="true"]{border-color:var(--lemon);background:var(--lemon-wash)}
@@ -634,6 +644,10 @@ a:not([class]){color:var(--lemon-text);text-underline-offset:3px}
 .engine .estat{display:grid;gap:4px;font-size:13.5px;color:var(--muted)}
 .engine .estat b{color:var(--text)}
 .engine .erow{display:flex;flex-wrap:wrap;align-items:center;gap:12px}
+.engine .erow label.help{display:inline-flex;align-items:center;flex-wrap:wrap;gap:8px}
+.engine .erow label.help,.engine .erow .aechk{font-size:14px;font-weight:400;color:var(--text)}
+.engine .erow select{min-height:36px;border:1px solid var(--line);border-radius:10px;background:var(--surface);color:var(--text);padding:0 10px;font:inherit;font-size:14px;max-width:100%}
+.engine .erow select:focus{border-color:var(--lemon);outline:none}
 .engine details.engmore{border-top:1px solid var(--line-soft);padding-top:8px}
 .engine details.engmore>summary{cursor:pointer;font-size:13.5px;color:var(--muted)}
 .engine details.engmore[open]>summary{margin-bottom:12px}
@@ -665,7 +679,7 @@ a:not([class]){color:var(--lemon-text);text-underline-offset:3px}
 .dlpill .prog{width:60px;height:6px}
 .card .prog{margin:2px 0}
 .card .dlrow{display:flex;gap:8px;align-items:center;font:12px var(--mono);color:var(--muted)}
-@media (max-width:900px){.flow{grid-template-columns:1fr 1fr}.flow li{border-radius:0!important;border-left:1px solid var(--line)!important;margin:-1px 0 0 -1px}.step .sbody{padding-left:24px}}
+@media (max-width:900px){.flow{grid-template-columns:1fr 1fr}.flow li{border-radius:0!important;border-left:1px solid var(--line)!important;margin:-1px 0 0 -1px}}
 @media (max-width:640px){.flow{grid-template-columns:1fr}.step>header{padding:16px}.step .sbody{padding:0 16px 20px}.rail{overflow-x:auto}.nav2{margin:0;width:auto}.src{grid-template-columns:auto 1fr}.src .sz{grid-column:2;text-align:left}}
 
 /* ---------- friendly layer ---------- */
@@ -676,7 +690,8 @@ a:not([class]){color:var(--lemon-text);text-underline-offset:3px}
 .note-warn a{color:inherit;font-weight:600}
 .card .ctop{display:grid;grid-template-columns:minmax(0,1fr);gap:8px 12px;align-items:start}
 .card .ctop:has(.cthumb){grid-template-columns:auto minmax(0,1fr)}
-.card .ctop h3{overflow-wrap:anywhere}.card .ctop .chip{order:-1;justify-self:start}
+.card .ctop h3{overflow-wrap:anywhere}.card .ctop .chip,.card .ctop .cchips{order:-1;justify-self:start}
+.card .ctop .cchips{display:flex;flex-wrap:wrap;gap:6px;min-width:0}
 .card .ctop .cthumb{grid-column:1;grid-row:1 / span 3}.card .ctop:has(.cthumb)>:not(.cthumb){grid-column:2}
 .libmore{margin-top:8px}.libmore summary{cursor:pointer;color:var(--muted);font-size:13px;padding:4px 0}
 .card .what{margin:-8px 0 0;color:var(--muted);font-size:14px}
@@ -782,7 +797,7 @@ a:not([class]){color:var(--lemon-text);text-underline-offset:3px}
 .faq p{margin:0 0 16px;color:var(--muted);max-width:62ch}
 .helpacts{display:flex;gap:12px;flex-wrap:wrap;margin-top:28px}
 .advgrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:16px}
-.advcard{align-content:start;text-align:left;border:1px solid var(--line);background:var(--surface);border-radius:16px;padding:20px 20px;display:grid;gap:8px;transition:border-color .2s,transform .2s var(--ease)}
+.advcard{align-content:start;align-self:stretch;height:100%;text-align:left;border:1px solid var(--line);background:var(--surface);border-radius:16px;padding:20px 20px;display:grid;gap:8px;transition:border-color .2s,transform .2s var(--ease)}
 .advcard:hover{border-color:var(--text);transform:translateY(-2px)}
 .advcard b{font:800 21px var(--disp)}
 .advcard span{color:var(--muted);font-size:14.5px}
@@ -824,7 +839,7 @@ a:not([class]){color:var(--lemon-text);text-underline-offset:3px}
 .lanp .lanerr{color:var(--bad);font-size:13px}
 .lanp .pairform{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
 .lanp .pairform input{font:600 16px var(--mono);letter-spacing:.18em;max-width:150px;text-align:center}
-.srvsec{margin:0 0 28px;display:grid;gap:12px}
+.srvsec{margin:0 0 28px;display:grid;grid-template-columns:minmax(0,1fr);gap:12px}
 .sechead{display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap}
 .panel,.wrap>*{min-width:0}.panel pre{max-width:100%;overflow-x:auto}
 @media (pointer:coarse),(max-width:640px){select,input[type=text],input[type=number],input[type=password],input[type=search],input[type=url]{min-height:40px}.linkbtn{padding:12px 4px}}
@@ -884,7 +899,7 @@ h4.sub{margin:12px 0 0;font:600 13px var(--sans);color:var(--muted);text-transfo
 .chip.bad{color:var(--bad);border-color:color-mix(in srgb,var(--bad) 45%,transparent)}
 .reqbody{padding:8px 16px 16px 16px;background:var(--surface);display:grid;gap:12px}
 .said{white-space:pre-wrap;font-size:14px;border-left:3px solid var(--lemon);padding-left:12px;max-height:240px;overflow:auto}
-@media (max-width:760px){.crow2{grid-template-columns:1fr auto auto}.crow2 .cl{grid-column:1/-1}.reqhead{grid-template-columns:1fr auto}.reqhead .rt,.reqhead .rm{display:none}.lane{grid-template-columns:70px 1fr}.swrow{flex-direction:column}}
+@media (max-width:760px){.crow2{grid-template-columns:minmax(0,1fr) auto auto}.crow2 .cl{grid-column:1/-1}.crow2>.btn:last-child{grid-column:auto}.crow2>.cv:nth-last-child(2){grid-column:1/3}.reqhead{grid-template-columns:1fr auto}.reqhead .rt,.reqhead .rm{display:none}.lane{grid-template-columns:70px 1fr}.swrow{flex-direction:column}}
 
 /* ---------- logs ---------- */
 .logbar{display:flex;gap:12px;align-items:center;margin-bottom:16px;flex-wrap:wrap}
@@ -984,7 +999,7 @@ h4.sub{margin:12px 0 0;font:600 13px var(--sans);color:var(--muted);text-transfo
 .cwtask:hover .del{display:block}
 .cwtask .del:hover{color:var(--bad);background:var(--surface-2)}
 @keyframes pulse{50%{opacity:.35}}
-.cwhero{margin:min(8vh,72px) auto 0;max-width:640px}
+.cwhero{margin:0 auto;max-width:640px}
 .cwhero h2{font:800 clamp(32px,4.6vw,50px)/1.06 var(--disp);letter-spacing:0;margin:0 0 16px}
 .cwhero p{color:var(--muted);max-width:56ch;margin:0 0 20px}
 .cwhero .recent{display:flex;gap:8px;flex-wrap:wrap;margin-top:16px}
@@ -1099,12 +1114,12 @@ svg.gl{width:1.2em;height:1.2em;vertical-align:-.25em;stroke:currentColor;fill:n
 .pkleave{font-size:11px;color:var(--warn)}
 /* the Models page's sources strip: everything that serves models, before the model list */
 .srcstrip{display:grid;gap:10px;margin-bottom:20px}
-.srcstrip .snip{display:flex;flex-wrap:wrap;align-items:center;gap:8px 12px;border:1px solid var(--line);border-radius:12px;background:var(--surface);padding:12px 16px;font-size:13.5px}
+.srcstrip .snip{display:flex;flex-wrap:wrap;align-items:center;gap:8px 12px;border:1px solid var(--line);border-radius:12px;background:var(--surface);padding:12px 16px;font:13.5px/1.5 var(--sans);max-height:none;overflow:visible}
 .srcstrip .snip.own{border-color:color-mix(in srgb,var(--lemon) 45%,transparent);background:var(--lemon-wash)}
 .srcstrip .snip.off{opacity:.6}
 .srcstrip .snip b{font-weight:600}
 .srcstrip .snip .mono{font-size:12px;color:var(--faint);overflow-wrap:anywhere}
-.srcstrip .snip .grow{flex:1;min-width:0}
+.srcstrip .snip .grow{flex:1 1 240px;min-width:0}
 .srcstrip .snip .btn{min-height:32px;padding:0 12px}
 .srcstrip .snip .srcacts{display:flex;gap:8px;flex-wrap:wrap}
 .srcstrip .srcadd{border-style:dashed}
@@ -2480,7 +2495,7 @@ function cardHTML(m, extra, title, quiet){            // quiet: in a long list t
   const sh = m.downloaded ? speedHistory(m.id) : null, [shWord, shCls] = sh ? speedWord(sh.tps) : ["", ""];
   const spLine = sh ? `<div class="speedline"><span class="sw ${shCls}">${shWord}</span><span>About <b class="num">${fmtRate(sh.tps)}</b> tok/s on this computer${sh.n > 1 ? ` <small>(from ${sh.n} answers)</small>` : ""}</span></div>` : "";
   return `<article class="card ${isLoaded?"loaded":""}" data-id="${esc(m.id)}">
-    <div class="ctop">${libPic(m.id, {title: modelName(m), size_gb: m.size})}<h3>${esc(title || (recPick(m.id) || {}).title || modelName(m))}</h3>${isLoaded?'<span class="chip ok">Loaded</span>':m.downloaded?'<span class="chip">On this computer</span>':""}${m.downloaded && m.recipe === "llamacpp" ? tnTag("llamacpp", m.id) : ""}</div>
+    <div class="ctop">${libPic(m.id, {title: modelName(m), size_gb: m.size})}<h3>${esc(title || (recPick(m.id) || {}).title || modelName(m))}</h3>${(() => { const c = (isLoaded?'<span class="chip ok">Loaded</span>':m.downloaded?'<span class="chip">On this computer</span>':"") + (m.downloaded && m.recipe === "llamacpp" ? tnTag("llamacpp", m.id) : ""); return c ? `<span class="cchips">${c}</span>` : ""; })()}</div>
     <p class="what">${esc(whatFor(m))}</p>${extra || ""}
     <div class="row"><span>${m.size ? `${sizeWord(m.size)} <span class="mono num">· ${m.size.toFixed(m.size<10?1:0)} GB</span>` : ""}</span></div>
     ${fitBadge(e)}${ctxLine(e)}
@@ -3600,8 +3615,8 @@ function llamaCard(){
     ${engineNeedsBuild(eng) ? `<div class="erow"><button class="btn${eng.installed ? "" : " primary"}" data-llama="install" ${dl ? "disabled" : ""}>${eng.installed ? "Get the build for your graphics card" : "Download llama.cpp"}</button></div>` : ""}
     ${prog}${chkRow}
     <div class="erow"><button class="btn" data-llama="check" ${dl ? "disabled" : ""}>Check for llama.cpp updates</button><button class="btn" data-llama="restart">Restart</button></div>
-    <div class="erow"><label class="help" style="margin:0">Keep up to <select data-llama="max" aria-label="Models loaded at once">${[1,2,3,4,5,6,7,8].map(x => `<option value="${x}" ${x === eng.max_loaded ? "selected" : ""}>${x}</option>`).join("")}</select> models loaded</label>
-      <label class="aechk"><input type="checkbox" data-llama="enabled" ${cfg.enabled !== false ? "checked" : ""}> Use llama.cpp</label></div>
+    <div class="erow"><label class="help" style="margin:0">Keep up to <select data-llama="max" aria-label="Models loaded at once">${[1,2,3,4,5,6,7,8].map(x => `<option value="${x}" ${x === eng.max_loaded ? "selected" : ""}>${x}</option>`).join("")}</select> models loaded</label></div>
+    <div class="erow"><label class="aechk"><input type="checkbox" data-llama="enabled" ${cfg.enabled !== false ? "checked" : ""}> Use llama.cpp</label></div>
     <div class="erow"><label class="help" style="margin:0">Graphics cards <select data-llama="device" aria-label="Graphics cards"><option value="" ${!cfg.device ? "selected" : ""}>Automatic</option>${devs.map(d => `<option value="${esc(d.id)}" ${String(cfg.device || "").toLowerCase() === d.id ? "selected" : ""}>${esc(shortName(d.name))} · ${Math.round(d.mib / 1024)} GB</option>`).join("")}</select></label></div>
     ${builds}
     ${llamaLeftovers()}
@@ -4483,7 +4498,7 @@ function beakPaint(){
 /* The chat's bars live in the header (see .topctl), and the header knows when it is the chat's. */
 function hdrPaint(){
   const top = $(".top"), ctl = $("#topctl");
-  if(ctl && !ctl.childElementCount){ ctl.append(cwEl("cwbar"), cwEl("cwmbar")); }
+  if(ctl && !ctl.childElementCount){ ctl.append(document.getElementById("cwbar"), document.getElementById("cwmbar")); }
   top.classList.toggle("cwtop", S.view === "cowork");
   beakPaint();
 }
@@ -4491,14 +4506,14 @@ function hdrPaint(){
 const SIDE_KEY = "shoggoth.sideHidden";
 const sideWide = () => innerWidth >= 1000;
 function cwSideApply(){
-  const v = $("#v-cowork"), side = cwEl("cwside"), hidden = store.get(SIDE_KEY, false) === true;
+  const v = $("#v-cowork"), side = document.getElementById("cwside"), hidden = store.get(SIDE_KEY, false) === true;
   v.classList.toggle("sidehidden", hidden);
-  cwEl("cwtoggle-side").setAttribute("aria-expanded", sideWide() ? String(!hidden) : String(side.classList.contains("open")));
+  document.getElementById("cwtoggle-side").setAttribute("aria-expanded", sideWide() ? String(!hidden) : String(side.classList.contains("open")));
 }
-function cwSideShow(){ store.set(SIDE_KEY, false); cwEl("cwside").classList.add("open"); cwSideApply(); }
+function cwSideShow(){ store.set(SIDE_KEY, false); document.getElementById("cwside").classList.add("open"); cwSideApply(); }
 function cwSideToggle(){
   if(sideWide()) store.set(SIDE_KEY, !(store.get(SIDE_KEY, false) === true));
-  else cwEl("cwside").classList.toggle("open");
+  else document.getElementById("cwside").classList.toggle("open");
   cwSideApply();
 }
 addEventListener("resize", () => cwSideApply());
@@ -5567,7 +5582,8 @@ setInterval(ping, 5000); ping();
 window.addEventListener("pagehide", () => { try{ navigator.sendBeacon("/ui/bye?tab=" + TAB); }catch(e){} });   /* closing the last tab quits Shoggoth at once */
 
 /* ======================= boot ======================= */
-(async function boot(){
+/* Start once the whole page has loaded: boot reaches into the second script (the chat page), which has to have run first. */
+async function boot(){
   await Promise.all([loadModels(), pollGpu(), pollServer(), pollDownloads(), loadRecs()]);
   try{ SU.st = await api("/ui/setup"); S.bk = (await api("/ui/backends")).recipes; }catch{}
   if(!S.convs.length || !conv()) { if(S.convs.length) S.cur = S.convs[0].id; else { const c = {id:uid(), title:"New chat", messages:[], system:"", created:Date.now()}; S.convs.push(c); S.cur = c.id; } }
@@ -5576,7 +5592,8 @@ window.addEventListener("pagehide", () => { try{ navigator.sendBeacon("/ui/bye?t
   show(TITLES[h] && h !== "welcome" ? h : (SU.st && !SU.st.setup_done ? "welcome" : "cowork"));
   renderThread();
   grow();
-})();
+}
+if(document.readyState === "loading") document.addEventListener("DOMContentLoaded", boot); else boot();
 </script>
 <script>
 /* ======================= Cowork: the Pi agent, working in a folder you choose ======================= */

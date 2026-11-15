@@ -107,4 +107,13 @@ assert.match(css, /\.view\.cw\.sidehidden \.cwside\{display:none\}/, "the sideba
 assert.match(css, /@media \(max-width:999\.98px\)\{\s*\.cwside,/, "the sidebar is not a drawer below 1000 px");
 assert.doesNotMatch(css, /@media \(max-width:1180px\)\{\s*\.cwside\{position:absolute/, "the sidebar is still a drawer at 1000 to 1180 px");
 
+
+// ---- the alignment pass
+assert.match(css, /\[hidden\]\{display:none!important\}/, "a hidden element can still be drawn (the empty 'Leaves your computer' pill)");
+assert.match(css, /@media \(max-width:1279\.98px\)\{[^@]*\.cwchipwrap\{flex:1 0 100%;order:20\}/, "the folder chips don't move under the controls below 1280 px, so Details is pushed off the screen");
+assert.match(css, /#cwtoggle-side\{order:13;display:inline-flex;margin-left:auto\}/, "Details doesn't keep to the right");
+assert.match(html, /if\(document\.readyState === "loading"\) document\.addEventListener\("DOMContentLoaded", boot\); else boot\(\);/,
+  "boot starts before the chat page's script has run, so it can call functions that don't exist yet");
+assert.ok(!/\(async function boot\(\)\{/.test(html), "boot is still started straight away");
+
 console.log("ok: the beaker, the header controls and the sidebar");
