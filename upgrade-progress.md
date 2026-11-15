@@ -637,3 +637,43 @@ The black blob is ImageMagick failing on the nested `<svg>` — the same pattern
 Warning: Reached maximum conversation turns (150). The response may be incomplete. Retry with --max-turns 300 to extend the budget.
 ```
 </details>
+
+## U7 (2026-11-15T11:11:09+05:30)
+
+- exit code 0, 1 new commit(s), tests: ---------------------------------------------------------------------- Ran 744 tests in 215.278s  OK 
+
+<details><summary>Worker report (tail)</summary>
+
+```
+=== U7 started 2026-11-15T10:57:33+05:30
+**What I did**
+
+- Added a mic button to the chat composer (`#cwform`). Hold to talk, or click to start and stop; it is hidden for jobs, like the paperclip.
+- Recording runs at 16 kHz mono with an `AudioWorklet` that collects samples; the page wraps them in a 16-bit PCM WAV (no ffmpeg) and posts to `/ui/speech/transcribe`. The transcript is appended to whatever is already in the composer, never sent.
+- First use checks `/ui/speech/status`; if the engine or model is missing it calls `/ui/speech/setup` and shows the download percentage and state in the button, then asks for another press. Added `model_ready` to `speech.status()` so the page can tell whether the model file is on disk.
+- `Read aloud` is **not** included: it depends on S13, which has not shipped (no `tts.py`, no `/ui/speech/speak`, no S13 commit).
+
+**Files changed** (commit `9e3a160`, 4 files, +338/−1)
+
+- `shoggoth/index.html` — button, CSS, recorder logic
+- `shoggoth/speech.py` — `model_ready()`, `status()["model_ready"]`
+- `tests/test_speech.py` — 4 tests for model readiness and status
+- `tests/ui/mic.test.mjs` (new) — WAV, text merge, progress/title strings, wiring, and a jsdom boot
+
+I staged only the U7 hunks of `index.html`; the uncommitted U4 engine/LAN work and U6 tube work in the worktree were left untouched and are **not** part of this commit.
+
+**Tests run**
+
+- `python3 -W ignore -m unittest discover tests` — **744 tests, OK**.
+- `node tests/ui/mic.test.mjs` — OK.
+- Also ran `setup`, `problems`, `skills-attach`, `gate`, `gate-skillsmith`, `skillsmith`, `job`, `models.test.cjs`, `tube.test.mjs`, `smoke.js` — all OK.
+- Re-ran `mic` and `smoke` against the committed `index.html` alone (with U4/U6 uncommitted work temporarily removed, then restored) — OK.
+
+**Not done / not verified**
+
+- No real microphone, AudioContext, worklet, or transcription run: this environment has no browser or audio device, and no whisper engine/model. The browser-only path is exercised only as wiring plus jsdom button states; the tested logic is the WAV encoder, text merge, progress wording, and state painting.
+- Assumes browsers honour `new AudioContext({sampleRate: 16000})`. If one does not, the server rejects non-16 kHz WAV without ffmpeg with its existing clear message.
+- Read aloud omitted pending S13.
+- `.driver.out` and `tests/ui/tube.test.mjs` remain untracked; no `git stash`, nothing pushed, nothing outside the worktree, no GPU used.
+```
+</details>
