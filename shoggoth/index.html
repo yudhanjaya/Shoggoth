@@ -5591,6 +5591,7 @@ function loadWatch(on){
 }
 function cwModelBar(){
   cwPicsPaint();
+  cwAtchPaint();          // the chip's "this model can't look at pictures" note follows the chosen model
   const bar = cwEl("cwmbar"); if(!bar) return;
   queueMicrotask(hdrPaint);
   if(!S.pk.busy && Date.now() - S.pk.t > 10000) pkLoad();
