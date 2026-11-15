@@ -62,7 +62,8 @@ def public():
     for s in all():
         k = str(s.get("key") or "")
         out.append({"id": s["id"], "preset": s.get("preset", ""), "name": s.get("name") or s["id"], "url": s["url"],
-                    "has_key": bool(k), "key_hint": k[-4:] if len(k) > 8 else ""})
+                    "has_key": bool(k), "key_hint": k[-4:] if len(k) > 8 else "", "api": s.get("api", ""),
+                    "ctx": s.get("ctx") or 0, "local": s.get("local")})
     return out
 
 
@@ -70,7 +71,7 @@ def get(sid):
     return next((s for s in all() if s["id"] == sid), None)
 
 
-def _append(s, pre, url, key, name):
+def _append(s, pre, url, key, name, extra=None):
     """Add a server to the settings `s` (not saved here). ValueError when the address is already connected."""
     have = s.setdefault("servers", [])
     for h in have:
@@ -83,17 +84,21 @@ def _append(s, pre, url, key, name):
         sid = "%s-%d" % (pre["id"], n)
     entry = {"id": sid, "preset": pre["id"], "name": (name or "").strip()[:60] or pre["name"] + (" %d" % n if n > 1 else ""),
              "url": url, "key": str(key or "").strip()}
+    for k, v in (extra or {}).items():
+        if v not in (None, "", {}):
+            entry[k] = v
     have.append(entry)
     return entry
 
 
-def add(preset, url, key="", name=""):
-    """Save a server. ValueError, in plain words, when the address is bad or already connected."""
+def add(preset, url, key="", name="", extra=None):
+    """Save a server. ValueError, in plain words, when the address is bad or already connected. `extra` carries what a hand-made
+    connection needs beyond an address: `api` (the wire format), `ctx` (the context size to assume) and `local`."""
     pre = next((p for p in presets() if p["id"] == preset), None)
     if not pre:
         raise ValueError("That isn't one of the servers Shoggoth knows by name. Choose 'Another server'.")
     url, out = normalise(url or pre.get("url")), []
-    store.update(lambda s: out.append(_append(s, pre, url, key, name)))
+    store.update(lambda s: out.append(_append(s, pre, url, key, name, extra)))
     return dict(out[0])
 
 
@@ -182,27 +187,34 @@ def _gemini_models(key, timeout=1.5):
     return status, [{"id": n, "ctx": ctx.get(n, 0)} for n in engines.gemini_chat_models(d)]
 
 
-def list_models(url, key="", pin=None, timeout=1.5):
-    """(status, [{id, ctx}]) from a saved address. status 0 means it didn't answer."""
-    if is_gemini(url):
+def list_models(url, key="", pin=None, timeout=1.5, api=""):
+    """(status, [{id, ctx}]) from a saved address. status 0 means it didn't answer. `api` is the wire format its models speak
+    (see engines.APIS plus "ollama-native"); empty guesses from the address. Every format Shoggoth speaks lists its models at
+    `<address>/models`; Gemini has its own listing, and Ollama's native one is /api/tags."""
+    if api == "google-generative-ai" or (not api and is_gemini(url)):
         return _gemini_models(key, timeout)
+    if api == "ollama-native":
+        status, d = provbase.http_json(url + "/api/tags", key, timeout=timeout, pin=pin)
+        out = [{"id": str(m["name"]), "ctx": 0} for m in (d.get("models") or [])
+               if isinstance(m, dict) and m.get("name")] if status == 200 else []
+        return status, out
     status, d = provbase.http_json(api_base(url) + "/models", key, timeout=timeout, pin=pin)
     out = []
     if status == 200:
-        for m in (d.get("data") or []):
+        for m in ((d or {}).get("data") or []):
             if isinstance(m, dict) and m.get("id"):
                 ctx = ((m.get("meta") or {}).get("n_ctx") if isinstance(m.get("meta"), dict) else 0) or 0
                 out.append({"id": str(m["id"]), "ctx": int(ctx) if str(ctx).isdigit() else 0})
     return status, out
 
 
-def probe(url, key="", pin=None):
+def probe(url, key="", pin=None, api=""):
     """Ask a server what it has. Never raises, never takes longer than a couple of seconds. {reachable, needs_key, models}."""
     try:
         base = normalise(url)
     except ValueError:
         return {"reachable": False, "needs_key": False, "models": []}
-    status, ms = list_models(base, key, pin)
+    status, ms = list_models(base, key, pin, api=api)
     return {"reachable": status != 0, "needs_key": status in (401, 403), "models": [m["id"] for m in ms] if status == 200 else []}
 
 
@@ -295,6 +307,11 @@ class ConnectedServer(provbase.GenericProvider):
     def _entry(self):
         return get(self.id) or {"url": self._url, "key": ""}
 
+    def _api(self):
+        """The wire format this server's models speak: its own `api` when the person chose one, else the preset's rules."""
+        e = self._entry()
+        return e.get("api") or engines.api_for(e.get("preset") or "", "")
+
     def _key(self):
         return self._entry().get("key", "")
 
@@ -303,8 +320,8 @@ class ConnectedServer(provbase.GenericProvider):
         if time.time() - t < 5:
             return v
         e = self._entry()
-        status, ms = list_models(e["url"], e.get("key", ""), e.get("fp"))
-        out = [dict(m, port=0, owner="yours") for m in ms] if status == 200 else []
+        status, ms = list_models(e["url"], e.get("key", ""), e.get("fp"), api=e.get("api", ""))
+        out = [dict(m, port=0, owner="yours", ctx=m.get("ctx") or e.get("ctx") or 0) for m in ms] if status == 200 else []
         self._seen = (time.time(), out, status)
         return out
 
@@ -323,8 +340,22 @@ class ConnectedServer(provbase.GenericProvider):
         e = self._entry()
         for m in self._models():
             if model_id is None or m["id"] == model_id:
-                return {"base_url": api_base(e["url"]), "key": e.get("key", ""), "model": m["id"], "ctx": m["ctx"], "owner": "yours", "pin": e.get("fp") or ""}
+                return {"base_url": api_base(e["url"]), "key": e.get("key", ""), "model": m["id"], "ctx": m["ctx"], "owner": "yours",
+                        "pin": e.get("fp") or "", "api": e.get("api", "")}
         return None
+
+    def pi_endpoint(self, zest_port):
+        """Where Pi talks to this server, for the format its models speak: an OpenAI-compatible base for all of them, except Gemini's
+        native door, which Pi's own Gemini client reaches at the version root."""
+        e = self._entry()
+        api = e.get("api") or engines.api_for(e.get("preset") or "", "")
+        if api == "google-generative-ai":
+            base = engines.pi_base_url(api, e["url"])
+        elif api == "ollama-native":
+            base = e["url"] + "/v1"                       # Ollama answers on both doors; /v1 gives the model list and chat Pi knows
+        else:
+            base = api_base(e["url"])
+        return {"base_url": base, "key": e.get("key", "") or self.id}
 
     def ensure(self, model_id, progress, opts=None):
         self._seen = (0.0, [], 0)

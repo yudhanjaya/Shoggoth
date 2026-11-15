@@ -452,6 +452,54 @@ class Sources(Env):
         self.assertEqual(len(scan.sources(proc=root, defs=[], fresh=True, include_other=True)["found"]), 0)
 
 
+class SourceRows(Env):
+    """What the Models page's strip and the chat bar's picker read: a source's own model rows, and what it served when it last answered."""
+
+    def test_a_connected_source_lists_its_models_as_rows(self):
+        port, stop = serve({"/v1/models": (200, {"data": [{"id": "m1"}, {"id": "m2", "meta": {"n_ctx": 8192}}]}, {})})
+        try:
+            servers.add("other", "http://127.0.0.1:%d" % port, extra={"ctx": 4096})
+            d = scan.sources(proc=self.proc_for(port), defs=[], fresh=True)
+        finally:
+            stop()
+        s = d["sources"][0]
+        self.assertEqual([(i["id"], i["source"], i["model"], i["state"]) for i in s["items"]],
+                         [("other/m1", "other", "m1", "available"), ("other/m2", "other", "m2", "available")])
+        self.assertEqual([i["ctx"] for i in s["items"]], [4096, 4096])          # the size the person typed, when the server says nothing
+
+    def test_an_offline_source_keeps_its_rows_greyed(self):
+        port, stop = serve({"/v1/models": (200, {"data": [{"id": "m1"}]}, {})})
+        try:
+            servers.add("other", "http://127.0.0.1:%d" % port)
+            scan.sources(proc=self.proc_for(port), defs=[], fresh=True)
+        finally:
+            stop()
+        d = scan.sources(proc=self.proc_for(port), defs=[], fresh=True)          # the server has gone
+        s = d["sources"][0]
+        self.assertEqual((s["state"], [i["state"] for i in s["items"]], [i["id"] for i in s["items"]]),
+                         ("offline", ["offline"], ["other/m1"]))
+        self.assertEqual(scan.last_known("other")["ids"], ["m1"])
+
+    def test_a_remembered_address_stays_on_this_computer(self):
+        port, stop = serve({"/v1/models": (200, {"data": []}, {})})
+        try:
+            servers.add("other", "http://127.0.0.1:%d" % port, extra={"local": False})
+            d = scan.sources(proc=self.proc_for(port), defs=[], fresh=True)
+        finally:
+            stop()
+        self.assertTrue(d["sources"][0]["leaves_computer"])                         # the person said it is elsewhere
+
+    def test_the_connect_state_does_not_need_a_scan(self):
+        port, stop = serve({"/v1/models": (200, {"data": [{"id": "m1"}]}, {})})
+        try:
+            servers.add("other", "http://127.0.0.1:%d" % port)
+            self.assertEqual(scan.connected_state("other"), "ready")
+        finally:
+            stop()
+        self.assertEqual(scan.connected_state("other"), "offline")
+        self.assertEqual(scan.connected_state("nobody"), "")
+
+
 class RealServers(Env):
     """Lists seen on the developer's machine."""
     def test_voicebox_is_speech(self):

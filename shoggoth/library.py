@@ -688,8 +688,9 @@ def _cache_type(e):
 def picker(max_age=8):
     """The models a person can pick for a chat, from every engine, with what helps them choose:
 
-    [{id, title, tier, tier_label, fit, why, size_gb, need_gb, live, start_s, start, engine, engine_name, vision, tools, reasoning, ctx, ctx_fixed,
-    quant, params, lineage, form, tone}]: the last five draw the model's creature.
+    [{id, title, tier, tier_label, fit, why, size_gb, need_gb, live, start_s, start, engine, engine_name, source, source_name, vision, tools,
+    reasoning, ctx, ctx_fixed, quant, params, lineage, form, tone}]: the last five draw the model's creature.
+    `source` is the id of what serves it (llama.cpp, a connected server, a hosted service), `source_name` its plain name.
     Engine names are carried for a discreet line; the interface never leads with them."""
     import router
     if max_age and _pk["v"] is not None and time.time() - _pk["t"] < max_age:
@@ -709,6 +710,7 @@ def picker(max_age=8):
         out.append({"id": m["id"], "title": recs.title_for(m["id"], m["pi_model"]) or e.get("title") or m.get("title") or m["pi_model"], "tier": e.get("tier") or "", "tier_label": TIER_LABEL.get(e.get("tier"), "Other"),
                     "fit": e.get("fit") or "fits", "why": e.get("why") or "", "size_gb": round(e.get("size_bytes", 0) / 1e9, 1), "need_gb": e.get("need_gb"),
                     "live": bool(m["live"]), "start_s": start, "start": _start_hint(start), "engine": m["engine"], "engine_name": p.name if p else m["engine"],
+                    "source": m["engine"], "source_name": p.name if p else m["engine"],
                     "vision": bool(m.get("vision")), "tools": bool(m.get("tools")), "reasoning": bool(m.get("reasoning")), "ctx": m.get("ctx") or 0,
                     "ctx_fixed": router.fixed_ctx(m["id"])})
         q = quant_of(e, m["pi_model"])

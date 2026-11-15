@@ -27,6 +27,7 @@ sys.path.insert(0, HERE)          # the AppImage runs Python in isolated mode, w
 
 import store       # noqa: E402  first: it maps old ZEST_* variables to their SHOGGOTH_* names
 import agent       # noqa: E402
+import custom      # noqa: E402
 import filetypes   # noqa: E402
 import folders     # noqa: E402
 import gateway     # noqa: E402
@@ -166,15 +167,58 @@ def own_source(sources):
     ms = llamacpp.models() if up else []
     b = llamacpp.choose()
     state = "ready" if up else "off" if current_mode() != "builtin" else "starting" if b else "not_installed"
-    me = {"id": "llamacpp", "kind": "builtin", "name": "llama.cpp", "engine": "llamacpp",
+    loaded = [m["id"] for m in ms if m["status"] == "loaded"]
+    items = [{"id": m["id"], "source": "llamacpp", "model": m["id"], "title": recs.title_for(m["id"]) or m["id"], "ctx": m["ctx"] or 0,
+              "state": "loaded" if m["status"] == "loaded" else "available"} for m in ms if not str(m["id"]).lower().startswith("mmproj")]
+    me = {"id": "llamacpp", "kind": "builtin", "name": "llama.cpp", "engine": "llamacpp", "label": "llama.cpp (on this computer)",
           "url": "http://127.0.0.1:%d" % llamacpp._state["port"] if up else "", "state": state, "models": len(ms),
-          "loaded": [m["id"] for m in ms if m["status"] == "loaded"], "loads": "router", "leaves_computer": False, "own": True,
-          "version": (b or {}).get("tag", ""), "backend": (b or {}).get("backend", ""), "error": llamacpp._state.get("error")}
+          "loaded": loaded, "items": items, "loads": "router", "leaves_computer": False, "own": True,
+          "version": (b or {}).get("tag", ""), "backend": (b or {}).get("backend", ""),
+          "error": llamacpp._state.get("error"), "installed": bool(b), "bundled": bool((b or {}).get("bundled")),
+          "recommended": llamacpp.recommended(), "hint": ""}
     return dict(sources, sources=[me] + list(sources.get("sources") or []))
 
 
 def get_info():
     return hardware.info(current_mode(), VERSION)
+
+
+SOURCE_ORDER = {"builtin": 0, "engine": 1, "shoggoth": 2, "cloud": 3}
+
+
+def _source_groups(src):
+    """The chat bar's groups, in the plan's order: this computer, then each connected engine, then other Shoggoths, then paid services.
+    A source that is offline keeps its place and its models, greyed (`state: "offline"`), so a chat's model never silently vanishes."""
+    out = []
+    for s in src.get("sources") or []:
+        sid = s.get("id")
+        rows = [m["id"] for m in (s.get("items") or []) if m.get("state") != "offline"] if s.get("state") != "offline" else []
+        out.append({"id": sid, "kind": s.get("kind", ""), "name": s.get("label") or s.get("name") or sid, "state": s.get("state", ""),
+                    "models": rows, "leaves_computer": bool(s.get("leaves_computer")), "loads": s.get("loads", ""), "url": s.get("url", "")})
+    out.sort(key=lambda g: (SOURCE_ORDER.get(g["kind"], 9), g["name"].lower()))
+    return out
+
+
+def picker_state(max_age=8):
+    """/ui/picker: the models, with the groups the chat bar draws and what the scan found that isn't connected yet."""
+    d = library.picker(max_age)
+    try:
+        src = own_source(scan.sources(own_ports=_own_ports_now()))
+    except Exception:  # noqa: BLE001 - the scan is a convenience; the model list still works without it
+        src = {"sources": [], "found": []}
+    names = {g["id"]: g["name"] for g in _source_groups(src)}
+    for m in d.get("models") or []:                       # the plan's names: a source's own name, not an engine id
+        m["source_name"] = names.get(m.get("source"), m.get("source_name") or m.get("engine_name") or "")
+    d["groups"] = _source_groups(src)
+    d["found"] = [{"port": f.get("port"), "name": f.get("name"), "engine": f.get("engine"), "url": f.get("url"),
+                   "needs_key": bool(f.get("needs_key")), "models": len(f.get("models") or [])}
+                  for f in src.get("found") or []][:12]
+    return d
+
+
+def _own_ports_now():
+    """This Shoggoth's port and its llama.cpp's, for a picker refresh outside a request."""
+    return tuple(llamacpp.own_ports())
 
 
 # ---------------------------------------------------------------- http
@@ -335,7 +379,7 @@ class Handler(BaseHTTPRequestHandler):
         elif p == "/ui/packages":
             self.send_json(pipkgs.summary())
         elif p == "/ui/picker":
-            self.send_json(library.picker(0 if parse_qs(u.query).get("fresh") else 8))
+            self.send_json(picker_state(0 if parse_qs(u.query).get("fresh") else 8))
         elif p == "/ui/library":
             self.send_json(self.library_summary())
         elif p == "/ui/disk":
@@ -431,6 +475,7 @@ class Handler(BaseHTTPRequestHandler):
             "/ui/engine/use": self.post_engine_use, "/ui/engine/restart": self.post_engine_restart,
             "/ui/engine/lemonade/delete": self.post_lemonade_delete,
             "/ui/sources/scan": self.post_sources_scan,
+            "/ui/custom/probe": self.post_custom_probe, "/ui/custom/save": self.post_custom_save,
             "/ui/gateway": self.post_gateway, "/ui/cowork/new": self.post_cowork_new,
             "/ui/cowork/cmd": self.post_cowork_cmd, "/ui/cowork/answer": self.post_cowork_answer,
             "/ui/cowork/mode": self.post_cowork_mode, "/ui/cowork/delete": self.post_cowork_delete,
@@ -760,9 +805,16 @@ class Handler(BaseHTTPRequestHandler):
         self.send_json({"ok": ok, "error": msg}, 200 if ok else 409)
 
     def post_model_ctx(self, body):
-        """Only remember the context size, for when the model is loaded next."""
+        """Only remember the context size for when the model is loaded next. "auto" lets each model take the most that fits."""
         v = body.get("ctx") or "auto"
-        self.send_json({"ok": True, "ctx": agent.set_chat_ctx(v if v == "auto" else int(v))})
+        if v not in ("auto", "") and not isinstance(v, bool):
+            try:
+                v = max(2048, int(v))
+            except (TypeError, ValueError):
+                raise ValueError("A context size is a number of tokens, like 32768, or auto.")
+        else:
+            v = "auto"
+        self.send_json({"ok": True, "ctx": agent.set_chat_ctx(v)})
 
     def post_pi_check(self, body):
         try:
@@ -867,6 +919,23 @@ class Handler(BaseHTTPRequestHandler):
     def post_sources_scan(self, body):
         """Look at what is listening on this computer again (the Look again button) and return the same shape as GET /ui/sources."""
         self.send_json(own_source(scan.sources(own_ports=self._own_ports(), fresh=True)))
+
+    def post_custom_probe(self, body):
+        """The Hook up something else form's Test button: one chat request and one tool request, in plain words."""
+        self.send_json(custom.probe(str(body.get("url", "")), str(body.get("key", "") or ""), str(body.get("api") or "openai-completions"),
+                                     str(body.get("model", "") or "")))
+
+    def post_custom_save(self, body):
+        """Connect a server set up by hand, and (with `remember`) teach Shoggoth to recognise it next time."""
+        r = custom.save(str(body.get("url", "")), str(body.get("key", "") or ""), str(body.get("api") or "openai-completions"),
+                        str(body.get("name") or ""), str(body.get("model") or ""), body.get("models"),
+                        body.get("ctx") or 0, body.get("local"), bool(body.get("remember")),
+                        body.get("match"), body.get("identify"))
+        if r["ok"]:
+            registry.reload()
+            router.invalidate()
+            scan.forget()
+        self.send_json(dict(r, servers=servers.public()), 200 if r["ok"] else 400)
 
     def _own_ports(self):
         """This Shoggoth's port and its llama.cpp's (the router's and each loaded model's), never offered as a server to connect."""

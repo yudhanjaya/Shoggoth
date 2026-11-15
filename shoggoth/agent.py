@@ -183,14 +183,22 @@ def model_ctx(model):
 
 
 def model_state():
-    """What the chat bar shows: the model in memory, how much context it has, and what Shoggoth is loading right now."""
+    """What the chat bar shows: the model in memory, how much context it has, and what Shoggoth is loading right now.
+
+    `auto_ctx` is what a load would ask for while the setting is "auto", so the chat bar can say "Auto (32k)" instead of only "auto"."""
     name, ctx = None, 0
     live = [m for m in router.chat_models() if m["live"]]           # the providers' own lists (llama.cpp: router GET /models, status loaded)
     if live:
         name, ctx = live[0]["id"], live[0]["ctx"]
     with _lock:
         loading = dict(_loading) if _loading["model"] else None
-    return {"loaded": name, "ctx": ctx, "chat_ctx": chat_ctx_setting(), "loading": loading, "default_ctx": DEFAULT_CTX,
+    auto = 0
+    if chat_ctx_setting() == "auto":
+        for m in router.chat_models():                            # the loaded one first, else the first model a chat could pick
+            auto = _auto_ctx(m["id"]) or 0
+            if auto and (m["live"] or not live):
+                break
+    return {"loaded": name, "ctx": ctx, "chat_ctx": chat_ctx_setting(), "auto_ctx": auto, "loading": loading, "default_ctx": DEFAULT_CTX,
             "step": router.state()["step"]}
 
 

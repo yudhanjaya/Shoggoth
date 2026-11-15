@@ -38,6 +38,7 @@ LABELS = {"specialized": "Specialized inference engine", "local": "Local inferen
           "shared": "Inference engine"}
 _lock = threading.Lock()
 _last = {"at": 0.0, "found": []}
+_known = {}                                  # connected source id -> {ids, state, at}: what it served and how it answered, last time it was asked
 
 
 # ---------------------------------------------------------------- what is listening
@@ -383,20 +384,50 @@ def latest(own_ports=(), fresh=False, **kw):
         return _last["found"], _last["at"]
 
 
-def _state(entry, defs):
-    r = servers.probe(entry["url"], entry.get("key", ""), pin=entry.get("fp"))
+def _items(ids, source_id, own, loaded, fallback_ctx=0, state="available"):
+    """The rows a source's models make in the picker and the strip: [{id, source, model, title, ctx, state}]. `own` models keep the id
+    chats already use (no source prefix); another source's are `<source>/<model>`."""
+    out, seen = [], set()
+    for mid in ids:
+        mid = str(mid)
+        if not mid or mid in seen:
+            continue
+        seen.add(mid)
+        full = mid if own else "%s/%s" % (source_id, mid)
+        out.append({"id": full, "source": source_id, "model": mid, "title": recs.title_for(full, mid) or mid,
+                    "ctx": int(fallback_ctx or 0), "state": "loaded" if mid in loaded else state})
+    return out
+
+
+def _state(entry, defs, ctx_by_model=None):
+    api = entry.get("api", "")
+    r = servers.probe(entry["url"], entry.get("key", ""), pin=entry.get("fp"), api=api) if api else \
+        servers.probe(entry["url"], entry.get("key", ""), pin=entry.get("fp"))
     d = next((x for x in defs if x["id"] == entry.get("preset")), None) or {}
     host = (urllib.parse.urlsplit(entry["url"]).hostname or "").lower()
     cloud = d.get("category") == "hosted"
-    return {"id": entry["id"], "kind": "cloud" if cloud else "shoggoth" if entry.get("preset") == "shoggoth" else "engine", "name": entry.get("name") or entry["id"], "engine": entry.get("preset", ""),
-            "url": entry["url"], "state": "needs_key" if r["needs_key"] else "ready" if r["reachable"] else "offline", "models": len(r["models"]),
-            "loads": d.get("loads", "fixed"), "leaves_computer": cloud or host not in ("127.0.0.1", "localhost", "::1")}
+    state = "needs_key" if r["needs_key"] else "ready" if r["reachable"] else "offline"
+    ids = list(r["models"]) if state != "offline" else list((_known.get(entry["id"]) or {}).get("ids") or [])
+    with _lock:
+        _known[entry["id"]] = {"ids": ids, "state": state, "at": time.time()}
+    fallback = int(entry.get("ctx") or 0)
+    items = _items(ids, entry["id"], False, (), fallback, "offline" if state == "offline" else "available")
+    for it in items:
+        it["ctx"] = (ctx_by_model or {}).get(it["model"]) or fallback
+    return {"id": entry["id"], "kind": "cloud" if cloud else "shoggoth" if entry.get("preset") == "shoggoth" else "engine",
+            "name": entry.get("name") or entry["id"], "engine": entry.get("preset", ""), "preset": entry.get("preset", ""),
+            "url": entry["url"], "state": state, "models": len(ids), "items": items,
+            "loads": d.get("loads", "fixed"), "leaves_computer": cloud or (entry.get("local") is False) or
+            (entry.get("local") is None and host not in ("127.0.0.1", "localhost", "::1")),
+            "own": False, "pinned": bool(entry.get("fp")), "has_key": bool(entry.get("key")),
+            "key_hint": str(entry.get("key") or "")[-4:] if len(str(entry.get("key") or "")) > 8 else "",
+            "hint": d.get("hint", ""), "api": api, "ctx": fallback, "model_count": len(ids)}
 
 
 def sources(own_ports=(), fresh=False, include_other=False, **kw):
     """The /ui/sources reply: {sources: [...connected...], found: [...answering but not connected...], scanned_at}.
     Servers whose models are all speech/embeddings/other (role != chat) are left out of `found` unless include_other.
-    Each source is {id, kind, name, engine, url, state, models, loads, leaves_computer}; each found server is a scan() entry."""
+    Each source is {id, kind, name, engine, url, state, models, items, loads, leaves_computer}; each found server is a scan() entry."""
     found, when = latest(own_ports, fresh, **kw)
     defs = engines.definitions()
     have = []
@@ -408,6 +439,32 @@ def sources(own_ports=(), fresh=False, include_other=False, **kw):
         have.append(h)
     with concurrent.futures.ThreadPoolExecutor(max_workers=WORKERS) as pool:
         srcs = list(pool.map(lambda e: _state(e, defs), have))
+    for s, entry in zip(srcs, have):
+        if entry.get("local") is not None:
+            s["leaves_computer"] = not bool(entry["local"])
     canon = {servers._canon(servers.normalise(h["url"])) for h in have}
     return {"sources": srcs, "found": [f for f in found if servers._canon(f["url"]) not in canon and (include_other or f.get("role", "chat") == "chat")], "scanned_at": when,
             "problems": engines.problems()}
+
+
+def connected_state(sid):
+    """ready, needs_key or offline for one connected source id, without a full scan. Empty for an id Shoggoth doesn't have."""
+    entry = servers.get(sid)
+    if not entry:
+        return ""
+    r = servers.probe(entry["url"], entry.get("key", ""), pin=entry.get("fp"), api=entry.get("api", "")) if entry.get("api") else \
+        servers.probe(entry["url"], entry.get("key", ""), pin=entry.get("fp"))
+    return "needs_key" if r["needs_key"] else "ready" if r["reachable"] else "offline"
+
+
+def last_known(sid):
+    """{ids, state}: the model ids a connected source served when it was last asked, and how it answered."""
+    with _lock:
+        k = dict(_known.get(sid) or {})
+    return {"ids": list(k.get("ids") or []), "state": k.get("state", ""), "at": k.get("at", 0)}
+
+
+def forget():
+    """Let the next look at this computer scan again (after a definition is added or a source connected or removed)."""
+    with _lock:
+        _last["at"] = 0.0
