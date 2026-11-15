@@ -305,6 +305,49 @@ class StatusText(unittest.TestCase):
             self.assertIsNone(speech.status()["runs_on"])
 
 
+class ModelReady(unittest.TestCase):
+    """GET /ui/speech/status tells the mic whether first use has to download anything."""
+
+    def setUp(self):
+        d = tempfile.mkdtemp()
+        self.addCleanup(lambda: __import__("shutil").rmtree(d, ignore_errors=True))
+        self.model = os.path.join(d, "ggml-base.en.bin")
+        self.settings = mock.patch.object(speech, "_settings", return_value={"model": self.model})
+        self.settings.start()
+        self.addCleanup(self.settings.stop)
+
+    def test_a_model_that_is_there(self):
+        self.assertFalse(speech.model_ready(self.model))
+        with open(self.model, "wb") as f:
+            f.write(b"x")
+        self.assertTrue(speech.model_ready(self.model))
+
+    def test_an_empty_file_does_not_count(self):
+        open(self.model, "wb").close()
+        self.assertFalse(speech.model_ready(self.model))
+
+    def test_a_name_is_looked_up_in_the_models_folder(self):
+        with mock.patch.object(speech, "models_dir", return_value=os.path.dirname(self.model)):
+            self.assertFalse(speech.model_ready(os.path.basename(self.model)))
+            with open(self.model, "wb") as f:
+                f.write(b"x")
+            self.assertTrue(speech.model_ready(os.path.basename(self.model)))
+
+    def test_the_status_carries_it(self):
+        with open(self.model, "wb") as f:
+            f.write(b"x")
+        found = {"server": "/w/whisper-server", "backend": "cpu", "source": "shoggoth"}
+        with mock.patch.object(speech, "find_server", return_value=found):
+            st = speech.status()
+        self.assertEqual((st["model"], st["model_ready"]), (self.model, True))
+        os.remove(self.model)
+        with mock.patch.object(speech, "find_server", return_value=found):
+            self.assertFalse(speech.status()["model_ready"])
+        with mock.patch.object(speech, "find_server", return_value=None):
+            st = speech.status()
+        self.assertEqual((st["installed"], st["model"], st["model_ready"]), (False, None, False))
+
+
 if __name__ == "__main__":
     unittest.main()
 

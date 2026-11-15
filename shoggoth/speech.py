@@ -237,6 +237,14 @@ def ensure_model(filename, cancel=None):
     return dest
 
 
+def model_ready(filename):
+    """True when the chosen model's file is already on disk."""
+    if not filename:
+        return False
+    path = filename if os.path.isabs(filename) else os.path.join(models_dir(), filename)
+    return os.path.isfile(path) and os.path.getsize(path) > 0
+
+
 def start_setup(model=None):
     """Install whisper.cpp's processor build and the model it uses, in the background: progress is in UPD, which
     status() returns as "download". False when a download is already running."""
@@ -363,8 +371,10 @@ def status():
     runs_on = None
     if found:
         runs_on = "Runs on the graphics card" if found["backend"] in GPU_BACKENDS else "Runs on the processor"
+    model = choose_model(found["backend"]) if found else None
     return {"installed": bool(found), "server": found and found["server"], "backend": found and found["backend"],
-            "model": choose_model(found["backend"]) if found else None, "running": running(), "port": _state["port"] if running() else None,
+            "model": model, "model_ready": model_ready(model), "running": running(),
+            "port": _state["port"] if running() else None,
             "runs_on": runs_on, "download": dict(UPD)}
 
 
