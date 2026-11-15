@@ -123,7 +123,7 @@ These are the parts the branch does not finish or has not verified.
 - **Pi packages.** The Tools section and the install and remove routes exist, but every package on the list is disabled until it has been tested. None can be installed in 5.0.
 - **Client-only set-up.** The server records that a connected Shoggoth will serve the models, but the page does not use that flag to skip the llama.cpp download in Getting ready.
 - **The website.** The `site/` update for 5.0 did not finish.
-- **The release itself.** `VERSION` is still `4.3.0`, the AppStream metainfo still lists 4.3.0, and no 5.0 AppImage has been built.
+- **The release itself.** This build is `5.0.0-beta`, a test build. The final 5.0.0 has not been released.
 
 ### Not tested
 

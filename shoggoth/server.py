@@ -56,7 +56,7 @@ import websearch   # noqa: E402
 import zestup      # noqa: E402
 from util import cached, invalidate, run   # noqa: E402
 
-VERSION = "4.3.0"
+VERSION = "5.0.0-beta"
 hf.VERSION = VERSION          # Hugging Face sees User-Agent: Shoggoth/<version>
 _last_ping = {"t": None}
 import speech      # noqa: E402  (speech to text with whisper.cpp)
