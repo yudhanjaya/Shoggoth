@@ -86,13 +86,17 @@ svg.i{width:20px;height:20px;stroke:currentColor;fill:none;stroke-width:1.7;stro
 @media (max-width:900px){.specs{grid-template-columns:1fr}}
 /* ---------- the model's picture on the chat header ---------- */
 main{position:relative}
-.top.tall{min-height:112px;padding-top:8px;padding-bottom:8px}
+.top.tall{min-height:88px;padding-top:8px;padding-bottom:8px}
 .ptube{display:flex;align-items:center;gap:12px;margin-left:72px;align-self:stretch}
 .ptube:empty{display:none}
-.ptube .tbtn{border:0;background:none;padding:0;height:98px;display:block;border-radius:14px;cursor:pointer;transition:transform .15s var(--ease)}
+.ptube .tbtn{border:0;background:none;padding:0;height:72px;display:block;border-radius:14px;cursor:pointer;transition:transform .15s var(--ease)}
+.ptube .tbtn svg{display:block;height:72px;width:auto}
 .ptube .tbtn:hover{transform:translateY(-2px)}.ptube .tbtn:hover .vtube{filter:drop-shadow(0 3px 6px var(--sh))}.ptube .tbtn:focus-visible{outline:2.5px solid var(--lemon-text);outline-offset:3px}
 .vtube .tb-liq{transition:width 1s var(--ease)}.vtube .tb-in{animation:tbDrop .7s var(--ease) both}
+.vtube.tall .tb-liq{transition:y .6s var(--ease),height .6s var(--ease)}
+.vtube.tall .tb-in{animation:tbDropTall .8s var(--ease) both}
 @keyframes tbDrop{from{transform:translateY(-46px);opacity:0}60%{opacity:1}}
+@keyframes tbDropTall{from{transform:translateY(-150px);opacity:0}60%{opacity:1}}
 .vtube{display:block;overflow:visible}
 .vtube .led,.vtube .ledglow{fill:currentColor;color:var(--steel)}
 .vtube .ledglow{opacity:0;transition:opacity .3s}
@@ -114,7 +118,49 @@ main{position:relative}
 .picnote .x{margin-left:auto}
 .picnote[hidden]{display:none}.picnote a{white-space:nowrap}.picnote .x{border:0;background:none;font-size:16px;color:var(--faint);min-width:32px;min-height:32px}
 @media (prefers-reduced-motion:reduce){.vtube *,.harness *{animation:none!important;transition:none!important}}
-@media (max-width:900px){.ptube,.harness{display:none!important}.top.tall{min-height:68px}}
+@media (max-width:899.98px){.ptube,.harness{display:none!important}.top.tall{min-height:68px}}
+/* ---------- the tube column on wide screens ---------- */
+/* At 1280 px and up the tube leaves the header and stands in its own column on the right, full height, with the bench under it.
+   From 900 to 1279 px it is the short strip in the header. Below 900 px the belt button in the chat bar opens it as a panel. */
+.tubecol{display:none}
+.tubecolbar{border:0;background:none;padding:8px 20px;font:700 11px/1 var(--mono);letter-spacing:.06em;text-transform:uppercase;color:var(--muted);text-align:left;display:flex;align-items:baseline;gap:8px;border-bottom:1px solid var(--line-soft);width:100%}
+.tubecolbar:hover{color:var(--text)}
+.tubecolbar .tubecolstate{font-weight:400;text-transform:none;letter-spacing:0;color:var(--faint);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.tubecolbody{flex:1;min-height:0;overflow:auto;display:flex;flex-direction:column;align-items:center;gap:16px;padding:16px 14px 20px}
+.tubewrap{width:100%;max-width:240px;display:grid;justify-items:center;gap:10px}
+.tubewrap .tbtn{border:0;background:none;padding:0;display:block;border-radius:14px;cursor:pointer;transition:transform .15s var(--ease)}
+.tubewrap .tbtn svg{display:block;width:100%;height:auto}
+.tubewrap .tbtn:hover{transform:translateY(-2px)}.tubewrap .tbtn:focus-visible{outline:2.5px solid var(--lemon-text);outline-offset:3px}
+.tubewrap .vtube{width:100%;height:auto}
+.tubebench{width:100%;max-width:240px;height:auto;display:block}
+.tubecol .lamp{margin-top:-4px}
+.tubecol[hidden]{display:none}
+.tubecol.collapsed .tubecolbody{display:none}
+.tubecol.collapsed{width:44px}
+.tubecol.collapsed .tubecolbar{writing-mode:vertical-rl;text-orientation:mixed;padding:20px 8px;height:100%;justify-content:flex-start}
+@media (min-width:1280px){
+  .view.cw.active{flex-direction:row}
+  .view.cw{position:relative}
+  .view.cw .tubecol{display:flex;flex-direction:column;width:212px;flex:none;border-left:1px solid var(--line-soft);background:var(--bg)}
+  .view.cw .tubecol[hidden]{display:none}
+  /* the chat centres in what the column leaves, on a reading measure */
+  .view.cw .col,.view.cw .composer,.view.cw .sheet,.view.cw .jobform{max-width:72ch}
+  /* three columns plus the rail leaves the chat too little room, so when the tube is showing, Details opens over the chat instead */
+  .view.cw:has(.tubecol:not([hidden])) .cwside{position:absolute;right:212px;top:52px;bottom:0;z-index:5;background:var(--bg);box-shadow:-12px 0 30px rgba(0,0,0,.08);display:none}
+  .view.cw:has(.tubecol:not([hidden])) .cwside.open{display:grid}
+  .view.cw:has(.tubecol:not([hidden])) .cwbar #cwtoggle-side{display:inline-flex}
+}
+@media (max-width:1279.98px) and (min-width:900px){
+  .ptube{margin-left:0}
+}
+@media (max-width:899.98px){
+  .view.cw{position:relative}
+  .view.cw .tubecol{display:none;position:absolute;right:0;top:52px;bottom:0;width:min(250px,88vw);z-index:8;border-left:1px solid var(--line);box-shadow:-12px 0 30px rgba(0,0,0,.12);background:var(--bg)}
+  .view.cw .tubecol.open{display:flex;flex-direction:column}
+  .view.cw .tubecol[hidden]{display:none}
+  .cwbar .tubebtn:not([hidden]){display:inline-flex}
+  .tubecol.collapsed{width:100%}
+}
 .tag{display:inline-block;font-size:11.5px;font-weight:700;padding:1px 8px;border-radius:999px;background:var(--surface-2);border:1px solid var(--line);color:var(--muted)}
 /* ---------- the Hardware bench ---------- */
 .rig{border-radius:18px;border:1px solid var(--line-soft);background:radial-gradient(ellipse at 50% 10%,color-mix(in srgb,var(--surface) 80%,#fff),var(--surface-2) 70%);padding:12px 12px 0;overflow:hidden;margin:0 0 20px}
@@ -1573,6 +1619,7 @@ h3.themesec{font:600 13px var(--sans);color:var(--faint);margin:0 0 12px}
         <div class="cwbar" id="cwbar">
           <button class="btn ghost" id="cwtoggle-list" type="button">Chats</button>
           <b class="cwtitle" id="cwtitle">New chat</b>
+          <button class="btn ghost tubebtn" id="tubebtn" type="button" hidden aria-expanded="false" aria-label="Show the model's tube" title="The model's tube"><svg class="i" viewBox="0 0 24 24" aria-hidden="true"><path d="M9 3h6v4l2 3v9a2 2 0 0 1-2 2h-6a2 2 0 0 1-2-2v-9l2-3z"/><path d="M7 14h10"/></svg></button>
           <div class="cwchipwrap"><div class="cwchips" id="cwchips"></div><div class="cwfpop" id="cwfpop" hidden></div></div>
           <span class="grow"></span>
           <span class="chip" id="cwmodechip" hidden></span>
@@ -1621,6 +1668,13 @@ h3.themesec{font:600 13px var(--sans);color:var(--faint);margin:0 0 12px}
         </div>
       </div>
       <aside class="cwside" id="cwside" aria-label="About this task"></aside>
+      <aside class="tubecol" id="tubecol" aria-label="The model's tube" hidden>
+        <button class="tubecolbar" id="tubecolbtn" type="button" aria-expanded="true" aria-controls="tubecolbody" title="Hide the tube">Tube<span class="tubecolstate" id="tubecolstate"></span></button>
+        <div class="tubecolbody" id="tubecolbody">
+          <div class="tubewrap" id="tubehost"></div>
+          <svg class="tubebench" id="tubebench" aria-hidden="true"></svg>
+        </div>
+      </aside>
     </section>
 
     <!-- DOCS -->
@@ -1946,6 +2000,7 @@ async function tick(){
   renderStatus();
   if(S.view === "hardware") renderHardware();
   if(S.view === "models") updateModelBadges();
+  if(S.view === "cowork") paintTubeColumn();
   syncModelSelect();
 }
 setInterval(tick, 2500);
@@ -4454,12 +4509,48 @@ const screwSvg = (x, y) => `<circle cx="${x}" cy="${y}" r="2.6" fill="var(--surf
 /* How full the graphics memory is, across every card: the liquid in the tube. */
 function vramFrac(){ const g = S.gpus || [], tot = g.reduce((n, x) => n + (x.mem_total_mb || 0), 0); return tot ? Math.min(1, g.reduce((n, x) => n + (x.mem_used_mb || 0), 0) / tot) : 0; }
 const TUBE_W = 240;
-function tubeSvg(m, mood){
+/* The tube: the model in its glass. Two shapes from one function. The strip (`tall` false) is the short horizontal module for the
+   header, 300 by 98. The tall one stands in the right-hand column, 300 by 440, with the same glass, caps and lamp turned upright. */
+function tubeSvg(m, mood, tall){
   const seated = !!m && (m.live || mood === "loading");          // the tube is empty until a model is in it
   const tint = seated ? crTone(m) : "var(--steel)";
+  const grooves = (x, y, n) => Array.from({length: n}, (_, i) => `<rect x="${x + i * 4}" y="${y}" width="1" height="40" rx=".5" fill="var(--line)"/>`).join("");
+  if(tall){
+    /* the glass runs from 40 to 378 in a 300 by 440 frame, between a matte cap at each end, on a plinth with the lamp and socket */
+    const glass = "M82 40 h136 a26 26 0 0 1 26 26 v296 a26 26 0 0 1 -26 26 h-136 a26 26 0 0 1 -26 -26 v-296 a26 26 0 0 1 26 -26 z";
+    /* the creature is cropped to its own box and fitted inside the glass, so it fills the tall tube instead of floating small in it */
+    const g = seated ? crGrown(m, 0.56) : null, b = g && g.box;
+    const GW = 150, GH = 286, k = b ? Math.min(GW / b.w, GH / b.h) : 1;
+    const iw = b ? b.w * k : GW, ih = b ? b.h * k : GH, ix = 150 - iw / 2, iy = 209 - ih / 2;
+    const inner = seated ? `<g class="tb-in" transform="translate(${ix.toFixed(1)} ${iy.toFixed(1)}) scale(${k.toFixed(3)}) translate(${(-b.x).toFixed(1)} ${(-b.y).toFixed(1)})">${crBody(m, {mood, live: true, aspect: 0.56})}</g>` : "";
+    const top = 378 - vramFrac() * 338;                 // the glass runs from y 40 (empty) to 378 (full)
+    const liquid = `<clipPath id="tbclipv"><path d="${glass}"/></clipPath><rect class="tb-liq" data-tall="1" x="56" y="${top.toFixed(1)}" width="188" height="${(378 - top).toFixed(1)}" clip-path="url(#tbclipv)" fill="var(--lemon)" fill-opacity=".34"/>`;
+    const bubs = [[104, 360, 2.4, 0], [150, 372, 1.8, .7], [196, 356, 2.2, 1.3], [128, 368, 1.6, 1.9], [176, 364, 2, .4]]
+      .map(([cx, cy, r, d]) => `<circle class="tb-bub" cx="${cx}" cy="${cy}" r="${r}" fill="var(--surface)" fill-opacity=".9" style="animation-delay:${d}s"/>`).join("");
+    return `<svg class="vtube tall mood-${mood}" viewBox="0 0 300 440" aria-hidden="true">
+      <g filter="url(#kShadow)"><rect x="26" y="384" width="248" height="40" rx="11" fill="url(#kMatte)" stroke="var(--line)" stroke-width="1"/></g>
+      <rect x="34" y="386" width="232" height="1" rx=".5" fill="var(--hi)"/>${screwSvg(40, 404)}${screwSvg(260, 404)}
+      <g fill="var(--text)" fill-opacity=".38">${holesSvg(96, 392, 16, 3, 8, 1.4)}</g>
+      <circle class="ledglow" cx="62" cy="404" r="6" filter="url(#kSoft)"/><circle class="led" cx="62" cy="404" r="3.2" stroke="var(--line)" stroke-width=".8"/>
+      <text x="120" y="398" font-size="6.5" fill="var(--muted)" font-family="JetBrains Mono, monospace" letter-spacing=".12em">MODEL</text>
+      <text x="120" y="410" font-size="7" fill="var(--text)" font-family="JetBrains Mono, monospace" font-weight="700" letter-spacing=".12em">BAY 01</text>
+      <rect x="216" y="396" width="13" height="15" rx="2.5" fill="var(--surface-2)" stroke="var(--line)" stroke-width=".8"/><rect x="219" y="399" width="7" height="7" rx="1" fill="var(--lemon)"/>
+      <rect x="40" y="20" width="220" height="26" rx="10" fill="url(#kMatteH)" stroke="var(--line)" stroke-width="1"/>
+      ${[48, 66, 84].map(d => `<rect x="${d}" y="27" width="1.4" height="12" rx=".7" fill="var(--line)"/>`).join("")}
+      ${[216, 234, 252].map(d => `<rect x="${d}" y="27" width="1.4" height="12" rx=".7" fill="var(--line)"/>`).join("")}
+      <rect x="56" y="40" width="188" height="338" rx="26" fill="${tint}" fill-opacity=".14"/>
+      ${liquid}
+      <rect x="56" y="40" width="188" height="338" rx="26" fill="url(#kGlass)"/>${inner}
+      <rect x="56" y="40" width="188" height="338" rx="26" fill="none" stroke="var(--line)" stroke-width="1.6"/>
+      <path d="M74 56 V 360" stroke="#fff" stroke-opacity=".55" stroke-width="3.4" stroke-linecap="round"/>
+      <path d="M82 56 V 150" stroke="#fff" stroke-opacity=".3" stroke-width="1.6" stroke-linecap="round"/>
+      ${bubs}
+      <g fill="var(--text)" fill-opacity=".5">${holesSvg(196, 64, 4, 10, 7, 1.3)}</g>
+      <rect class="conn" x="146" y="418" width="34" height="11" rx="3.5" fill="var(--surface-2)" stroke="var(--line)" stroke-width=".9"/><circle cx="163" cy="423.5" r="2.6" fill="var(--text)" fill-opacity=".75"/>
+    </svg>`;
+  }
   const inner = seated ? `<g class="tb-in">${crPic(m, {mood, live: true, crop: true, label: false}).replace("<svg ", '<svg x="50" y="11" width="200" height="50" ')}</g>` : "";
   const liquid = `<clipPath id="tbclip"><rect x="30" y="8" width="240" height="56" rx="28"/></clipPath><rect class="tb-liq" x="30" y="8" height="56" clip-path="url(#tbclip)" fill="var(--lemon)" fill-opacity=".38" style="width:${(vramFrac() * TUBE_W).toFixed(1)}px"/>`;
-  const grooves = x => [7, 11, 15].map(d => `<rect x="${x + d}" y="16" width="1" height="40" rx=".5" fill="var(--line)"/>`).join("");
   return `<svg class="vtube mood-${mood}" viewBox="0 0 300 98" width="300" height="98" aria-hidden="true">
     <g filter="url(#kShadow)"><rect x="4" y="66" width="292" height="29" rx="9" fill="url(#kMatte)" stroke="var(--line)" stroke-width="1"/></g>
     <rect x="9" y="67.5" width="282" height="1" rx=".5" fill="var(--hi)"/>${screwSvg(14, 80.5)}${screwSvg(286, 80.5)}
@@ -4474,7 +4565,33 @@ function tubeSvg(m, mood){
     <circle class="tb-bub" cx="80" cy="56" r="2.2" fill="var(--surface)" fill-opacity=".9"/><circle class="tb-bub" cx="178" cy="58" r="1.7" fill="var(--surface)" fill-opacity=".9"/><circle class="tb-bub" cx="222" cy="55" r="2" fill="var(--surface)" fill-opacity=".9"/>
     <rect x="30" y="8" width="240" height="56" rx="28" fill="url(#kGlass)"/><rect x="30" y="8" width="240" height="56" rx="28" fill="none" stroke="var(--line)" stroke-width="1.6"/>
     <path d="M56 15.5 H244" stroke="#fff" stroke-opacity=".55" stroke-width="2.6" stroke-linecap="round"/>
-    <g filter="url(#kShadow)"><rect x="12" y="12" width="26" height="48" rx="10" fill="url(#kMatteH)" stroke="var(--line)" stroke-width="1"/><rect x="262" y="12" width="26" height="48" rx="10" fill="url(#kMatteH)" stroke="var(--line)" stroke-width="1"/></g>${grooves(12)}${grooves(262)}
+    <g filter="url(#kShadow)"><rect x="12" y="12" width="26" height="48" rx="10" fill="url(#kMatteH)" stroke="var(--line)" stroke-width="1"/><rect x="262" y="12" width="26" height="48" rx="10" fill="url(#kMatteH)" stroke="var(--line)" stroke-width="1"/></g>${grooves(12, 16, 3)}${grooves(262, 16, 3)}
+  </svg>`;
+}
+/* The bench under the tall tube: a speed meter, a readout of the model and its memory, and the lamp row. It reads the same live
+   numbers the model bar does, and must never be the only place a figure appears. */
+function tubeBenchSvg(tps, mood){
+  const g = (S.gpus || []).reduce((a, x) => ({ used: a.used + (x.mem_used_mb || 0), total: a.total + (x.mem_total_mb || 0) }), { used: 0, total: 0 });
+  const frac = g.total ? Math.min(1, g.used / g.total) : 0, t = Math.max(0, Math.min(1, (tps || 0) / 60));
+  const a0 = -Math.PI * 0.75, sweep = Math.PI * 1.5, needle = a0 + sweep * t;
+  const pt = (a, r) => [130 + Math.cos(a) * r, 74 + Math.sin(a) * r];
+  const arc = (a, b) => { const [x0, y0] = pt(a, 46), [x1, y1] = pt(b, 46); return `M${x0.toFixed(1)} ${y0.toFixed(1)} A46 46 0 ${b - a > Math.PI ? 1 : 0} 1 ${x1.toFixed(1)} ${y1.toFixed(1)}`; };
+  const ticks = Array.from({length: 9}, (_, i) => { const a = a0 + sweep * (i / 8), [x0, y0] = pt(a, 40), [x1, y1] = pt(a, i % 4 === 0 ? 33 : 36); return `<line x1="${x0.toFixed(1)}" y1="${y0.toFixed(1)}" x2="${x1.toFixed(1)}" y2="${y1.toFixed(1)}" stroke="var(--line)" stroke-width="${i % 4 === 0 ? 1.6 : 1}"/>`; }).join("");
+  const [nx, ny] = pt(needle, 34);
+  return `<svg class="benchsvg" viewBox="0 0 260 168">
+    <rect x="2" y="2" width="256" height="164" rx="14" fill="var(--surface)" stroke="var(--line-soft)"/>
+    <path d="${arc(a0, a0 + sweep)}" fill="none" stroke="var(--line)" stroke-width="3" stroke-linecap="round"/>
+    <path d="${arc(a0, a0 + sweep * frac)}" fill="none" stroke="var(--lemon)" stroke-width="3" stroke-linecap="round"/>
+    ${ticks}
+    <line x1="130" y1="74" x2="${nx.toFixed(1)}" y2="${ny.toFixed(1)}" stroke="var(--text)" stroke-width="2.2" stroke-linecap="round"/>
+    <circle cx="130" cy="74" r="3.6" fill="var(--text)"/>
+    <text x="130" y="98" text-anchor="middle" font-family="JetBrains Mono, monospace" font-weight="700" font-size="15" fill="var(--text)">${tps ? Math.round(tps) + " tok/s" : "—"}</text>
+    <text x="130" y="112" text-anchor="middle" font-family="JetBrains Mono, monospace" font-size="8" fill="var(--muted)" letter-spacing=".1em">SPEED</text>
+    <rect x="18" y="128" width="224" height="22" rx="6" fill="var(--surface-2)" stroke="var(--line)" stroke-width=".8"/>
+    <text x="30" y="143" font-family="JetBrains Mono, monospace" font-size="8.5" fill="var(--muted)" letter-spacing=".08em">MEMORY</text>
+    <rect x="94" y="135" width="110" height="8" rx="4" fill="var(--line)"/>
+    <rect x="94" y="135" width="${(110 * frac).toFixed(1)}" height="8" rx="4" fill="var(--lemon)"/>
+    <text x="212" y="143" text-anchor="end" font-family="JetBrains Mono, monospace" font-size="8.5" fill="var(--text)">${g.total ? Math.round(frac * 100) + "%" : "—"}</text>
   </svg>`;
 }
 /* The cable: one lead in the text colour from the module's socket to a plug on the model picker, with an accent collar. */
@@ -4499,26 +4616,86 @@ function chatMood(){
   return {m, mood: m.live ? "idle" : "none"};
 }
 const HDR = {key: ""};
-function hdrPaint(){
-  const host = $("#ptube"), harness = $("#harness"); if(!host) return;
-  const on = picturesOn() && S.view === "cowork" && innerWidth > 900, {m, mood} = on ? chatMood() : {m: null, mood: "none"};
-  $(".top").classList.toggle("tall", on);
-  if(!on){ if(host.innerHTML) host.innerHTML = ""; harness.innerHTML = ""; HDR.key = ""; return; }
-  const key = [m && m.id, m && m.form, m && m.tone, m && m.quant, m && (m.live || mood === "loading") ? "in" : "out"].join("|");
-  if(key !== HDR.key){
-    HDR.key = key;
-    host.innerHTML = `<button class="tbtn" type="button" id="ptubebtn" aria-label="Choose a model. ${m && m.live ? esc(crDescribe(m)) : "The tube is empty"}" title="Choose a model">${tubeSvg(m, mood)}</button><span class="lamp ${mood}" id="plamp">${MOOD_WORD[mood]}</span>`;
+/* Which piece of the page carries the tube: a column on wide screens, the short strip in the header from 901 to 1279 px, a
+   panel behind the chat bar's button below that. A collapsed column is remembered for this viewer. */
+const TUBE_KEY = "shoggoth.tubeCollapsed";
+const tubeCollapsed = () => store.get(TUBE_KEY, false) === true;
+const setTubeCollapsed = on => store.set(TUBE_KEY, !!on);
+const TUBE = {open: false, tps: 0};
+const tubeLayout = () => innerWidth >= 1280 ? "column" : innerWidth >= 900 ? "strip" : "panel";
+/* The tube, its lamp, and the mood; shared by the strip and the column so both look the same. */
+function tubeHtml(m, mood, tall){
+  const label = m && m.live ? crDescribe(m) : "The tube is empty";
+  return `<button class="tbtn" type="button" data-tubebutton aria-label="Choose a model. ${esc(label)}" title="Choose a model">${tubeSvg(m, mood, tall)}</button><span class="lamp ${mood}">${MOOD_WORD[mood]}</span>`;
+}
+const tubeKey = (m, mood, tall) => [m && m.id, m && m.form, m && m.tone, m && m.quant, m && (m.live || mood === "loading") ? "in" : "out", tall ? "tall" : "strip"].join("|");
+function paintTubeHost(host, m, mood, tall){
+  if(!host) return;
+  const key = tubeKey(m, mood, tall);
+  if(key !== host._tubekey){
+    host._tubekey = key;
+    host.innerHTML = tubeHtml(m, mood, tall);
     crCrop(host);
-  }else{
-    crMood(host.querySelector(".vtube"), mood); crMood(host.querySelector(".vtube .cr"), mood);
-    const lq = host.querySelector(".tb-liq"); if(lq) lq.style.width = (vramFrac() * TUBE_W).toFixed(1) + "px";
-    const l = $("#plamp"); l.className = "lamp " + mood; l.textContent = MOOD_WORD[mood];
+    return;
   }
-  hdrCable(mood);
+  crMood(host.querySelector(".vtube"), mood); crMood(host.querySelector(".vtube .cr"), mood);
+  const lq = host.querySelector(".tb-liq");
+  if(lq){
+    if(lq.dataset.tall === "1"){ const h = vramFrac() * 338; lq.setAttribute("height", h.toFixed(1)); lq.setAttribute("y", (378 - h).toFixed(1)); }
+    else lq.style.width = (vramFrac() * TUBE_W).toFixed(1) + "px";
+  }
+  const l = host.querySelector(".lamp"); if(l){ l.className = "lamp " + mood; l.textContent = MOOD_WORD[mood]; }
+}
+function hdrPaint(){
+  const layout = tubeLayout();
+  const strip = picturesOn() && S.view === "cowork" && layout === "strip";
+  const {m, mood} = strip ? chatMood() : {m: null, mood: "none"};
+  const host = $("#ptube"), harness = $("#harness");
+  $(".top").classList.toggle("tall", strip);
+  if(!strip){
+    if(host && host.innerHTML) host.innerHTML = "";
+    if(host) host._tubekey = "";
+    if(harness) harness.innerHTML = "";
+    HDR.key = "";
+  }else{
+    paintTubeHost(host, m, mood, false);
+    hdrCable(mood);
+  }
+  paintTubeColumn(layout);
+}
+function paintTubeColumn(layout = tubeLayout()){
+  const col = $("#tubecol"); if(!col) return;
+  const on = picturesOn() && S.view === "cowork";
+  const shown = on && (layout === "column" || (layout === "panel" && TUBE.open));
+  const btn = $("#tubebtn");
+  if(btn){ btn.hidden = !(on && layout === "panel"); btn.setAttribute("aria-expanded", TUBE.open ? "true" : "false"); }
+  col.hidden = !shown;
+  col.classList.toggle("open", layout === "panel" && TUBE.open);
+  col.classList.toggle("collapsed", layout === "column" && tubeCollapsed());
+  const bar = $("#tubecolbtn");
+  if(bar){
+    const collapsed = col.classList.contains("collapsed");
+    bar.setAttribute("aria-expanded", collapsed ? "false" : "true");
+    bar.title = layout === "panel" ? "Hide the tube" : collapsed ? "Show the tube" : "Hide the tube";
+  }
+  if(!shown){
+    if(col._tubekey){ const h = $("#tubehost"); if(h) h.innerHTML = ""; col._tubekey = ""; }
+    const bench = $("#tubebench"); if(bench) bench.innerHTML = "";
+    const st = $("#tubecolstate"); if(st) st.textContent = "";
+    return;
+  }
+  const {m, mood} = chatMood();
+  paintTubeHost($("#tubehost"), m, mood, true);
+  const st = $("#tubecolstate"); if(st) st.textContent = MOOD_WORD[mood];
+  const bench = $("#tubebench");
+  if(bench){
+    const k = [m && m.id, mood, Math.round(TUBE.tps || 0)].join("|");
+    if(bench._k !== k){ bench._k = k; bench.innerHTML = tubeBenchSvg(TUBE.tps, mood); }
+  }
 }
 function hdrCable(mood){
   const harness = $("#harness"), conn = $("#ptube .conn"), lamp = $("#cwmbar .mdot"), bar = $("#cwbar");
-  if(!conn || !lamp || !bar || !lamp.offsetParent){ harness.innerHTML = ""; return; }
+  if(!harness || !conn || !lamp || !bar || !lamp.offsetParent){ if(harness) harness.innerHTML = ""; return; }
   const o = $("main").getBoundingClientRect(), a = conn.getBoundingClientRect(), l = lamp.getBoundingClientRect(), b = bar.getBoundingClientRect();
   harness.innerHTML = harnessSvg(a.left + a.width / 2 - o.left, a.bottom - o.top - 2, b.left - o.left + 7, b.bottom - o.top,
     l.top + l.height / 2 - o.top, l.left - o.left - 3);
@@ -4526,7 +4703,13 @@ function hdrCable(mood){
 }
 addEventListener("resize", () => hdrPaint());
 document.addEventListener("click", e => {
-  if(e.target.closest("#ptubebtn")) return pkOpen(true);
+  if(e.target.closest("[data-tubebutton]")) return pkOpen(true);
+  if(e.target.closest("#tubebtn")){ TUBE.open = !TUBE.open; return paintTubeColumn(); }
+  if(e.target.closest("#tubecolbtn")){
+    if(tubeLayout() === "panel") TUBE.open = false;
+    else setTubeCollapsed(!tubeCollapsed());
+    return paintTubeColumn();
+  }
   if(e.target.closest("#picnotex")){ store.set("shoggoth.picturesNoted", true); $("#picnote")?.remove(); }
   const sw = e.target.closest("#picsw");
   if(sw){ store.set("shoggoth.pictures", !picturesOn()); sw.setAttribute("aria-checked", picturesOn()); store.set("shoggoth.picturesNoted", true); hdrPaint(); }
@@ -4940,8 +5123,14 @@ function generate(P) {
     minY = Math.min(minY, (v.x + v.y) * U.h - (v.z + 1) * U.H); maxY = Math.max(maxY, (v.x + v.y + 2) * U.h - v.z * U.H);
   };
   mainVs.forEach(grow); brainVs.forEach(grow); flo.forEach((g) => g.forEach(grow));
-  const sc = Math.min(1, 228 / Math.max(-minX, maxX, 1), 290 / Math.max(-minY, 1), 112 / Math.max(maxY, 1));
-  const OX = 240, OY = 300;
+  /* `aspect` is the frame's width over height. Left out, the frame is the default 480 by 420 picture and the drawing is the same
+     as it always was. The tall tube passes 0.7 and gets a portrait frame: the ground sits 120 from the foot and the room above it
+     grows, so the same body fits a tall slot. The body itself never changes, only the frame it is fitted into. */
+  const FW = 480, DEF = FW / 420;
+  const aspect = Math.max(0.4, Math.min(2.5, Number(P.aspect) || DEF));
+  const FH = Math.round(FW / aspect);
+  const OX = 240, OY = FH - 120, up = OY - 10;
+  const sc = Math.min(1, 228 / Math.max(-minX, maxX, 1), up / Math.max(-minY, 1), 112 / Math.max(maxY, 1));
   const pt = (x, y, z) => f1(OX + (x - y) * U.w * sc) + ' ' + f1(OY + ((x + y) * U.h - z * U.H) * sc);
   const emit = (vs, own) => {
     vs.sort((a, b) => (a.x + a.y + a.z) - (b.x + b.y + b.z) || a.z - b.z);
@@ -4959,7 +5148,12 @@ function generate(P) {
   const matrix = (mm) => 'matrix(' + [mm.a * sc, mm.b * sc, mm.c * sc, mm.d * sc].map((n) => n.toFixed(3)).join(' ') + ' ' +
     f1(OX + ((mm.P0[0] - mm.P0[1]) * U.w + mm.off[0]) * sc) + ' ' + f1(OY + (((mm.P0[0] + mm.P0[1]) * U.h - mm.P0[2] * U.H) + mm.off[1]) * sc) + ')';
   const Rg = fp + 2;
+  /* the body's own box in frame coordinates, so a picture can be cropped to the creature without asking the browser for its
+     bounding box (the tall tube does) */
+  const pad = Math.max(maxX - minX, maxY - minY) * .04;
+  const box = { x: OX + minX * sc - pad, y: OY + minY * sc - pad, w: (maxX - minX) * sc + 2 * pad, h: (maxY - minY) * sc + 2 * pad };
   return {
+    w: FW, h: FH, box,
     runs: emit(mainVs, false), brainRuns: emit(brainVs, false), hasBrain,
     fl1: emit(flo[0], true), fl2: emit(flo[1], true), fl3: emit(flo[2], true),
     eyes: decals.map((e) => ({ m: matrix(e.mm), face: e.f, delay: e.delay, ic: e.ic, scl: e.scl, sr: e.sr, ir: e.ir, prx: e.prx, pry: e.pry })),
@@ -4990,8 +5184,8 @@ const crQuant = t => (String(t || "").match(/\b(i?q\d[a-z0-9_]*|bf16|f16)\b/i) |
 const crIn = m => { const name = m.title || m.id || "model", seed = crFamily(m.lineage || name);
   return {seed, params: Number(m.params) || crParams(name + " " + (m.id || ""), m.size_gb || m.need_gb || m.size), quant: String(m.quant || crQuant(name + " " + (m.id || ""))),
     ctx: 256, vision: true, reasoning: !!m.reasoning, tools: true, tone: hashStr(seed + "|tone") % 5, form: m.formOverride != null ? m.formOverride : hashStr(seed) % CR_FORMS}; };
-function crGrown(m){
-  const P = crIn(m), k = JSON.stringify(P);
+function crGrown(m, aspect){
+  const P = aspect ? Object.assign(crIn(m), {aspect}) : crIn(m), k = JSON.stringify(P);
   if(!crCache.has(k)) crCache.set(k, generate(P));
   return crCache.get(k);
 }
@@ -5005,16 +5199,24 @@ function crParts(m){
   return p;
 }
 const crDescribe = m => `Picture of ${m.title || m.id}: ${crParts(m).join("; ")}.`;
-/* The creature as SVG. `live` animates it (one per view at most); `crop` fits small pictures to the creature without its shadow. */
-function crPic(m, {mood = "idle", live = false, crop = false, label = true} = {}){
-  if(!m) return "";
-  const g = crGrown(m);
+/* The creature's shapes as SVG groups, in the frame's own coordinates: the body (with its eyes and brain), and the floating
+   flecks when `live`. Both the card picture and the tall tube draw from this, so they never drift apart. */
+function crBody(m, {mood = "idle", live = false, aspect = 1} = {}){
+  const g = crGrown(m, aspect);
   const P = rs => rs.map(r => `<path d="${r.d}" fill="${r.c}" stroke="${r.c}" stroke-width=".7" stroke-linejoin="round"/>`).join("");
   const eyes = g.eyes.map(e => `<g transform="${e.m}"><g class="zc-eye zc-f-${e.face}" style="animation-delay:${e.delay}"><circle cx=".5" cy=".5" r="${e.sr}" fill="${e.scl}" stroke="#0e0e12" stroke-width=".05"/><circle cx=".5" cy=".5" r="${e.ir}" fill="${e.ic}"/><g class="zc-pupil" style="animation-delay:${e.delay}"><ellipse cx=".5" cy=".5" rx="${e.prx}" ry="${e.pry}" fill="#0e0e12"/></g></g></g>`).join("");
   const brain = g.hasBrain ? `<g class="zc-brain">${P(g.brainRuns)}${g.sparks.map(s => `<g transform="${s.m}"><rect class="zc-spark" width="1" height="1" fill="#f7d916" style="animation-delay:${s.delay}"/></g>`).join("")}</g>` : "";
   const fl = live ? [g.fl1, g.fl2, g.fl3].map((f, i) => `<g class="zc-fl zc-fl${i + 1}">${P(f)}</g>`).join("") : "";
+  /* the group carries `cr`, so the mood and animation rules in the stylesheet apply inside the tube as well as in a picture */
+  return `<g class="cr ${live ? "live" : "still"} mood-${mood}"><g class="zc-sway"><ellipse cx="${g.shadow.x}" cy="${g.shadow.y}" rx="${g.shadow.rx}" ry="${g.shadow.ry}" fill="#0e0e12" fill-opacity=".16"/><g class="zc-breathe"><g class="zc-body">${P(g.runs)}${eyes}${brain}</g></g>${fl}</g></g>`;
+}
+/* The creature as SVG. `live` animates it (one per view at most); `crop` fits small pictures to the creature without its shadow;
+   `aspect` is the frame's width over height, so the tall tube gets a portrait frame from the same generator. */
+function crPic(m, {mood = "idle", live = false, crop = false, label = true, aspect = 1} = {}){
+  if(!m) return "";
+  const g = crGrown(m, aspect);
   const a11y = label ? `role="img" aria-label="${esc(crDescribe(m))}"` : `aria-hidden="true"`;
-  return `<svg viewBox="0 0 480 420" class="cr mood-${mood} ${live ? "live" : "still"} ${crop ? "crop" : ""}" ${a11y}><g class="zc-sway"><ellipse cx="${g.shadow.x}" cy="${g.shadow.y}" rx="${g.shadow.rx}" ry="${g.shadow.ry}" fill="#0e0e12" fill-opacity=".16"/><g class="zc-breathe"><g class="zc-body">${P(g.runs)}${eyes}${brain}</g></g>${fl}</g></svg>`;
+  return `<svg viewBox="0 0 ${g.w} ${g.h}" class="cr mood-${mood} ${live ? "live" : "still"} ${crop ? "crop" : ""}" ${a11y}>${crBody(m, {mood, live, aspect})}</svg>`;
 }
 function crCrop(root = document){
   root.querySelectorAll("svg.cr.crop:not([data-vb])").forEach(svg => {
@@ -5829,6 +6031,7 @@ function cwModelBar(){
   cwPicsPaint();
   cwAtchPaint();          // the chip's "this model can't look at pictures" note follows the chosen model
   const bar = cwEl("cwmbar"); if(!bar) return;
+  TUBE.tps = (S.live && S.live.tps) || S.tps || 0;      // the bench reads the same speed the model bar does
   queueMicrotask(hdrPaint);
   if(!S.pk.busy && Date.now() - S.pk.t > 10000) pkLoad();
   const models = pkModels(), cur = cwBarModel(), m = pkFind(cur), ms = S.ms || {}, cfg = ms.chat_ctx ?? "auto";
