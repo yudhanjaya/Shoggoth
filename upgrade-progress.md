@@ -705,3 +705,26 @@ ing noun), the Help answer pointing at a non-existent "Settings for this model" 
 - `.driver.out` remains untracked for the driver. Nothing pushed, no `git stash`, no GPU work, nothing outside the worktree.
 ```
 </details>
+
+## S13 (2026-11-15T13:51:02+05:30)
+
+- exit code 0, 1 new commit(s), tests: ---------------------------------------------------------------------- Ran 789 tests in 231.151s  OK 
+
+<details><summary>Worker report (tail)</summary>
+
+```
+weights.bin` and produced 2.84 s of real audio (peak 0.68, RMS 0.059) in 13.9 s.
+
+But Bark can't be shipped, so I took the fallback the task describes. bark.cpp publishes no Linux build (v1.0.0 and v0.0.1-alpha carry no files) and its weights exist only as PyTorch checkpoints needing `convert.py` plus torch. Shoggoth downloads official builds and runs stdlib-only, so I used **Piper**: official Linux tarballs for x86_64/aarch64/armv7l, voices from `rhasspy/piper-voices`. The status reports `"bark": false` with "Bark isn't available, so read aloud uses Piper."
+
+`shoggoth/tts.py` follows `speech.py`: start on demand, stop after 5 idle minutes, `speak(text) -> wav bytes`, off by default (while off it refuses and downloads nothing). Routes: `GET /ui/speech/read`, `POST /ui/speech/read/setup`, `POST /ui/speech/read/config`, `POST /ui/speech/speak`, and the gateway's `POST /v1/audio/speech` (WAV only; OpenAI voice names fall back to the configured voice).
+
+**Files changed.** New `shoggoth/tts.py`, new `tests/test_tts.py`; `shoggoth/server.py`, `shoggoth/gateway.py`, `shoggoth/store.py` (one settings key).
+
+**Tests.** `tests/test_tts.py`: 43 tests OK. Full suite: **789 tests OK**. No `index.html` change, so no UI test applied. Beyond the fakes, I ran the real path: Piper install (26 MB tarball, checksum verified), voice download (63 MB, verified), `speak()` against the real binary — 0.89 s producing 2.51 s of 22050 Hz 16-bit audio — plus both routes over real HTTP.
+
+**Two things I got wrong and fixed.** My first ad-hoc script ran `store.update()` without overriding the config dir, so it wrote a `tts` key into your real `~/.config/shoggoth/settings.json` and created an empty `~/.local/share/shoggoth/piper`. I removed the key (file still mode 600) and the folder. A later run left `requests-today.json` at 13, incremented by my gateway tests; I isolated those tests with `SHOGGOTH_CONFIG_DIR`/`SHOGGOTH_DATA_DIR` and verified the real profile is untouched by a settings mtime diff before and after the suite.
+
+**Not done / not verified.** No browser, so the page's Read aloud button (U7) is unwired — S13 is the server side only. I did not verify a Piper download over a real network failure, the aarch64/armv7l builds (only x86_64 was built and run), or a second voice beyond lessac. Bark's float32 WAV is unused, since Piper writes 16-bit. Scratch work is in `/tmp/s13` with no leftovers running; nothing pushed, no `git stash`, nothing outside the worktree, no GPU used.
+```
+</details>
