@@ -59,6 +59,7 @@ VERSION = "4.3.0"
 hf.VERSION = VERSION          # Hugging Face sees User-Agent: Shoggoth/<version>
 _last_ping = {"t": None}
 import speech      # noqa: E402  (speech to text with whisper.cpp)
+import tts         # noqa: E402  (read aloud with Piper)
 import lan         # noqa: E402  (LAN sharing and pairing; its /ui/lan/* routes are lan.handle)
 lan.VERSION = VERSION
 
@@ -334,6 +335,8 @@ class Handler(BaseHTTPRequestHandler):
             self.send_json({"gpus": library.models_on_cards(hardware.all_gpus()), "t": time.time()})
         elif p == "/ui/speech/status":
             self.send_json(speech.status())
+        elif p == "/ui/speech/read":
+            self.send_json(tts.status())
         elif p == "/ui/info":
             self.send_json(self._info())
         elif p == "/ui/backends":
@@ -465,8 +468,18 @@ class Handler(BaseHTTPRequestHandler):
                 return self.send_json({"error": "That recording is too long."}, 413)
             status, obj = speech.ui_transcribe(self.rfile.read(n) if n else b"", self.headers.get("Content-Type", ""))
             return self.send_json(obj, status)
+        if p == "/ui/speech/speak":                               # Read aloud: the body is the answer to read, the reply a WAV (tts.py)
+            body = self.read_json()
+            status, ctype, payload = tts.ui_speak(body)
+            self.send_response(status)
+            self.send_header("Content-Type", ctype)
+            self.send_header("Content-Length", str(len(payload)))
+            self.send_header("Cache-Control", "no-store")
+            self.end_headers()
+            return self.wfile.write(payload)
         handler = {
             "/ui/speech/setup": self.post_speech_setup,
+            "/ui/speech/read/setup": self.post_speech_read_setup, "/ui/speech/read/config": self.post_speech_read_config,
             "/ui/device": self.post_device, "/ui/config": self.post_config,
             "/ui/args/parse": self.post_args_parse, "/ui/args/check": self.post_args_check,
             "/ui/backend": self.post_backend, "/ui/backend/install": self.post_backend_install,
@@ -636,6 +649,31 @@ class Handler(BaseHTTPRequestHandler):
     def post_speech_setup(self, body):
         """Install whisper.cpp's processor build and its model (in the background; progress at GET /ui/speech/status)."""
         self.send_json({"ok": True, "started": speech.start_setup(), "speech": speech.status()})
+
+    # ---- read aloud (tts.py)
+    def post_speech_read_setup(self, body):
+        """Download Piper and the chosen voice (in the background; progress at GET /ui/speech/read)."""
+        self.send_json({"ok": True, "started": tts.start_setup(str(body.get("voice") or "") or None), "read": tts.status()})
+
+    def post_speech_read_config(self, body):
+        """Turn Read aloud on or off, and pick the voice. Turning it off stops the engine and keeps what was downloaded."""
+        kw = {}
+        if "enabled" in body:
+            kw["enabled"] = bool(body["enabled"])
+        if "voice" in body:
+            voice = str(body["voice"] or "")
+            if voice not in tts.VOICES:
+                return self.send_json({"error": "Shoggoth doesn't have a voice called %s." % (voice or "that")}, 400)
+            kw["voice"] = voice
+        if not kw:
+            raise ValueError("Nothing to change.")
+        store.update(lambda st: st.setdefault("tts", {}).update(kw))
+        invalidate()
+        if kw.get("enabled") is False:
+            tts.stop()
+        elif kw.get("voice"):
+            tts.stop()                                     # the voice changed, so the running engine is the wrong one
+        self.send_json({"ok": True, "read": tts.status()})
 
     # ---- files attached in a chat
     def post_attach(self):

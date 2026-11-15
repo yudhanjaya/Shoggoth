@@ -15,6 +15,8 @@ DEFAULTS = {
     # device (llama.cpp's name, like cuda0; "" = all), max_loaded (keep up to N models loaded), enabled (false turns it off)
     "llamacpp": {"backend": "", "tag": "", "device": "", "max_loaded": 1},
     "search": {"enabled": True, "provider": "duckduckgo", "brave_key": "", "tavily_key": ""},   # the model may search the web; every search still asks first
+    # Read aloud with Piper (tts.py): off until someone turns it on, with one of the voices it offers.
+    "tts": {"enabled": False, "voice": ""},
     "chat": {"ctx": "auto"},  # the context window chats ask for: "auto" (the most that fits, per model) or a number of tokens
     "pi": {"version": ""},   # which Pi (the agent) to run: "" = newest, "bundled" = the one that came with Shoggoth, or a version number
     "servers": [],                 # servers the person connected under Advanced > Engines: [{id, preset, name, url, key}]

@@ -666,6 +666,17 @@ class GWHandler(BaseHTTPRequestHandler):
             self.end_headers()
             self.wfile.write(payload)
             return
+        if p == "/v1/audio/speech" and self.command == "POST":            # read aloud runs in Piper (tts.py)
+            import tts
+            rec = REC.start(app, "app", self.command, p, "piper", False, self.client_address[0])
+            code, ctype, payload = tts.openai_speech(body or b"", self.headers)
+            Tap(rec, False).finish(code)
+            self.send_response(code)
+            self.send_header("Content-Type", ctype)
+            self.send_header("Content-Length", str(len(payload)))
+            self.end_headers()
+            self.wfile.write(payload)
+            return
         rec = None
         if INFER.match(p) and self.command == "POST":
             model, stream = describe(body, p)
