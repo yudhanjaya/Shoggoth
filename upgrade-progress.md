@@ -677,3 +677,31 @@ I staged only the U7 hunks of `index.html`; the uncommitted U4 engine/LAN work a
 - `.driver.out` and `tests/ui/tube.test.mjs` remain untracked; no `git stash`, nothing pushed, nothing outside the worktree, no GPU used.
 ```
 </details>
+
+## U8 (2026-11-15T12:52:50+05:30)
+
+- exit code 0, 2 new commit(s), tests: ---------------------------------------------------------------------- Ran 746 tests in 224.172s  OK 
+
+<details><summary>Worker report (tail)</summary>
+
+```
+ing noun), the Help answer pointing at a non-existent "Settings for this model" under Details, the chat model picker still using U2's old fit words (`Fits this computer` / `Won't fit`), a duplicated capture switch that repeated itself verbatim, a six-sentence hardware caption, a vague "More engines worth knowing", and — the substantive one — the blanket "everything runs on this computer" claims in the rail, composer hint, Getting ready and both privacy sections, which became false once U4 shipped paid hosted services.
+
+3. **Motto and quit timing.** The motto was already in the rail; I added the CSS that hides it (and the rail note) where the rail shrinks to an icon column, since it would otherwise overrun 84 px. README already said two seconds; a test now pins it.
+
+**Files changed** (2 commits on `deepseek-rest`): `shoggoth/index.html`, `shoggoth/docs.md`, `README.md`, `shoggoth/recommendations/tools.yaml`, `tests/ui/copy.test.mjs` (new), `tests/ui/tube.test.mjs`, `tests/ui/api.json`, `tests/test_ui_smoke.py`.
+
+**Tests run**
+- `python3 -W ignore -m unittest discover tests` → **746 tests, OK** (run three times on the final tree).
+- Every `tests/ui/*.test.mjs`, `models.test.cjs` and `smoke.js` → all OK.
+- `tests.test_ui_smoke` → 7 OK. `recommendations check` → all three files clean.
+- New `tests/ui/copy.test.mjs` extracts the 274 user-facing strings and fails on banned words, exclamation marks, dash substitutes and old fit vocabulary, plus pins each named fix. I verified it fails against the pre-U8 page, so it genuinely catches regressions.
+
+**Not done / not verified**
+- One full-suite run failed four tests in `test_router` because another worktree (`ui-beaker`) was holding the fixed ports 18980–18989. `test_router` alone passed 27/27 immediately after, and the following full runs were clean — rule 4's known flake, not my change.
+- No live browser was used; the UI was exercised in jsdom only. I could not visually confirm the motto's position at 1100 px and 640 px, so the hiding rules are asserted statically against the CSS rather than seen.
+- I did not touch the copy in `docs/plans/*` (historical notes) or `tests/ui/api.json`'s captured Lemonade log lines (a recorded fixture, per the audit's own note).
+- Left a stray `server.py` process from the `ui-beaker` worktree running — I did not start it, so I did not stop it.
+- `.driver.out` remains untracked for the driver. Nothing pushed, no `git stash`, no GPU work, nothing outside the worktree.
+```
+</details>
