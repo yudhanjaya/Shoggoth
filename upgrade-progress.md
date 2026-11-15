@@ -728,3 +728,35 @@ But Bark can't be shipped, so I took the fallback the task describes. bark.cpp p
 **Not done / not verified.** No browser, so the page's Read aloud button (U7) is unwired — S13 is the server side only. I did not verify a Piper download over a real network failure, the aarch64/armv7l builds (only x86_64 was built and run), or a second voice beyond lessac. Bark's float32 WAV is unused, since Piper writes 16-bit. Scratch work is in `/tmp/s13` with no leftovers running; nothing pushed, no `git stash`, nothing outside the worktree, no GPU used.
 ```
 </details>
+
+## W1 (2026-11-15T14:10:47+05:30)
+
+- exit code 0, 1 new commit(s), tests: ---------------------------------------------------------------------- Ran 797 tests in 232.302s  OK 
+
+<details><summary>Worker report (tail)</summary>
+
+```
+=== W1 started 2026-11-15T13:51:02+05:30
+W1 is done and committed as `22df924` on `deepseek-rest`.
+
+**What I did**
+- Rewrote the 5.0 documentation for the features that actually shipped: llama.cpp/sources, the scan and engine definition files, hosted services, LAN sharing, speech (mic and Piper read aloud), model-written skills (`save_skill`), Pi packages, and attachments.
+- Added a "Moving from 4.x" section to `README.md` and the in-app guide describing every `migrate5` step and that it never deletes a model without asking.
+- Documented the `engines.d` definition schema in `docs/ENGINES.md`, including `match`, `cwd`, `identify`, `formats`, the pinned hosted-service hosts, and `engines check`. Kept the `provider.yaml` half for engines Shoggoth starts, and fixed stale references (`recommendations/servers.yaml`, llama-server's port).
+- Added `tests/test_docs.py` to pin the required sections, resolve relative links, and enforce the copy rules.
+
+**Files changed** (9): `README.md`, `docs/ENGINES.md`, `docs/ARCHITECTURE.md`, `docs/AGENT-RUNTIME.md`, `docs/PRIVACY.md`, `docs/SECURITY.md`, `docs/README.md`, `shoggoth/docs.md`, `tests/test_docs.py`.
+
+**Tests**
+- `python3 -W ignore -m unittest discover tests` → **797 tests, OK** (run twice, the second after the final text edits).
+- `tests.test_docs tests.test_wording` → 10 tests, OK.
+- `engines check` on two bundled definitions → both ✓, run with a scratch `XDG_DATA_HOME`.
+- No `tests/ui/*.test.mjs` run because no UI file was touched.
+
+**Not done / not verified**
+- Read aloud has server routes and the gateway endpoint but no page button, so the user guide documents the mic only and `ARCHITECTURE.md` states the missing button plainly.
+- To respect S12's rule that shipped docs don't say "Lemonade", the 4.x section describes "the engine 4.x used" rather than naming it.
+- LAN, speech and package behaviour is documented from code and existing tests; no real second machine, microphone, Piper run or package install was exercised here. No GPU used, nothing pushed, no `git stash`.
+- `.driver.out` remains untracked for the driver.
+```
+</details>
