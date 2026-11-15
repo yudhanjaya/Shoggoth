@@ -6,7 +6,7 @@ Shoggoth runs inference locally. Chat content is not sent to any remote service.
 
 | What | Where |
 | --- | --- |
-| Shoggoth's settings, including the keys for other apps and hosted services (file mode `600`) | `~/.config/shoggoth/settings.json` |
+| Shoggoth's settings, including the keys for other apps and servers you connected (file mode `600`) | `~/.config/shoggoth/settings.json` |
 | The secret that lets a browser into Shoggoth's own page (file mode `600`) | `~/.config/shoggoth/ui-token` |
 | llama.cpp builds you've downloaded | `~/.local/share/shoggoth/llamacpp/<tag>/<backend>/` |
 | llama.cpp's own state: presets, the running router, and its view of your Models folder | `~/.local/share/shoggoth/llamacpp/` and `~/.local/share/shoggoth/views/llamacpp/` |
@@ -31,7 +31,7 @@ To reset, delete `~/.config/shoggoth` and `~/.local/share/shoggoth`. Downloaded 
 
 ## Network behavior
 
-Chat content stays on the machine unless you choose otherwise: a model on a hosted service sends that chat to the service, and web search sends the words of the search. Speech to text, read aloud and attachments run or stay locally.
+Chat content stays on the machine unless you choose otherwise: a model on a server you connected elsewhere sends that chat to that server, and web search sends the words of the search. Speech to text, read aloud and attachments run or stay locally.
 
 - The model has a web search tool. Every search asks first and shows the exact words it wants to search for. Those words, and only those, go to the search provider.
 - You can switch web search off for good in the chat's **Details** panel.
@@ -43,15 +43,9 @@ Apart from search, a chat with a folder runs locally. Pi starts offline, with te
 
 **Sharing on your local network.** When "Share my models with other Shoggoths on this network" is on, Shoggoth sends a small UDP beacon to port 13309 every 2 seconds. The beacon carries this computer's name, a profile id, the Shoggoth version, the gateway port, the certificate fingerprint and the number of models. It carries nothing else: no model names, no chats, no folder names and no keys. Other Shoggoths that heard the beacon and were paired with this one connect over HTTPS only. Removing a pair stops that computer's key at once, so it cannot reach the shared models again.
 
-Hosted services. Five services are built in and each one is contacted only if you connect it and paste a key. Chats sent to a model on one of these services leave this computer and go to that service.
+**Servers online.** No online service is built in. A server you connect by address, or describe in your own `engines.d` file, is contacted only after you connect it. Chats sent to a model on it leave this computer and go to that server.
 
-- **OpenRouter** (openrouter.ai): only if you connect it and paste a key.
-- **Nous Portal** (inference-api.nousresearch.com): only if you connect it and paste a key.
-- **OpenCode** (opencode.ai): only if you connect it and paste a key.
-- **Command Code** (api.commandcode.ai): only if you connect it and paste a key.
-- **Google Gemini** (generativelanguage.googleapis.com): only if you connect it and paste a key.
-
-Keys for these services are stored in Shoggoth's settings file, which is kept at mode 600 so only your user account can read it.
+Keys for these servers are stored in Shoggoth's settings file, which is kept at mode 600 so only your user account can read it.
 
 Destinations contacted by Shoggoth and its bundled engine:
 

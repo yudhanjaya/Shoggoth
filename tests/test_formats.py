@@ -11,13 +11,25 @@ import unittest
 
 HERE = os.path.dirname(os.path.abspath(__file__))
 sys.path.insert(0, os.path.join(HERE, "..", "shoggoth"))
+sys.path.insert(0, HERE)
 
 import agent  # noqa: E402
 import engines  # noqa: E402
 import gateway  # noqa: E402
+import online_services  # noqa: E402
 
 
 class Rules(unittest.TestCase):
+    def setUp(self):
+        self.tmp = tempfile.mkdtemp()
+        self._old = os.environ.get("SHOGGOTH_DATA_DIR")
+        os.environ["SHOGGOTH_DATA_DIR"] = self.tmp
+        online_services.install()
+
+    def tearDown(self):
+        os.environ.pop("SHOGGOTH_DATA_DIR", None) if self._old is None else os.environ.__setitem__("SHOGGOTH_DATA_DIR", self._old)
+        shutil.rmtree(self.tmp, ignore_errors=True)
+
     def test_zen_and_command_code_pick_a_format_per_model(self):
         for eid in ("opencode-zen", "command-code"):
             self.assertEqual(engines.api_for(eid, "claude-sonnet-4-5"), "anthropic-messages")
@@ -68,6 +80,7 @@ class PiModels(unittest.TestCase):
         self.tmp = tempfile.mkdtemp()
         self._old = os.environ.get("SHOGGOTH_DATA_DIR"), os.environ.get("SHOGGOTH_CONFIG_DIR")
         os.environ["SHOGGOTH_DATA_DIR"], os.environ["SHOGGOTH_CONFIG_DIR"] = os.path.join(self.tmp, "d"), os.path.join(self.tmp, "c")
+        online_services.install()
 
     def tearDown(self):
         for k, v in zip(("SHOGGOTH_DATA_DIR", "SHOGGOTH_CONFIG_DIR"), self._old):

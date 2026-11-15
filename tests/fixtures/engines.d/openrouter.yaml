@@ -9,6 +9,4 @@ formats:
 key: required
 key_url: https://openrouter.ai/keys
 docs: https://openrouter.ai
-terms: https://openrouter.ai/terms
-price: "Pay as you go. Each model's page shows its price."
 hint: "Paste your OpenRouter key. Each model's page shows its price."

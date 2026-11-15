@@ -1,6 +1,6 @@
 ## What Shoggoth is
 
-Shoggoth lets you use local AI on your own computer. You talk to it like a chat app, but the AI, your conversations and your files stay here. Two things can leave: web search, and a chat you start on a paid hosted model, where your message goes to that service. Both are your choice. If the model wants to search, it asks first and shows the words it will use.
+Shoggoth lets you use local AI on your own computer. You talk to it like a chat app, but the AI, your conversations and your files stay here. Two things can leave: web search, and a chat you start on a model another computer serves, where your message goes to that computer. Both are your choice. If the model wants to search, it asks first and shows the words it will use.
 
 Every chat is a working session.
 
@@ -30,7 +30,7 @@ flowchart LR
 | **An engine** | A program that loads a model into your computer's memory and gets answers out of it. Shoggoth picks the right one for each model, starts it, and frees the memory when you switch, so you never have to. Shoggoth runs llama.cpp for you. It also finds engines already running on this computer, such as Ollama or LM Studio, and you can connect one under **Advanced > Engines**. |
 | **The model** | The AI. A large file, usually a few gigabytes (a lot more for the Large ones), that you download once and keep. |
 
-A model can also come from another computer on your network, or from a paid service you have a key for. Shoggoth shows where every model comes from, and a chat on a paid model says so before you send anything.
+A model can also come from another computer: one on your network, or a server online you connected with its address and key. Shoggoth shows where every model comes from, and a chat on a model that leaves this computer says so before you send anything.
 
 ## Your first minutes
 
@@ -188,7 +188,7 @@ Replies can also contain tables, lists, links, quotes and code blocks, shown nea
 
 Open **Models**. It lists every model on your computer, whichever program runs it. Models are grouped by size. **Small** ones use under 10 GB of graphics memory and are ready in seconds. **Medium** ones use 10 to 24 GB. **Large** ones are for big computers and take a couple of minutes to start.
 
-The strip at the top of the page shows where models come from: llama.cpp on this computer, engines Shoggoth found already running, servers you connected, paid services, and other Shoggoths. The model picker in the chat bar groups them the same way. A source that is offline keeps its place, greyed out, so a chat's model does not silently disappear.
+The strip at the top of the page shows where models come from: llama.cpp on this computer, engines Shoggoth found already running, servers you connected, servers online, and other Shoggoths. The model picker in the chat bar groups them the same way. A source that is offline keeps its place, greyed out, so a chat's model does not silently disappear.
 
 - **Installed** is what you have. **Recommended for this computer** has the models I have tried and recommend on systems from 10 GB of VRAM to 26 GB of VRAM, and any Large model that will fit yours. The Large picks are Qwen3.8 Flash-Next (IQ3_S, and the smaller IQ2_XS), plus Coder (code only) and Swift 1.5, which are offered but never suggested. You can pick one before llama.cpp is installed: Shoggoth sets llama.cpp up, then gets the model. Models that aren't ready yet are greyed out under **Coming soon**. **All models** is everything your engines report, tested or not, with a filter for pictures, speech and sound. Each model shows whether it is tuned.
 - **Very large models.** Shoggoth runs large models through llama.cpp. Only the ones llama.cpp can serve are listed. For models with over a hundred billion parameters, llama.cpp is not yet as good as [Strata](https://github.com/Niko1221/Strata), [Basalt](https://github.com/jesdga95/basalt) and [Maya](https://github.com/mw00/project-maya). That is true as of November 2026. It will change. To run models that size, set one of those up yourself. Then connect it under Advanced, Connect a server.
@@ -211,14 +211,15 @@ Shoggoth runs llama.cpp by itself. If you already run another server, you can us
 - Its models appear in the model picker as `<server name>/<model>`.
 - **Shoggoth never starts, stops, updates or installs a connected server.** Start it yourself first. It does not free memory for it either, so if it shares a graphics card with Shoggoth's llama.cpp, you manage that. **Remove** forgets the address and leaves the server alone.
 
-## Paid models
+## Models online
 
-Models on a paid service run on that service's computers, not yours. They are there if you want a bigger model than your computer can hold, and they cost money. Shoggoth has five built in: OpenRouter, Nous Portal, OpenCode, Command Code and Google Gemini.
+Shoggoth doesn't come with any paid services built in: their prices and terms change faster than Shoggoth is released. If you want a model that runs on someone else's computers, connect it like any other server.
 
-- Find them under **Paid services** in the sources strip. Pick one, paste your key, and press the button to connect it. The card shows where the key goes, what the service costs where it publishes a price, and a link to its terms.
+- Under **Advanced > Engines**, **Connect a server** takes its address and your key. Choose **Another server** for anything that speaks the OpenAI API.
+- To have Shoggoth recognise a service by name, or use the Anthropic or Google API format for some of its models, put a definition in `~/.local/share/shoggoth/engines.d/`. No new copy of Shoggoth is needed. `docs/ENGINES.md` describes the file.
 - A key is kept on this computer and is shown only by its last four characters after you save it.
-- A chat on one of these models carries a **Leaves your computer: <service>** chip, so you always know. Your message goes to that service. Everything else in the chat still runs here.
-- Shoggoth never chooses a paid model for you. You pick it from the model bar like any other.
+- A chat on a model online carries a **Leaves your computer: <server>** chip, so you always know. Your message goes to that server. Everything else in the chat still runs here.
+- Shoggoth never chooses a model online for you. You pick it from the model bar like any other.
 
 ## Other computers on your network
 
@@ -256,7 +257,7 @@ Everything in **Advanced** is optional.
 
 ## Where things live, and privacy
 
-Your chats, jobs, skills and settings are saved on your computer. As the opening section says, only web search and a chat on a paid hosted model send anything out, and both are your choice.
+Your chats, jobs, skills and settings are saved on your computer. As the opening section says, only web search and a chat on a model from another computer send anything out, and both are your choice.
 
 - **Conversations and what the AI did** are saved in Shoggoth's own folder (`~/.local/share/shoggoth/cowork/`). That includes the copies that jobs work on until you apply or throw them away. Files you attach are in `attachments/` inside the chat's folder, or in the chat's scratch folder when it has no folder.
 - **Skills you added** are in `~/.local/share/shoggoth/skills/`. Skills your models wrote are under `sets/own/`.
@@ -267,7 +268,7 @@ Your chats, jobs, skills and settings are saved on your computer. As the opening
 - **Models** are in the folder you chose (the **Models** folder, with a subfolder for each engine), or in the Hugging Face cache (`~/.cache/huggingface/hub`) if you kept that. Models you added from elsewhere stay where they are.
 - **Settings and keys** are in `~/.config/shoggoth/`.
 
-Shoggoth goes online only to: download models you ask for, download the speech engine or voice you set up, check for Shoggoth, engine and Pi updates (you can turn that off), fetch skills when you paste a link, install a checked Pi package you pick, search the web when you allow it, and talk to a hosted service you set up. Sharing sends a small beacon on your own network and nothing else. Pi runs offline and sends nothing anywhere. To start from scratch, delete `~/.config/shoggoth` and `~/.local/share/shoggoth`.
+Shoggoth goes online only to: download models you ask for, download the speech engine or voice you set up, check for Shoggoth, engine and Pi updates (you can turn that off), fetch skills when you paste a link, install a checked Pi package you pick, search the web when you allow it, and talk to a server you connected. Sharing sends a small beacon on your own network and nothing else. Pi runs offline and sends nothing anywhere. To start from scratch, delete `~/.config/shoggoth` and `~/.local/share/shoggoth`.
 
 **Coming from Zest?** Shoggoth used to be called Zest. The first time it starts, it moves `~/.config/zest` and `~/.local/share/zest` to the new names. It keeps your chats, skills, settings and keys. Apps that use a `zest-` key keep working.
 
@@ -302,9 +303,9 @@ Shoggoth goes online only to: download models you ask for, download the speech e
 ## Terms used
 
 - **Model**: the AI itself, a big file on your computer.
-- **Source**: where a model comes from: llama.cpp on this computer, an engine Shoggoth found, a server you connected, a paid service, or another Shoggoth.
+- **Source**: where a model comes from: llama.cpp on this computer, an engine Shoggoth found, a server you connected, or another Shoggoth.
 - **Engine**: a program that runs the model. Shoggoth runs llama.cpp. A server you run yourself and connect also counts as an engine. Shoggoth never starts or stops it.
-- **Paid model**: a model that runs on a company's computers and needs a key. A chat on one leaves your computer and goes to that service.
+- **Model online**: a model that runs on a server somewhere else, often a company's, and usually needs a key. A chat on one leaves your computer and goes to that server.
 - **Pi package**: code added to Pi that gives it new tools or skills. It runs on this computer, so only Shoggoth's checked list can be installed.
 - **Attachment**: a file you add to a message. It is saved in the chat's folder and never run.
 - **Small, Medium, Large**: how Shoggoth groups models by what they need. Small fits under 10 GB of graphics memory, Medium 10 to 24 GB, and Large needs more than that.

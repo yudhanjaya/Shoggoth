@@ -11,6 +11,4 @@ formats:
 key: required
 key_url: https://opencode.ai/console
 docs: https://opencode.ai
-terms: https://opencode.ai/legal/terms-of-service
-price: "Pay as you go, per token. The Console models page lists each price."
 hint: "Paste your OpenCode key. Claude models use the Anthropic format; GPT models use the Responses format."

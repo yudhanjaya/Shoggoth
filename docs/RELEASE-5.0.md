@@ -4,7 +4,7 @@ Draft, 15 November 2026. This describes what is in the 5.0 branch, what it remov
 
 *Heavy on the cosmos. Light on your machine.*
 
-Shoggoth 5.0 changes the engine under the app, adds paid services and other computers, and brings speech, file attachments and model-written skills into the page. It also raises the minimum Linux version.
+Shoggoth 5.0 changes the engine under the app, adds servers online and other computers, and brings speech, file attachments and model-written skills into the page. It also raises the minimum Linux version.
 
 ## What's new
 
@@ -27,24 +27,26 @@ Shoggoth now runs llama.cpp itself. The bundled Lemonade engine is gone.
 - Model names use the catalog title, then the GGUF's own name, then a clean id. The old `user.` prefix is gone.
 - Shoggoth picks a context size and shows it with the reason ("Auto (32k)").
 - Hugging Face search puts the allowed uploaders first, then orders by downloads, and hides repositories with no GGUF files.
+- Get it, the Hugging Face dialog, Cancel, Delete and a model's options work from the page again: downloads run in Shoggoth (resume and a checksum check) into the Models folder, and Delete only removes files Shoggoth downloaded.
+- A `models.yaml` of yours adds to the recommended list instead of replacing it (`replace: true` uses yours alone).
 - Removing a connected server removes its models from the chat list and from Pi's model list at once, without a restart.
 - The catalog check requires a download link on every entry, validates quants, and warns about a checkpoint from an uploader outside the allowed list.
 
 ### Sources: what is already running
 
 - Shoggoth finds more than 20 local engines on any port: Ollama, LM Studio, vLLM, SGLang, KoboldCpp, TabbyAPI, text-generation-webui, LocalAI, Jan, llama-swap, TGI and the rest.
-- It also knows the specialized engines (Strata, PolyStrata, Maya, NInfer, Basalt), other Shoggoths, and the five paid services.
+- It also knows the specialized engines (Strata, PolyStrata, Maya, NInfer, Basalt), and other Shoggoths.
 - Engine definitions are data in `engines.d`. They can name an engine and say how to recognise it. They cannot carry a command, and they cannot start, install or run anything. [docs/ENGINES.md](ENGINES.md) describes the fields.
 - When several engines share a port, the Models page groups them as "Inference engine on port N" and says how to tell them apart.
 - The Models page has a sources strip. The chat bar's picker groups models the same way, greys out a source that is offline, and writes both the source and the model when you switch.
 - A custom connection takes an address, a key, an API format, a model list, a context size, and whether it runs on this computer. A Test button probes it, and "Recognise this next time" saves it as a definition the server validates.
 - `/v1/models` carries `{"shoggoth": {"fit", "loaded"}}` on each model, so another app or Shoggoth can say "Loads on desk-pc".
 
-### Paid services
+### Servers online
 
-- Five services are built in: OpenRouter, Nous Portal, OpenCode (Zen and Go endpoints), Command Code and Google Gemini.
-- A key is kept on this computer and shown only by its last four characters. The card shows the destination host, the price where the service publishes one, and a link to its terms.
-- A chat on a paid model keeps a "Leaves your computer: <service>" chip. Shoggoth does not pick a paid model for you.
+- No paid service is built in: their prices and terms change faster than Shoggoth is released. Connect any OpenAI-style server by address and key, or describe a service in your own `engines.d` (with its API formats per model). No rebuild is needed.
+- A key is kept on this computer and shown only by its last four characters.
+- A chat on a model online keeps a "Leaves your computer: <server>" chip. Shoggoth does not pick a model online for you.
 
 ### Other Shoggoths on your network
 
@@ -115,7 +117,6 @@ These are the parts the branch does not finish or has not verified.
 
 ### Not finished
 
-- **Model downloads from the page.** The server can download from Hugging Face with resume and a checksum check, but the page's Get it and download controls still call the old `/api/v1/pull` and `/api/v1/downloads` routes. The server does not forward those routes, so the buttons report that downloads are not available in this copy. This is the first thing to fix before release.
 - **Read aloud.** Piper is on the server, and `POST /ui/speech/speak` and `/v1/audio/speech` work, but the page has no Read aloud button. It is off by default.
 - **PDF text.** The attachment chip chooses and shows a PDF handler, but nothing runs `pdftotext -layout` or `pdftoppm` yet. A PDF is passed to the chat as a path.
 - **Spreadsheets and Word files.** They are labelled as needing a tool that is not installed. No package provides that tool in 5.0.
@@ -129,7 +130,7 @@ These are the parts the branch does not finish or has not verified.
 - Vulkan and ROCm llama.cpp builds have not been run.
 - A split or vision model has not been run through the router.
 - LAN sharing has not been tried on a real second machine. A person on the network who fakes the first beacon can still pair as a man in the middle; comparing the short fingerprint on both screens is the defence. A password-authenticated key exchange would close it.
-- No hosted service has been tried with a real key. Gemini thought signatures through Pi are untested.
+- No server online has been tried with a real key. Gemini thought signatures through Pi are untested.
 - The memory estimate is not yet checked within 10%. It needs load logs for LFM2.5-8B, Gemma-4-12B and Qwen3.6-35B-A3B. One real measurement exists: Qwen3-0.6B Q8_0 at 32768 context measured 2.87 GB on the RTX 3080.
 - The mic has not been used with a real microphone, browser or whisper model here.
 - `make-skill` and the `save_skill` card have not been tried with a live Pi session and model.

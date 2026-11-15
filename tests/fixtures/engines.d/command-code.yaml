@@ -11,6 +11,4 @@ formats:
 key: required
 key_url: https://commandcode.ai/studio/
 docs: https://commandcode.ai
-terms: https://commandcode.ai/terms
-price: "A monthly plan with credits included. The $1 Go plan is the cheapest."
 hint: "Paste your Command Code key. Claude models use the Anthropic format; GPT models use the Responses format."

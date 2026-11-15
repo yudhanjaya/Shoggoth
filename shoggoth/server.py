@@ -28,6 +28,7 @@ sys.path.insert(0, HERE)          # the AppImage runs Python in isolated mode, w
 import store       # noqa: E402  first: it maps old ZEST_* variables to their SHOGGOTH_* names
 import agent       # noqa: E402
 import custom      # noqa: E402
+import downloads   # noqa: E402
 import filetypes   # noqa: E402
 import folders     # noqa: E402
 import gateway     # noqa: E402
@@ -188,7 +189,7 @@ SOURCE_ORDER = {"builtin": 0, "engine": 1, "shoggoth": 2, "cloud": 3}
 
 
 def _source_groups(src):
-    """The chat bar's groups, in the plan's order: this computer, then each connected engine, then other Shoggoths, then paid services.
+    """The chat bar's groups, in the plan's order: this computer, then each connected engine, then other Shoggoths, then servers online.
     A source that is offline keeps its place and its models, greyed (`state: "offline"`), so a chat's model never silently vanishes."""
     out = []
     for s in src.get("sources") or []:
@@ -383,6 +384,12 @@ class Handler(BaseHTTPRequestHandler):
             self.send_json(pipkgs.summary())
         elif p == "/ui/picker":
             self.send_json(picker_state(0 if parse_qs(u.query).get("fresh") else 8))
+        elif p == "/ui/models/list":                             # the page's model list: on this computer, and recommended (downloads.py)
+            self.send_json({"data": downloads.listing()})
+        elif p == "/ui/models/downloads":
+            self.send_json(downloads.jobs())
+        elif p == "/ui/models/options":
+            self.send_json(downloads.options(parse_qs(u.query).get("id", [""])[0]))
         elif p == "/ui/library":
             self.send_json(self.library_summary())
         elif p == "/ui/disk":
@@ -394,7 +401,9 @@ class Handler(BaseHTTPRequestHandler):
         elif p == "/ui/providers":
             self.send_json(registry.default().summary())
         elif p == "/ui/servers":
-            self.send_json({"presets": servers.presets(), "servers": servers.public()})
+            import engines
+            self.send_json({"presets": servers.presets(), "servers": servers.public(), "definitions_folder": engines.user_dir(),
+                            "models_file": os.path.join(recs.user_dir(), "models.yaml")})
         elif p == "/ui/sources":
             self.send_json(own_source(scan.sources(own_ports=self._own_ports())))
         elif p == "/ui/tuning":
@@ -460,6 +469,18 @@ class Handler(BaseHTTPRequestHandler):
             return self.proxy()
         if p.startswith("/ui/lan/"):                              # LAN sharing and pairing (lan.py)
             return self.send_json(*reversed(lan.handle("POST", p, self.read_json())))
+        if p in ("/ui/models/pull", "/ui/models/downloads/control", "/ui/models/delete", "/ui/models/options"):
+            body = self.read_json()
+            try:
+                if p == "/ui/models/pull":
+                    return self.send_json(downloads.pull(body))
+                if p == "/ui/models/downloads/control":
+                    return self.send_json(downloads.control(body))
+                if p == "/ui/models/delete":
+                    return self.send_json(downloads.delete(str(body.get("model_name", ""))))
+                return self.send_json(downloads.set_options(str(body.pop("id", "")), body))
+            except ValueError as e:
+                return self.send_json({"error": str(e)}, 400)
         if p == "/ui/attach":                                     # a file from the composer: the body is the file (filetypes.py)
             return self.post_attach()
         if p == "/ui/speech/transcribe":                          # the mic button: the body is the audio itself (speech.py)

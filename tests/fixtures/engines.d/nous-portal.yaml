@@ -9,6 +9,4 @@ formats:
 key: required
 key_url: https://portal.nousresearch.com/api-keys
 docs: https://portal.nousresearch.com
-terms: https://portal.nousresearch.com/terms
-price: "A Nous Portal subscription, bought in advance each month or year."
 hint: "Paste the key from your Nous Portal dashboard. It needs a subscription."

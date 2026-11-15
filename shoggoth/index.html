@@ -639,21 +639,6 @@ a:not([class]){color:var(--lemon-text);text-underline-offset:3px}
 .engine details.engmore[open]>summary{margin-bottom:12px}
 .engerr{display:grid;gap:4px;font-size:13px}
 .engerr code{overflow-wrap:anywhere}
-/* a paid service: where the key goes, what it costs, and the terms it is used under */
-.hosted .estat{gap:6px}
-.hosted .hwhere{font:12.5px var(--mono);color:var(--faint);overflow-wrap:anywhere}
-.hosted .hfld{display:grid;gap:6px}
-.hosted .hfld label{display:grid;gap:4px;font-size:13px;color:var(--muted)}
-.hosted .hfld label>span{font-weight:600;color:var(--text);font-size:12.5px}
-.hosted input{min-height:40px;border:1px solid var(--line);border-radius:10px;background:var(--surface);padding:0 12px;font:inherit;font-size:13.5px;color:var(--text)}
-.hosted input:focus{border-color:var(--lemon);outline:none}
-.hosted .hkeyrow{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:8px;align-items:center}
-.hosted .hfour{font:13.5px var(--mono);color:var(--muted)}
-.hosted .hfour b{font-weight:600;color:var(--text);letter-spacing:.08em}
-.hosted .hlinks{display:flex;flex-wrap:wrap;gap:6px 16px;font-size:13px}
-.hosted .hlinks a{color:var(--muted)}
-.hosted .hlinks a:hover{color:var(--text)}
-.hosted .price{font-size:13px;color:var(--muted)}
 .wlist{list-style:none;margin:16px 0;padding:0;display:grid;gap:12px;text-align:left}
 .wrow2{display:flex;gap:12px;align-items:flex-start}
 .wrow2>i{flex:none;width:26px;height:26px;border-radius:50%;display:grid;place-items:center;font-style:normal;font-size:14px;background:var(--surface-2);color:var(--muted);border:1px solid var(--line)}
@@ -1956,11 +1941,9 @@ async function pollServer(){
 }
 async function loadModels(){
   try{
-    const r = await api("/api/v1/models?show_all=true");
+    const r = await api("/ui/models/list");
     S.models = r.data || [];
-  }catch(e){
-    try{ S.models = (await api("/api/v1/models")).data || []; }catch{}
-  }
+  }catch{}
 }
 function renderStatus(){
   const anyLoaded = S.loaded || (S.ms && S.ms.loaded) || null, up = S.up || !!anyLoaded;   // a model another server runs counts even when llama.cpp is off
@@ -2034,7 +2017,7 @@ let dlFast = null;
 const isActiveJob = j => ["downloading", "paused"].includes(j.status);
 async function pollDownloads(){
   try{
-    const r = await api("/api/v1/downloads");
+    const r = await api("/ui/models/downloads");
     S.dlSupported = true;
     const before = S.downloads || [];
     S.downloads = Array.isArray(r) ? r : [];
@@ -2073,16 +2056,16 @@ async function startDownload(id){
   const room = await diskProblem(((S.models || []).find(m => m.id === id) || {}).size);
   if(room){ SU.msg.dl = room; toast("Not enough room for that download"); showPlain("Not enough room", room, ""); if(inSetup()) renderSetup(true); return; }
   try{
-    await api("/api/v1/pull", {method:"POST", headers:{"Content-Type":"application/json"}, body:JSON.stringify({model_name:id, stream:true, subscribe:false})});
+    await api("/ui/models/pull", {method:"POST", headers:{"Content-Type":"application/json"}, body:JSON.stringify({model_name:id})});
     SU.msg.dl = ""; await pollDownloads(); if(S.view === "models") renderModels(); if(inSetup()) renderSetup(true);
   }catch(e){ SU.msg.dl = e.message; toast("Couldn't start the download"); showProblem(e.message, friendly(id)); if(inSetup()) renderSetup(true); }
 }
 async function cancelDownload(id){
   try{
     const body = a => JSON.stringify({id: "model:" + id, action: a});
-    await api("/api/v1/downloads/control", {method:"POST", headers:{"Content-Type":"application/json"}, body: body("cancel")});
+    await api("/ui/models/downloads/control", {method:"POST", headers:{"Content-Type":"application/json"}, body: body("cancel")});
     await new Promise(r => setTimeout(r, 600));
-    await api("/api/v1/downloads/control", {method:"POST", headers:{"Content-Type":"application/json"}, body: body("remove")}).catch(() => {});
+    await api("/ui/models/downloads/control", {method:"POST", headers:{"Content-Type":"application/json"}, body: body("remove")}).catch(() => {});
   }catch(e){ toast(e.message); }
   await pollDownloads(); if(S.view === "models") renderModels(); if(inSetup()) renderSetup(true);
 }
@@ -2220,7 +2203,7 @@ function recordSpeed(id, tps){
 const ctxCache = {};
 async function ctxLimit(id){
   const c = ctxCache[id]; if(c && Date.now() - c.t < 60000) return c.v;
-  try{ const d = await api(`/api/v1/models/${encodeURIComponent(id)}/options`); const v = Number(d.resolved_ctx_size) || (d.effective?.ctx_size > 0 ? d.effective.ctx_size : 0) || null; ctxCache[id] = {v, t: Date.now()}; return v; }
+  try{ const d = await api(`/ui/models/options?id=${encodeURIComponent(id)}`); const v = Number(d.resolved_ctx_size) || (d.effective?.ctx_size > 0 ? d.effective.ctx_size : 0) || null; ctxCache[id] = {v, t: Date.now()}; return v; }
   catch{ return null; }
 }
 const fmtK = n => n >= 10000 ? Math.round(n / 1000) + "k" : n >= 1000 ? (n / 1000).toFixed(1) + "k" : String(n);
@@ -2515,7 +2498,7 @@ function cardHTML(m, extra, title, quiet){            // quiet: in a long list t
         ${m.context_length ? `<div class="mid">Remembers up to ${fmtTok(m.context_length)} tokens of conversation</div>` : ""}
         ${savedLine(m)}
         ${m.downloaded ? headroomRow(m.id, "llamacpp") : ""}
-        <div class="dact">${m.downloaded ? `<button class="btn danger" data-delete="${esc(m.id)}">${ICON.trash} Delete from this computer</button>` : ""}</div>
+        <div class="dact">${m.downloaded && m.owned ? `<button class="btn danger" data-delete="${esc(m.id)}">${ICON.trash} Delete from this computer</button>` : m.downloaded && m.folder ? `<p class="help">Shoggoth reads this model from ${esc(m.folder)}. Delete it there if you no longer want it.</p>` : ""}</div>
       </div></details>
   </article>`;
 }
@@ -2527,7 +2510,7 @@ const recModels = () => ((RECS.d || {}).models) || {recommended: [], first_run: 
 const recAllTools = () => (((RECS.d || {}).tools || {}).tools) || [];
 const recTools = place => recAllTools().filter(t => t.show.includes(place));
 const recPlace = place => ((((RECS.d || {}).tools || {}).places || {})[place]) || {title: "", blurb: ""};
-const recModel = it => [it.id, ...(it.also || [])].map(id => S.models.find(x => x.id === id)).find(Boolean);   // the engine's listing of a recommended model
+const recModel = it => S.models.find(x => x.downloaded && x.rec === it.id) || [it.id, ...(it.also || [])].map(id => S.models.find(x => x.id === id)).find(Boolean);   // the engine's listing of a recommended model
 const recPick = id => recModels().recommended.find(i => i.id === id || (i.also || []).includes(id));
 const recLinks = t => t.links.length ? `<div class="links">${t.links.map(l => l.url.startsWith("#") ? `<a href="${esc(l.url)}" data-go="${esc(l.url.slice(1))}">${esc(l.label)}</a>` : `<a href="${esc(l.url)}" target="_blank" rel="noopener noreferrer">${esc(l.label)}</a>`).join("")}</div>` : "";
 const recToolCard = t => `<article class="card engcard"><div class="ctop"><h3>${esc(t.name)}</h3>${t.badge ? `<span class="chip lem">${esc(t.badge)}</span>` : ""}</div>${t.take ? `<p class="take">${inline(t.take)}</p>` : ""}${recLinks(t)}</article>`;
@@ -2653,9 +2636,9 @@ async function recFetch(it){
   const room = await diskProblem(it.size_gb);
   if(room){ toast("Not enough room for that download"); showPlain("Not enough room", room, ""); return; }
   if(!it.download) return startDownload(it.id);
-  const body = {model_name: it.id, checkpoint: it.download.checkpoint, recipe: it.download.recipe || "llamacpp", stream: true, subscribe: false};
+  const body = {model_name: it.id, checkpoint: it.download.checkpoint};
   if(it.download.mmproj) body.mmproj = it.download.mmproj;
-  try{ await api("/api/v1/pull", {method: "POST", headers: {"Content-Type": "application/json"}, body: JSON.stringify(body)}); await loadModels(); await pollDownloads(); if(S.view === "models") renderModels(); }
+  try{ await api("/ui/models/pull", {method: "POST", headers: {"Content-Type": "application/json"}, body: JSON.stringify(body)}); await loadModels(); await pollDownloads(); if(S.view === "models") renderModels(); }
   catch(e){ toast("Couldn't start the download"); showProblem(e.message, it.title || friendly(it.id)); }
 }
 async function recGet(id){
@@ -2720,8 +2703,8 @@ function renderModels(){
 const SRC_STATE = {ready: ["Answering", "ok"], starting: ["Starting", "busy"], offline: ["Not answering", "off"], needs_key: ["Needs a key", "warn"],
   off: ["Turned off", "off"], not_installed: ["Not set up yet", "off"]};
 const srcState = s => SRC_STATE[s] || [s || "", ""];
-const SRC_KIND_HEAD = {builtin: "On this computer", engine: "Engines you connected", shoggoth: "Other Shoggoths", cloud: "Paid services"};
-/* The kinds in the plan's order, so the strip reads This computer, engines, other Shoggoths, paid services. */
+const SRC_KIND_HEAD = {builtin: "On this computer", engine: "Engines you connected", shoggoth: "Other Shoggoths", cloud: "Servers online"};
+/* The kinds in order, so the strip reads This computer, engines, other Shoggoths, servers online. */
 const SRC_KINDS = ["builtin", "engine", "shoggoth", "cloud"];
 const srcModels = s => (s.items || []).length;
 function srcCount(s){
@@ -2747,9 +2730,9 @@ function srcLine(s){
 }
 /* A server the scan found that isn't connected: one button, no form. */
 function srcFoundLine(f){
-  const nm = f.needs_key ? "Needs a key" : "Not connected yet";
+  const nm = f.needs_key ? "Needs a key" : "Not connected yet", n = Array.isArray(f.models) ? f.models.length : (Number(f.models) || 0);
   return `<div class="snip" data-found="${esc(String(f.port))}"><b>${esc(f.name || "A server")}</b>
-    <span class="chip">${esc(nm)}</span><span class="grow">on port ${esc(String(f.port))} · ${f.models} model${f.models === 1 ? "" : "s"}</span>
+    <span class="chip">${esc(nm)}</span><span class="grow">on port ${esc(String(f.port))}${f.needs_key && !n ? "" : ` · ${n} model${n === 1 ? "" : "s"}`}</span>
     <span class="srcacts"><button class="btn primary" data-src="connect" data-port="${esc(String(f.port))}" data-url="${esc(f.url || "")}" data-key="${f.needs_key ? "1" : ""}">Connect</button></span></div>`;
 }
 function srcStripHTML(){
@@ -2762,7 +2745,7 @@ function srcStripHTML(){
   }
   if(found.length) html += `<div class="srchead">Found on this computer<span>${found.length}</span></div>` + found.map(srcFoundLine).join("");
   if(d.problems && d.problems.length) html += `<div class="note-warn" style="margin-top:4px">${d.problems.slice(0, 4).map(p => esc(p.file + (p.line ? ":" + p.line : "") + " · " + p.error)).join("<br>")}</div>`;
-  html += `<div class="snip srcadd"><b>Hook up something else</b><span class="grow">A server Shoggoth hasn't found, such as one on another computer, or a paid service.</span>
+  html += `<div class="snip srcadd"><b>Hook up something else</b><span class="grow">A server Shoggoth hasn't found, such as one on another computer or online.</span>
     <span class="srcacts"><button class="btn" data-src="scan">Look again</button><button class="btn primary" data-src="hookup">Add an address…</button></span></div>`;
   return html;
 }
@@ -2781,7 +2764,7 @@ function hookupHTML(){
   const r = HOOK.result || {}, local = HOOK.local !== false;
   return `<form class="hookup" id="hookform">
     <h3>Hook up something else</h3>
-    <p class="help" style="margin:0">Use a server Shoggoth hasn't found, or a paid service that isn't in the list. Shoggoth uses the models it serves and never starts or stops it.</p>
+    <p class="help" style="margin:0">Use a server Shoggoth hasn't found, on another computer or online. Shoggoth uses the models it serves and never starts or stops it.</p>
     <div class="row2">
       <label><span>Address</span><input id="hkurl" type="text" inputmode="url" placeholder="http://192.168.1.20:8000" autocomplete="off" spellcheck="false"></label>
       <label><span>Key (if it needs one)</span><input id="hkkey" type="password" placeholder="None" autocomplete="off"></label>
@@ -2929,8 +2912,7 @@ $("#deldlg form").addEventListener("submit", async e => {
   e.preventDefault();
   const id = pendingDelete, b = $("#delok"); b.disabled = true; b.textContent = "Deleting…";
   try{
-    if(S.loaded === id) await api("/api/v1/unload", {method:"POST", headers:{"Content-Type":"application/json"}, body:JSON.stringify({model_name:id})});
-    await api("/api/v1/delete", {method:"POST", headers:{"Content-Type":"application/json"}, body:JSON.stringify({model_name:id})});
+    await api("/ui/models/delete", {method:"POST", headers:{"Content-Type":"application/json"}, body:JSON.stringify({model_name:id})});
     if(S.model === id) S.model = null;
     $("#deldlg").close(); toast("Deleted " + friendly(S.models.find(x => x.id === id) || id));
     await loadModels(); await tick(); syncModelSelect(); if(S.view === "models") renderModels();
@@ -2992,13 +2974,13 @@ async function hfLookup(){
 async function hfDownload(){
   const d = HF.data, v = d?.versions.find(x => x.quant === HF.pick); if(!v) return;
   const id = d.name.replace(/[-_.]?gguf$/i, "") + "-" + v.quant.toUpperCase();
-  const body = {model_name: id, checkpoint: `${d.repo}:${v.quant}`, recipe: "llamacpp", stream: true, subscribe: false};
+  const body = {model_name: id, checkpoint: `${d.repo}:${v.quant}`};
   if(d.mmproj) body.mmproj = d.mmproj;
   const room = await diskProblem(v.gb);
   if(room){ HF.err = room; renderHF(); return; }
   $("#hfdo").disabled = true;
   try{
-    await api("/api/v1/pull", {method:"POST", headers:{"Content-Type":"application/json"}, body:JSON.stringify(body)});
+    await api("/ui/models/pull", {method:"POST", headers:{"Content-Type":"application/json"}, body:JSON.stringify(body)});
     $("#hfdlg").close(); toast("Download started. You can keep using Shoggoth while it works.");
     await loadModels(); await pollDownloads(); S.filter = "downloaded"; store.set("shoggoth.filter3", S.filter); if(S.view === "models") renderModels();
   }catch(e){ HF.err = "Shoggoth couldn't start that download: " + e.message; renderHF(); showProblem(e.message, d?.name || "This model"); }
@@ -3125,7 +3107,7 @@ function updateOptButtons(){
 }
 async function openOptions(id){
   const m = S.models.find(x => x.id === id); if(!m) return;
-  let data; try{ data = await api(`/api/v1/models/${encodeURIComponent(id)}/options`); }
+  let data; try{ data = await api(`/ui/models/options?id=${encodeURIComponent(id)}`); }
   catch(e){ toast("Couldn't read this model's options: " + e.message); return; }
   let bk = []; try{ bk = (await api("/ui/backends")).recipes; }catch{}
   OD = {m, data, dirty:{}, bk, argErrors:false};
@@ -3176,7 +3158,7 @@ function showOptErr(msg){ const el = $("#oderr"); el.textContent = msg; el.hidde
 async function saveOptions(){
   if(!Object.keys(OD.dirty).length) return;
   const body = {...OD.dirty};
-  const r = await api(`/api/v1/models/${encodeURIComponent(OD.m.id)}/options`, {method:"POST", headers:{"Content-Type":"application/json"}, body:JSON.stringify(body)});
+  const r = await api("/ui/models/options", {method:"POST", headers:{"Content-Type":"application/json"}, body:JSON.stringify({id: OD.m.id, ...body})});
   OD.data = r; OD.dirty = {};
 }
 /* Load `id` into memory at the chat context size (or `ctx`, which becomes the new chat setting). `force` loads it afresh. */
@@ -3474,7 +3456,7 @@ function wRowHTML(r){
 }
 /* the first model: one suggestion per size, whichever the computer can take */
 function wFirstModels(){
-  const out = [], fits = m => { const e = libEntry(m.id); return !e || e.fit !== "no"; }, listed = ids => ids.map(id => S.models.find(m => m.id === id && m.recipe === "llamacpp" && m.size)).filter(Boolean),
+  const out = [], fits = m => { const e = libEntry(m.id); return !e || e.fit !== "no"; }, listed = ids => ids.map(id => S.models.find(m => m.downloaded && m.rec === id) || S.models.find(m => (m.id === id || m.rec === id) && m.recipe === "llamacpp" && m.size)).filter(Boolean),
     pick = ids => listed(ids).find(fits) || listed(ids)[0];                    // one that fits if there is one; otherwise the first, with a note, rather than no card
   const TIER = {small: "Small", medium: "Medium", large: "Large"};
   for(const f of recModels().first_run){
@@ -3577,41 +3559,8 @@ function engConnCard(p){                 // a server the person connected: Shogg
     <div class="estat">${state}</div>
     <div class="erow"><button class="btn" data-eng="srvremove" data-id="${esc(p.id)}">Remove</button><span class="help" style="margin:0">Shoggoth forgets the address. It doesn't touch the server.</span></div></section>`;
 }
-/* Paid services: pick one, paste its key, done. The card says where the key goes, what it costs, and links its terms. The page
-   only ever sees the key's last four characters, because the server never sends the rest. */
-const hostedPresets = () => (ENG.srv.presets || []).filter(p => p.category === "hosted");
-function hostedConnected(p){ return (ENG.srv.servers || []).filter(s => s.preset === p.id); }
-/* What the page is allowed to show of a stored key: its last four characters, from the server. A key too short to hide a
-   quarter of itself comes back with no hint, and the card shows only dots. */
-const hostedMask = hint => hint ? "•••• •••• " + hint : "•••• •••• ••••";
-function hostedCard(p){
-  const conn = hostedConnected(p), c = conn[0], host = p.host || "", busy = ENG.hosted === p.id;
-  const state = c
-    ? `<span><b>Connected.</b> ${c.has_key && c.key_hint ? `The key ends ${esc(c.key_hint)}.` : "It needs a key."}</span>`
-    : `<span>Not connected yet. Paste your key from ${esc(host || p.name)}.</span>`;
-  const keyField = c
-    ? `<div class="hkeyrow"><span class="hfour">${esc(hostedMask(c.key_hint))}</span>
-        <button class="btn ghost" type="button" data-hosted="forget" data-id="${esc(c.id)}">Remove</button></div>`
-    : `<div class="hkeyrow"><input id="hkey-${esc(p.id)}" type="password" placeholder="Your ${esc(p.name)} key" autocomplete="off" spellcheck="false" aria-label="${esc(p.name)} key">
-        <button class="btn primary" type="button" data-hosted="connect" data-id="${esc(p.id)}" ${busy ? "disabled" : ""}>${busy ? "Checking…" : "Connect"}</button></div>`;
-  const links = [p.key_url ? `<a href="${esc(p.key_url)}" target="_blank" rel="noopener noreferrer">Get a key</a>` : "",
-    p.terms ? `<a href="${esc(p.terms)}" target="_blank" rel="noopener noreferrer">Terms</a>` : "",
-    p.docs ? `<a href="${esc(p.docs)}" target="_blank" rel="noopener noreferrer">Docs</a>` : ""].filter(Boolean).join("");
-  return `<section class="panel engine hosted" data-hosted-id="${esc(p.id)}"><div class="ehead"><h3>${esc(p.name)}</h3><span class="chip lem">Paid service</span>
-      ${c ? '<span class="chip ok">Connected</span>' : ""}${host ? `<span class="chip">Leaves your computer</span>` : ""}</div>
-    <p class="help" style="margin:0">${esc(p.summary || "")}</p>
-    <div class="estat">${state}${host ? `<span class="hwhere">Keys go to ${esc(host)}</span>` : ""}${p.price ? `<span class="price">${esc(p.price)}</span>` : ""}</div>
-    <div class="hfld">${keyField}</div>
-    ${links ? `<div class="hlinks">${links}</div>` : ""}
-    ${c ? `<p class="help" style="margin:0">Chats on its models show “Leaves your computer: ${esc(p.name)}”.</p>` : ""}</section>`;
-}
-function hostedSection(){
-  const ps = hostedPresets();
-  if(!ps.length) return "";
-  return `<div class="srchead">Paid services<span>${ps.length}</span></div><p class="help" style="margin:0 0 6px">Models that run on someone else's computer. Your messages leave this computer when a chat uses one.</p>` + ps.map(hostedCard).join("");
-}
-function engConnect(){                   // the form that connects one; paid services have their own cards above
-  const pre = (ENG.srv.presets || []).filter(x => x.category !== "hosted"), first = pre[0] || {};
+function engConnect(){                   // the form that connects one: a bundled definition, or one of yours in engines.d
+  const pre = ENG.srv.presets || [], first = pre[0] || {};
   return `<section class="panel engine"><div class="ehead"><h3>Connect a server</h3></div>
     <p class="help" style="margin:0">Use a server you already run: Ollama, LM Studio, llama.cpp, Strata, Maya, Unsloth, or anything that speaks the OpenAI API. Shoggoth uses its models in chat and for your other apps. It doesn't install, start, stop or update the server.</p>
     <form class="line" id="srvform" style="margin-top:8px;flex-wrap:wrap">
@@ -3696,7 +3645,7 @@ function engMount(){                     // the engine-specific parts live in a 
 }
 function renderEngines(){
   const d = ENG.d, host = $("#engcards"); if(!d) return;
-  const sig = JSON.stringify([d, ENG.srv, ENG.checks, ENG.msg, ENG.probeMsg, ENG.left, ENG.check, ENG.hosted, SU.st && SU.st.engine, SU.cfg]);
+  const sig = JSON.stringify([d, ENG.srv, ENG.checks, ENG.msg, ENG.probeMsg, ENG.left, ENG.check, SU.st && SU.st.engine, SU.cfg]);
   if(sig === ENG.sig) return;
   if([host, $("#engadd")].some(el => el && el.contains(document.activeElement) && /^(INPUT|SELECT|TEXTAREA)$/.test(document.activeElement.tagName))) return;
   ENG.sig = sig;
@@ -3707,9 +3656,10 @@ function renderEngines(){
   engMount();
   document.querySelectorAll("#engcards details.engmore").forEach(x => { if(open.has(x.dataset.part)) x.open = true; });
   const form = ["#srvpre", "#srvurl", "#srvkey"].map(q => { const n = $(q); return n ? n.value : null; });
-  $("#engadd").innerHTML = hostedSection() + engConnect() + engMore() + `<section class="panel engine"><div class="ehead"><h3>Add an engine</h3></div>
+  $("#engadd").innerHTML = engConnect() + engMore() + `<section class="panel engine"><div class="ehead"><h3>Add an engine</h3></div>
     <p class="help" style="margin:0">An engine is a folder with a <span class="mono">provider.yaml</span> file in it that says how to start the program, where to reach it and which models it can run. Put the folder in <span class="mono" style="overflow-wrap:anywhere">${esc(d.user_folder || "")}</span>, then press Reload. Shoggoth asks before it lets an added engine run a program.</p>
     <p class="help" style="margin:0">In a terminal, <span class="mono">Shoggoth-*.AppImage providers new my-engine</span> makes a starting folder. <span class="mono">providers check &lt;folder&gt;</span> tells you what to fix before you press Reload. The guide is <span class="mono">docs/ENGINES.md</span> in the Shoggoth repository.</p>
+    <p class="help" style="margin:0">To have Shoggoth recognise a server by name, such as a service online and the API it uses for each model, put a definition file in <span class="mono" style="overflow-wrap:anywhere">${esc(ENG.srv.definitions_folder || "")}</span>. To add models to the recommended list, write them in <span class="mono" style="overflow-wrap:anywhere">${esc(ENG.srv.models_file || "")}</span>. Shoggoth reads both again when they change; nothing has to be installed again.</p>
     <div class="erow"><button class="btn" data-eng="reload">Reload engines</button></div>
     ${(d.errors || []).length ? `<div class="engerr"><b>Engines Shoggoth couldn't load</b>${d.errors.map(e => `<div class="note-bad"><code>${esc(e.folder)}</code><br>${esc(e.error)}</div>`).join("")}</div>` : ""}
     ${ENG.msg ? `<div class="note-bad">${esc(ENG.msg)}</div>` : ""}</section>`;
@@ -3737,28 +3687,6 @@ document.addEventListener("submit", async e => {
     await engLoad();
   }catch(err){ out.textContent = err.message; }
   finally{ btn.disabled = false; }
-});
-/* A paid service's two buttons: connect with the key in its box, or forget a connected one. */
-document.addEventListener("click", async e => {
-  const b = e.target.closest("[data-hosted]"); if(!b || !b.closest("#v-backends")) return;
-  const act = b.dataset.hosted, id = b.dataset.id;
-  try{
-    if(act === "connect"){
-      const box = $("#hkey-" + id), key = (box ? box.value : "").trim(), pre = (ENG.srv.presets || []).find(p => p.id === id) || {};
-      if(!key){ toast("Paste your key first."); return; }
-      ENG.hosted = id; renderEngines();
-      const r = await api("/ui/servers", {method: "POST", body: JSON.stringify({action: "probe", preset: id, url: pre.url || "", key})});
-      ENG.hosted = "";
-      if((r.connected || []).length) toast("Connected " + pre.name + ".");
-      else if((r.already || []).length) toast(pre.name + " is already connected.");
-      else if((r.needs_key || []).length) toast(pre.name + " didn't accept that key.");
-      else toast("Nothing answered at " + (pre.host || "the service") + ".");
-    }else if(act === "forget"){
-      if(!confirm("Remove this connection? Shoggoth forgets the key. Your account with the service is untouched.")) return;
-      await api("/ui/servers", {method: "POST", body: JSON.stringify({action: "remove", id})}); toast("Removed.");
-    }
-  }catch(err){ ENG.hosted = ""; toast(err.message); }
-  await engLoad();
 });
 document.addEventListener("click", async e => {
   const b = e.target.closest("[data-eng]"); if(!b || !b.closest("#v-backends")) return;
@@ -3928,7 +3856,7 @@ document.addEventListener("click", e => { if(e.target.closest("[data-pick]")){ e
 /* ======================= help + advanced hub ======================= */
 const FAQ = [
   ["What is a model?", "A model is the AI that answers you. It is a big file, usually a few gigabytes, that lives on this computer. Bigger models tend to write better but need a stronger computer and answer more slowly. Each model's card says whether it runs well, is tight, or is too big for this computer."],
-  ["Is my data private?", "Yes, unless you choose otherwise. Shoggoth and its models run on this computer, and your conversations are saved in Shoggoth's own folder here. They leave this computer only when you ask: a chat on a paid hosted model sends the conversation to that service, and web search sends your search words. Shoggoth also goes online to download a model you ask for, check for updates, or fetch skills from a link you paste. It asks first. The <a href=\"#docs\" data-go=\"docs\">Docs</a> page explains where everything is kept."],
+  ["Is my data private?", "Yes, unless you choose otherwise. Shoggoth and its models run on this computer, and your conversations are saved in Shoggoth's own folder here. They leave this computer only when you ask: a chat on a model another computer serves (a server you connected) sends the conversation there, and web search sends your search words. Shoggoth also goes online to download a model you ask for, check for updates, or fetch skills from a link you paste. It asks first. The <a href=\"#docs\" data-go=\"docs\">Docs</a> page explains where everything is kept."],
   ["Why is the first answer slow?", "The model has to be loaded into your computer's memory before it can answer. That takes a few seconds to a minute, depending on its size. After that, answers start right away."],
   ["How do I know which model to use?", "It depends on your computer and what you want to do. Start with <b>Recommended for this computer</b> in Models, where I explain each recommendation. <b>Everything</b> shows the rest, with a note on whether each one will fit. <p><button class=\"btn\" type=\"button\" data-pick>Show me how to compare models</button></p>"],
   ["What is the context window?", "It is how much of the conversation a model can see at once. Shoggoth uses <b>128k</b> tokens (about 100,000 words) by default. That's enough for long chats and agent work. You can change it with the <b>Memory</b> menu in a chat, or for one model with <b>Settings</b> on its card. A bigger window needs more graphics memory."],
@@ -5816,9 +5744,9 @@ function cwBarModel(){
   return pick || ids[0] || "";
 }
 const PK_TIER = {small: ["Small models", "Under 10 GB of graphics memory"], medium: ["Medium models", "10 to 24 GB of graphics memory"], large: ["Large models", "For big computers. They take a couple of minutes to start."], "": ["Other models", ""]};
-/* The plan's groups, in order: This computer, each connected engine by name, Other Shoggoths, then Paid services under a heading that
+/* The plan's groups, in order: This computer, each connected engine by name, Other Shoggoths, then servers online under a heading that
    says they leave your computer. `S.pk.groups` comes from the server; a model with no group falls under This computer. */
-const PK_KIND_HEAD = {builtin: "This computer", engine: "", shoggoth: "Other Shoggoths", cloud: "Paid services · they leave your computer"};
+const PK_KIND_HEAD = {builtin: "This computer", engine: "", shoggoth: "Other Shoggoths", cloud: "Online · they leave your computer"};
 function pkGroups(){
   const src = {}; for(const g of (S.pk.groups || [])) src[g.id] = g;
   const by = new Map();
@@ -5888,7 +5816,7 @@ function loadWatch(on){
     S.loadPoll = setInterval(async () => { try{ S.ms = await api("/ui/model"); }catch{} pkNoteStep(); cwModelBar(); }, 1200);
   }else if(!on && S.loadPoll){ clearInterval(S.loadPoll); S.loadPoll = null; S.loadSteps = []; }
 }
-/* "Leaves your computer: OpenRouter": said for as long as a chat on a paid service is open, not only while it answers. The
+/* "Leaves your computer: <server>": said for as long as a chat on a server online is open, not only while it answers. The
    model's source says `leaves_computer`; the group's plain name is what the person knows the service as. */
 function leaveChip(m){
   const chip = cwEl("mbleave"); if(!chip) return;

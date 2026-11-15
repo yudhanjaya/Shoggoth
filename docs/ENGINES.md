@@ -42,7 +42,7 @@ hint: "Ollama's usual address. Start Ollama first, then pull a model with ollama
 | Setting | What it says |
 | --- | --- |
 | `id`, `name`, `summary` | A short id (lowercase letters, digits, `-`, `_`, up to 48), the friendly name, and one line. `id` and `name` are needed for an enabled definition. |
-| `category` | `local`, `specialized` (built for very large models) or `hosted` (a paid service). |
+| `category` | `local`, `specialized` (built for very large models) or `hosted` (a service online). |
 | `url` | The service's usual base address. `http://` or `https://`, with no user name or password in it. |
 | `ports` | Ports the engine usually listens on. If `url` names a loopback port and `ports` is missing, the port is taken from the address. |
 | `match` | Process names to look for in `/proc`: the program name, or any word of its command line. Case-insensitive. |
@@ -52,12 +52,11 @@ hint: "Ollama's usual address. Start Ollama first, then pull a model with ollama
 | `context` | `{path, json}`: where to read a model's context size, for example `{path: /props, json: "$.default_generation_settings.n_ctx"}`. |
 | `loads` | `router` (loads and unloads models on request), `ollama` (loads the first time a model is asked for) or `fixed` (the model was chosen when it started). |
 | `key` | `none`, `optional` or `required`. |
-| `key_url`, `docs`, `terms` | Web addresses for where to get a key, the project's documentation, and the service's terms. |
-| `price` | One short line on what a hosted service costs, where the service publishes it. |
+| `key_url`, `docs` | Web addresses for where to get a key and the project's documentation. |
 | `hint` | One line shown under the address field. |
 | `enabled` | `false` hides the definition. |
 
-**Hosted services are pinned.** The five built-in services (OpenRouter, Nous Portal, OpenCode, Command Code and Google Gemini; OpenCode has two entries) each have a fixed host. A definition of yours that reuses one of their ids cannot point it at a different address, so a key cannot be sent somewhere the service does not live. Give a different service a different `id`.
+**No online services are bundled.** Their prices and terms change faster than Shoggoth is released. Put a `category: hosted` definition in your own `engines.d` to have Shoggoth name one, pick its API format per model, and show it in **Connect a server**. Shoggoth reads the folder again when a file changes; nothing has to be rebuilt.
 
 **Check a file before you reload.** This reads the file and starts nothing:
 

@@ -145,7 +145,7 @@ def clean_models(doc, c):
     if not isinstance(doc, dict):
         c.bad("", "the file must be groups of settings (key: value), not %s." % type(doc).__name__)
         return out
-    c.keys(doc, "", ["version", "recommended", "first_run", "coming_soon"])
+    c.keys(doc, "", ["version", "replace", "recommended", "first_run", "coming_soon"])
     if doc.get("version", 1) != 1:
         c.bad("version", "Shoggoth reads version 1.")
     ids = set()
@@ -370,6 +370,24 @@ def load(name, fname=None):
     return {"data": CLEAN[name](doc, c), "problems": c.problems, "file": fname}
 
 
+def _merge_models(mine, fname):
+    """Your models.yaml adds to Shoggoth's own: your entries first, one with the same id (or `also`) replaces Shoggoth's, and
+    `first_run` or `coming_soon` replace Shoggoth's when your file has them. `replace: true` uses your file alone."""
+    doc, _ = _read(fname)
+    doc = doc if isinstance(doc, dict) else {}
+    if doc.get("replace") is True:
+        return mine
+    base = load("models", os.path.join(BUNDLED, "models.yaml"))
+    if base["problems"]:
+        mine["problems"] = mine["problems"] + base["problems"]
+    d, b = mine["data"], base["data"]
+    taken = {n for m in d["recommended"] for n in [m["id"]] + list(m["also"])}
+    out = {"recommended": d["recommended"] + [m for m in b["recommended"] if not ({m["id"]} | set(m["also"])) & taken],
+           "first_run": d["first_run"] if "first_run" in doc else b["first_run"],
+           "coming_soon": d["coming_soon"] if "coming_soon" in doc else b["coming_soon"]}
+    return dict(mine, data=out)
+
+
 def get(name):
     """load(name), kept until the file changes."""
     fname = path(name)
@@ -382,6 +400,8 @@ def get(name):
         if hit and hit[0] == sig:
             return hit[1]
         v = load(name, fname)
+        if name == "models" and fname.startswith(user_dir()) and not any("using its own" in p for p in v["problems"]):
+            v = _merge_models(v, fname)
         _cache[name] = (sig, v)
         return v
 
@@ -435,7 +455,7 @@ def main(argv):
     if argv[0] == "where":
         for n in FILES:
             print("%s: %s%s" % (n, path(n), "  (yours)" if path(n).startswith(user_dir()) else ""))
-        print("Put a file in %s to use it instead of the bundled one." % user_dir())
+        print("Put a file in %s to use it instead of the bundled one. Your models.yaml adds to Shoggoth's list (`replace: true` uses yours alone)." % user_dir())
         return 0
     targets = argv[1:] or [path(n) for n in FILES]
     bad = 0

@@ -23,7 +23,7 @@ def read(rel):
 class Docs(unittest.TestCase):
     def test_readme_covers_the_5_0_features(self):
         text = read("README.md")
-        for phrase in ("llama.cpp", "Moving from 4.x", "hosted", "Other computers", "whisper.cpp",
+        for phrase in ("llama.cpp", "Moving from 4.x", "Other servers", "Other computers", "whisper.cpp",
                        "Tools for the agent", "glibc 2.38"):
             self.assertIn(phrase, text, "README.md should mention %r" % phrase)
 
@@ -40,7 +40,7 @@ class Docs(unittest.TestCase):
     def test_in_app_guide_covers_the_5_0_features(self):
         text = read("shoggoth/docs.md")
         for phrase in ("Pictures and files", "Speech", "Written by your models", "Tools",
-                       "Paid models", "Other computers", "Coming from 4.x", "Attach a file"):
+                       "Models online", "Other computers", "Coming from 4.x", "Attach a file"):
             self.assertIn(phrase, text, "the user guide should mention %r" % phrase)
 
     def test_release_notes_cover_the_release(self):

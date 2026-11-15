@@ -16,7 +16,7 @@ import engines  # noqa: E402
 GOOD = {"id": "ninfer", "name": "Ninfer", "category": "specialized", "summary": "Big models.", "url": "http://127.0.0.1:9100", "ports": [9100],
         "match": ["ninfer"], "cwd": [], "identify": [{"path": "/v1/models", "json": "$.data[*].owned_by", "equals": "ninfer"}],
         "formats": [{"api": "openai-completions"}], "context": {"path": "/props", "json": "$.n_ctx"}, "loads": "fixed", "key": "optional",
-        "key_url": "", "docs": "https://example.com/ninfer", "terms": "", "price": "", "hint": "Use the address it prints.", "enabled": True}
+        "key_url": "", "docs": "https://example.com/ninfer", "hint": "Use the address it prints.", "enabled": True}
 
 
 class Env(unittest.TestCase):
@@ -98,14 +98,14 @@ class Schema(unittest.TestCase):
         self.assertIn("did you mean `summary`", self.bad(sumary="x"))
 
     def test_urls_must_be_http_or_https(self):
-        for key in ("url", "docs", "key_url", "terms"):
+        for key in ("url", "docs", "key_url"):
             for u in ("file:///etc/passwd", "ftp://x/y", "javascript:alert(1)", "http://u:p@h", "//h/x", "http://h:99999"):
                 self.assertIn("`%s`" % key, self.bad(**{key: u}), u)
 
-    def test_a_price_is_plain_text_and_not_a_link(self):
-        d, errs = engines.clean(dict(GOOD, price="From $1 a month"))
-        self.assertEqual((errs, d["price"]), ([], "From $1 a month"))
-        self.assertNotEqual(self.bad(price="x" * 200), "")
+    def test_prices_and_terms_are_not_kept(self):
+        """Services change their prices and terms faster than Shoggoth is released, so a definition doesn't carry them."""
+        self.assertIn("unknown key `price`", self.bad(price="From $1 a month"))
+        self.assertIn("unknown key `terms`", self.bad(terms="https://example.com/terms"))
 
     def test_identify_paths_must_be_plain(self):
         for p in ("props", "http://evil/props", "/props?x=1", "/a/../b", "//evil", "/p q", "/p#frag", ""):
@@ -159,37 +159,17 @@ class Merging(Env):
         self.assertEqual((by["ollama"]["name"], by["ollama"]["ports"]), ("My Ollama", [11999]))
         self.assertEqual(self.ids().count("ollama"), 1)
 
-    def test_a_user_definition_cannot_move_a_hosted_service(self):
-        self.put("or.yaml", "id: openrouter\nname: OpenRouter fix\ncategory: hosted\nurl: https://evil.example/api/v1\nkey: required\n")
-        by = {e["id"]: e for e in engines.definitions()}
-        self.assertEqual(by["openrouter"]["url"], "https://openrouter.ai/api/v1")
-        self.assertEqual(by["openrouter"]["name"], "OpenRouter")
-        msg = [p for p in engines.problems() if p["file"].endswith("or.yaml")]
-        self.assertEqual(len(msg), 1)
-        self.assertIn("openrouter.ai", msg[0]["error"])
-        self.assertIn("new `id`", msg[0]["error"])
+    def test_no_online_service_is_bundled(self):
+        self.assertEqual([e["id"] for e in engines.definitions() if e["category"] == "hosted"], [])
 
-    def test_a_user_definition_may_restate_a_hosted_service_or_use_a_new_id(self):
-        self.put("or.yaml", "id: openrouter\nname: My OpenRouter\ncategory: hosted\nurl: https://openrouter.ai/api/v1\nkey: required\n")
-        self.put("mine.yaml", "id: myhost\nname: Mine\ncategory: hosted\nurl: https://llm.example.com/v1\nkey: required\n")
+    def test_an_online_service_of_yours_is_added_from_a_file_and_carries_its_host(self):
+        self.put("mine.yaml", "id: myhost\nname: Mine\ncategory: hosted\nurl: https://llm.example.com/v1\nkey: required\n"
+                 "formats:\n  - {api: anthropic-messages, match: \"^claude\"}\n")
         by = {e["id"]: e for e in engines.definitions()}
-        self.assertEqual(by["openrouter"]["name"], "My OpenRouter")
-        self.assertIn("myhost", by)
-        self.assertEqual(engines.problems(), [])
-
-    def test_hosted_definitions_carry_their_host(self):
-        by = {e["id"]: e for e in engines.definitions()}
-        self.assertEqual(by["openrouter"]["host"], "openrouter.ai")
+        self.assertEqual(by["myhost"]["host"], "llm.example.com")
         self.assertNotIn("host", by["ollama"])
-
-    def test_every_hosted_service_says_its_terms_and_its_price(self):
-        """The card shows the terms link and the price, so each hosted definition has to carry both."""
-        by = {e["id"]: e for e in engines.definitions()}
-        hosted = [e for e in by.values() if e["category"] == "hosted"]
-        self.assertEqual({e["id"] for e in hosted}, {"openrouter", "nous-portal", "opencode-zen", "opencode-go", "command-code", "gemini"})
-        for e in hosted:
-            self.assertTrue(e["terms"].startswith("https://"), e["id"])
-            self.assertTrue(e["price"], e["id"])
+        self.assertEqual(engines.api_for("myhost", "claude-x"), "anthropic-messages")
+        self.assertEqual(engines.problems(), [])
 
     def test_alias_bombs_are_refused(self):
         bomb = "a: &a [x, x, x, x, x, x, x, x, x, x]\n" + "".join(

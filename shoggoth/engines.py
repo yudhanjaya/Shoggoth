@@ -30,7 +30,7 @@ ID_RE = re.compile(r"^[a-z0-9][a-z0-9_-]{0,47}$")
 PATH_RE = re.compile(r"^/[A-Za-z0-9._~/-]*$")                  # a plain GET path: no query, no fragment, no host
 JSON_RE = re.compile(r"^\$[A-Za-z0-9_.\[\]*-]*$")
 KEYS = ("id", "name", "category", "summary", "url", "ports", "match", "cwd", "identify", "formats", "context", "loads", "key", "key_url",
-        "docs", "hint", "price", "terms", "enabled")
+        "docs", "hint", "enabled")
 CATEGORIES = ("local", "specialized", "hosted")
 LOADS = ("router", "ollama", "fixed")
 KEY_MODES = ("none", "optional", "required")
@@ -248,8 +248,6 @@ def clean(d):
     out["key"] = _choice(d, "key", KEY_MODES, "none", errs)
     out["key_url"] = _url(d.get("key_url"), errs, "key_url")
     out["docs"] = _url(d.get("docs"), errs, "docs")
-    out["terms"] = _url(d.get("terms"), errs, "terms")
-    out["price"] = _text(d, "price", errs, limit=120)
     out["hint"] = _text(d, "hint", errs)
     if out["url"] and not out["ports"]:
         p = urllib.parse.urlsplit(out["url"]).port
@@ -346,21 +344,13 @@ def read_file(fname, label=None):
 
 def load():
     """{engines, problems}: bundled definitions first, then yours (same id replaces, enabled false hides)."""
-    byid, order, probs, pinned = {}, [], [], {}
+    byid, order, probs = {}, [], []
     for folder, tag in ((BUNDLED, "engines.d"), (user_dir(), "engines.d")):
         seen_files = _files(folder)
         for fname in seen_files:
             defs, p = read_file(fname, "%s/%s" % (tag, os.path.basename(fname)))
             probs += p
             for d in defs:
-                if folder == BUNDLED:
-                    if d["category"] == "hosted":
-                        pinned[d["id"]] = urllib.parse.urlsplit(d["url"]).netloc.lower()
-                elif d["id"] in pinned and d["enabled"] and urllib.parse.urlsplit(d["url"]).netloc.lower() != pinned[d["id"]]:
-                    # Your key for a known service must keep going to that service; a copy of it can't send it elsewhere.
-                    probs.append(_problem("%s/%s" % (tag, os.path.basename(fname)),
-                                          "`%s` is a built-in service that lives at %s, so a definition can't move it to another address. Use a new `id` for a different service." % (d["id"], pinned[d["id"]])))
-                    continue
                 if d["id"] not in byid:
                     order.append(d["id"])
                 byid[d["id"]] = d

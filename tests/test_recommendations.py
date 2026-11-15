@@ -102,10 +102,27 @@ class ThePicks(Env):
 
 
 class Yours(Env):
-    def test_a_copy_in_the_data_folder_is_used_instead(self):
-        self.mine("models", "version: 1\nrecommended:\n  - {id: My-Model, label: Mine}\n")
-        self.assertEqual([m["id"] for m in recs.models()["recommended"]], ["My-Model"])
+    def test_yours_adds_to_shoggoths_list_yours_first(self):
+        self.mine("models", "version: 1\nrecommended:\n  - {id: My-Model, label: Mine, download: {checkpoint: 'unsloth/My-GGUF:Q4_K_M'}}\n")
+        ids = [m["id"] for m in recs.models()["recommended"]]
+        self.assertEqual(ids[0], "My-Model")
+        self.assertIn("LFM2.5-8B-A1B", ids)
+        self.assertEqual(recs.models()["first_run"], recs.load("models", os.path.join(recs.BUNDLED, "models.yaml"))["data"]["first_run"])
         self.assertTrue(recs.summary()["files"]["models"].startswith(self.tmp))
+
+    def test_the_same_id_replaces_shoggoths_entry(self):
+        self.mine("models", "recommended:\n  - {id: LFM2.5-8B-A1B, title: My LFM, download: {checkpoint: 'unsloth/LFM2.5-8B-A1B-GGUF:Q8_0'}}\n")
+        got = [m for m in recs.models()["recommended"] if m["id"] == "LFM2.5-8B-A1B"]
+        self.assertEqual([m["title"] for m in got], ["My LFM"])
+
+    def test_replace_true_uses_yours_alone(self):
+        self.mine("models", "version: 1\nreplace: true\nrecommended:\n  - {id: My-Model, label: Mine, download: {checkpoint: 'unsloth/My-GGUF:Q4_K_M'}}\n")
+        self.assertEqual([m["id"] for m in recs.models()["recommended"]], ["My-Model"])
+        self.assertEqual(recs.models()["first_run"], [])
+
+    def test_your_first_run_replaces_shoggoths(self):
+        self.mine("models", "recommended: []\nfirst_run:\n  - {size: small, models: [LFM2.5-8B-A1B]}\n")
+        self.assertEqual([f["models"] for f in recs.models()["first_run"]], [["LFM2.5-8B-A1B"]])
 
     def test_a_change_is_read_without_a_restart(self):
         self.mine("models", "recommended:\n  - {id: A, label: a}\n")
@@ -118,7 +135,7 @@ class Yours(Env):
     def test_a_mistake_skips_that_entry_and_says_where(self):
         self.mine("models", "recommended:\n  - {id: A, size_gb: lots}\n  - {id: B, label: fine}\nfirst_run:\n  - {size: tiny, models: [X]}\n")
         s = recs.summary()
-        self.assertEqual([m["id"] for m in s["models"]["recommended"]], ["A", "B"])
+        self.assertEqual([m["id"] for m in s["models"]["recommended"]][:2], ["A", "B"])
         self.assertIsNone(s["models"]["recommended"][0]["size_gb"])
         self.assertEqual(s["models"]["first_run"], [])
         joined = "\n".join(s["problems"])

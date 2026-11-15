@@ -2,7 +2,9 @@
 #
 # Check your edits with:   python3 shoggoth/server.py recommendations check
 # Shoggoth reads the file again when it changes: refresh the page to see the new cards.
-# A copy at ~/.local/share/shoggoth/recommendations/models.yaml is used instead of this one.
+# A models.yaml of yours at ~/.local/share/shoggoth/recommendations/models.yaml adds to this list: your entries come first, and one
+# with the same id replaces the one here. Its `first_run` and `coming_soon`, if it has them, replace these. Put `replace: true` at
+# the top of yours to use it alone. No new copy of Shoggoth is needed: the page reads the file again when it changes.
 #
 # Text may use `code` and [links](https://example.com). A link to #skills, #models, #server... opens that page in Shoggoth.
 

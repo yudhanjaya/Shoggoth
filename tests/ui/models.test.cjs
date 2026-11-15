@@ -11,7 +11,7 @@ const GTX_1080_TI = {
 
 // The server prices each pick and sends fit/need_gb/why with it. The page only draws the badge.
 const PICKS = {
-  "/api/v1/models?show_all=true": { data: [] },
+  "/ui/models/list": { data: [] },
   "/ui/library": { root: "", chosen: false, places: [], machine: { ram_gb: 32, vram_gb: 16, best_gpu_gb: 16, gpus: ["RTX"] },
     tiers: [], models: [], bytes: 0, disk: null, missing: false, views: {} },
   "/ui/recommendations": { models: { recommended: [
@@ -107,7 +107,7 @@ test("the folder chooser can't make the page wider than the screen", () => {
 
 // ---- unslop polish: what the audit found on All models and Connect a server
 const WORLD = {
-  "/api/v1/models?show_all=true": { data: [
+  "/ui/models/list": { data: [
     { id: "Phishing-Email-Detection-ONNX", recipe: "onnxruntime", labels: ["classification"], size: 0.27, downloaded: false },
     { id: "MOSS-TTS-Local", recipe: "openmoss", labels: ["tts"], size: 4, downloaded: false },
     { id: "TRELLIS-3D", recipe: "trellis", labels: ["3d"], size: 6, downloaded: false },

@@ -37,7 +37,7 @@ Shoggoth is not meant to be a replacement for various backends or front-ends. I 
 
 | | |
 | --- | --- |
-| **Private by default** | Chats run on your computer. Two things leave it, and you have to choose them: web search (the model asks before every search) and a chat on a paid hosted model. |
+| **Private by default** | Chats run on your computer. Two things leave it, and you have to choose them: web search (the model asks before every search) and a chat on a model from a server you connected elsewhere. |
 | **It works on your files** | Choose a folder. The model reads, searches, edits and runs things there while you watch. It asks before it changes anything. |
 | **Bigger jobs, in the background** | Describe the work and how to tell it is done, such as a passing test. The job runs round after round. You review its changes before they touch your folder. |
 | **Diagrams and documents** | Ask for a picture or a README. It appears in the chat. |
@@ -45,7 +45,7 @@ Shoggoth is not meant to be a replacement for various backends or front-ends. I 
 | **Models that fit your computer** | Shoggoth tells you which models will run well on your hardware. It downloads them for you. |
 | **Your own server** | Shoggoth runs [llama.cpp](https://github.com/ggml-org/llama.cpp) for you. It also finds engines already running on this computer (Ollama, LM Studio, vLLM and others), and connects a server you run yourself (Strata, Maya, Unsloth). Shoggoth doesn't install or start those. |
 | **Other computers** | Share your models with another Shoggoth on your network, and use the models on theirs. Pair once with a short code; after that it speaks HTTPS only. |
-| **Paid models, if you want them** | Connect OpenRouter, Nous Portal, OpenCode, Command Code or Google Gemini with your own key. Chats on those models leave your computer, and the chat says so. |
+| **Other servers, if you want them** | Connect any OpenAI-style server, on your network or online, with its address and key. Chats on those models leave your computer, and the chat says so. |
 | **Your voice** | Speak to it with the mic in the message box. The words appear in the box and go nowhere until you send them. Speech runs on this computer. |
 | **Tools for the agent** | Add a few checked Pi packages that give the agent new skills, such as spreadsheets. They run code on your computer, and only Shoggoth's pinned list can be installed. |
 | **Use your models in other apps** | Share them with Hermes, or anything that talks to an OpenAI-style server. |
@@ -149,7 +149,7 @@ The move is safe to run again: each step is recorded in `migrate5.json` and skip
 
 ## Your data and privacy
 
-Everything stays on your computer unless you choose otherwise. Chats, jobs, skills and settings live in `~/.local/share/shoggoth/` and `~/.config/shoggoth/`. Two things can leave: web search, which asks first and shows the exact words, and a chat on a paid hosted model, which goes to that service. Shoggoth also goes online to download models, speech engines and updates you ask for, to fetch skills when you paste a link, and to install a checked Pi package you pick. Sharing models with other computers only accepts connections; it sends a small beacon on your own network and nothing more. Full details: [docs/PRIVACY.md](docs/PRIVACY.md).
+Everything stays on your computer unless you choose otherwise. Chats, jobs, skills and settings live in `~/.local/share/shoggoth/` and `~/.config/shoggoth/`. Two things can leave: web search, which asks first and shows the exact words, and a chat on a model from a server you connected elsewhere, which goes to that server. Shoggoth also goes online to download models, speech engines and updates you ask for, to fetch skills when you paste a link, and to install a checked Pi package you pick. Sharing models with other computers only accepts connections; it sends a small beacon on your own network and nothing more. Full details: [docs/PRIVACY.md](docs/PRIVACY.md).
 
 ## Learn more
 

@@ -35,7 +35,7 @@ Shoggoth's UI can change settings, start engines, and run commands inside a fold
 - Each paired client gets its own key. The server keeps only a hash of each key, so the keys cannot be read back out of the settings file.
 - **Remove** revokes a key at once.
 - The beacon is a UDP packet every 2 seconds on port 13309. It carries the computer's name, a profile id, the Shoggoth version, the gateway port, the certificate fingerprint and the model count. It carries no model names, chats, folders or keys.
-- Keys for the hosted services (OpenRouter, Nous Portal, OpenCode, Command Code and Google Gemini) are stored in the settings file, which is kept at mode `600`.
+- Keys for servers you connect are stored in the settings file, which is kept at mode `600`.
 
 ## Agent approval gate
 

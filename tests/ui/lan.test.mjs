@@ -1,4 +1,4 @@
-// U4: the paid-service cards, the "Leaves your computer" chip, and the LAN panel on the Server page.
+// The "Leaves your computer" chip and the LAN panel on the Server page (U4; the paid-service cards were removed).
 // Run: node tests/ui/lan.test.mjs
 import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
@@ -54,26 +54,10 @@ const esc = s => String(s ?? "").replace(/[&<>"']/g, c => ({"&": "&amp;", "<": "
   assert.doesNotMatch(off, /Turn down|data-lan="revoke"/, "nothing to answer while sharing is off");
 }
 
-// ---- a paid service's card: only the last four characters of a key, where it goes, the price and the terms
-{
-  const src = slice("const hostedPresets", "function engConnect");
-  const pre = {id: "openrouter", name: "OpenRouter", category: "hosted", host: "openrouter.ai", url: "https://openrouter.ai/api/v1",
-    key_url: "https://openrouter.ai/keys", terms: "https://openrouter.ai/terms", docs: "https://openrouter.ai", price: "Pay as you go.", summary: "Many models."};
-  const card = servers => new Function("ENG", "esc", src + "; return hostedCard;")({srv: {presets: [pre], servers}, hosted: ""}, esc)(pre);
+// ---- no paid-service cards: Shoggoth bundles no online service; one of yours is connected like any server
+assert.doesNotMatch(html, /function hostedCard|Paid services|data-hosted=/, "the paid-service cards are gone");
 
-  const fresh = card([]);
-  assert.match(fresh, /type="password"/, "a key is typed into a password field");
-  assert.match(fresh, /Keys go to openrouter\.ai/, "the card says where the key goes");
-  assert.match(fresh, /Pay as you go\./, "and what it costs");
-  assert.match(fresh, /href="https:\/\/openrouter\.ai\/terms"[^>]*>Terms/, "and links the terms");
-
-  const done = card([{id: "s1", preset: "openrouter", has_key: true, key_hint: "9f3c"}]);
-  assert.match(done, /•••• •••• 9f3c/, "a stored key shows only its last four characters");
-  assert.doesNotMatch(done, /type="password"/, "a connected service has no key field to fill");
-  assert.match(done, /Leaves your computer: OpenRouter/, "it says chats on it leave the computer");
-}
-
-// ---- the model bar's chip, for as long as a chat on a paid service is open
+// ---- the model bar's chip, for as long as a chat on a server online is open
 {
   const src = slice("function leaveChip", "function cwModelBar");
   const chip = {hidden: true, textContent: "", title: ""};

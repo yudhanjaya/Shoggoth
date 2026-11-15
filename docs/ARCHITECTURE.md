@@ -16,7 +16,7 @@ flowchart LR
     gw --> proxy
     proxy --> lcpp["llama.cpp router<br/>(started by Shoggoth)"]
     proxy --> srv2["Servers you connected<br/>Ollama, LM Studio, llama.cpp, ..."]
-    proxy --> cloud["Hosted services<br/>OpenRouter, Gemini, ..."]
+    proxy --> cloud["Servers online<br/>you connected"]
 ```
 
 | Component | Responsibility |
@@ -44,11 +44,11 @@ All model traffic passes through one forwarding function. It streams the upstrea
 - The UI's chat and Pi both call `/api/v1`, an authenticated proxy inside the UI server. Their requests are recorded alongside external ones.
 - External clients call the gateway. It exposes only the OpenAI-style endpoints (models, chat, completions, embeddings, responses, audio, images, reranking, and model load and unload), always requires the API key, and listens on loopback unless LAN access is enabled.
 - `/api/*` serves only those same OpenAI-style endpoints (plus Google's own format for Gemini); nothing else is forwarded.
-- A model on a hosted service is sent to that service directly, with the API format its definition names. A local server is sent to the address the person connected.
+- A model on a server online is sent to that server directly, with the API format its definition names. A local server is sent to the address the person connected.
 
 ## Sources and engine definitions
 
-`GET /ui/sources` lists what can answer: Shoggoth's own llama.cpp first (`kind: "builtin"`), then each connected server (`engine`), each paired Shoggoth (`shoggoth`) and each hosted service (`cloud`). Each source carries its state (`ready`, `needs_key`, `offline`, `not_installed`), its models, whether a request leaves this computer, and any error.
+`GET /ui/sources` lists what can answer: Shoggoth's own llama.cpp first (`kind: "builtin"`), then each connected server (`engine`), each paired Shoggoth (`shoggoth`) and each server online (`cloud`). Each source carries its state (`ready`, `needs_key`, `offline`, `not_installed`), its models, whether a request leaves this computer, and any error.
 
 `scan.py` finds engines already running on this computer. It reads `/proc/net/tcp`, matches listening ports to processes where it may read `/proc`, and sends each port one `GET /v1/models`. `shoggoth/engines.d/*.yaml` then decides what answered: the process name or working folder (`match`, `cwd`), then a signature in a reply (`identify`), then the category the candidates share. A port several engines use becomes "Inference engine on port N". The scan only reads and sends GETs; it never starts, stops or looks at another computer. `scan.sources()` returns both the connected sources and `found`, the servers that answered but are not connected yet. A paired Shoggoth that stops answering keeps its place with `state: "offline"`, and the beacon listener re-finds it by certificate fingerprint.
 
@@ -62,7 +62,7 @@ Each engine is a provider (`provider.yaml`, optionally `provider.py`). The regis
 
 **Connected servers.** A server the person runs (Ollama, LM Studio, llama-server, Strata, Maya, Unsloth, or any OpenAI-style server) is saved by address under Advanced > Engines and becomes an address-only engine. Shoggoth reads its model list and sends requests to it. It never installs, starts, stops, updates or tunes it.
 
-**Hosted services.** OpenRouter, Nous Portal, OpenCode, Command Code and Google Gemini are definitions with `category: hosted`. A key is saved in the settings file (mode 600) and the page sees only its last four characters. Each definition lists the API formats it speaks; `engines.api_for()` picks one per model from the optional `match` pattern, and `engines.pi_base_url()` gives Pi the base address its client for that format expects. A chat on one of these models says it leaves the computer.
+**Servers online.** None is bundled. A person connects one by address, or describes one with a `category: hosted` definition in their own `engines.d`. A key is saved in the settings file (mode 600) and the page sees only its last four characters. Each definition lists the API formats it speaks; `engines.api_for()` picks one per model from the optional `match` pattern, and `engines.pi_base_url()` gives Pi the base address its client for that format expects. A chat on one of these models says it leaves the computer.
 
 ## Speech
 

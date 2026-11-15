@@ -208,6 +208,7 @@ def sources(reg=None):
     if r:
         for sub in SUBDIRS:
             add(os.path.join(r, sub), "Shoggoth library", None)
+    add(os.path.join(store.data_dir(), "models"), "Shoggoth library", None)   # where downloads go before there is a Models folder
     m = store.load().get("models") or {}
     for imp in m.get("imports") or []:
         if imp.get("kind") == "folder":
@@ -526,7 +527,7 @@ def models_disk():
     """Where the next download goes and how much room is there: {where, free_gb, missing}. `missing` is true when a library folder was chosen
     but can't be found now (a disk that isn't connected)."""
     r = root()
-    where = r or modelscan.hf_cache_dir()
+    where = r or os.path.join(store.data_dir(), "models")       # the disk downloads.dest_dir() is on
     here = _nearest_existing(where)
     return {"where": where, "free_gb": round(shutil.disk_usage(here).free / 1e9, 1), "missing": bool(r) and not os.path.isdir(r)}
 

@@ -64,7 +64,7 @@ const css = html.slice(html.indexOf("<style>"), html.indexOf("</style>"));
 assert.match(css, /@media \(max-width:1100px\)\{[^@]*\.railmotto\{display:none\}/, "the motto is not hidden where the rail shrinks to icons");
 assert.match(css, /@media \(max-width:640px\)\{[^@]*\.railmotto,/, "the motto is not hidden in the phone-width rail");
 
-// ---- the rail note must not promise more than the app does now that paid services exist
+// ---- the rail note must not promise more than the app does now that servers elsewhere can answer
 assert.ok(!/Everything runs on this computer\./.test(body), "the rail still claims everything runs here, which hosted models contradict");
 assert.ok(!/hintdev/.test(html), "the composer still has the old 'Private: everything runs on this computer' slot");
 assert.ok(!/Everything runs on this computer, so your chats stay private/.test(body), "the Getting ready screen still gives the blanket privacy promise");
@@ -78,13 +78,13 @@ assert.match(docs, /^## Advanced, page by page$/m, "the renamed guide heading is
 const readme = readFileSync(new URL("../../README.md", import.meta.url), "utf8");
 assert.match(readme, /quits about two seconds later/, "the README quit timing is not about two seconds");
 assert.ok(!/three minutes/.test(readme), "the README still says three minutes");
-assert.match(readme, /web search.*paid hosted model/, "the README privacy row does not name both ways data leaves");
+assert.match(readme, /web search.*server you connected/, "the README privacy row does not name both ways data leaves");
 
-// ---- the blanket "everything stays here" claim is false now that paid services exist, in the guide and the README
+// ---- the blanket "everything stays here" claim is false now that servers elsewhere can answer, in the guide and the README
 assert.ok(!/^Everything stays on your computer\.$/m.test(docs), "the guide still opens its privacy section with 'Everything stays on your computer.'");
 assert.ok(!/^Everything stays on your computer\./.test(readme), "the README still opens its privacy section with 'Everything stays on your computer.'");
-assert.match(docs, /only web search and a chat on a paid hosted model send anything out/, "the guide does not say what can leave");
-assert.match(docs, /search the web when you allow it, and talk to a hosted service you set up/, "the guide's list of what it goes online for is missing search and hosted services");
+assert.match(docs, /only web search and a chat on a model from another computer send anything out/, "the guide does not say what can leave");
+assert.match(docs, /search the web when you allow it, and talk to a server you connected/, "the guide's list of what it goes online for is missing search and hosted services");
 
 assert.deepEqual(failures, [], failures.join("\n"));
 console.log("ok: " + strings.length + " user-facing strings, the Help fix, the fit words, the motto and the quit timing");
