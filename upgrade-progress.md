@@ -563,3 +563,16 @@ U2 is done and committed as `059fe0a`.
 - `.driver.out` remains untracked and was not committed.
 ```
 </details>
+
+## U3 (2026-11-15T08:39:16+05:30)
+
+- exit code 8, 0 new commit(s), tests: ---------------------------------------------------------------------- Ran 738 tests in 221.632s  OK 
+
+<details><summary>Worker report (tail)</summary>
+
+```
+=== U3 started 2026-11-15T07:34:47+05:30
+`cfg` defaults to 131072 for display — a missing `chat_ctx` should not show a number. Let me make it "auto" for display when the server doesn't send a value.
+Warning: Reached maximum conversation turns (150). The response may be incomplete. Retry with --max-turns 300 to extend the budget.
+```
+</details>
