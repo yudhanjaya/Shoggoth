@@ -490,3 +490,38 @@ S5 done and committed as `f5695a9`.
 - `index.html` not changed (S-task rule), so U5 still needs to build the Tools UI against these routes.
 ```
 </details>
+
+## S11 (2026-11-15T07:15:54+05:30)
+
+- exit code 0, 1 new commit(s), tests: ---------------------------------------------------------------------- Ran 701 tests in 126.415s  OK (skipped=2) 
+
+<details><summary>Worker report (tail)</summary>
+
+```
+=== S11 started 2026-11-15T07:07:54+05:30
+Done with S11. Committed as `09a3710`.
+
+**What I did**
+- Corrected the hosted key pages from each service's own docs:
+  - `command-code` → `https://commandcode.ai/studio/` (docs/studio: "API keys page")
+  - `opencode-zen` and `opencode-go` → `https://opencode.ai/console` (docs/console/models and docs/console/go)
+  - `nous-portal` → `https://portal.nousresearch.com/api-keys` (its sign-in redirect points there)
+- Added a `cwd` match to the engine schema for TabbyAPI (`python main.py`) and text-generation-webui (`python server.py`): `scan.py` now reads `/proc/<pid>/cwd`, and `identify()` matches folder name parts case-insensitively. No command execution added.
+- Extended `identify` so a `contains` signature with no `json`/`header` searches a plain-text reply, capped at 64 KB (`scan.TEXT_LIMIT`). NInfer's definition now uses `GET /metrics` containing `ninfer_`.
+
+**Files changed**
+- `shoggoth/engines.py`, `shoggoth/scan.py`
+- `shoggoth/engines.d/{command-code,opencode-zen,opencode-go,nous-portal,tabbyapi,textgen,ninfer}.yaml`
+- `tests/test_engines.py`, `tests/test_scan.py`
+
+**Tests run**
+- `python3 -W ignore -m unittest tests.test_engines tests.test_scan` — 82 passed.
+- `python3 -W ignore -m unittest discover tests` — 701 passed, 2 skipped.
+- `engines check` on the seven edited definition files — all valid.
+
+**Not done / not verified**
+- The task says five `key_url` files; only four actually pointed at home pages. `openrouter` already pointed at `https://openrouter.ai/keys`, which OpenRouter's authentication docs name as its API keys page, so I left it; `gemini` was already correct.
+- TabbyAPI, text-generation-webui and NInfer weren't running here, so `cwd` and `/metrics` matching were tested only with fakes/unit tests, not a live scan.
+- `docs/ENGINES.md` doesn't exist yet (W1), so the new `cwd` key is documented only in code/docstrings for now.
+```
+</details>
