@@ -199,6 +199,7 @@ main{position:relative}
 .nav .sub button{min-height:36px;font-size:14px;font-weight:500}
 .rail .spacer{flex:1}
 .railnote{padding:12px 12px;font-size:12.5px;color:var(--faint);line-height:1.45}
+.railmotto{font:800 12.5px/1.35 var(--disp);letter-spacing:.01em;color:var(--muted);padding:0 12px 14px;margin:0}
 main{display:flex;flex-direction:column;min-width:0;height:100dvh}
 .top{display:flex;align-items:center;gap:16px;padding:16px 28px;border-bottom:1px solid var(--line-soft);min-height:68px}
 .top h1{font:900 52px/1 var(--disp);margin:0;letter-spacing:0}
@@ -1564,6 +1565,7 @@ h3.themesec{font:600 13px var(--sans);color:var(--faint);margin:0 0 12px}
     </div>
     <div class="railchats" id="railchats"></div>
     <div class="spacer"></div>
+    <p class="railmotto">Heavy on the cosmos. Light on your machine.</p>
     <p class="railnote">Everything runs on this computer.</p>
   </nav>
 
@@ -1714,7 +1716,7 @@ h3.themesec{font:600 13px var(--sans);color:var(--faint);margin:0 0 12px}
 
     <!-- BACKENDS -->
     <section class="view" id="v-backends"><div class="pad"><div class="wrap">
-      <p class="lede">An <b>engine</b> is a program that runs models. Shoggoth picks one for each model, starts it, and frees its memory when you switch. You don't need this page to chat. It's here if you want to look under the bonnet.</p>
+      <p class="lede">An <b>engine</b> is a program that runs models. Shoggoth picks one for each model, starts it, and frees its memory when you switch. You don't need this page to chat.</p>
       <div id="engcards"></div>
       <div id="pibox"></div>
       <div id="engadd"></div>
@@ -2499,7 +2501,7 @@ function headroomRow(id, engine){
   const v = hrGb(id, engine), opts = [0, 1, 1.5, 2, 3, 4];
   if(!opts.includes(v)) opts.push(v), opts.sort((a, b) => a - b);
   return `<div class="hrrow"><label>Leave some graphics memory free so my computer doesn't slow <select data-hr="${esc(id)}" aria-label="Graphics memory to leave free">${opts.map(o => `<option value="${o}" ${o === v ? "selected" : ""}>${o ? o + " GB" : "None"}${o === (HR.d[engine] || 0) ? " (recommended)" : ""}</option>`).join("")}</select></label>
-    <small>It applies the next time the model loads. The model may keep a little less on the card, which can make it a bit slower.</small></div>`;
+    <small>Applies the next time the model loads. Part of the model then stays in normal memory, which can make it slower.</small></div>`;
 }
 document.addEventListener("change", async e => {
   const sel = e.target.closest && e.target.closest("select[data-hr]"); if(!sel) return;
@@ -2608,8 +2610,8 @@ function libDlHTML(){
 /* cards */
 const featLine = e => [e.vision ? "Understands pictures" : "", e.reasoning ? "Thinks before it answers" : "", e.tools !== false ? "Can use tools" : ""].filter(Boolean).join(" · ") || "Everyday chat and writing";
 function libFitHTML(e){
-  if(!e.why && e.fit === "fits") return `<div class="fitnote ok" style="margin-top:2px">Fits this computer</div>`;
-  return `<div class="fitnote ${e.fit === "no" ? "over" : e.fit === "tight" ? "tight" : "ok"}" style="margin-top:2px">${esc(e.why || (e.fit === "tight" ? "A snug fit." : "Fits this computer."))}</div>`;
+  if(!e.why && e.fit === "fits") return `<div class="fitnote ok" style="margin-top:2px">Runs well</div>`;
+  return `<div class="fitnote ${e.fit === "no" ? "over" : e.fit === "tight" ? "tight" : "ok"}" style="margin-top:2px">${esc(e.why || (e.fit === "tight" ? "Tight" : e.fit === "no" ? "Too big for this computer" : "Runs well"))}</div>`;
 }
 function bigCard(e){          // an installed model that another engine runs (no per-engine settings to edit here)
   const startable = !!pkFind(e.ref), live = (S.ms || {}).loaded === e.ref;
@@ -2627,7 +2629,7 @@ function bigCard(e){          // an installed model that another engine runs (no
 }
 const LARGE_LINKS = [["Strata", "https://github.com/Niko1221/Strata"], ["Basalt", "https://github.com/jesdga95/basalt"], ["Maya", "https://github.com/mw00/project-maya"]];
 const largeNote = () => `<div class="largenote"><b>Running very large models</b>
-  <p>Shoggoth runs models with llama.cpp. Only models llama.cpp can serve are listed here. For models with over a hundred billion parameters, llama.cpp is not yet as good as Strata, Basalt and Maya. That is true as of November 2026. It will change. To run models that size, set one of these up yourself. Then connect it under <b>Advanced</b>, <b>Connect a server</b>.</p>
+  <p>Shoggoth runs models with llama.cpp. Only models llama.cpp can serve are listed here. For models with over a hundred billion parameters, llama.cpp is not yet as good as Strata, Basalt and Maya, as of November 2026. To run models that size, set one of these up yourself, then connect it under <b>Advanced</b>, <b>Connect a server</b>.</p>
   <div class="links">${LARGE_LINKS.map(([n, u]) => `<a href="${u}" target="_blank" rel="noopener noreferrer">${n} on GitHub</a>`).join("")}</div></div>`;
 function libGrid(items){ return items.length ? `<div class="grid">${items.join("")}</div>` : ""; }
 function libSection(t, cards, note){ return cards.length || note ? `<section class="picktier"><div class="tierhead"><h3>${esc(t[1])}</h3>${t[2] ? `<p>${esc(t[2])}</p>` : ""}</div>${note || ""}${cards.length ? `<div class="grid">${cards.join("")}</div>` : ""}</section>` : ""; }
@@ -2664,7 +2666,7 @@ function recGetCard(it){
     <div class="act">${act}</div>
     <details class="more"><summary>Details</summary><div class="mbody"><div class="mono mid">${esc(it.id)}</div>${it.download ? `<div class="mono mid">${esc(it.download.checkpoint)}</div>` : ""}</div></details></article>`;
 }
-const recSoonCard = c => `<article class="card soon" aria-label="${esc(c.title)}, coming soon"><span class="soonband" aria-hidden="true">COMING SOON!</span><div class="ctop"><h3>${esc(c.title)}</h3></div>${c.take ? `<p class="take">${inline(c.take)}</p>` : ""}</article>`;
+const recSoonCard = c => `<article class="card soon" aria-label="${esc(c.title)}, coming soon"><span class="soonband" aria-hidden="true">COMING SOON</span><div class="ctop"><h3>${esc(c.title)}</h3></div>${c.take ? `<p class="take">${inline(c.take)}</p>` : ""}</article>`;
 /* the person chose a pick before llama.cpp was ready: set up, then fetch it */
 const PICK = {id: store.get("shoggoth.pendingpick", "")};
 async function recFetch(it){
@@ -2964,7 +2966,7 @@ function hfFit(gb){
   const need = gb + 0.8, r = v.avail > 0 ? need / v.avail : Infinity;
   return r <= .8 ? "ok" : r <= 1 ? "tight" : "over";
 }
-const HF_FIT = {ok: "Runs comfortably", tight: "A snug fit", over: "Probably too big"};
+const HF_FIT = {ok: "Runs well", tight: "Tight", over: "Too big for this computer"};
 function hfPlain(q){
   if(/^(UD-)?(IQ[12]|Q[12])/i.test(q)) return "Smallest, a little less accurate";
   if(/^(UD-)?(IQ3|Q3)/i.test(q)) return "Small, slightly less accurate";
@@ -3931,7 +3933,7 @@ function renderPick(){
   $("#pickbody").innerHTML = `
     <h4>Start with three questions</h4>
     <ol class="picklist">
-      <li><b>Will it fit?</b> Shoggoth's Models page lists <b>Recommended for this computer</b> first. It marks anything that won't run comfortably in your free graphics memory as “Probably too big”. A model that doesn't fit will be slow or fail to start.</li>
+      <li><b>Will it fit?</b> Shoggoth's Models page lists <b>Recommended for this computer</b> first. Each card says whether the model fits your free graphics memory: <b>Runs well</b>, <b>Tight</b>, or <b>Too big for this computer</b>. A model that doesn't fit will be slow or fail to start.</li>
       <li><b>What is it for?</b> Chat and writing, coding, tool use, or understanding pictures. The labels on each card say what a model is good at.</li>
       <li><b>How much does it need to remember?</b> The context window is how much conversation the model can see. 128k tokens is enough for long chats and agent work. It's Shoggoth's default.</li>
     </ol>
@@ -3945,14 +3947,14 @@ document.addEventListener("click", e => { if(e.target.closest("[data-pick]")){ e
 
 /* ======================= help + advanced hub ======================= */
 const FAQ = [
-  ["What is a model?", "A model is the AI that answers you. It is a big file, usually a few gigabytes, that lives on this computer. Bigger models tend to write better but need a stronger computer and answer more slowly. Shoggoth marks each one as comfortable, snug or too big for your machine."],
+  ["What is a model?", "A model is the AI that answers you. It is a big file, usually a few gigabytes, that lives on this computer. Bigger models tend to write better but need a stronger computer and answer more slowly. Each model's card says whether it runs well, is tight, or is too big for this computer."],
   ["Is my data private?", "Yes, unless you choose otherwise. Shoggoth and its models run on this computer, and your conversations are saved in Shoggoth's own folder here. They leave this computer only when you ask: a chat on a paid hosted model sends the conversation to that service, and web search sends your search words. Shoggoth also goes online to download a model you ask for, check for updates, or fetch skills from a link you paste. It asks first. The <a href=\"#docs\" data-go=\"docs\">Docs</a> page explains where everything is kept."],
   ["Why is the first answer slow?", "The model has to be loaded into your computer's memory before it can answer. That takes a few seconds to a minute, depending on its size. After that, answers start right away."],
   ["How do I know which model to use?", "It depends on your computer and what you want to do. Start with <b>Recommended for this computer</b> in Models, where I explain each recommendation. <b>Everything</b> shows the rest, with a note on whether each one will fit. <p><button class=\"btn\" type=\"button\" data-pick>Show me how to compare models</button></p>"],
   ["What is the context window?", "It is how much of the conversation a model can see at once. Shoggoth uses <b>128k</b> tokens (about 100,000 words) by default. That's enough for long chats and agent work. You can change it for one model under <b>Details</b>, then <b>Settings for this model</b>. A bigger window needs more graphics memory."],
   ["How do I get more models?", "Open the <b>Models</b> and press <b>Get it</b> on any model. Models you already have somewhere else, or ones from Hugging Face, come in with <b>Add models</b>. Large models work the same way: Shoggoth sets up whatever they need and starts them when you pick one."],
   ["Can other apps use my models?", "Yes. Open <b>Advanced</b>, then <b>Server</b>. Shoggoth gives you an address and a key that you can paste into Hermes, or any chat app or coding assistant that works with an OpenAI-style server."],
-  ["Answers are slow or the model won't start", "Close other programs that use your graphics card, such as games or video editors. Then try again. If it still struggles, choose a smaller model in Models. Models marked “Probably too big” often fail on this computer. Large models take a couple of minutes to start; the bar at the top of the chat shows how far along they are."]
+  ["Answers are slow or the model won't start", "Close other programs that use your graphics card, such as games or video editors. Then try again. If it still struggles, choose a smaller model in Models. Models marked “Too big for this computer” often fail here. Large models take a couple of minutes to start; the bar at the top of the chat shows how far along they are."]
 ];
 let DOCS = null;
 async function renderDocs(){
@@ -3988,7 +3990,7 @@ const ADV_CARDS = [
   ["themes", "Themes", "Change how Shoggoth looks. Light Touch is the default; there are fifteen to try."]
 ];
 function renderAdvanced(){
-  $("#advhub").innerHTML = `<p class="lede">The tools for people who like to look under the bonnet. You never need these to chat.</p>
+  $("#advhub").innerHTML = `<p class="lede">These pages are for changing how Shoggoth runs. You never need them to chat.</p>
     <div class="advgrid">${ADV_CARDS.map(([k, t, d]) => `<button type="button" class="advcard" data-view2="${k}"><b>${t}</b><span>${d}</span></button>`).join("")}</div>`;
 }
 $("#advhub").addEventListener("click", e => { const c = e.target.closest("[data-view2]"); if(c) show(c.dataset.view2); });
@@ -4735,6 +4737,7 @@ const TRI = {
   void: { t: '#2a2a33', l: '#15151b', r: '#0a0a0e' }
 };
 const U = { w: 12.1, h: 7, H: 14 };
+const CR_FORMS = 17;                       // how many bodies the generator knows; `form` picks one
 function hashStr(s) {
   let h = 2166136261;
   for (let i = 0; i < s.length; i++) { h ^= s.charCodeAt(i); h = Math.imul(h, 16777619); }
@@ -5175,7 +5178,6 @@ const archetype = (seed, params) => hashStr(seed + '|' + params) % 9;
 const crCache = new Map();
 /* The creature comes from the name. The family (the name without sizes, quants and packaging) picks its shape and colour, the biggest
    number written before a B sets its size and how many hands it has, and every creature gets camera eyes and hands holding things. */
-const CR_FORMS = 17;
 const crFamily = t => String(t || "model").toLowerCase().replace(/^[^/]*\//, "").replace(/^(user|extra)\./, "").replace(/,.*$/, "").replace(/\(.*?\)/g, " ")
   .replace(/\b(gguf|mtp|it|distill|gsq|rco|dual|instruct)\b/g, " ").replace(/\bi?q\d[a-z0-9_]*\b/g, " ").replace(/\b\d{4}\b/g, " ")
   .replace(/\b[a-z]?\d+(\.\d+)?b\b/g, " ").replace(/-a\d+b\b/g, " ").replace(/[\s_]+/g, "-").replace(/-+/g, "-").replace(/^-|-$/g, "") || "model";
@@ -5695,7 +5697,7 @@ const ENGINE_INFO = {
   acestep: "Composes music from a written description.",
   onnxruntime: "Runs small specialised models, such as ones that sort text into categories.",
   trellis: "Builds 3D objects from a picture or a description.",
-  vllm: "A server for large models, aimed at powerful machines serving many requests at once.",
+  vllm: "A server for large models, built to serve many requests at once from a big machine.",
   flm: "Runs models on AMD Ryzen AI processors (the NPU).",
   ryzenai: "Runs models on AMD Ryzen AI processors (the NPU).",
 };

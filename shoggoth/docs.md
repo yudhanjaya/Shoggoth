@@ -38,7 +38,7 @@ If you pick the recommended model you will be chatting within minutes, depending
 
 You can see the first-run screen again any time: go to **Help**, then **Run the welcome steps again**.
 
-Closing the browser tab quits Shoggoth after about three minutes, unless a job is still working.
+Closing the browser tab quits Shoggoth within about two seconds, unless a job is still working.
 
 ## Model pictures
 
@@ -179,7 +179,7 @@ Open **Models**. It lists every model on your computer, whichever program runs i
 - **Chat with it** starts a chat with a model. **Settings** on a model edits how it runs. Choosing a model in the chat gets it ready, and frees the memory of whatever else was running.
 - Shoggoth keeps your models in one folder you choose (change it at the top of the **Models** page), with a subfolder for each engine. It moves nothing you already have. The name of the engine that runs a model is shown, small, at the foot of its card.
 
-- Will it fit? Shoggoth compares a model's size with the memory that is free on your graphics card right now. It marks it comfortable, snug or too big.
+- Will it fit? Shoggoth compares a model's size with the memory that is free on your graphics card right now. Its card says **Runs well**, **Tight**, or **Too big for this computer**.
 - For working in a folder, pick a model that handles tools well. Look for tool-calling in its description. The recommended ones lean that way. Models that are very small can still chat well but often fumble tools.
 - Memory (the context window): this is how much the AI can keep in mind at once. Shoggoth sets a roomy 128k by default. Working in a folder can use a lot of it, because the AI reads files. The Details panel shows how full it is, with a **Make room** button that tidies the older part of the conversation. The **Memory** menu in the chat's model bar changes the size.
 - **Settings for one model** (the **Settings** button on its card) let you change which devices it uses, backend options and more. The defaults are fine for nearly everyone. Chat always loads a model with the context size in its model bar.
