@@ -1018,6 +1018,48 @@ svg.gl{width:1.2em;height:1.2em;vertical-align:-.25em;stroke:currentColor;fill:n
 .pkmeta{font-size:12px;color:var(--muted)}
 .pkmeta .tight{color:var(--warn)}
 .pkeng{font-size:11px;color:var(--faint);flex:none}
+/* the picker's groups: a source is a heading with its models under it, greyed when it isn't answering */
+.pkhead .pkstat{font-size:11px;color:var(--faint);margin-left:auto}
+.pkhead.off b,.pkhead.off .pkstat{color:var(--faint)}
+.pkrow.off{opacity:.5}
+.pkrow.off .pkmeta{color:var(--faint)}
+.pkrow .pkctx{font:11.5px var(--mono);color:var(--faint);flex:none}
+.pkrow .pkico{width:13px;height:13px;flex:none;color:var(--faint)}
+.pkrow .pkico+ .pkico{margin-left:-6px}
+.pkfound{border-top:1px solid var(--line-soft);margin-top:8px;padding:10px 12px 2px;display:grid;gap:8px}
+.pkfound b{font-size:12.5px;color:var(--muted);font-weight:600}
+.pkfound .line{display:flex;gap:10px;align-items:center;font-size:13px}
+.pkfound .line .btn{margin-left:auto}
+.pkleave{font-size:11px;color:var(--warn)}
+/* the Models page's sources strip: everything that serves models, before the model list */
+.srcstrip{display:grid;gap:10px;margin-bottom:20px}
+.srcstrip .snip{display:flex;flex-wrap:wrap;align-items:center;gap:8px 12px;border:1px solid var(--line);border-radius:12px;background:var(--surface);padding:12px 16px;font-size:13.5px}
+.srcstrip .snip.own{border-color:color-mix(in srgb,var(--lemon) 45%,transparent);background:var(--lemon-wash)}
+.srcstrip .snip.off{opacity:.6}
+.srcstrip .snip b{font-weight:600}
+.srcstrip .snip .mono{font-size:12px;color:var(--faint);overflow-wrap:anywhere}
+.srcstrip .snip .grow{flex:1;min-width:0}
+.srcstrip .snip .btn{min-height:32px;padding:0 12px}
+.srcstrip .snip .srcacts{display:flex;gap:8px;flex-wrap:wrap}
+.srcstrip .srcadd{border-style:dashed}
+.srchead{font:600 13px var(--sans);color:var(--muted);margin:6px 0 0;letter-spacing:.01em}
+.srchead span{font-weight:400;color:var(--faint);margin-left:8px}
+/* Hook up something else: address, key, format, models, context, a Test button and "Recognise this next time?" */
+.hookup{display:grid;gap:14px;border:1px dashed var(--line);border-radius:var(--radius);padding:20px;background:var(--surface)}
+.hookup h3{margin:0;font:800 20px var(--disp)}
+.hookup .row2{display:grid;gap:12px;grid-template-columns:repeat(auto-fit,minmax(180px,1fr))}
+.hookup label{display:grid;gap:4px;font-size:13px;color:var(--muted)}
+.hookup label>span{font-weight:600;color:var(--text);font-size:12.5px}
+.hookup input,.hookup select{min-height:40px;border:1px solid var(--line);border-radius:10px;background:var(--surface);padding:0 12px;font:inherit;font-size:13.5px;color:var(--text)}
+.hookup input:focus,.hookup select:focus{border-color:var(--lemon);outline:none}
+.hookup .chk{display:flex;gap:10px;align-items:flex-start;font-size:13px;color:var(--muted)}
+.hookup .chk input{min-height:0;margin-top:3px}
+.hookup .chk span b{color:var(--text)}
+.hookup .testout{font-size:13px;color:var(--muted);min-height:20px}
+.hookup .testout.ok{color:var(--leaf)}
+.hookup .testout.bad{color:var(--bad)}
+.hookup .act{display:flex;gap:10px;flex-wrap:wrap;align-items:center}
+.hookup .modelsout{font:12px var(--mono);color:var(--faint);overflow-wrap:anywhere}
 .pkfoot{display:flex;gap:8px;justify-content:flex-end;padding:8px 8px 2px;border-top:1px solid var(--line-soft);margin-top:8px}
 .mcard{display:grid;gap:8px;padding:12px 20px;border-bottom:1px solid var(--line-soft);background:var(--surface-2)}
 .mcard[hidden]{display:none}
@@ -1512,6 +1554,8 @@ h3.themesec{font:600 13px var(--sans);color:var(--faint);margin:0 0 12px}
       <div class="pagehead"><p class="lede">Everything your computer can run, in one place. Models you get stay on this computer and work without the internet.</p>
         <div class="pagebtns"><button class="btn ghost" type="button" data-pick>How do I choose a model?</button>
         <button class="btn" id="libadd" type="button"><svg class="i" viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></svg>Add models from other sources</button></div></div>
+      <div id="srcstrip" class="srcstrip"></div>
+      <div id="hookup"></div>
       <div id="libwhere"></div>
       <div id="modelsbanner"></div>
       <div id="libdl"></div>
@@ -2375,7 +2419,7 @@ function recProblems(){                  // a mistake in the files is said where
   return p.length ? `<div class="note-warn" style="margin-top:12px"><b>Some recommendations were skipped.</b> Run <span class="mono">python3 shoggoth/server.py recommendations check</span> for the full list.<br>${p.slice(0, 5).map(esc).join("<br>")}</div>` : "";
 }
 /* ======================= the Models page: one list, whichever engine runs a model ======================= */
-const LIB = {d: null, t: 0, busy: false, tab: store.get("shoggoth.libtab", "installed"), kind: "all", q: "", notNow: false, picked: ""};
+const LIB = {d: null, t: 0, busy: false, tab: store.get("shoggoth.libtab", "installed"), kind: "all", q: "", notNow: false, picked: "", src: null, srcErr: ""};
 const LIB_TIERS = [["small", "Small models", "Under 10 GB of graphics memory. They start in seconds."], ["medium", "Medium models", "10 to 24 GB of graphics memory."],
   ["large", "Large models", "For big computers. They take a couple of minutes to start."], ["other", "Pictures, speech and sound", ""]];
 const LIB_TABS = [["installed", "Installed"], ["recommended", "Recommended for this computer"], ["everything", "All models"]];
@@ -2392,7 +2436,9 @@ async function libLoad(fresh){
   LIB.busy = false; if(S.view === "models") renderModels(); if(S.view === "welcome") renderWelcome(true); if(S.view === "backends") renderPrefs(true);
 }
 function libShow(){
-  hrLoad().then(() => { if(S.view === "models") renderModels(); }); tnQuiet(); renderModels(); libLoad(); pkLoad(true); loadRecs().then(() => { if(S.view === "models") renderModels(); }); }
+  hrLoad().then(() => { if(S.view === "models") renderModels(); }); tnQuiet(); renderModels(); libLoad(); pkLoad(true); srcLoad();
+  loadRecs().then(() => { if(S.view === "models") renderModels(); });
+}
 function libFilters(){
   $("#filters").innerHTML = LIB_TABS.map(([k, l]) => `<button type="button" data-tab="${k}" aria-pressed="${LIB.tab === k}">${l}</button>`).join("") +
     (LIB.tab === "everything" ? `<select id="libkind" aria-label="Kind of model">${LIB_KINDS.map(([k, l]) => `<option value="${k}" ${LIB.kind === k ? "selected" : ""}>${l}</option>`).join("")}</select>` : "") +
@@ -2543,6 +2589,8 @@ function renderModels(){
   const noBackend = S.bk && S.bk.length && !(SU.st && SU.st.engine.installed);
   $("#modelsbanner").innerHTML = noBackend ? `<div class="note-warn" style="margin-bottom:12px">Shoggoth still needs llama.cpp before models can run. <a href="#welcome" data-go="welcome">Finish getting ready</a>.</div>` : "";
   $("#libwhere").innerHTML = libWhereHTML();
+  $("#srcstrip").innerHTML = srcStripHTML();
+  $("#hookup").innerHTML = hookupHTML();
   $("#libdl").innerHTML = libDlHTML();
   const open = new Set($$("#grid details.more[open]").map(d => d.closest(".card")?.dataset.id));
   $("#grid").classList.add("picksmode");
@@ -2550,6 +2598,147 @@ function renderModels(){
   $$("#grid .card[data-id]").forEach(c => { if(open.has(c.dataset.id)) c.querySelector("details.more")?.setAttribute("open", ""); });
   crCrop($("#grid"));
 }
+/* ======================= sources: everything that serves models, in one strip ======================= */
+/* What each source's state means, in words a person reads at a glance. The server says the state; the page only names it. */
+const SRC_STATE = {ready: ["Answering", "ok"], starting: ["Starting", "busy"], offline: ["Not answering", "off"], needs_key: ["Needs a key", "warn"],
+  off: ["Turned off", "off"], not_installed: ["Not set up yet", "off"]};
+const srcState = s => SRC_STATE[s] || [s || "", ""];
+const SRC_KIND_HEAD = {builtin: "On this computer", engine: "Engines you connected", shoggoth: "Other Shoggoths", cloud: "Paid services"};
+/* The kinds in the plan's order, so the strip reads This computer, engines, other Shoggoths, paid services. */
+const SRC_KINDS = ["builtin", "engine", "shoggoth", "cloud"];
+const srcModels = s => (s.items || []).length;
+function srcCount(s){
+  const n = srcModels(s);
+  if(s.state === "offline" && n) return `${n} model${n === 1 ? "" : "s"}, not answering`;
+  return `${n} model${n === 1 ? "" : "s"}`;
+}
+/* One source's line: what it is, where it is, how it is doing, and what can be done with it. */
+function srcLine(s){
+  const [word, cls] = srcState(s.state), own = !!s.own;
+  const version = own ? [s.version, s.backend].filter(Boolean).join(" · ") : "";
+  const acts = own ? `<button class="btn" data-src="engines">Settings</button>`
+    : `<button class="btn" data-src="remove" data-id="${esc(s.id)}">Remove</button>`;
+  const url = s.url ? `<span class="mono">${esc(s.url)}</span>` : "";
+  const leave = s.leaves_computer ? `<span class="pkleave">Leaves your computer</span>` : "";
+  return `<div class="snip ${own ? "own" : ""} ${['offline','off'].includes(s.state) ? "off" : ""}" data-sid="${esc(s.id)}">
+    <b>${esc(own ? (s.label || "llama.cpp (on this computer)") : (s.name || s.id))}</b>
+    <span class="chip ${cls === "ok" ? "ok" : cls === "warn" ? "warn" : ""}">${esc(word)}</span>
+    <span class="grow">${esc(srcCount(s))}${url ? " · " + url : ""}${version ? ` <span class="mono">${esc(version)}</span>` : ""}${leave}</span>
+    <span class="srcacts">${acts}</span>
+    ${s.error ? `<div class="note-bad" style="flex:1 0 100%">${esc(s.error)}</div>` : ""}
+    ${s.hint && !own ? `<p class="help" style="flex:1 0 100%;margin:0">${esc(s.hint)}</p>` : ""}</div>`;
+}
+/* A server the scan found that isn't connected: one button, no form. */
+function srcFoundLine(f){
+  const nm = f.needs_key ? "Needs a key" : "Not connected yet";
+  return `<div class="snip" data-found="${esc(String(f.port))}"><b>${esc(f.name || "A server")}</b>
+    <span class="chip">${esc(nm)}</span><span class="grow">on port ${esc(String(f.port))} · ${f.models} model${f.models === 1 ? "" : "s"}</span>
+    <span class="srcacts"><button class="btn primary" data-src="connect" data-port="${esc(String(f.port))}" data-url="${esc(f.url || "")}" data-key="${f.needs_key ? "1" : ""}">Connect</button></span></div>`;
+}
+function srcStripHTML(){
+  const d = LIB.src || {}, all = d.sources || [], found = d.found || [];
+  const by = {}; all.forEach(s => (by[s.kind] = by[s.kind] || []).push(s));
+  let html = "";
+  for(const k of SRC_KINDS){
+    const list = by[k] || []; if(!list.length) continue;
+    html += `<div class="srchead">${SRC_KIND_HEAD[k]}<span>${list.length}</span></div>` + list.map(srcLine).join("");
+  }
+  if(found.length) html += `<div class="srchead">Found on this computer<span>${found.length}</span></div>` + found.map(srcFoundLine).join("");
+  if(d.problems && d.problems.length) html += `<div class="note-warn" style="margin-top:4px">${d.problems.slice(0, 4).map(p => esc(p.file + (p.line ? ":" + p.line : "") + " · " + p.error)).join("<br>")}</div>`;
+  html += `<div class="snip srcadd"><b>Hook up something else</b><span class="grow">A server Shoggoth hasn't found, such as one on another computer, or a paid service.</span>
+    <span class="srcacts"><button class="btn" data-src="scan">Look again</button><button class="btn primary" data-src="hookup">Add an address…</button></span></div>`;
+  return html;
+}
+async function srcLoad(fresh){
+  try{ LIB.src = fresh ? await api("/ui/sources/scan", {method: "POST", body: "{}"}) : await api("/ui/sources"); }
+  catch(e){ LIB.src = LIB.src || {sources: [], found: [], problems: []}; LIB.srcErr = e.message; }
+  if(S.view === "models") $("#srcstrip").innerHTML = srcStripHTML();
+  return LIB.src;
+}
+/* Hook up something else: the form the plan describes. The Test button and Save both go through the server. */
+const HOOK = {open: false, busy: false, result: null, models: []};
+const HOOK_API = [["openai-completions", "OpenAI chat completions"], ["anthropic-messages", "Anthropic Messages"],
+  ["openai-responses", "OpenAI Responses"], ["ollama-native", "Ollama's own API"], ["google-generative-ai", "Google Gemini"]];
+function hookupHTML(){
+  if(!HOOK.open) return "";
+  const r = HOOK.result || {}, local = HOOK.local !== false;
+  return `<form class="hookup" id="hookform">
+    <h3>Hook up something else</h3>
+    <p class="help" style="margin:0">Use a server Shoggoth hasn't found, or a paid service that isn't in the list. Shoggoth uses the models it serves and never starts or stops it.</p>
+    <div class="row2">
+      <label><span>Address</span><input id="hkurl" type="text" inputmode="url" placeholder="http://192.168.1.20:8000" autocomplete="off" spellcheck="false"></label>
+      <label><span>Key (if it needs one)</span><input id="hkkey" type="password" placeholder="None" autocomplete="off"></label>
+    </div>
+    <div class="row2">
+      <label><span>API format</span><select id="hkapi">${HOOK_API.map(([v, l]) => `<option value="${esc(v)}">${esc(l)}</option>`).join("")}</select></label>
+      <label><span>Name</span><input id="hkname" type="text" maxlength="60" placeholder="Shown in the list" autocomplete="off"></label>
+    </div>
+    <div class="row2">
+      <label><span>Models</span><input id="hkmodel" type="text" placeholder="Read from the server, or type one" autocomplete="off"></label>
+      <label><span>Context size</span><input id="hkctx" type="number" min="2048" step="1024" value="32768" autocomplete="off"></label>
+    </div>
+    <div class="modelsout" id="hkmodels">${HOOK.models.length ? "It serves: " + HOOK.models.slice(0, 12).map(esc).join(", ") + (HOOK.models.length > 12 ? "…" : "") : ""}</div>
+    <label class="chk"><input id="hklocal" type="checkbox" ${local ? "checked" : ""}><span><b>On this computer.</b> Shoggoth infers this from the address. A server here keeps every message on your network; one elsewhere leaves your computer.</span></label>
+    <label class="chk"><input id="hkremember" type="checkbox" checked><span><b>Recognise this next time.</b> Shoggoth saves what it saw so it names this server on any port, and offers it again after a restart.</span></label>
+    <div class="act"><button class="btn" type="button" data-hook="test" ${HOOK.busy ? "disabled" : ""}>${HOOK.busy ? "Testing…" : "Test"}</button>
+      <button class="btn primary" type="submit" ${HOOK.busy ? "disabled" : ""}>Connect</button>
+      <button class="btn ghost" type="button" data-hook="close">Cancel</button></div>
+    <p class="testout ${r.ok ? "ok" : r.message ? "bad" : ""}" id="hktest" role="status">${esc(r.message || "")}</p></form>`;
+}
+function hookShow(open){ HOOK.open = !!open; $("#hookup").innerHTML = hookupHTML(); if(open) setTimeout(() => { const u = $("#hkurl"); if(u) u.focus(); }, 30); }
+/* The scan's Connect button: it wants a key, so the form opens with the address filled in. */
+function srcConnect(port, url, needsKey){
+  hookShow(true);
+  const f = (LIB.src || {}).found || [], hit = f.find(x => String(x.port) === String(port)) || {};
+  $("#hkurl").value = hit.url || url || "";
+  $("#hkname").value = hit.name || "";
+  $("#hkapi").value = "openai-completions";
+  if(needsKey){ const k = $("#hkkey"); if(k) k.focus(); }
+  else api("/ui/servers", {method: "POST", body: JSON.stringify({action: "probe", preset: hit.engine || "other", url: hit.url || url, key: ""})})
+    .then(async r => { if(r.connected && r.connected.length){ toast("Connected " + r.connected.map(c => c.name).join(", ") + "."); hookShow(false); await srcLoad(true); await libLoad(true); } })
+    .catch(e => toast(e.message));
+}
+document.addEventListener("click", async e => {
+  const b = e.target.closest("[data-src],[data-hook]"); if(!b) return;
+  if(b.dataset.hook === "close") return hookShow(false);
+  if(b.dataset.hook === "test") return hookTest();
+  if(b.dataset.src === "hookup") return hookShow(!HOOK.open);
+  if(b.dataset.src === "engines") return show("backends");
+  try{
+    if(b.dataset.src === "scan"){ await srcLoad(true); toast("Looked at this computer again."); }
+    else if(b.dataset.src === "connect") srcConnect(b.dataset.port, b.dataset.url, b.dataset.key === "1");
+    else if(b.dataset.src === "remove"){
+      if(!confirm("Remove this server? Shoggoth forgets the address; the server itself is untouched.")) return;
+      await api("/ui/servers", {method: "POST", body: JSON.stringify({action: "remove", id: b.dataset.id})});
+      toast("Removed."); await Promise.all([srcLoad(true), libLoad(true), pkLoad(true)]);
+    }
+  }catch(err){ toast(err.message); }
+});
+async function hookBody(){
+  const val = q => ($(q) ? $(q).value.trim() : "");
+  return {url: val("#hkurl"), key: val("#hkkey"), api: val("#hkapi"), name: val("#hkname"), model: val("#hkmodel"),
+          ctx: Number(val("#hkctx")) || 0, local: !!($("#hklocal") || {}).checked, remember: !!($("#hkremember") || {}).checked};
+}
+async function hookTest(){
+  if(HOOK.busy) return;
+  HOOK.busy = true; $("#hookup").innerHTML = hookupHTML();
+  try{ HOOK.result = await api("/ui/custom/probe", {method: "POST", body: JSON.stringify(await hookBody())}); }
+  catch(e){ HOOK.result = {ok: false, message: e.message}; }
+  HOOK.busy = false; HOOK.models = (HOOK.result || {}).models || [];
+  $("#hookup").innerHTML = hookupHTML();
+}
+document.addEventListener("submit", async e => {
+  if(e.target.id !== "hookform") return;
+  e.preventDefault();
+  const btn = e.target.querySelector("button[type=submit]");
+  if(HOOK.busy) return; HOOK.busy = true; btn.disabled = true; btn.textContent = "Connecting…";
+  try{
+    const body = await hookBody(), r = await api("/ui/custom/save", {method: "POST", body: JSON.stringify(body)});
+    toast("Connected " + (r.server && r.server.name ? r.server.name : "it") + ".");
+    hookShow(false); await Promise.all([srcLoad(true), libLoad(true), pkLoad(true)]);
+  }catch(err){ HOOK.result = {ok: false, message: err.message}; HOOK.busy = false; $("#hookup").innerHTML = hookupHTML(); return; }
+  HOOK.busy = false;
+});
 /* adding models */
 function libAddOpen(){ $("#addbody").innerHTML = `
   <div class="addopt"><b>From Hugging Face</b><span>Paste a link to a model page.</span><button class="btn" type="button" data-add="hf">Paste a link</button></div>
@@ -5263,13 +5452,14 @@ function cwConnect(){
 
 /* ---- the model bar: which model, how much it remembers, ready or not. One list, from every engine. */
 const BAR_CTX = [8192, 16384, 32768, 65536, 131072, 262144];
-S.pk = {models: [], t: 0, busy: false}; S.loadSteps = []; S.loadStart = 0; S.loadPoll = null;
+S.pk = {models: [], groups: [], found: [], t: 0, busy: false}; S.loadSteps = []; S.loadStart = 0; S.loadPoll = null;
 async function pkLoad(fresh){
   if(S.pk.busy) return; S.pk.busy = true;
-  try{ const d = await api("/ui/picker" + (fresh ? "?fresh=1" : "")); S.pk.models = d.models || []; S.pk.machine = d.machine || null; S.pk.t = Date.now(); }catch{}
+  try{ const d = await api("/ui/picker" + (fresh ? "?fresh=1" : ""));
+    S.pk.models = d.models || []; S.pk.groups = d.groups || []; S.pk.found = d.found || []; S.pk.machine = d.machine || null; S.pk.t = Date.now(); }catch{}
   S.pk.busy = false; cwModelBar();
 }
-const pkModels = () => S.pk.models.length ? S.pk.models : chatModels().map(m => ({id: m.id, title: modelName(m), tier: "", tier_label: "Other", fit: "fits", live: S.loaded === m.id, start: "", engine_name: "", ctx: 0, ctx_fixed: false, size_gb: 0}));
+const pkModels = () => S.pk.models.length ? S.pk.models : chatModels().map(m => ({id: m.id, title: modelName(m), tier: "", tier_label: "Other", fit: "fits", live: S.loaded === m.id, start: "", engine_name: "", source: "llamacpp", source_name: "This computer", state: "", ctx: 0, ctx_fixed: false, size_gb: 0}));
 const pkFind = id => pkModels().find(m => m.id === id);
 /* the model this chat uses, or would use if it started now */
 function cwBarModel(){
@@ -5278,6 +5468,23 @@ function cwBarModel(){
   return pick || ids[0] || "";
 }
 const PK_TIER = {small: ["Small models", "Under 10 GB of graphics memory"], medium: ["Medium models", "10 to 24 GB of graphics memory"], large: ["Large models", "For big computers. They take a couple of minutes to start."], "": ["Other models", ""]};
+/* The plan's groups, in order: This computer, each connected engine by name, Other Shoggoths, then Paid services under a heading that
+   says they leave your computer. `S.pk.groups` comes from the server; a model with no group falls under This computer. */
+const PK_KIND_HEAD = {builtin: "This computer", engine: "", shoggoth: "Other Shoggoths", cloud: "Paid services · they leave your computer"};
+function pkGroups(){
+  const src = {}; for(const g of (S.pk.groups || [])) src[g.id] = g;
+  const by = new Map();
+  for(const m of pkModels()){
+    const g = src[m.source] || src[m.engine] || {id: m.source || m.engine || "builtin", kind: "builtin", name: m.source_name || m.engine_name || "This computer", state: "ready"};
+    const key = g.id || "builtin";
+    if(!by.has(key)) by.set(key, {g, models: []});
+    by.get(key).models.push(m);
+  }
+  const order = {builtin: 0, engine: 1, shoggoth: 2, cloud: 3};
+  return [...by.values()].sort((a, b) => (order[a.g.kind] ?? 9) - (order[b.g.kind] ?? 9) || String(a.g.name).localeCompare(String(b.g.name)));
+}
+const pkGroupState = g => (S.pk.groups || []).find(x => x.id === g.id) || {};
+const pkOffline = (g, m) => (g.state === "offline") || m.state === "offline";
 function pkNote(m){
   const bits = [];
   if(m.tier === "large" && m.need_gb) bits.push("Needs about " + Math.round(m.need_gb) + " GB of memory");
@@ -5286,18 +5493,28 @@ function pkNote(m){
   else{ bits.push(m.fit === "tight" ? '<span class="tight">Tight: close other big programs first</span>' : "Fits this computer"); bits.push(m.live ? "Ready now" : esc(m.start || "")); }
   return bits.filter(Boolean).join(" · ");
 }
+const PK_ICONS = {tools: '<svg class="i pkico" viewBox="0 0 24 24" aria-hidden="true"><path d="M14 6l4 4-7 7H7v-4z"/></svg>',
+  vision: '<svg class="i pkico" viewBox="0 0 24 24" aria-hidden="true"><path d="M2 12s3.5-6 10-6 10 6 10 6-3.5 6-10 6S2 12 2 12z"/><circle cx="12" cy="12" r="2.5"/></svg>'};
+function pkRow(m, off){
+  const pi = recPick(m.id), no = m.fit === "no";
+  const ico = (m.tools ? PK_ICONS.tools : "") + (m.vision ? PK_ICONS.vision : "");
+  return `<button type="button" class="pkrow ${off ? "off" : ""}" role="option" data-id="${esc(m.id)}" aria-selected="${m.id === cwBarModel()}" ${no || off ? 'aria-disabled="true"' : ""}>
+    <span class="pkdot ${m.live ? "on" : ""}" aria-hidden="true"></span><span class="pkmain"><b>${esc(m.title)}${pi ? ` <span class="chip">${esc(pi.label)}</span>` : ""}</b><span class="pkmeta">${off ? "Not answering right now" : pkNote(m)}</span></span>
+    ${m.ctx ? `<span class="pkctx">${fmtTok(m.ctx)}</span>` : ""}${ico}</button>`;
+}
 function pkRender(){
   const pop = $("#mbpop"), cur = cwBarModel(), ms = S.ms || {};
-  const by = {}; pkModels().forEach(m => (by[m.tier || ""] = by[m.tier || ""] || []).push(m));
   let html = "";
-  for(const t of ["small", "medium", "large", ""]){
-    if(!by[t]) continue;
-    html += `<div class="pkhead" role="presentation"><b>${PK_TIER[t][0]}</b><span>${PK_TIER[t][1]}</span></div>` + by[t].map(m => {
-      const pi = recPick(m.id), no = m.fit === "no";
-      return `<button type="button" class="pkrow" role="option" data-id="${esc(m.id)}" aria-selected="${m.id === cur}" ${no ? 'aria-disabled="true"' : ""}><span class="pkdot ${m.live ? "on" : ""}" aria-hidden="true"></span><span class="pkmain"><b>${esc(m.title)}${pi ? ` <span class="chip">${esc(pi.label)}</span>` : ""}</b><span class="pkmeta">${pkNote(m)}</span></span><span class="pkeng">${esc(m.engine_name)}</span></button>`;
-    }).join("");
+  for(const {g, models} of pkGroups()){
+    const st = pkGroupState(g), off = st.state === "offline" || g.state === "offline";
+    const head = PK_KIND_HEAD[g.kind] !== undefined && g.kind !== "engine" ? PK_KIND_HEAD[g.kind] : g.name;
+    html += `<div class="pkhead ${off ? "off" : ""}"><b>${esc(head)}</b>${g.kind === "engine" || head !== g.name ? `<span>${esc(g.name)}</span>` : ""}
+      <span class="pkstat">${esc(off ? "not answering" : g.kind === "cloud" ? "" : "")}</span></div>` + models.map(m => pkRow(m, off)).join("");
   }
-  if(!html) html = '<div class="pkhead"><span>No model downloaded yet.</span></div><div class="pkfoot"><button type="button" class="btn" data-pk="models">Get one in Models</button></div>';
+  const found = (S.pk.found || []).slice(0, 6);
+  if(found.length) html += `<div class="pkfound"><b>Found running</b>${found.map(f => `<div class="line"><span>${esc(f.name)} on ${esc(String(f.port))}</span><button class="btn" type="button" data-pk="connect" data-port="${esc(String(f.port))}" data-url="${esc(f.url || "")}">${f.needs_key ? "Add key…" : "Connect"}</button></div>`).join("")}</div>`;
+  html += `<div class="pkfoot"><button type="button" class="btn ghost" data-pk="hookup">Hook up something else…</button><button type="button" class="btn ghost" data-pk="models">Models</button></div>`;
+  if(!pkModels().length) html = '<div class="pkhead"><span>No model downloaded yet.</span></div>' + html;
   const foot = [ms.loaded ? '<button type="button" class="btn ghost" data-pk="free">Unload</button>' : "", ms.loaded && ms.loaded === cur ? '<button type="button" class="btn ghost" data-pk="again" title="Load it again, so settings you saved for this model take effect">Load it again</button>' : ""].join("");
   pop.innerHTML = html + (foot.replace(/<[^>]*>/g, "").trim() ? `<div class="pkfoot">${foot}</div>` : "");
 }
@@ -5312,6 +5529,11 @@ function pkOpen(open){
 function pkNoteStep(){
   const st = S.ms && S.ms.step; if(st && S.loadSteps[S.loadSteps.length - 1] !== st) S.loadSteps.push(st);
 }
+/* "Auto (32k)": the size the server works out for this model, so the choice is never a mystery. Without one, plain "Auto". */
+function autoCtxWord(ms){
+  const n = (ms || {}).auto_ctx;
+  return n ? `Auto (${fmtTok(n)})` : "Auto";
+}
 function loadWatch(on){
   if(on && !S.loadPoll){
     S.loadSteps = []; S.loadStart = Date.now();
@@ -5323,16 +5545,19 @@ function cwModelBar(){
   const bar = cwEl("cwmbar"); if(!bar) return;
   queueMicrotask(hdrPaint);
   if(!S.pk.busy && Date.now() - S.pk.t > 10000) pkLoad();
-  const models = pkModels(), cur = cwBarModel(), m = pkFind(cur), ms = S.ms || {}, cfg = ms.chat_ctx || 131072;
+  const models = pkModels(), cur = cwBarModel(), m = pkFind(cur), ms = S.ms || {}, cfg = ms.chat_ctx ?? "auto";
   const isJob = (cwFind(CW.id) || {}).isJob;
   const selC = cwEl("mbctx");
-  const sig = JSON.stringify([cfg, m && m.ctx_fixed, m && m.ctx]);
+  const sig = JSON.stringify([cfg, m && m.ctx_fixed, m && m.ctx, ms.auto_ctx]);
   if(bar._sig !== sig){
     bar._sig = sig;
     if(m && m.ctx_fixed) selC.innerHTML = `<option value="fixed">${fmtTok(m.ctx)}</option>`;
-    else{ const opts = BAR_CTX.includes(cfg) ? BAR_CTX : BAR_CTX.concat([cfg]).sort((a, b) => a - b); selC.innerHTML = opts.map(n => `<option value="${n}">${fmtTok(n)}${n === (ms.default_ctx || 131072) ? " · default" : ""}</option>`).join(""); }
+    else if(cfg === "auto") selC.innerHTML = `<option value="auto">${autoCtxWord(ms)}</option>` +
+      BAR_CTX.map(n => `<option value="${n}">${fmtTok(n)}</option>`).join("");
+    else{ const opts = BAR_CTX.includes(cfg) ? BAR_CTX : BAR_CTX.concat([cfg]).sort((a, b) => a - b);
+      selC.innerHTML = `<option value="auto">${autoCtxWord(ms)}</option>` + opts.map(n => `<option value="${n}">${fmtTok(n)}${n === (ms.default_ctx || 131072) ? " · default" : ""}</option>`).join(""); }
   }
-  if(document.activeElement !== selC) selC.value = m && m.ctx_fixed ? "fixed" : String(cfg);
+  if(document.activeElement !== selC) selC.value = m && m.ctx_fixed ? "fixed" : (cfg === "auto" ? "auto" : String(cfg));
   const loadingId = S.loadingModel || (ms.loading && ms.loading.model), loading = !!loadingId, here = !!cur && ms.loaded === cur;
   const busy = !!CW.running || loading || !cur;
   $("#mbdot").className = "mdot " + (loading ? "busy" : here ? "on" : "");
@@ -5341,7 +5566,7 @@ function cwModelBar(){
   const pb = $("#mbpick"); pb.disabled = !!isJob || CW.running || loading;
   pb.title = isJob ? "A job keeps the model it started with." : CW.running ? "Wait until it has finished answering." : loading ? "Getting a model ready…" : "Choose a model";
   selC.disabled = busy || !!(m && m.ctx_fixed);
-  selC.title = m && m.ctx_fixed ? "This model decides how much it can remember." : "How much of the conversation the model can keep in mind. 128k is the default.";
+  selC.title = m && m.ctx_fixed ? "This model decides how much it can remember." : "How much of the conversation the model can keep in mind. Automatic gives each model the most that fits.";
   const st = $("#mbstate");
   if(loading) st.textContent = (S.loadSteps[S.loadSteps.length - 1]) || "Getting ready…";
   else if(!models.length) st.textContent = "Download a model from Models to start.";
@@ -5369,7 +5594,8 @@ async function cwModelAct(fn){
   await Promise.all([loadModels(), pollServer(), pkLoad(true)]); renderStatus(); cwModelBar(); if(S.view === "models") renderModels();
 }
 async function pkChoose(id){
-  const m = pkFind(id); if(!m || m.fit === "no") return;
+  const m = pkFind(id); if(!m || m.fit === "no" || m.state === "offline") return;
+  const g = (S.pk.groups || []).find(x => x.id === (m.source || m.engine)); if(g && g.state === "offline") return;
   pkOpen(false);
   S.model = id; store.set("shoggoth.model", id);
   await cwModelAct(async () => {
@@ -5381,6 +5607,8 @@ cwEl("mbpick").addEventListener("click", () => pkOpen());
 $("#mbpop").addEventListener("click", e => {
   const f = e.target.closest("[data-pk]"), r = e.target.closest(".pkrow");
   if(f && f.dataset.pk === "models"){ pkOpen(false); show("models"); }
+  else if(f && f.dataset.pk === "hookup"){ pkOpen(false); show("models"); hookShow(true); }
+  else if(f && f.dataset.pk === "connect"){ pkOpen(false); show("models"); srcConnect(f.dataset.port, f.dataset.url, false); }
   else if(f){ pkOpen(false); const m = (S.ms || {}).loaded; if(f.dataset.pk === "free") cwModelAct(async () => { await api("/ui/model/unload", {method: "POST", body: JSON.stringify({model: m})}); toast("The model is unloaded and its memory is free."); }); else loadModelNow(cwBarModel(), null, true); }
   else if(r) pkChoose(r.dataset.id);
 });
@@ -5392,7 +5620,14 @@ $("#mbpop").addEventListener("keydown", e => {
 });
 document.addEventListener("click", e => { if(!$("#mbpop").hidden && !e.target.closest(".mpicker, #ptubebtn")) pkOpen(false); });
 cwEl("mbctx").addEventListener("change", e => cwModelAct(async () => {
-  const n = Number(e.target.value), m = cwBarModel();
+  const v = e.target.value, m = cwBarModel();
+  if(v === "auto"){                        // automatic: each model gets the most that fits, so nothing is reloaded now
+    const r = await api("/ui/model/ctx", {method: "POST", body: JSON.stringify({ctx: "auto"})});
+    toast("Chats will use the most context each model fits." + ((S.ms || {}).auto_ctx ? ` This one: ${fmtTok(S.ms.auto_ctx)}.` : ""));
+    if(CW.id){ const id = CW.id; await cwLoad(); cwOpen(id); }
+    return;
+  }
+  const n = Number(v);
   if(!n) return;
   if(m && (S.ms || {}).loaded === m) await loadModelNow(m, n);
   else { await api("/ui/model/ctx", {method: "POST", body: JSON.stringify({ctx: n})}); toast(`Chats will use ${fmtTok(n)} of context.`); }
