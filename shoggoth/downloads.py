@@ -127,6 +127,10 @@ def pull(body, run=None):
     if not ck:
         ck, mm = _checkpoint_for(name)
     repo, _, what = ck.partition(":")
+    if isinstance(mm, str) and ":" in mm:                  # models.yaml writes the vision file as repo:file, like the checkpoint
+        mrepo, _, mm = mm.partition(":")
+        if mrepo != repo:
+            raise ValueError("The vision file for %s has to come from the same repository as the model." % (name or "that model"))
     if not name or not repo or not what:
         raise ValueError("Shoggoth doesn't know where to download %s from." % (name or "that model"))
     if not hf._REPO.match(repo):

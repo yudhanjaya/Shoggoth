@@ -2,7 +2,7 @@
 
 Draft, 15 November 2026. This describes what is in the 5.0 branch, what it removes, and what is still missing. It has not been through the final check.
 
-*Heavy on the cosmos. Light on your machine.*
+*Heavy on the cosmos. Light on your machine!*
 
 Shoggoth 5.0 changes the engine under the app, adds servers online and other computers, and brings speech, file attachments and model-written skills into the page. It also raises the minimum Linux version.
 
@@ -82,7 +82,7 @@ Shoggoth now runs llama.cpp itself. The bundled Lemonade engine is gone.
 
 - The Models page has a sources strip, and the chat bar's model picker is grouped by source.
 - The creature sits in a vertical tube on screens 1280 px and wider, in a short strip from 900 to 1279 px, and behind a button below 900 px. The tube has a portrait frame, and a collapsed column is remembered for that browser.
-- The recommended cards, the fit words, the model names and the empty states were rewritten in plain English. The motto is in the rail: *Heavy on the cosmos. Light on your machine.*
+- The recommended cards, the fit words, the model names and the empty states were rewritten in plain English. The motto is in the rail: *Heavy on the cosmos. Light on your machine!*
 
 ### Packaging and supported systems
 

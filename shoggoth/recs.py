@@ -140,12 +140,12 @@ def clean_quants(q, where, c):
 
 
 def clean_models(doc, c):
-    """The usable part of a parsed models.yaml: {recommended, first_run, coming_soon}."""
-    out = {"recommended": [], "first_run": [], "coming_soon": []}
+    """The usable part of a parsed models.yaml: {recommended, first_run}."""
+    out = {"recommended": [], "first_run": []}
     if not isinstance(doc, dict):
         c.bad("", "the file must be groups of settings (key: value), not %s." % type(doc).__name__)
         return out
-    c.keys(doc, "", ["version", "replace", "recommended", "first_run", "coming_soon"])
+    c.keys(doc, "", ["version", "replace", "recommended", "first_run"])
     if doc.get("version", 1) != 1:
         c.bad("version", "Shoggoth reads version 1.")
     ids = set()
@@ -180,12 +180,6 @@ def clean_models(doc, c):
                             c.bad(dw, "the checkpoint comes from `%s`, which isn't one of the uploaders Shoggoth trusts (%s). "
                                        "Set `trusted: true` once you have checked it." % (owner or repo, ", ".join(hf.ALLOWED_UPLOADERS)))
             out["recommended"].append(ent)
-    for i, e in c.items(doc, "coming_soon", ""):
-        w = "coming_soon[%d]" % i
-        c.keys(e, w, ["title", "take"])
-        title = c.text(e, "title", w, need=True)
-        if title:
-            out["coming_soon"].append({"title": title, "take": c.text(e, "take", w) or ""})
     for i, f in c.items(doc, "first_run", ""):
         w = "first_run[%d]" % i
         c.keys(f, w, ["size", "models", "blurb", "start", "recommended"])
@@ -372,7 +366,7 @@ def load(name, fname=None):
 
 def _merge_models(mine, fname):
     """Your models.yaml adds to Shoggoth's own: your entries first, one with the same id (or `also`) replaces Shoggoth's, and
-    `first_run` or `coming_soon` replace Shoggoth's when your file has them. `replace: true` uses your file alone."""
+    `first_run` replaces Shoggoth's when your file has one. `replace: true` uses your file alone."""
     doc, _ = _read(fname)
     doc = doc if isinstance(doc, dict) else {}
     if doc.get("replace") is True:
@@ -383,8 +377,7 @@ def _merge_models(mine, fname):
     d, b = mine["data"], base["data"]
     taken = {n for m in d["recommended"] for n in [m["id"]] + list(m["also"])}
     out = {"recommended": d["recommended"] + [m for m in b["recommended"] if not ({m["id"]} | set(m["also"])) & taken],
-           "first_run": d["first_run"] if "first_run" in doc else b["first_run"],
-           "coming_soon": d["coming_soon"] if "coming_soon" in doc else b["coming_soon"]}
+           "first_run": d["first_run"] if "first_run" in doc else b["first_run"]}
     return dict(mine, data=out)
 
 
@@ -467,7 +460,7 @@ def main(argv):
             continue
         r = load(name, os.path.abspath(f))
         d = r["data"]
-        counts = ("%d recommended, %d coming soon, %d first-run sizes" % (len(d["recommended"]), len(d["coming_soon"]), len(d["first_run"])) if name == "models"
+        counts = ("%d recommended, %d first-run sizes" % (len(d["recommended"]), len(d["first_run"])) if name == "models"
                   else "%d tools, %d places" % (len(d["tools"]), len(d["places"])) if name == "tools"
                   else "%d lines in %d sets" % (sum(map(len, d["lines"].values())), len(d["lines"])))
         print("%s %s: %s" % ("✗" if r["problems"] else "✓", f, counts))

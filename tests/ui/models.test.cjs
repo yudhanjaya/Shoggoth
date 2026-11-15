@@ -171,7 +171,7 @@ test("the Large models group says where very large models run better, with the t
     assert.ok(note.closest("section").querySelector("h3").textContent.includes("Large models"), tab + ": note is not in the Large group");
     const hrefs = Array.from(note.querySelectorAll("a")).map(a => a.href);
     assert.deepEqual(hrefs, ["https://github.com/Niko1221/Strata", "https://github.com/jesdga95/basalt", "https://github.com/mw00/project-maya"]);
-    assert.match(note.textContent, /llama\.cpp is not yet as good as Strata, Basalt and Maya/);
+    assert.match(note.textContent, /llama\.cpp is not yet as fast as specialized inference engines like Strata, Basalt and Maya/);
     assert.ok(!/, and /.test(note.textContent), "a sentence is joined with , and");
   }
 });

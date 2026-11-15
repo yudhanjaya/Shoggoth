@@ -88,6 +88,7 @@ class Docs(unittest.TestCase):
                 if word in text.lower():
                     offending.append("%s: %s" % (rel, word))
             prose = re.sub(r"!\[[^\]]*\]\([^)]*\)", "", text)          # markdown images use "!["
+            prose = prose.replace("Light on your machine!", "")          # the motto is the one exception
             if re.search(r"\w!", prose):
                 offending.append("%s: exclamation mark" % rel)
         self.assertEqual(offending, [], "Copy rules broken: %s" % ", ".join(offending))

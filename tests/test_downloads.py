@@ -94,6 +94,17 @@ class Pulling(Base):
         self.assertEqual(seen, {"repo": "acme/Tiny-4B-GGUF", "what": "Q4_K_M"})
         self.assertEqual(downloads.jobs()[0]["status"], "completed")
 
+    def test_a_vision_file_written_as_repo_and_file_is_fetched_by_its_file_name(self):
+        seen = {}
+        def run(j, repo, what, mm):
+            seen.update(repo=repo, mm=mm)
+            downloads._end(j, "completed", "")
+        downloads.pull({"model_name": "V", "checkpoint": "acme/V-GGUF:Q8_0", "mmproj": "acme/V-GGUF:mmproj-V-Q8_0.gguf"}, run=run)
+        time.sleep(0.05)
+        self.assertEqual(seen, {"repo": "acme/V-GGUF", "mm": "mmproj-V-Q8_0.gguf"})
+        with self.assertRaisesRegex(ValueError, "same repository"):
+            downloads.pull({"model_name": "W", "checkpoint": "acme/V-GGUF:Q8_0", "mmproj": "other/X-GGUF:mmproj.gguf"})
+
     def test_a_model_with_no_checkpoint_is_refused_in_words(self):
         with self.assertRaisesRegex(ValueError, "doesn't know where to download"):
             downloads.pull({"model_name": "Nope"})

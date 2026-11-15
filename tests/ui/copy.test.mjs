@@ -12,6 +12,7 @@ const body = html.slice(start);
 
 // ---- every visible string, in the markup and in the template literals the page builds
 const strings = [];
+const MOTTO = "Heavy on the cosmos. Light on your machine!";
 
 // markup text between tags, up to the inline script, skipping svg path data, css and single identifiers
 const markup = body.slice(0, body.indexOf("<script"));
@@ -43,7 +44,7 @@ const failures = [];
 for (const s of strings) {
   if (BANNED.test(s)) failures.push("AI tell: " + s);
   if (STALE_FIT.test(s)) failures.push("old fit word: " + s);
-  if (/!/.test(s.replace(/\$\{[^}]*\}/g, ""))) failures.push("exclamation mark: " + s);
+  if (s !== MOTTO && /!/.test(s.replace(/\$\{[^}]*\}/g, ""))) failures.push("exclamation mark: " + s);   // the motto is the one exception
   // an em dash used as punctuation, or the spaced hyphen and double hyphen substitutes
   if (/\u2014/.test(s) || / -- /.test(s) || /\s+-\s+[a-z]/.test(s)) failures.push("dash substitute: " + s);
 }
@@ -53,11 +54,11 @@ assert.match(html, /Open <b>Models<\/b> and press <b>Get it<\/b>/, "the Help ans
 assert.ok(!/Open the <b>Models<\/b>/.test(html), "the Help answer lost its noun");
 assert.match(html, /bits\.push\(esc\(m\.why \|\| "Too big for this computer"\)\)/, "the chat model picker went back to the old fit words");
 assert.ok(!/bits\.push\(esc\(m\.why \|\| "Won't fit on this computer"\)\)/.test(html), "the chat model picker has the old fit words again");
-assert.match(html, /Right for almost everyone\./, "the backend help lost its shortened line");
+assert.match(html, /Works for almost everyone\./, "the backend help lost its shortened line");
 assert.ok(!/This is the right answer for almost everyone/.test(html), "the backend help still says 'right answer'");
 
 // ---- the motto lives in the header rail, and it is the agreed sentence (master plan 8.3, 10.1)
-assert.match(body, /<p class="railmotto">Heavy on the cosmos\. Light on your machine\.<\/p>/, "the motto is not in the rail");
+assert.match(body, /<p class="railmotto">Heavy on the cosmos\. Light on your machine!<\/p>/, "the motto is not in the rail");
 
 // ---- where the rail shrinks to icons, the motto and the note go with the rest of the words, or they overrun 84 px
 const css = html.slice(html.indexOf("<style>"), html.indexOf("</style>"));
