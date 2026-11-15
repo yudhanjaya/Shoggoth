@@ -27,8 +27,10 @@ flowchart LR
 | --- | --- |
 | **Shoggoth** | The window you are using. It shows the conversation, asks your permission, and manages everything else. |
 | **Pi** | A helper that lets a model do things: read a file, edit it, run a command, follow a skill. It comes bundled inside Shoggoth. |
-| **An engine** | A program that loads a model into your computer's memory and gets answers out of it. Shoggoth picks the right one for each model, starts it, and frees the memory when you switch, so you never have to. Shoggoth runs llama.cpp for you. If you run another server yourself, such as Ollama or LM Studio, you can connect it under **Advanced > Engines**. |
+| **An engine** | A program that loads a model into your computer's memory and gets answers out of it. Shoggoth picks the right one for each model, starts it, and frees the memory when you switch, so you never have to. Shoggoth runs llama.cpp for you. It also finds engines already running on this computer, such as Ollama or LM Studio, and you can connect one under **Advanced > Engines**. |
 | **The model** | The AI. A large file, usually a few gigabytes (a lot more for the Large ones), that you download once and keep. |
+
+A model can also come from another computer on your network, or from a paid service you have a key for. Shoggoth shows where every model comes from, and a chat on a paid model says so before you send anything.
 
 ## Your first minutes
 
@@ -94,9 +96,19 @@ You can give Shoggoth a folder at any point, or change its folder from the Detai
 
 Delete a conversation and the files it changed stay exactly as they are.
 
-## Pictures
+## Pictures and files
 
 Some models can look at pictures: their card says **Understands pictures**. With one of those chosen, press **Add a picture…** next to the message box, or paste or drag pictures in (up to four). Say what you want to know, then send. Shoggoth shrinks large pictures first so they don't use up the model's memory. The button doesn't appear for models that can't see.
+
+The paperclip, **Attach a file**, adds a file to the next message. Drag a file onto the message box or drop it there. The file is saved in the chat's folder under `attachments/`, and a small chip says how it will be read: text and code as they are, a PDF as text, or an image for a model that can see. A PDF needs `pdftotext` for text; without it, Shoggoth can turn its pages into images for a model that understands pictures. Spreadsheets and Word documents say they need a tool that isn't installed yet. A file you attach is never run. If a model can't see images, an image chip says it won't be sent.
+
+## Speech
+
+The microphone button beside the message box turns your voice into text. Hold it to talk, or click it to start and click again to stop. The words appear in the message box. They are not sent until you send them, so you can correct them first.
+
+The first time, Shoggoth downloads whisper.cpp and a speech model for the processor, and shows how far along it is in the button. Speech runs on this computer: the recording goes to the local engine, is turned into text, and is not kept. If whisper.cpp cannot run, the button says so in plain words.
+
+Recording happens in the page at 16 kHz mono, so no other program is needed.
 
 ## Jobs
 
@@ -152,6 +164,10 @@ Open **Skills** to switch any of them on or off, one at a time or a whole set at
 
 **Skills you made yourself** go in a folder called `mine` inside Shoggoth's data folder (`~/.local/share/shoggoth/skills/mine`). Put a folder with a `SKILL.md` file in it and it shows up on the Skills page as **My skills**, switched on, from the next message. No other files are needed.
 
+**Skills your models write.** When a model works out a procedure worth keeping, it can propose a skill. A card shows the whole skill and any extra files, and asks **Save**, **Save and turn on**, or **Don't save**. It asks in every mode, even *Do everything*. Saved ones appear under **Written by your models**, where you can edit the text in a plain box or delete one. In a chat's menu, **Make a skill from this chat** asks the model to distil what worked.
+
+**Tools.** The Skills page has a **Tools** section for a few checked Pi packages that add abilities, such as reading spreadsheets. They run code on your computer, so Shoggoth offers only the packages on its own list, at an exact version checked against the publisher's checksum. None is switched on in this version until it has been tested with Shoggoth; the card says why it can't be installed yet. Installing or removing one restarts idle chats, so it applies from your next message.
+
 Good to know:
 
 - **Only add skills from people you trust.** A skill is instructions the AI follows. Some include scripts. While you are on *Ask first*, every command still asks you.
@@ -171,6 +187,8 @@ Replies can also contain tables, lists, links, quotes and code blocks, shown nea
 ## Choosing and managing models
 
 Open **Models**. It lists every model on your computer, whichever program runs it. Models are grouped by size. **Small** ones use under 10 GB of graphics memory and are ready in seconds. **Medium** ones use 10 to 24 GB. **Large** ones are for big computers and take a couple of minutes to start.
+
+The strip at the top of the page shows where models come from: llama.cpp on this computer, engines Shoggoth found already running, servers you connected, paid services, and other Shoggoths. The model picker in the chat bar groups them the same way. A source that is offline keeps its place, greyed out, so a chat's model does not silently disappear.
 
 - **Installed** is what you have. **Recommended for this computer** has the models I have tried and recommend on systems from 10 GB of VRAM to 26 GB of VRAM, and any Large model that will fit yours. The Large picks are Qwen3.8 Flash-Next (IQ3_S, and the smaller IQ2_XS), plus Coder (code only) and Swift 1.5, which are offered but never suggested. You can pick one before llama.cpp is installed: Shoggoth sets llama.cpp up, then gets the model. Models that aren't ready yet are greyed out under **Coming soon**. **All models** is everything your engines report, tested or not, with a filter for pictures, speech and sound. Each model shows whether it is tuned.
 - **Very large models.** Shoggoth runs large models through llama.cpp. Only the ones llama.cpp can serve are listed. For models with over a hundred billion parameters, llama.cpp is not yet as good as [Strata](https://github.com/Niko1221/Strata), [Basalt](https://github.com/jesdga95/basalt) and [Maya](https://github.com/mw00/project-maya). That is true as of November 2026. It will change. To run models that size, set one of those up yourself. Then connect it under Advanced, Connect a server.
@@ -193,6 +211,27 @@ Shoggoth runs llama.cpp by itself. If you already run another server, you can us
 - Its models appear in the model picker as `<server name>/<model>`.
 - **Shoggoth never starts, stops, updates or installs a connected server.** Start it yourself first. It does not free memory for it either, so if it shares a graphics card with Shoggoth's llama.cpp, you manage that. **Remove** forgets the address and leaves the server alone.
 
+## Paid models
+
+Models on a paid service run on that service's computers, not yours. They are there if you want a bigger model than your computer can hold, and they cost money. Shoggoth has five built in: OpenRouter, Nous Portal, OpenCode, Command Code and Google Gemini.
+
+- Find them under **Paid services** in the sources strip. Pick one, paste your key, and press the button to connect it. The card shows where the key goes, what the service costs where it publishes a price, and a link to its terms.
+- A key is kept on this computer and is shown only by its last four characters after you save it.
+- A chat on one of these models carries a **Leaves your computer: <service>** chip, so you always know. Your message goes to that service. Everything else in the chat still runs here.
+- Shoggoth never chooses a paid model for you. You pick it from the model bar like any other.
+
+## Other computers on your network
+
+A second computer running Shoggoth can use the models on this one, and this copy can use the models on it. Both computers make the choice; nothing is shared until you pair them.
+
+- On the **Server** page, turn on **Share my models**, and give this computer a name if you like.
+- The other computer finds this one under **Other Shoggoths**. Ask to pair. This computer shows a six-digit code and the other computer's name. Type the code there.
+- Once paired, the two check a short fingerprint with **Check this matches on the other computer**. Each paired computer gets its own key.
+- Paired computers speak over HTTPS only. **Remove** on either side stops that key at once.
+- Requests from the other computer appear on the Server page like any other app's, so you can see what it asks for.
+
+Sharing is only for Shoggoth. If you want another program to use your models, use the address and key on the **Server** page instead.
+
 ## Tuning
 
 **Advanced > Tuning** makes a model answer faster on your computer. It measures the model as it is, tries changes one at a time, and keeps only those that clearly help. Answers stay the same: tuning never changes how a model is compressed.
@@ -210,24 +249,29 @@ Shoggoth runs llama.cpp by itself. If you already run another server, you can us
 Everything in **Advanced** is optional.
 
 - **Hardware** is a lab bench. Each machine at the back is one graphics card, with lights for how hard it is working and the name of the model on it. The beaker shows memory used across all your cards. The gauge shows the hottest card. The coil and radio show how hard they compute. Below the bench you choose which cards Shoggoth uses, and in what order.
-- **Engines** has a card for llama.cpp, with its version, whether it is running, an update check, and which build it uses (CUDA, Vulkan, ROCm or the processor). Under it, **Connect a server** adds one you run yourself. Each connected server has its own card. You can also add an engine Shoggoth starts for you by putting a folder with a `provider.yaml` file in the engines folder shown at the bottom of the page, then pressing **Reload**. Shoggoth asks once before an engine you added runs a program. The repository's `docs/ENGINES.md` explains how. `providers check <folder>` (run the AppImage with those words) tells you what to fix before you reload.
+- **Engines** has a card for llama.cpp, with its version, whether it is running, an update check, and which build it uses (CUDA, Vulkan, ROCm or the processor). Under it, **Connect a server** adds one you run yourself. Each connected server has its own card. To teach Shoggoth a new engine, put a definition file in `engines.d` in the data folder; it can say how to recognise the engine but cannot run anything. A definition file that failed to load is shown in the Models page's sources strip with the line to fix. To add an engine Shoggoth starts for you, put a folder with a `provider.yaml` in the engines folder shown at the bottom of the page, then press **Reload**. Shoggoth asks once before an engine you added runs a program. The repository's `docs/ENGINES.md` explains both files. `engines check <file>` and `providers check <folder>` (run the AppImage with those words) tell you what to fix before you reload.
 - **Engine settings** is every setting the engine has, searchable.
 - **Themes** changes how Shoggoth looks. **Light Touch** is the default; **Braun T3** and **Teenage Engineering** are softer and bolder takes on the same idea. The rest borrow colour schemes from popular code editors (Dracula, Nord, Monokai Pro, GitHub Light and more). Nothing moves when you switch. Your choice is remembered on this computer.
-- **Advanced > Engines** is where **Check and update everything** lives. Its **Connect a server** section is for a server you run yourself, for example Ollama, or a llama.cpp you start as a system service: connect Shoggoth to it there instead of using the one Shoggoth starts.
+- **Check and update everything**, on the Engines page, updates Shoggoth, llama.cpp and Pi together.
 
 ## Where things live, and privacy
 
 Your chats, jobs, skills and settings are saved on your computer. As the opening section says, only web search and a chat on a paid hosted model send anything out, and both are your choice.
 
-- **Conversations and what the AI did** are saved in Shoggoth's own folder (`~/.local/share/shoggoth/cowork/`). That includes the copies that jobs work on until you apply or throw them away.
-- **Skills you added** are in `~/.local/share/shoggoth/skills/`.
+- **Conversations and what the AI did** are saved in Shoggoth's own folder (`~/.local/share/shoggoth/cowork/`). That includes the copies that jobs work on until you apply or throw them away. Files you attach are in `attachments/` inside the chat's folder, or in the chat's scratch folder when it has no folder.
+- **Skills you added** are in `~/.local/share/shoggoth/skills/`. Skills your models wrote are under `sets/own/`.
+- **Speech to text** puts whisper.cpp and its model in `~/.local/share/shoggoth/whisper/`. **Read aloud**, when it is turned on, puts Piper and its voices in `~/.local/share/shoggoth/piper/`.
+- **Pi packages** you install are in `~/.local/share/shoggoth/pi-packages/`.
 - **Newer versions of Pi** that you download are in `~/.local/share/shoggoth/pi/`.
+- **Sharing** keeps the certificate, its key and the hashes of paired computers' keys in `~/.local/share/shoggoth/lan/`.
 - **Models** are in the folder you chose (the **Models** folder, with a subfolder for each engine), or in the Hugging Face cache (`~/.cache/huggingface/hub`) if you kept that. Models you added from elsewhere stay where they are.
 - **Settings and keys** are in `~/.config/shoggoth/`.
 
-Shoggoth goes online only to: download models you ask for, check for Shoggoth, engine and Pi updates (you can turn that off), fetch skills when you paste a link, search the web when you allow it, and talk to a hosted service you set up. Pi runs offline and sends nothing anywhere. To start from scratch, delete `~/.config/shoggoth` and `~/.local/share/shoggoth`.
+Shoggoth goes online only to: download models you ask for, download the speech engine or voice you set up, check for Shoggoth, engine and Pi updates (you can turn that off), fetch skills when you paste a link, install a checked Pi package you pick, search the web when you allow it, and talk to a hosted service you set up. Sharing sends a small beacon on your own network and nothing else. Pi runs offline and sends nothing anywhere. To start from scratch, delete `~/.config/shoggoth` and `~/.local/share/shoggoth`.
 
 **Coming from Zest?** Shoggoth used to be called Zest. The first time it starts, it moves `~/.config/zest` and `~/.local/share/zest` to the new names. It keeps your chats, skills, settings and keys. Apps that use a `zest-` key keep working.
+
+**Coming from 4.x?** The first time 5.0 starts, it moves a 4.x setup to llama.cpp and leaves every model file where it is: it links the models 4.x downloaded, maps old model names to new ones, carries each model's saved context size and options into llama.cpp's presets, and stops the engine 4.x started itself (one you started is left alone). It then counts the space 4.x's own files take, and **Advanced > Engines** offers to delete them. That never deletes a model. The move is safe to run again, and nothing is deleted without asking.
 
 ## When something goes wrong
 
@@ -241,6 +285,14 @@ Shoggoth goes online only to: download models you ask for, check for Shoggoth, e
 
 **A diagram did not draw.** Press **Ask the model to fix it**. If it still fails, ask for a simpler diagram with fewer boxes.
 
+**The microphone does not work.** The first press sets up whisper.cpp and downloads its model; the button shows the progress and asks for another press when it is done. The browser must be allowed to use the microphone. If the button still says it cannot run, whisper.cpp may not start on this computer; the message says why.
+
+**An attached PDF is not read.** Reading a PDF as text needs `pdftotext` from poppler (`poppler-utils` on most Linux systems). Without it, Shoggoth can turn the PDF's pages into pictures for a model that understands pictures. The chip on the file says which will happen.
+
+**A tool cannot be installed.** Every package in the Tools list is off until it has been tested with Shoggoth, and the card says so. Shoggoth only installs the packages on that list, at the exact version in it.
+
+**Another computer does not appear under Other Shoggoths.** Both computers must be on the same network, sharing must be on for the one sharing its models, and the network must allow the small UDP beacon on port 13309. Pairing is the only way to connect; a code from one computer is typed on the other.
+
 **"The Pi agent isn't installed."** This only happens when running Shoggoth from source rather than the AppImage. [docs/DEVELOPMENT.md](https://github.com/yudhanjaya/Shoggoth/blob/main/docs/DEVELOPMENT.md) explains how to add it.
 
 **The app won't open.** Shoggoth needs Linux on x86_64 with a few common libraries: OpenSSL 3, zstd and libdrm. If the AppImage fails with a FUSE error, run it with `./Shoggoth-*-x86_64.AppImage --appimage-extract-and-run` instead.
@@ -250,7 +302,11 @@ Shoggoth goes online only to: download models you ask for, check for Shoggoth, e
 ## Terms used
 
 - **Model**: the AI itself, a big file on your computer.
+- **Source**: where a model comes from: llama.cpp on this computer, an engine Shoggoth found, a server you connected, a paid service, or another Shoggoth.
 - **Engine**: a program that runs the model. Shoggoth runs llama.cpp. A server you run yourself and connect also counts as an engine. Shoggoth never starts or stops it.
+- **Paid model**: a model that runs on a company's computers and needs a key. A chat on one leaves your computer and goes to that service.
+- **Pi package**: code added to Pi that gives it new tools or skills. It runs on this computer, so only Shoggoth's checked list can be installed.
+- **Attachment**: a file you add to a message. It is saved in the chat's folder and never run.
 - **Small, Medium, Large**: how Shoggoth groups models by what they need. Small fits under 10 GB of graphics memory, Medium 10 to 24 GB, and Large needs more than that.
 - **Models**: the list of every model on your computer, and where you get new ones.
 - **Pi**: the helper that lets a model read files, make edits and run steps.

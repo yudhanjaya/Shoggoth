@@ -43,7 +43,11 @@ Shoggoth is not meant to be a replacement for various backends or front-ends. I 
 | **Diagrams and documents** | Ask for a picture or a README. It appears in the chat. |
 | **Skills** | A skill is a short instruction sheet that makes small models far more dependable. Add more by pasting a GitHub link. |
 | **Models that fit your computer** | Shoggoth tells you which models will run well on your hardware. It downloads them for you. |
-| **Your own server** | Shoggoth runs [llama.cpp](https://github.com/ggml-org/llama.cpp) for you. Under Advanced you can connect a server you run yourself (Ollama, LM Studio, llama.cpp, Strata, Maya, Unsloth) and use its models in chat. Shoggoth doesn't install or start those. |
+| **Your own server** | Shoggoth runs [llama.cpp](https://github.com/ggml-org/llama.cpp) for you. It also finds engines already running on this computer (Ollama, LM Studio, vLLM and others), and connects a server you run yourself (Strata, Maya, Unsloth). Shoggoth doesn't install or start those. |
+| **Other computers** | Share your models with another Shoggoth on your network, and use the models on theirs. Pair once with a short code; after that it speaks HTTPS only. |
+| **Paid models, if you want them** | Connect OpenRouter, Nous Portal, OpenCode, Command Code or Google Gemini with your own key. Chats on those models leave your computer, and the chat says so. |
+| **Your voice** | Speak to it with the mic in the message box. The words appear in the box and go nowhere until you send them. Speech runs on this computer. |
+| **Tools for the agent** | Add a few checked Pi packages that give the agent new skills, such as spreadsheets. They run code on your computer, and only Shoggoth's pinned list can be installed. |
 | **Use your models in other apps** | Share them with Hermes, or anything that talks to an OpenAI-style server. |
 
 ## Install
@@ -127,20 +131,34 @@ Shoggoth drives two open-source programs, so you don't have to:
 - [llama.cpp](https://github.com/ggml-org/llama.cpp) runs your models.
 - [Pi](https://pi.dev) lets a model read files, edit them and run commands.
 
-The AppImage includes llama.cpp's processor-only build and Pi. Everything updates from **Advanced > Engines** with one button, checked against published checksums.
+The AppImage includes llama.cpp's processor-only build and Pi. Everything updates from **Advanced > Engines** with one button, checked against published checksums. Shoggoth also downloads whisper.cpp for speech to text, and Piper for read aloud, when you ask for them.
+
+The list of engines and services Shoggoth knows lives in `shoggoth/engines.d/` as data. Those files can name an engine and say how to recognise it; they cannot start, install or run anything. [docs/ENGINES.md](docs/ENGINES.md) shows the fields.
+
+## Moving from 4.x
+
+The first time 5.0 starts, it moves a 4.x setup across without touching a model file:
+
+- it links the models 4.x downloaded into the folder llama.cpp reads, using hard links on the same disk and symbolic links otherwise;
+- it maps each old model name to its new one, so old chats and saved settings find their models;
+- it carries each model's saved context size and extra options into llama.cpp's presets, dropping options llama.cpp no longer accepts;
+- it stops the engine Shoggoth 4.x started itself. An engine you started yourself is left alone;
+- it counts the space 4.x's own files take. **Advanced > Engines** then offers to delete those files, which never include a model.
+
+The move is safe to run again: each step is recorded in `migrate5.json` and skipped if it is already done. Nothing is downloaded. Nothing is deleted without asking.
 
 ## Your data and privacy
 
-Everything stays on your computer unless you choose otherwise. Chats, jobs, skills and settings live in `~/.local/share/shoggoth/` and `~/.config/shoggoth/`. Two things can leave: web search, which asks first and shows the exact words, and a chat on a paid hosted model, which goes to that service. Shoggoth also goes online to download models and updates you ask for and to fetch skills when you paste a link. Full details: [docs/PRIVACY.md](docs/PRIVACY.md).
+Everything stays on your computer unless you choose otherwise. Chats, jobs, skills and settings live in `~/.local/share/shoggoth/` and `~/.config/shoggoth/`. Two things can leave: web search, which asks first and shows the exact words, and a chat on a paid hosted model, which goes to that service. Shoggoth also goes online to download models, speech engines and updates you ask for, to fetch skills when you paste a link, and to install a checked Pi package you pick. Sharing models with other computers only accepts connections; it sends a small beacon on your own network and nothing more. Full details: [docs/PRIVACY.md](docs/PRIVACY.md).
 
 ## Learn more
 
 | | |
 | --- | --- |
-| [User guide](shoggoth/docs.md) | The in-app guide: chat, jobs, models, tuning, skills, troubleshooting. |
+| [User guide](shoggoth/docs.md) | The in-app guide: chat, jobs, models, speech, other computers, skills, troubleshooting. |
 | [Architecture](docs/ARCHITECTURE.md) | Components, request flow, engine integration, platform support. |
-| [Agent runtime](docs/AGENT-RUNTIME.md) | Pi integration, approval gate, jobs, work copies, skills. |
-| [Engines](docs/ENGINES.md) | Add an engine with a `provider.yaml`. |
+| [Agent runtime](docs/AGENT-RUNTIME.md) | Pi integration, approval gate, jobs, work copies, skills, packages and attachments. |
+| [Engines](docs/ENGINES.md) | Write an engine definition file, or an engine with a `provider.yaml`. |
 | [Security model](docs/SECURITY.md) | Authentication, network exposure, and the limits of the approval gate. |
 | [Privacy and data](docs/PRIVACY.md) | On-disk layout and every network destination. |
 | [Development](docs/DEVELOPMENT.md) | Run from source, test, build, release. |

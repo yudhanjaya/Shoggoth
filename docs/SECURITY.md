@@ -51,6 +51,16 @@ Related controls:
 
 ## Supply chain
 
-- Downloaded components (llama.cpp, Pi, and the AppImage build inputs) are verified against pinned or published checksums before use. Pi's npm tarball is verified against the registry's sha512 integrity value.
+- Downloaded components (llama.cpp, Pi, whisper.cpp and Piper, and the AppImage build inputs) are verified against pinned or published checksums before use. Pi's npm tarball is verified against the registry's sha512 integrity value. GitHub publishes no checksum for Piper's Linux tarballs, so their sha256 values are kept in `tts.py`; each voice from Hugging Face is checked against its published sha256.
 - Skills installed from a link are downloaded as plain files from `codeload.github.com` (40 MB cap, 3,000 files, no path escapes). Nothing from the download is executed at install time. A skill's scripts run only if the model runs them, which requires approval in `ask` mode.
-- Engines added by users must be approved once. Approval is keyed to a fingerprint of the engine's files, so any change prompts again. Engines bundled with Shoggoth are trusted.
+- Engines added by users must be approved once. Approval is keyed to a fingerprint of the engine's files, so any change prompts again. Engines bundled with Shoggoth are trusted. An engine definition file (`engines.d/*.yaml`) is data: it can name an engine and describe how to recognise it, but it cannot carry a command, and a built-in hosted service cannot be pointed at another address.
+
+## Pi packages
+
+A Pi package is npm code that runs inside Pi. Shoggoth installs only the pinned entries in `shoggoth/recommendations/pi-packages.yaml`, at an exact version, checked against the sha512 npm publishes. It never runs npm or a lifecycle script: the tarball is unpacked, and a dependency from anywhere except the npm registry is refused. All entries shipped with 5.0 are switched off until they have been tested.
+
+Once installed and turned on, a package's code runs in Pi's own process, with the user's permissions. The approval gate covers Pi's tools, not an extension's own code, so a package can do what any program on the computer can. Shoggoth says "Runs code on your computer" next to it for that reason.
+
+## Attachments
+
+A file attached in a chat is written as it came and never executed. Its name is cleaned: folder parts, control characters and direction-changing characters are refused, and one file is capped at 50 MB. A PDF is read with `pdftotext` or rendered with `pdftoppm` only if poppler is installed; no content from a file is passed to a shell.
