@@ -1,0 +1,34 @@
+name: Real model
+
+# Builds the AppImage and runs it end to end with real models from Hugging Face on a processor-only machine: download (resume, checksum),
+# the model list, loading with the bundled llama.cpp, and an answer through the chat door. Nightly, and by hand from the Actions tab.
+# It goes online, so it isn't part of every push; a failure here is often Hugging Face or a moved file, so read the log before the code.
+on:
+  schedule:
+    - cron: "17 3 * * *"
+  workflow_dispatch:
+    inputs:
+      pick:
+        description: "A recommended model's id from models.yaml (empty: only the quick 135M check)"
+        required: false
+        default: "LFM3-Omni-2B"
+
+permissions:
+  contents: read
+
+jobs:
+  real-model:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 60
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/cache@v4
+        with:
+          path: build/cache
+          key: appimage-cache-${{ hashFiles('packaging/build-appimage.sh') }}
+      - run: ./packaging/build-appimage.sh
+      - name: A tiny model, quickly (SmolLM2-135M)
+        run: python3 packaging/check-real-model.py dist/Shoggoth-*-x86_64.AppImage
+      - name: The recommended small pick, as Getting ready would fetch it
+        if: github.event_name == 'schedule' || inputs.pick != ''
+        run: python3 packaging/check-real-model.py dist/Shoggoth-*-x86_64.AppImage --pick "${{ inputs.pick || 'LFM3-Omni-2B' }}"

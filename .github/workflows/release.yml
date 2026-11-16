@@ -1,16 +1,33 @@
 name: Release AppImage
+# A v* tag: the tests, then the AppImage, then a check of the AppImage itself, then the release. A failure at any step stops it.
 on:
   push:
     tags: ["v*"]
-  workflow_dispatch:
+  workflow_dispatch:          # builds and checks without publishing (no tag)
 permissions:
   contents: write
 jobs:
+  test:
+    uses: ./.github/workflows/test.yml
+
   appimage:
-    runs-on: ubuntu-24.04   # the bundled llama.cpp build needs glibc 2.38, so the image builds on 24.04
+    needs: test
+    runs-on: ubuntu-24.04     # the bundled llama.cpp build needs glibc 2.38, so the image builds on 24.04
+    timeout-minutes: 30
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
+      - uses: actions/cache@v4
+        with:
+          path: build/cache   # every download in it is pinned by checksum, so a cached copy is the same file
+          key: appimage-cache-${{ hashFiles('packaging/build-appimage.sh') }}
       - run: ./packaging/build-appimage.sh
+      - name: The tag and the app agree on the version
+        if: startsWith(github.ref, 'refs/tags/v')
+        run: |
+          app="$(ls dist/Shoggoth-*-x86_64.AppImage | sed -n 's/.*Shoggoth-\(.*\)-x86_64\.AppImage$/\1/p')"
+          [ "v$app" = "${GITHUB_REF_NAME}" ] || { echo "The tag is ${GITHUB_REF_NAME} but shoggoth/server.py says $app"; exit 1; }
+      - name: Start the AppImage, check it, stop it
+        run: ./packaging/check-appimage.sh dist/Shoggoth-*-x86_64.AppImage
       - uses: actions/upload-artifact@v4
         with:
           name: Shoggoth-AppImage
@@ -20,8 +37,13 @@ jobs:
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
+          tag="${GITHUB_REF_NAME}"
+          if ! gh release view "$tag" >/dev/null 2>&1; then
+            pre=""; case "$tag" in *-*) pre="--prerelease";; esac        # v5.0.0-beta: a pre-release, so "latest" stays the last full one
+            gh release create "$tag" --verify-tag --generate-notes $pre
+          fi
           # Don't replace assets that were already attached by hand.
-          existing="$(gh release view "${GITHUB_REF_NAME}" --json assets -q '.assets[].name' || true)"
+          existing="$(gh release view "$tag" --json assets -q '.assets[].name' || true)"
           for f in dist/*-x86_64.AppImage dist/*-x86_64.AppImage.zsync dist/*-x86_64.AppImage.sha256; do
-            echo "$existing" | grep -qx "$(basename "$f")" || gh release upload "${GITHUB_REF_NAME}" "$f"
+            echo "$existing" | grep -qx "$(basename "$f")" || gh release upload "$tag" "$f"
           done
