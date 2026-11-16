@@ -9,38 +9,30 @@ HERE = os.path.dirname(os.path.abspath(__file__))
 UI = os.path.join(HERE, "ui")
 
 
-class Gate(unittest.TestCase):
-    @unittest.skipUnless(shutil.which("node") and os.path.isdir(os.path.join(UI, "node_modules", "jsdom")), "node and jsdom are needed")
-    def test_every_recommendation_shows_whatever_the_card_and_names_read_cleanly(self):
-        r = subprocess.run(["node", os.path.join(UI, "models.test.cjs")], capture_output=True, text=True, timeout=120)
-        self.assertEqual(r.returncode, 0, r.stdout + r.stderr)
+JSDOM = os.path.isdir(os.path.join(UI, "node_modules", "jsdom"))
 
+
+def ui_tests():
+    """Every tests/ui/*.test.mjs and *.test.cjs, so a new one runs without being listed here."""
+    return sorted(n for n in os.listdir(UI) if n.endswith((".test.mjs", ".test.cjs")))
+
+
+def needs_jsdom(name):
+    with open(os.path.join(UI, name), encoding="utf8") as f:
+        text = f.read()
+    return "jsdom" in text or "page.cjs" in text
+
+
+class EveryUITest(unittest.TestCase):
     @unittest.skipUnless(shutil.which("node"), "node is needed")
-    def test_the_approval_card_says_what_a_command_could_do(self):
-        r = subprocess.run(["node", os.path.join(UI, "gate.test.mjs")], capture_output=True, text=True, timeout=60)
-        self.assertEqual(r.returncode, 0, r.stdout + r.stderr)
-
-
-    @unittest.skipUnless(shutil.which("node"), "node is needed")
-    def test_a_model_that_wont_load_is_explained_in_plain_words(self):
-        r = subprocess.run(["node", os.path.join(UI, "problems.test.mjs")], capture_output=True, text=True, timeout=60)
-        self.assertEqual(r.returncode, 0, r.stdout + r.stderr)
-
-
-    @unittest.skipUnless(shutil.which("node"), "node is needed")
-    def test_the_job_tool_only_fills_a_form_in(self):
-        r = subprocess.run(["node", os.path.join(UI, "job.test.mjs")], capture_output=True, text=True, timeout=60)
-        self.assertEqual(r.returncode, 0, r.stdout + r.stderr)
-
-    @unittest.skipUnless(shutil.which("node"), "node is needed")
-    def test_the_written_copy_keeps_to_the_plain_words(self):
-        r = subprocess.run(["node", os.path.join(UI, "copy.test.mjs")], capture_output=True, text=True, timeout=60)
-        self.assertEqual(r.returncode, 0, r.stdout + r.stderr)
-
-    @unittest.skipUnless(shutil.which("node") and os.path.isdir(os.path.join(UI, "node_modules", "jsdom")), "node and jsdom are needed")
-    def test_the_beaker_and_the_header_controls(self):
-        r = subprocess.run(["node", os.path.join(UI, "beaker.test.mjs")], capture_output=True, text=True, timeout=120)
-        self.assertEqual(r.returncode, 0, r.stdout + r.stderr)
+    def test_every_ui_test_file_passes(self):
+        self.assertGreaterEqual(len(ui_tests()), 13)
+        for name in ui_tests():
+            with self.subTest(name):
+                if needs_jsdom(name) and not JSDOM:
+                    self.skipTest("jsdom is needed: cd tests/ui && npm ci")
+                r = subprocess.run(["node", os.path.join(UI, name)], capture_output=True, text=True, timeout=180)
+                self.assertEqual(r.returncode, 0, r.stdout[-3000:] + r.stderr[-3000:])
 
 
 @unittest.skipUnless(shutil.which("node") and os.path.isdir(os.path.join(UI, "node_modules", "jsdom")), "node and `npm install` in tests/ui are needed")

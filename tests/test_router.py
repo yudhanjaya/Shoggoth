@@ -43,6 +43,28 @@ YAML = """
     """
 
 
+
+def _free_block(n=20):
+    """A run of n free ports starting at a multiple of 10, so two test runs (or a running Shoggoth) never share one."""
+    import random
+    import socket
+    for _ in range(200):
+        base = random.randrange(20000, 60000, 10)
+        ok = True
+        for p in range(base, base + n):
+            with socket.socket() as s:
+                try:
+                    s.bind(("127.0.0.1", p))
+                except OSError:
+                    ok = False
+                    break
+        if ok:
+            return base
+    raise RuntimeError("no free ports")
+
+
+B = _free_block()
+
 class Env(unittest.TestCase):
     def setUp(self):
         self.tmp = tempfile.mkdtemp()
@@ -50,8 +72,8 @@ class Env(unittest.TestCase):
         os.environ["SHOGGOTH_DATA_DIR"], os.environ["SHOGGOTH_CONFIG_DIR"] = os.path.join(self.tmp, "data"), os.path.join(self.tmp, "config")
         self.user = os.path.join(self.tmp, "providers")
         os.makedirs(self.user)
-        self.add("fast", id="fast", name="Fast", tier="small-medium", ports="18980-18984", exclusive="false", idle=0)
-        self.add("big", id="big", name="Big", tier="large", ports="18985-18989", exclusive="true", idle=1)
+        self.add("fast", id="fast", name="Fast", tier="small-medium", ports="%d-%d" % (B + 0, B + 4), exclusive="false", idle=0)
+        self.add("big", id="big", name="Big", tier="large", ports="%d-%d" % (B + 5, B + 9), exclusive="true", idle=1)
         self.reg = registry.Registry(bundled=os.path.join(self.tmp, "none"), user=self.user).load()
         self.assertEqual(self.reg.errors, [])
         for pid in ("fast", "big"):
@@ -165,13 +187,13 @@ class Progress(Env):
         self.assertEqual(router.state()["step"], "")
 
     def test_what_zest_started_goes_when_zest_quits_and_what_you_started_stays(self):
-        self.start_stray(18984)                                                   # yours, on the fast engine's ports
+        self.start_stray(B + 4)                                                   # yours, on the fast engine's ports
         router.activate("fast/m2", lambda x: None)                                # a name the stray doesn't serve, so Shoggoth starts its own
-        self.assertTrue(provbase.port_open(18980))                                # Shoggoth's own, on the first free port
+        self.assertTrue(provbase.port_open(B + 0))                                # Shoggoth's own, on the first free port
         stopped = router.stop_started()
         self.assertEqual(stopped, ["fast"])
-        self.assertFalse(provbase.port_open(18980))
-        self.assertTrue(provbase.port_open(18984))                                # what you started is still there
+        self.assertFalse(provbase.port_open(B + 0))
+        self.assertTrue(provbase.port_open(B + 4))                                # what you started is still there
 
 
 class Arbiter(Env):
@@ -206,19 +228,19 @@ class Arbiter(Env):
         self.assertFalse(self.big.is_running())
 
     def test_an_engine_you_started_only_earns_a_warning_when_the_new_one_can_share(self):
-        self.start_stray(18986)                                    # a Big (exclusive) that somebody else started
+        self.start_stray(B + 6)                                    # a Big (exclusive) that somebody else started
         log = []
         router.activate("fast/m1", log.append)                     # Fast is not exclusive, so it goes ahead beside it
-        self.assertTrue(provbase.port_open(18986))                 # never stopped
+        self.assertTrue(provbase.port_open(B + 6))                 # never stopped
         self.assertTrue(self.fast.is_running())
         self.assertTrue(any("something you started" in t for t in log), log)
 
     def test_an_exclusive_engine_will_not_stop_one_you_started(self):
-        self.start_stray(18981)                                    # a Fast that somebody else started
+        self.start_stray(B + 1)                                    # a Fast that somebody else started
         with self.assertRaises(provbase.ProviderError) as cm:
             router.activate("big/m1")                              # Big needs the memory to itself: refused, with the reason
         self.assertIn("you started", str(cm.exception))
-        self.assertTrue(provbase.port_open(18981))                 # still running
+        self.assertTrue(provbase.port_open(B + 1))                 # still running
         self.assertFalse(self.big.is_running())
 
     def test_an_engine_that_is_not_approved_is_refused_in_words(self):
@@ -240,7 +262,7 @@ class Idle(Env):
 
     def setUp(self):
         super().setUp()
-        self.add("quiet", code=self.CODE, id="quiet", name="Quiet", tier="large", ports="18990-18994", exclusive="true", idle=1)
+        self.add("quiet", code=self.CODE, id="quiet", name="Quiet", tier="large", ports="%d-%d" % (B + 10, B + 14), exclusive="true", idle=1)
         self.reg = registry.Registry(bundled=os.path.join(self.tmp, "none"), user=self.user).load()
         self.assertEqual(self.reg.errors, [])
         for pid in ("fast", "big", "quiet"):
@@ -280,7 +302,7 @@ class Idle(Env):
         self.assertTrue(self.big.is_running())
 
     def test_nothing_of_yours_is_ever_idle_stopped(self):
-        self.start_stray(18991)
+        self.start_stray(B + 11)
         self.assertEqual(router.idle_tick(time.time() + 9999), {})
 
 
@@ -312,7 +334,7 @@ class GatewayRouting(Env):
         body = json.dumps({"model": "big/m1", "messages": []}).encode()
         scheme, host, port, key, path, new_body, err = gateway._route("/v1/chat/completions", body)
         self.assertIsNone(err)
-        self.assertEqual((host, port // 5), ("127.0.0.1", 18985 // 5))
+        self.assertEqual((host, port // 5), ("127.0.0.1", (B + 5) // 5))
         self.assertEqual(path, "/v1/chat/completions")
         self.assertEqual(json.loads(new_body)["model"], "m1")             # rewritten to the engine's own name
         self.assertTrue(self.big.is_running())

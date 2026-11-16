@@ -1,0 +1,38 @@
+name: Tests
+
+# The whole suite on every push and pull request: Python's unittest (stdlib only, fake servers on 127.0.0.1, no network, no GPU) and the
+# page's tests under node and jsdom. Release AppImage calls this first, so nothing is released that fails it.
+on:
+  push:
+    branches: [main, "shoggoth-*", ci]
+  pull_request:
+  workflow_dispatch:
+  workflow_call:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: tests-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  test:
+    runs-on: ubuntu-24.04          # what the AppImage is built on, and the oldest system 5.0 supports (glibc 2.39)
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-python@v6
+        with:
+          python-version: "3.12"   # the Python the AppImage bundles
+      - uses: actions/setup-node@v5
+        with:
+          node-version: "22"       # Pi needs 22.19 or newer; the page's tests run on the same
+          cache: npm
+          cache-dependency-path: tests/ui/package-lock.json
+      - name: jsdom for the page's tests
+        run: npm ci --prefix tests/ui
+      - name: Python and page tests
+        run: python3 -W ignore -m unittest discover tests -v 2>&1 | tail -400
+        # tail keeps the log readable; the step still fails with the suite because of pipefail
+        shell: bash -o pipefail {0}

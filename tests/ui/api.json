@@ -1901,9 +1901,7 @@
    "free_gb": 38.7
   },
   "missing": false,
-  "views": {
-   "lemonade": "/home/user/zest/zd/views/lemonade"
-  }
+  "views": {}
  },
  "/ui/cowork": {
   "pi": {
